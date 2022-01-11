@@ -26,7 +26,6 @@ from libcbm_runner.core.runner import Runner
 # Constants #
 
 ###############################################################################
-
 class DynamicRunner(Runner):
     """
     Replaces the standard Simulation object with a DynamicSimulation instead.
@@ -124,24 +123,36 @@ class DynamicSimulation(Simulation):
         fluxes = fluxes.merge(irw_frac, how='left', on=cols)
 
         # Join the wood density and bark fraction parameters #
-        pass #TODO
+        coefs = self.runner.silv.coefs.df
+        fluxes = fluxes.merge(coefs, how='left', on=['forest_type'])
 
-        # Calculate the `flux_irw` and `flux_fw` for this year #
-        flux_irw = sum([fluxes[s + '_to_product'] * fluxes[s]
-                        for s in self.sources])
-        flux_fw  = sum([fluxes[s + '_to_product'] * (1 - fluxes[s])
-                        for s in self.sources])
+        # Calculate the total `flux_irw` and `flux_fw` for this year #
+        def tot_flux_vol(irw=True):
+            # Convert all fluxes' fraction to volume #
+            tot = [fluxes[s + '_to_product'] *
+                   (fluxes[s] if irw else (1 - fluxes[s])) *
+                   (1 - fluxes['bark_frac']) /
+                   (0.49 * fluxes['wood_density'])
+                   for s in self.sources]
+            # Sum to a scalar #
+            return sum([s.sum() for s in tot])
+
+        # The argument is False for firewood and True for roundwood #
+        flux_irw_vol = tot_flux_vol(True)
+        flux_fw_vol  = tot_flux_vol(False)
 
         # Get demand for the current year #
         query  = "year == %s" % year
-        fw  = self.runner.demand.irw.query(query)['value']
-        irw = self.runner.demand.fw.query(query)['value']
+        demand_fw  = self.runner.demand.irw.query(query)['value']
+        demand_irw = self.runner.demand.fw.query(query)['value']
 
         # Convert to a cubic meter float value #
-        self.demand_fw_vol  = fw.values[0]  * 1000
-        self.demand_irw_vol = irw.values[0] * 1000
+        demand_fw_vol  = demand_fw.values[0]  * 1000
+        demand_irw_vol = demand_irw.values[0] * 1000
 
-
+        # Calculate unsatisfied demand #
+        self.remain_fw_vol  = demand_fw_vol  - flux_irw_vol
+        self.remain_irw_vol = demand_irw_vol - flux_fw_vol
 
         # Debug test #
         if timestep == 19:
