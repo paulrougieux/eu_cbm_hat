@@ -104,25 +104,28 @@ class DynamicSimulation(Simulation):
         assert all(df['Input'] == 1.0)
         df = df.drop(columns='Input')
 
-        # Fluxes and pools are scaled to one hectare so fix it #
+        # Get the columns that contain either pools or fluxes #
         cols = list(end_vars.flux.columns) + list(end_vars.pools.columns)
         cols.pop(cols.index('Input'))
-        df[cols] = df[cols].multiply(df['area'], axis="index")
 
-        # Load the fraction that goes to `irw` and to `fw` #
-        irw_frac = self.runner.silv.irw_frac.get_year(year)
+        # Fluxes and pools are scaled to tonnes per one hectare so fix it #
+        df[cols] = df[cols].multiply(df['area'], axis="index")
+        df[cols] = df[cols].multiply(1000, axis="index")
+
+        # Get the classifier columns along with `disturbance_type` #
         cols = self.runner.silv.irw_frac.cols
 
-        # Get only eight interesting fluxes, summed by disturbance type #
+        # Get only eight interesting fluxes, summed also by dist_type #
         fluxes = df.query("disturbance_type != 0")
         fluxes = fluxes.groupby(cols)
         fluxes = fluxes.agg({s + '_to_product': 'sum' for s in self.sources})
         fluxes = fluxes.reset_index()
 
-        # Join the fluxes going to `products` with the IRW fractions #
+        # Join the `irw` fractions with the fluxes going to `products` #
+        irw_frac = self.runner.silv.irw_frac.get_year(year)
         fluxes = fluxes.merge(irw_frac, how='left', on=cols)
 
-        # Join the wood density and bark fraction parameters #
+        # Join the wood density and bark fraction parameters also #
         coefs = self.runner.silv.coefs.df
         fluxes = fluxes.merge(coefs, how='left', on=['forest_type'])
 
@@ -138,21 +141,21 @@ class DynamicSimulation(Simulation):
             return sum([s.sum() for s in tot])
 
         # The argument is False for firewood and True for roundwood #
-        flux_irw_vol = tot_flux_vol(True)
-        flux_fw_vol  = tot_flux_vol(False)
+        flux_irw_vol = tot_flux_vol(irw=True)
+        flux_fw_vol  = tot_flux_vol(irw=False)
 
         # Get demand for the current year #
         query  = "year == %s" % year
-        demand_fw  = self.runner.demand.irw.query(query)['value']
-        demand_irw = self.runner.demand.fw.query(query)['value']
+        demand_irw = self.runner.demand.irw.query(query)['value']
+        demand_fw  = self.runner.demand.fw.query(query)['value']
 
         # Convert to a cubic meter float value #
-        demand_fw_vol  = demand_fw.values[0]  * 1000
         demand_irw_vol = demand_irw.values[0] * 1000
+        demand_fw_vol  = demand_fw.values[0]  * 1000
 
         # Calculate unsatisfied demand #
-        self.remain_fw_vol  = demand_fw_vol  - flux_irw_vol
         self.remain_irw_vol = demand_irw_vol - flux_fw_vol
+        self.remain_fw_vol  = demand_fw_vol  - flux_irw_vol
 
         # Debug test #
         if timestep == 19:
