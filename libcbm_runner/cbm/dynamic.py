@@ -97,26 +97,26 @@ class DynamicSimulation(Simulation):
         assert len({get_num_rows(name) for name in self.df_names}) == 1
 
         # Concatenate dataframes together by columns into one big df #
-        df = pandas.concat([getattr(end_vars, name)
-                            for name in self.df_names], axis=1)
+        stands = pandas.concat([getattr(end_vars, name)
+                                for name in self.df_names], axis=1)
 
         # Check that the 'Input' column is always one and remove #
-        assert all(df['Input'] == 1.0)
-        df = df.drop(columns='Input')
+        assert all(stands['Input'] == 1.0)
+        stands = stands.drop(columns='Input')
 
         # Get the columns that contain either pools or fluxes #
         cols = list(end_vars.flux.columns) + list(end_vars.pools.columns)
         cols.pop(cols.index('Input'))
 
         # Fluxes and pools are scaled to tonnes per one hectare so fix it #
-        df[cols] = df[cols].multiply(df['area'], axis="index")
-        df[cols] = df[cols].multiply(1000, axis="index")
+        stands[cols] = stands[cols].multiply(stands['area'], axis="index")
+        stands[cols] = stands[cols].multiply(1000, axis="index")
 
         # Get the classifier columns along with `disturbance_type` #
         cols = self.runner.silv.irw_frac.cols
 
         # Get only eight interesting fluxes, summed also by dist_type #
-        fluxes = df.query("disturbance_type != 0")
+        fluxes = stands.query("disturbance_type != 0")
         fluxes = fluxes.groupby(cols)
         fluxes = fluxes.agg({s + '_to_product': 'sum' for s in self.sources})
         fluxes = fluxes.reset_index()
@@ -130,7 +130,7 @@ class DynamicSimulation(Simulation):
         fluxes = fluxes.merge(coefs, how='left', on=['forest_type'])
 
         # Calculate the total `flux_irw` and `flux_fw` for this year #
-        def tot_flux_vol(irw=True):
+        def tot_flux_to_vol(irw=True):
             # Convert all fluxes' fraction to volume #
             tot = [fluxes[s + '_to_product'] *
                    (fluxes[s] if irw else (1 - fluxes[s])) *
@@ -141,21 +141,55 @@ class DynamicSimulation(Simulation):
             return sum([s.sum() for s in tot])
 
         # The argument is False for firewood and True for roundwood #
-        flux_irw_vol = tot_flux_vol(irw=True)
-        flux_fw_vol  = tot_flux_vol(irw=False)
+        tot_flux_irw_vol = tot_flux_to_vol(irw=True)
+        tot_flux_fw_vol  = tot_flux_to_vol(irw=False)
 
         # Get demand for the current year #
         query  = "year == %s" % year
-        demand_irw = self.runner.demand.irw.query(query)['value']
-        demand_fw  = self.runner.demand.fw.query(query)['value']
+        demand_irw_vol = self.runner.demand.irw.query(query)['value']
+        demand_fw_vol  = self.runner.demand.fw.query(query)['value']
 
         # Convert to a cubic meter float value #
-        demand_irw_vol = demand_irw.values[0] * 1000
-        demand_fw_vol  = demand_fw.values[0]  * 1000
+        demand_irw_vol = demand_irw_vol.values[0] * 1000
+        demand_fw_vol  = demand_fw_vol.values[0]  * 1000
 
         # Calculate unsatisfied demand #
-        self.remain_irw_vol = demand_irw_vol - flux_fw_vol
-        self.remain_fw_vol  = demand_fw_vol  - flux_irw_vol
+        self.remain_irw_vol = demand_irw_vol - tot_flux_irw_vol
+        self.remain_fw_vol  = demand_fw_vol  - tot_flux_fw_vol
+
+        # If there is no unsatisfied demand, we stop here #
+        if (self.remain_irw_vol <= 0) and (self.remain_fw_vol <= 0):
+            return cbm_vars
+
+        # To distribute remaining demand, first load event templates #
+        events = self.runner.silv.events.get_year(year)
+
+        # Get the classifier columns #
+        cols = list(self.country.orig_data.classif_names.values())
+
+        # Check that every event template has at least one stand to match it #
+        if year == self.country.base_year + 9999999999:
+            df = pandas.merge(stands, events, how='right', on=cols)
+            df = df.query("_merge == 'right_only'")
+            if not df.empty:
+                msg = "The following events in '%s' have no matching stand.\n"
+                msg = msg % self.runner.silv.events.csv_path
+                msg = msg + df[cols].to_string()
+                raise Exception(msg)
+
+        # We will left-join the current stands with the events templates.
+        # We validate that merge keys are unique in the right dataset with the
+        # option `many_to_one` so that no stands are duplicated by the merge.
+        df = pandas.merge(stands, events, how='left', on=cols,
+                          validate='many_to_one')
+
+        # Stands that did not get an event associated after the merge
+        # are left alone and considered part of conservation efforts.
+        df = df.query("_merge != 'left_only'")
+        df = df.drop(columns='_merge')
+
+        # Join the `irw` fractions with the fluxes going to `products` #
+        #inv = fluxes.merge(irw_frac, how='left', on=cols)
 
         # Debug test #
         if timestep == 19:
@@ -164,8 +198,6 @@ class DynamicSimulation(Simulation):
             end_vars = self.cbm.step(end_vars)
             print(end_vars)
             1/0
-
-        # Compute remaining demand that needs to be satisfied #
 
         # Return #
         return cbm_vars

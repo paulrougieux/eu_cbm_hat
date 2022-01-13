@@ -35,6 +35,10 @@ class Silviculture:
     * `silv.coefs`
     * `silv.events`
     * `silv.harvest`
+
+    Loading this information will fail if you call `df` before a simulation
+    is launched, because we need the internal SIT classifier and disturbance
+    mapping.
     """
 
     def __init__(self, runner):
@@ -53,7 +57,7 @@ class Silviculture:
 
     @property_cached
     def events(self):
-        return EventsTemplate(self)
+        return EventsTemplates(self)
 
     @property_cached
     def harvest(self):
@@ -81,13 +85,46 @@ class BaseSilvInfo:
         return pandas.read_csv(self.csv_path,
                                dtype = {c:'str' for c in self.cols})
 
+    @property_cached
+    def cols(self):
+        return list(self.country.orig_data.classif_names.values()) + \
+               ['disturbance_type']
+
+    @property_cached
+    def df(self):
+        # Make a consistency check between dist_name and dist_id #
+        self.consistency_check()
+        # Load #
+        df = self.raw.copy()
+        # Drop the names which are useless #
+        df = df.drop(columns='dist_type_name')
+        # Convert the disturbance IDs to the real internal IDs #
+        df = self.conv_dists(df)
+        # Convert the classifier IDs to the real internal IDs #
+        df = self.conv_clfrs(df)
+        # Return #
+        return df
+
     #------------------------------- Methods ---------------------------------#
+    def conv_dists(self, df):
+        """
+        Convert the disturbance IDs such as `20` and `22` into their
+        internal simulation ID numbers that are defined by SIT.
+        """
+        # Get the conversion mapping and invert it #
+        id_to_id = self.runner.simulation.sit.disturbance_id_map
+        id_to_id = {v:k for k,v in id_to_id.items()}
+        # Apply the mapping to the dataframe #
+        df['disturbance_type'] = df['disturbance_type'].map(id_to_id)
+        # Return #
+        return df
+
     def conv_clfrs(self, df):
         """
         Convert the classifier values such as `PA` and `QA` into their
         internal simulation ID numbers that are defined by SIT.
         """
-        # Get all the conversion eachs, for each classifier #
+        # Get all the conversion mappings, for each classifier #
         all_maps = self.runner.simulation.sit.classifier_value_ids.items()
         # Apply each of them to the dataframe #
         for classif_name, str_to_id in all_maps:
@@ -96,50 +133,6 @@ class BaseSilvInfo:
         # Return #
         return df
 
-###############################################################################
-class IRWFractions(BaseSilvInfo):
-    """
-    Gives access the industrial roundwood fractions, per disturbance type,
-    for the current simulation run.
-    """
-
-    #----------------------------- Properties --------------------------------#
-    @property
-    def choices(self):
-        """Choices made for irw_frac in the current combo."""
-        return self.combo.config['irw_frac_by_dist']
-
-    @property
-    def csv_path(self):
-        return self.country.orig_data.paths.irw_csv
-
-    @property
-    def cols(self):
-        return list(self.country.orig_data.classif_names.values()) + \
-                    ['disturbance_type']
-
-    @property_cached
-    def df(self):
-        """
-        This will fail if you call `df` before a simulation is launched,
-        because we need the internal SIT classifier and disturbance mapping.
-        """
-        # Make a consistency check between dist_name and dist_id #
-        self.consistency_check()
-        # Load #
-        df = self.raw.copy()
-        # Drop the names which are useless #
-        df = df.drop(columns='dist_type_name')
-        # Convert the disturbance IDs to the real internal IDs #
-        id_to_id = self.runner.simulation.sit.disturbance_id_map
-        id_to_id = {v:k for k,v in id_to_id.items()}
-        df['disturbance_type'] = df['disturbance_type'].map(id_to_id)
-        # Convert the classifier IDs to the real internal IDs #
-        df = self.conv_clfrs(df)
-        # Return #
-        return df
-
-    #------------------------------- Methods ---------------------------------#
     def consistency_check(self):
         # Get mapping dictionary from ID to full description #
         id_to_name = self.country.orig_data['disturbance_types']
@@ -152,7 +145,10 @@ class IRWFractions(BaseSilvInfo):
         # Raise exception #
         if not all(comp):
             msg = "Names don't match IDs in '%s'.\n" % self.csv_path
-            msg += str(orig[~comp]) + '' + str(names[~comp])
+            msg += "Names derived from the IDs:\n"
+            msg += str(names[~comp])
+            msg += "\n\nNames in the user file:\n"
+            msg += str(orig[~comp])
             raise Exception(msg)
 
     def get_year(self, year):
@@ -168,6 +164,23 @@ class IRWFractions(BaseSilvInfo):
         assert not df.empty
         # Return #
         return df
+
+###############################################################################
+class IRWFractions(BaseSilvInfo):
+    """
+    Gives access the industrial roundwood fractions, per disturbance type,
+    for the current simulation run.
+    """
+
+    @property
+    def choices(self):
+        """Choices made for irw_frac in the current combo."""
+        return self.combo.config['irw_frac_by_dist']
+
+    @property
+    def csv_path(self):
+        return self.country.orig_data.paths.irw_csv
+
 
 ###############################################################################
 class VolToMassCoefs(BaseSilvInfo):
@@ -194,10 +207,19 @@ class VolToMassCoefs(BaseSilvInfo):
         return df
 
 ###############################################################################
-class EventsTemplate(BaseSilvInfo):
+class EventsTemplates(BaseSilvInfo):
     """
-    Gives access to...
+    Gives access to the dynamic events that have to be generated to
+    satisfy the demand.
     """
+    @property
+    def choices(self):
+        """Choices made for the events template in the current combo."""
+        return self.combo.config['events_templates']
+
+    @property
+    def csv_path(self):
+        return self.country.orig_data.paths.events_templates
 
 ###############################################################################
 class HarvestFactors(BaseSilvInfo):
