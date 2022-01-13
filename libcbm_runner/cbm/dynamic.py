@@ -180,8 +180,14 @@ class DynamicSimulation(Simulation):
         # We will left-join the current stands with the events templates.
         # We validate that merge keys are unique in the right dataset with the
         # option `many_to_one` so that no stands are duplicated by the merge.
-        df = pandas.merge(stands, events, how='left', on=cols,
-                          validate='many_to_one')
+        try:
+            df = pandas.merge(stands, events, how='left', on=cols,
+                              validate='many_to_one')
+        except pandas.errors.MergeError as error:
+            msg = "The combinations of classifiers are not unique in '%s'."
+            msg += "\nThe duplicated rows are shown below:\n\n"
+            msg += str(events.loc[events.duplicated(subset=cols), cols])
+            raise Exception(msg % self.runner.silv.events.csv_path) from error
 
         # Stands that did not get an event associated after the merge
         # are left alone and considered part of conservation efforts.
