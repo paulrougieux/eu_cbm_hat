@@ -228,38 +228,66 @@ class DynamicSimulation(Simulation):
         def vol_by_source(row, source, irw):
             frac = row[source + '_irw_frac']
             frac = frac if irw else 1 - frac
-            return row[source] *                      \
-                   row[source + '_prod_prop'] *       \
-                   frac *                             \
-                   (1/row['dist_interval_bias']) *    \
-                   row['skew'] *                      \
-                   (1 - row['bark_frac']) /           \
-                   (0.49 * row['wood_density'])
+            return (row[source] *
+                    row[source + '_prod_prop'] *
+                    frac *
+                    (1/row['dist_interval_bias']) *
+                    row['skew'] *
+                    (1 - row['bark_frac']) /
+                    (0.49 * row['wood_density']))
 
-        def tot_vol_created(row):
+        def mass_to_volume(row):
             irw_vol = (vol_by_source(row, s, True)  for s in self.sources)
             fw_vol  = (vol_by_source(row, s, False) for s in self.sources)
             return {'irw_vol': sum(irw_vol),
                     'fw_vol':  sum(fw_vol)}
 
         # Add two columns `irw_vol` and `fw_vol` to the dataframe #
-        vols = df.apply(tot_vol_created, axis=1, result_type='expand')
+        vols = df.apply(mass_to_volume, axis=1, result_type='expand')
         df = pandas.concat([df, vols], axis='columns')
+
+        # If there is no irw demand just set to zero for calculation #
+        if self.remain_irw_vol < 0: self.remain_irw_vol = 0
+
+        # Distribute demand in volume evenly #
+        irw_norm = self.remain_irw_vol / df['irw_vol'].sum()
+        df['irw_vol_ask'] = df['irw_vol'] * irw_norm
+        df['fw_vol_ask']  = df['fw_vol']  * irw_norm
 
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
         df_irw = df.query("product_created == 'irw_and_fw'")
         df_fw  = df.query("product_created == 'fw_only'")
 
-        # Check `products_created` is correct #
-        check_irw = df.query("product_created == 'irw_and_fw' & "
-                             "fw == 0.0")
-        check_fw  = df.query("product_created == 'fw_only' & "
-                             "irw_vol != 0.0")
+        # Check `products_created` is correct and not lying #
+        check_irw = df_irw.query("fw_vol == 0.0")
+        check_fw  = df_fw.query("irw_vol != 0.0")
         assert check_irw.empty
         assert check_fw.empty
 
-        # Now we will work separately with `irw_and_fw` vs `fw_only` #
-        pass
+        # How much firewood would this give us as a collateral product #
+        fwi = df_fw.index
+        df.loc[fwi, 'fw_vol_ask'] = 0.0
+        self.remain_fw_vol -= df_irw['fw_vol_ask'].sum()
+
+        # If there is still firewood to satisfy, distribute it evenly #
+        if self.remain_fw_vol > 0.0:
+            if df_fw['fw_vol'].sum() == 0.0:
+                msg = "There is remaining fw demand this year, but there " \
+                      "are no events that enable the creation of fw only."
+                raise Exception(msg)
+            fw_norm = self.remain_fw_vol / df_fw['fw_vol'].sum()
+            df.loc[fwi, 'fw_vol_ask'] = df.loc[fwi, 'fw_vol'] * fw_norm
+
+        # Then convert back to mass #
+        def mass_to_volume(row):
+            irw_vol = (vol_by_source(row, s, True)  for s in self.sources)
+            fw_vol  = (vol_by_source(row, s, False) for s in self.sources)
+            return {'irw_vol': sum(irw_vol),
+                    'fw_vol':  sum(fw_vol)}
+str 
+
+        irw    = df_irw.index
+        fw     = df_fw.index
 
         # Debug test #
         if timestep == 19:
@@ -267,36 +295,6 @@ class DynamicSimulation(Simulation):
             end_vars = cbm_variables.prepare(end_vars)
             end_vars = self.cbm.step(end_vars)
             print(end_vars)
-
-        # Return #
-        return cbm_vars
-
-    #---------------------------- Exploration --------------------------------#
-    def test(self, timestep, cbm_vars):
-        # Check the timestep #
-        if timestep == 12:
-            print('test')
-
-        # Info sources ? #
-        # prod has columns:
-        # Index(['DisturbanceSoftProduction', 'DisturbanceHardProduction',
-        #        'DisturbanceDOMProduction', 'Total'])
-        # Aggregate of fluxes,
-        prod = self.cbm.compute_disturbance_production(cbm_vars, density=False)
-        print(prod)
-
-        # Sit events has columns:
-        # Index(['total_eligible_value', 'total_achieved', 'shortfall',
-        #        'num_records_disturbed', 'num_splits', 'num_eligible',
-        #        'sit_event_index'],
-        #        dtype = 'object')#
-        print(self.rule_based_proc.sit_event_stats_by_timestep)
-
-        # This is just the same as the input events.csv #
-        print(self.sit.sit_data.disturbance_events)
-
-        # This doesn't contain the current timestep, only past ones
-        print(self.results.state)
 
         # Return #
         return cbm_vars
@@ -364,7 +362,7 @@ class ExampleHarvestProcessor:
         # If the target is already met we stop here #
         if remaining_production <= 0: return cbm_vars
 
-        # Otherwise we create a dynamic event #
+        # Otherwise, we create a dynamic event #
         dynamic_event = self.get_event_template()
         dynamic_event["disturbance_year"] = timestep
         dynamic_event["target_type"]      = "M"
