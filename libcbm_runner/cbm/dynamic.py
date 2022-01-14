@@ -56,6 +56,12 @@ class DynamicSimulation(Simulation):
                'softwood_stem_snag',   'hardwood_stem_snag',
                'softwood_branch_snag', 'hardwood_branch_snag']
 
+    # These are the equivalent names in the libcbm dataframes #
+    sources_cbm = ['SoftwoodMerch',      'HardwoodMerch',
+                   'SoftwoodOther',      'HardwoodOther',
+                   'SoftwoodStemSnag',   'HardwoodStemSnag',
+                   'SoftwoodBranchSnag', 'HardwoodBranchSnag']
+
     #--------------------------- Special Methods -----------------------------#
     def dynamics_func(self, timestep, cbm_vars, debug=True):
         """
@@ -96,6 +102,11 @@ class DynamicSimulation(Simulation):
         get_num_rows = lambda name: len(getattr(end_vars, name))
         assert len({get_num_rows(name) for name in self.df_names}) == 1
 
+        # The age and land_class columns appears twice #
+        renaming = {'age':        'inv_start_age',
+                    'land_class': 'inv_start_land_class'}
+        end_vars.inventory = end_vars.inventory.rename(columns=renaming)
+
         # Concatenate dataframes together by columns into one big df #
         stands = pandas.concat([getattr(end_vars, name)
                                 for name in self.df_names], axis=1)
@@ -112,8 +123,11 @@ class DynamicSimulation(Simulation):
         stands[cols] = stands[cols].multiply(stands['area'], axis="index")
         stands[cols] = stands[cols].multiply(1000, axis="index")
 
+        # Get the classifier columns #
+        clfrs = list(self.country.orig_data.classif_names.values())
+
         # Get the classifier columns along with `disturbance_type` #
-        cols = self.runner.silv.irw_frac.cols
+        cols = clfrs + ["disturbance_type"]
 
         # Get only eight interesting fluxes, summed also by dist_type #
         fluxes = stands.query("disturbance_type != 0")
@@ -164,37 +178,59 @@ class DynamicSimulation(Simulation):
         # To distribute remaining demand, first load event templates #
         events = self.runner.silv.events.get_year(year)
 
-        # Get the classifier columns #
-        cols = list(self.country.orig_data.classif_names.values())
+        # Take only the stands that have not been disturbed yet #
+        stands = stands.query("disturbance_type == 0")
+        stands = stands.drop(columns = 'disturbance_type')
 
-        # Check that every event template has at least one stand to match it #
-        if year == self.country.base_year + 9999999999:
-            df = pandas.merge(stands, events, how='right', on=cols)
-            df = df.query("_merge == 'right_only'")
-            if not df.empty:
-                msg = "The following events in '%s' have no matching stand.\n"
-                msg = msg % self.runner.silv.events.csv_path
-                msg = msg + df[cols].to_string()
-                raise Exception(msg)
+        # Keep only columns of interest from our current stands #
+        interest = clfrs + ['time_since_last_disturbance',
+                            'last_disturbance_type', 'age'] + self.sources_cbm
+        stands = stands[interest]
 
-        # We will left-join the current stands with the events templates.
-        # We validate that merge keys are unique in the right dataset with the
-        # option `many_to_one` so that no stands are duplicated by the merge.
-        try:
-            df = pandas.merge(stands, events, how='left', on=cols,
-                              validate='many_to_one')
-        except pandas.errors.MergeError as error:
-            msg = "The combinations of classifiers are not unique in '%s'."
-            msg += "\nThe duplicated rows are shown below:\n\n"
-            msg += str(events.loc[events.duplicated(subset=cols), cols])
-            raise Exception(msg % self.runner.silv.events.csv_path) from error
+        # Rename the pools to their snake case equivalent #
+        stands = stands.rename(columns = dict(zip(self.sources_cbm,
+                                                  self.sources)))
 
-        # Stands that did not get an event associated after the merge
-        # are left alone and considered part of conservation efforts.
-        df = df.query("_merge != 'left_only'")
-        df = df.drop(columns='_merge')
+        # We will merge the current stands with the events templates #
+        df = pandas.merge(stands, events, how='inner', on=clfrs)
 
-        # Join the `irw` fractions with the fluxes going to `products` #
+        # We will filter on ages, `last_dist_id` and `min_since_last_dist` #
+        df = df.query("age >= sw_start")
+        df = df.query("age <= sw_end")
+        df = df.query("last_dist_id == -1 | "
+                      "last_dist_id == last_disturbance_type")
+        df = df.query("min_since_last_dist == -1 | "
+                      "min_since_last_dist <= time_since_last_disturbance")
+
+        # We will now join the flux's proportions for each disturbance #
+        props = self.runner.fluxes.df
+        cols = self.runner.fluxes.cols + ['disturbance_type']
+        df = pandas.merge(df, props[cols], how='left', on='disturbance_type')
+
+        # We will retrieve the harvest skew factors for the current year #
+        harvest = self.runner.silv.harvest.get_year(year)
+
+        # Only one of the columns matches the current year #
+        harvest = harvest.rename(columns = {'value_%i' % year: 'skew'})
+        cols = self.runner.silv.harvest.cols + ['product_created']
+        df = pandas.merge(df, harvest[cols + ['skew']], how='inner', on=cols)
+
+        # We will add the fractions going to `irw` and `fw` #
+        mapping  = {pool: pool + '_irw_frac' for pool in self.sources}
+        irw_frac = irw_frac.rename(columns = mapping)
+        cols     = clfrs + ["disturbance_type"]
+        df       = df.merge(irw_frac, how='left', on=cols)
+
+        # Join the wood density and bark fraction parameters also #
+        df = df.merge(coefs, how='left', on=['forest_type'])
+
+        # Calculate the volumes that would be produced by the events #
+        pass
+
+        # Now we will work separately with `irw_and_fw` vs `fw_only` #
+
+
+        # Join the `irw` fractions  #
         #inv = fluxes.merge(irw_frac, how='left', on=cols)
 
         # Debug test #
@@ -203,7 +239,6 @@ class DynamicSimulation(Simulation):
             end_vars = cbm_variables.prepare(end_vars)
             end_vars = self.cbm.step(end_vars)
             print(end_vars)
-            1/0
 
         # Return #
         return cbm_vars

@@ -91,13 +91,22 @@ class BaseSilvInfo:
                ['disturbance_type']
 
     @property_cached
+    def dup_cols(self):
+        return ['scenario'] + self.cols
+
+    @property_cached
     def df(self):
-        # Make a consistency check between dist_name and dist_id #
-        self.consistency_check()
+        # Make a check of duplicated entries #
+        self.duplication_check()
+        # Optional extra checks #
+        if hasattr(self, 'extra_checks'): self.extra_checks()
         # Load #
         df = self.raw.copy()
         # Drop the names which are useless #
-        df = df.drop(columns='dist_type_name')
+        if 'dist_type_name' in self.raw.columns:
+            # Make a consistency check between dist_name and dist_id #
+            self.consistency_check()
+            df = df.drop(columns='dist_type_name')
         # Convert the disturbance IDs to the real internal IDs #
         df = self.conv_dists(df)
         # Convert the classifier IDs to the real internal IDs #
@@ -151,6 +160,18 @@ class BaseSilvInfo:
             msg += str(orig[~comp])
             raise Exception(msg)
 
+    def duplication_check(self):
+        # What columns are we going to check duplication on #
+        cols = self.dup_cols
+        # Get duplicated rows #
+        dups = self.raw.duplicated(subset=cols, keep=False)
+        # Assert #
+        if any(dups):
+            msg = "There are duplicated entries in the file '%s'."
+            msg += "\nThe duplicated rows are shown below:\n\n"
+            msg += str(self.raw.loc[dups, cols])
+            raise Exception(msg % self.csv_path)
+
     def get_year(self, year):
         # Case number 1: there is only a single scenario specified #
         if isinstance(self.choices, str): scenario = self.choices
@@ -174,13 +195,12 @@ class IRWFractions(BaseSilvInfo):
 
     @property
     def choices(self):
-        """Choices made for irw_frac in the current combo."""
+        """Choices made for `irw` fraction in the current combo."""
         return self.combo.config['irw_frac_by_dist']
 
     @property
     def csv_path(self):
         return self.country.orig_data.paths.irw_csv
-
 
 ###############################################################################
 class VolToMassCoefs(BaseSilvInfo):
@@ -197,8 +217,14 @@ class VolToMassCoefs(BaseSilvInfo):
     def cols(self):
         return ['forest_type']
 
+    @property
+    def dup_cols(self):
+        return self.cols
+
     @property_cached
     def df(self):
+        # Make a check of duplicated entries #
+        self.duplication_check()
         # Load #
         df = self.raw.copy()
         # Convert the classifier IDs to the real internal IDs #
@@ -212,6 +238,7 @@ class EventsTemplates(BaseSilvInfo):
     Gives access to the dynamic events that have to be generated to
     satisfy the demand.
     """
+
     @property
     def choices(self):
         """Choices made for the events template in the current combo."""
@@ -221,9 +248,34 @@ class EventsTemplates(BaseSilvInfo):
     def csv_path(self):
         return self.country.orig_data.paths.events_templates
 
+    @property
+    def dup_cols(self):
+        return list(self.country.orig_data.classif_names.values()) + \
+               ['scenario', 'sw_start', 'sw_end', 'hw_start', 'hw_end']
+
+    def extra_checks(self):
+        # Guarantee no difference between sw_start and hw_start #
+        assert all(self.raw['sw_start'] == self.raw['hw_start'])
+        # Guarantee no difference between sw_end and hw_end #
+        assert all(self.raw['sw_end'] == self.raw['hw_end'])
+        # Guarantee we don't use max_since_last_dist #
+        assert all(self.raw['max_since_last_dist'] == -1)
+
 ###############################################################################
 class HarvestFactors(BaseSilvInfo):
     """
-    Gives access to...
+    Gives access to the data in the file `harvest_factors.csv`.
     """
 
+    @property
+    def choices(self):
+        """Choices made for the harvest factors in the current combo."""
+        return self.combo.config['harvest_factors']
+
+    @property
+    def csv_path(self):
+        return self.country.orig_data.paths.harvest_factors
+
+    @property
+    def cols(self):
+        return ['forest_type', 'mgmt_type', 'disturbance_type']

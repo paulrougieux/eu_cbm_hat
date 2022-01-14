@@ -16,6 +16,8 @@ from autopaths.dir_path   import DirectoryPath
 from autopaths.auto_paths import AutoPaths
 from plumbing.cache       import property_cached
 
+# Internal modules #
+
 # Where is the data, default case #
 aidb_repo = DirectoryPath("~/repos/libcbm_aidb/")
 

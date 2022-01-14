@@ -24,6 +24,7 @@ from libcbm_runner.info.input_data     import InputData
 from libcbm_runner.info.output_data    import OutputData
 from libcbm_runner.info.internal_data  import InternalData
 from libcbm_runner.info.demand         import Demand
+from libcbm_runner.info.fluxes         import Fluxes
 from libcbm_runner.info.silviculture   import Silviculture
 from libcbm_runner.pump.pre_processor  import PreProcessor
 from libcbm_runner.pump.post_processor import PostProcessor
@@ -123,6 +124,14 @@ class Runner(object):
     def silv(self):
         """Access to silvicultural data."""
         return Silviculture(self)
+
+    @property_cached
+    def fluxes(self):
+        """
+        Returns a dataframe linking disturbance to proportions sent to
+        the pool `products`.
+        """
+        return Fluxes(self)
 
     @property_cached
     def output(self):
