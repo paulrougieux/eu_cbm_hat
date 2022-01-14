@@ -224,14 +224,42 @@ class DynamicSimulation(Simulation):
         # Join the wood density and bark fraction parameters also #
         df = df.merge(coefs, how='left', on=['forest_type'])
 
-        # Calculate the volumes that would be produced by the events #
-        pass
+        # Calculate the two volumes that would be produced by the events #
+        def vol_by_source(row, source, irw):
+            frac = row[source + '_irw_frac']
+            frac = frac if irw else 1 - frac
+            return row[source] *                      \
+                   row[source + '_prod_prop'] *       \
+                   frac *                             \
+                   (1/row['dist_interval_bias']) *    \
+                   row['skew'] *                      \
+                   (1 - row['bark_frac']) /           \
+                   (0.49 * row['wood_density'])
+
+        def tot_vol_created(row):
+            irw_vol = (vol_by_source(row, s, True)  for s in self.sources)
+            fw_vol  = (vol_by_source(row, s, False) for s in self.sources)
+            return {'irw_vol': sum(irw_vol),
+                    'fw_vol':  sum(fw_vol)}
+
+        # Add two columns `irw_vol` and `fw_vol` to the dataframe #
+        vols = df.apply(tot_vol_created, axis=1, result_type='expand')
+        df = pandas.concat([df, vols], axis='columns')
 
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
+        df_irw = df.query("product_created == 'irw_and_fw'")
+        df_fw  = df.query("product_created == 'fw_only'")
 
+        # Check `products_created` is correct #
+        check_irw = df.query("product_created == 'irw_and_fw' & "
+                             "fw == 0.0")
+        check_fw  = df.query("product_created == 'fw_only' & "
+                             "irw_vol != 0.0")
+        assert check_irw.empty
+        assert check_fw.empty
 
-        # Join the `irw` fractions  #
-        #inv = fluxes.merge(irw_frac, how='left', on=cols)
+        # Now we will work separately with `irw_and_fw` vs `fw_only` #
+        pass
 
         # Debug test #
         if timestep == 19:
