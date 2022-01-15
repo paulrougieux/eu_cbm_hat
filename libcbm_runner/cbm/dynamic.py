@@ -63,7 +63,7 @@ class DynamicSimulation(Simulation):
                    'SoftwoodBranchSnag', 'HardwoodBranchSnag']
 
     #--------------------------- Special Methods -----------------------------#
-    def dynamics_func(self, timestep, cbm_vars, debug=True):
+    def dynamics_func(self, timestep, cbm_vars, debug=False):
         """
         First apply predetermined disturbances, then apply demand
         specific to harvesting. The full specification for the "Harvest
@@ -254,25 +254,23 @@ class DynamicSimulation(Simulation):
         df['irw_need'] = self.remain_irw_vol * df['irw_norm']
 
         # Calculate what fraction that is of the total available #
-        df['irw_frac'] = df['irw_need'] / df['irw_vol']
+        df['amount'] = df['irw_need'] / df['irw_vol']
 
         # How much firewood would this give us as a collateral product #
-        df['fw_colat'] = df['irw_frac'] * df['fw_vol']
-        self.remain_fw_vol -= df_irw['fw_colat'].sum()
+        df['fw_colat'] = df['amount'] * df['fw_vol']
 
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
         df_irw = df.query("product_created == 'irw_and_fw'")
         df_fw  = df.query("product_created == 'fw_only'")
-
-        # We can keep the index of rows for each #
-        irwi = df_irw.index
-        fwi  = df_fw.index
 
         # Check `products_created` is correct and not lying #
         check_irw = df_irw.query("fw_vol == 0.0")
         check_fw  = df_fw.query("irw_vol != 0.0")
         assert check_irw.empty
         assert check_fw.empty
+
+        # Subtract from remaining firewood demand #
+        self.remain_fw_vol -= df_irw['fw_colat'].sum()
 
         # If there is no extra firewood needed, set to zero #
         if self.remain_fw_vol <= 0.0:
@@ -284,29 +282,38 @@ class DynamicSimulation(Simulation):
                 raise Exception(msg)
 
         # If there is still firewood to satisfy, distribute it evenly #
+        fwi = df_fw.index
         df['fw_pot'] = df['fw_vol'] * df['skew'] / df['dist_interval_bias']
         df['fw_norm'] = df['fw_pot'] / df.loc[fwi, 'fw_pot'].sum()
         df['fw_need'] = self.remain_fw_vol * df['fw_norm']
-        df['fw_frac'] = df['fw_need'] / df['fw_vol']
+        df.loc[fwi, 'amount'] = df['fw_need'] / df['fw_vol']
 
-        # Then convert back to mass needed using the fraction of volume #
-        # Half the volume is always half the mass (homogenous) #
-        df['tot_mass'] = sum(df[source] for source in self.sources)
-        #TODO we need the total mass here of all sources?
-        
-        df.loc[irwi, 'mass'] = df.loc[irwi, 'tot_mass'] * \
-                               df.loc[irwi, 'irw_frac']
-        df.loc[fwi,  'mass'] = df.loc[fwi,  'tot_mass'] * \
-                               df.loc[fwi,  'fw_frac']
+        # Our disturbances will all be proportional #
+        df['measurement_type'] = 'P'
+        df['step'] = timestep
+        df = df.rename(columns={'disturbance_type': 'dist_type_name'})
 
+        # Get a dataframe to send to `libcbm` #
+        cols = self.runner.input_data['events'].columns
+        events = df[cols]
 
+        # Create disturbances #
+        dyn_proc = sit_cbm_factory.create_sit_rule_based_processor(
+            self.sit,
+            self.cbm,
+            reset_parameters = False,
+            sit_events = events
+        )
+
+        # Run the dynamic rule based processor #
+        cbm_vars = dyn_proc.pre_dynamics_func(timestep, cbm_vars)
 
         # Debug test #
         if timestep == 19:
-            end_vars = copy.deepcopy(cbm_vars)
-            end_vars = cbm_variables.prepare(end_vars)
-            end_vars = self.cbm.step(end_vars)
             print(end_vars)
+
+        # Print a message #
+        self.parent.log.info(f"Time step {timestep} is about to run.")
 
         # Return #
         return cbm_vars
