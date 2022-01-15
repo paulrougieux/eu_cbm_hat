@@ -231,8 +231,6 @@ class DynamicSimulation(Simulation):
             return (row[source] *
                     row[source + '_prod_prop'] *
                     frac *
-                    (1/row['dist_interval_bias']) *
-                    row['skew'] *
                     (1 - row['bark_frac']) /
                     (0.49 * row['wood_density']))
 
@@ -246,17 +244,29 @@ class DynamicSimulation(Simulation):
         vols = df.apply(mass_to_volume, axis=1, result_type='expand')
         df = pandas.concat([df, vols], axis='columns')
 
-        # If there is no irw demand just set to zero for calculation #
-        if self.remain_irw_vol < 0: self.remain_irw_vol = 0
+        # Integrate the dist_interval_bias and the market skew #
+        df['irw_pot'] = df['irw_vol'] * df['skew'] / df['dist_interval_bias']
 
-        # Distribute demand in volume evenly #
-        irw_norm = self.remain_irw_vol / df['irw_vol'].sum()
-        df['irw_vol_ask'] = df['irw_vol'] * irw_norm
-        df['fw_vol_ask']  = df['fw_vol']  * irw_norm
+        # Distrubute evenly according to the potential irw volume produced #
+        df['irw_norm'] = df['irw_pot'] / df['irw_pot'].sum()
+
+        # Calculate how much volume we need from each stand #
+        df['irw_need'] = self.remain_irw_vol * df['irw_norm']
+
+        # Calculate what fraction that is of the total available #
+        df['irw_frac'] = df['irw_need'] / df['irw_vol']
+
+        # How much firewood would this give us as a collateral product #
+        df['fw_colat'] = df['irw_frac'] * df['fw_vol']
+        self.remain_fw_vol -= df_irw['fw_colat'].sum()
 
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
         df_irw = df.query("product_created == 'irw_and_fw'")
         df_fw  = df.query("product_created == 'fw_only'")
+
+        # We can keep the index of rows for each #
+        irwi = df_irw.index
+        fwi  = df_fw.index
 
         # Check `products_created` is correct and not lying #
         check_irw = df_irw.query("fw_vol == 0.0")
@@ -264,30 +274,32 @@ class DynamicSimulation(Simulation):
         assert check_irw.empty
         assert check_fw.empty
 
-        # How much firewood would this give us as a collateral product #
-        fwi = df_fw.index
-        df.loc[fwi, 'fw_vol_ask'] = 0.0
-        self.remain_fw_vol -= df_irw['fw_vol_ask'].sum()
-
-        # If there is still firewood to satisfy, distribute it evenly #
-        if self.remain_fw_vol > 0.0:
+        # If there is no extra firewood needed, set to zero #
+        if self.remain_fw_vol <= 0.0:
+            self.remain_fw_vol = 0.0
+        else:
             if df_fw['fw_vol'].sum() == 0.0:
                 msg = "There is remaining fw demand this year, but there " \
                       "are no events that enable the creation of fw only."
                 raise Exception(msg)
-            fw_norm = self.remain_fw_vol / df_fw['fw_vol'].sum()
-            df.loc[fwi, 'fw_vol_ask'] = df.loc[fwi, 'fw_vol'] * fw_norm
 
-        # Then convert back to mass #
-        def mass_to_volume(row):
-            irw_vol = (vol_by_source(row, s, True)  for s in self.sources)
-            fw_vol  = (vol_by_source(row, s, False) for s in self.sources)
-            return {'irw_vol': sum(irw_vol),
-                    'fw_vol':  sum(fw_vol)}
-str 
+        # If there is still firewood to satisfy, distribute it evenly #
+        df['fw_pot'] = df['fw_vol'] * df['skew'] / df['dist_interval_bias']
+        df['fw_norm'] = df['fw_pot'] / df.loc[fwi, 'fw_pot'].sum()
+        df['fw_need'] = self.remain_fw_vol * df['fw_norm']
+        df['fw_frac'] = df['fw_need'] / df['fw_vol']
 
-        irw    = df_irw.index
-        fw     = df_fw.index
+        # Then convert back to mass needed using the fraction of volume #
+        # Half the volume is always half the mass (homogenous) #
+        df['tot_mass'] = sum(df[source] for source in self.sources)
+        #TODO we need the total mass here of all sources?
+        
+        df.loc[irwi, 'mass'] = df.loc[irwi, 'tot_mass'] * \
+                               df.loc[irwi, 'irw_frac']
+        df.loc[fwi,  'mass'] = df.loc[fwi,  'tot_mass'] * \
+                               df.loc[fwi,  'fw_frac']
+
+
 
         # Debug test #
         if timestep == 19:
