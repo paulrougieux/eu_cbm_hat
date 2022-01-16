@@ -295,7 +295,7 @@ class DynamicSimulation(Simulation):
 
         # Get only the right columns in the dataframe to send to `libcbm` #
         cols = self.runner.input_data['events'].columns
-        events = df[cols]
+        events = df[cols].copy()
 
         # Convert IDs back to the user standard #
         events = self.conv_dists(events)
@@ -314,10 +314,11 @@ class DynamicSimulation(Simulation):
 
         # Debug test #
         if timestep == 19:
-            print(end_vars)
+            print("Timestep 19")
 
         # Print a message #
-        self.parent.log.info(f"Time step {timestep} is about to run.")
+        msg = f"Time step {timestep} (year {year}) is about to run."
+        self.parent.log.info(msg)
 
         # Return #
         return cbm_vars
