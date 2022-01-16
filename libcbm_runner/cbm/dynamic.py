@@ -293,9 +293,13 @@ class DynamicSimulation(Simulation):
         df['step'] = timestep
         df = df.rename(columns={'disturbance_type': 'dist_type_name'})
 
-        # Get a dataframe to send to `libcbm` #
+        # Get only the right columns in the dataframe to send to `libcbm` #
         cols = self.runner.input_data['events'].columns
         events = df[cols]
+
+        # Convert IDs back to the user standard #
+        events = self.conv_dists(events)
+        events = self.conv_clfrs(events)
 
         # Create disturbances #
         dyn_proc = sit_cbm_factory.create_sit_rule_based_processor(
@@ -317,6 +321,33 @@ class DynamicSimulation(Simulation):
 
         # Return #
         return cbm_vars
+
+    #--------------------------- Other Methods -------------------------------#
+    def conv_dists(self, df):
+        """
+        Convert the disturbance IDs from their internal simulation IDs that
+        are defined by SIT into the user defined equivalent string.
+        """
+        # Get the conversion mapping #
+        id_to_id = self.runner.simulation.sit.disturbance_id_map
+        # Apply the mapping to the dataframe #
+        df['dist_type_name'] = df['dist_type_name'].map(id_to_id)
+        # Return #
+        return df
+
+    def conv_clfrs(self, df):
+        """
+        Convert the classifier IDs from their internal simulation IDs that
+        are defined by SIT into the user defined equivalent string.
+        """
+        # Get all the conversion mappings, for each classifier #
+        all_maps = self.runner.simulation.sit.classifier_value_ids.items()
+        # Apply each of them to the dataframe #
+        for classif_name, str_to_id in all_maps:
+            mapping = {v:k for k,v in str_to_id.items()}
+            df[classif_name] = df[classif_name].map(mapping)
+        # Return #
+        return df
 
 ###############################################################################
 class ExampleHarvestProcessor:
