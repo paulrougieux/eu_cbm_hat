@@ -168,11 +168,11 @@ class DynamicSimulation(Simulation):
         demand_fw_vol  = demand_fw_vol.values[0]  * 1000
 
         # Calculate unsatisfied demand #
-        self.remain_irw_vol = demand_irw_vol - tot_flux_irw_vol
-        self.remain_fw_vol  = demand_fw_vol  - tot_flux_fw_vol
+        remain_irw_vol = demand_irw_vol - tot_flux_irw_vol
+        remain_fw_vol  = demand_fw_vol  - tot_flux_fw_vol
 
         # If there is no unsatisfied demand, we stop here #
-        if (self.remain_irw_vol <= 0) and (self.remain_fw_vol <= 0):
+        if (remain_irw_vol <= 0) and (remain_fw_vol <= 0):
             return cbm_vars
 
         # To distribute remaining demand, first load event templates #
@@ -287,8 +287,8 @@ class DynamicSimulation(Simulation):
         df_irw['irw_norm'] = df_irw['irw_pot'] / df_irw['irw_pot'].sum()
 
         # Calculate how much volume we need from each stand #
-        df_irw['irw_need'] = self.remain_irw_vol * df_irw['irw_norm']
-        assert math.isclose(df_irw['irw_need'].sum(), self.remain_irw_vol)
+        df_irw['irw_need'] = remain_irw_vol * df_irw['irw_norm']
+        assert math.isclose(df_irw['irw_need'].sum(), remain_irw_vol)
 
         # How much is this volume as compared to the total volume possible #
         df_irw['irw_frac'] = df_irw['irw_need'] / df_irw['irw_vol']
@@ -297,11 +297,11 @@ class DynamicSimulation(Simulation):
         df_irw['fw_colat'] = df_irw['irw_frac'] * df_irw['fw_vol']
 
         # Subtract from remaining firewood demand #
-        self.remain_fw_vol -= df_irw['fw_colat'].sum()
+        still_miss_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
 
         # If there is no extra firewood needed, set to zero #
-        if self.remain_fw_vol <= 0.0:
-            self.remain_fw_vol = 0.0
+        if still_miss_fw_vol <= 0.0:
+            still_miss_fw_vol = 0.0
         else:
             if df_fw['fw_vol'].sum() == 0.0:
                 msg = "There is remaining fw demand this year, but there " \
@@ -310,8 +310,8 @@ class DynamicSimulation(Simulation):
 
         # If there is still firewood to satisfy, distribute it evenly #
         df_fw['fw_norm'] = df_fw['fw_pot'] / df_fw['fw_pot'].sum()
-        df_fw['fw_need'] = self.remain_fw_vol * df_fw['fw_norm']
-        assert math.isclose(df_fw['fw_need'].sum(), self.remain_fw_vol)
+        df_fw['fw_need'] = still_miss_fw_vol * df_fw['fw_norm']
+        assert math.isclose(df_fw['fw_need'].sum(), still_miss_fw_vol)
 
         # Convert to mass (we don't need to care about source pools) #
         df_irw['amount'] = ((df_irw['irw_need'] + df_irw['fw_colat']) *
@@ -347,6 +347,21 @@ class DynamicSimulation(Simulation):
 
         # Run the dynamic rule based processor #
         cbm_vars = dyn_proc.pre_dynamics_func(timestep, cbm_vars)
+
+        # Debug test #
+        if timestep == 16:
+            print("Timestep 16")
+
+        # Record values for safe keeping in the output #
+        record = {'remain_irw_vol':    remain_fw_vol,
+                  'remain_fw_vol':     remain_fw_vol,
+                  'still_miss_fw_vol': still_miss_fw_vol,
+                  'tot_irw_vol_pot':   df['irw_pot'].sum(),
+                  'tot_fw_vol_pot':    df['fw_pot'].sum()}
+
+        # Save them in a dataframe owned by the output object #
+        for k,v in record.items():
+            self.runner.output.extras.loc[year, k] = v
 
         # Print a message #
         msg = f"Time step {timestep} (year {year}) is about to finish."

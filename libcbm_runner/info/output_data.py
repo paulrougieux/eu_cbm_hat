@@ -16,6 +16,7 @@ import pandas
 
 # First party modules #
 from autopaths.auto_paths import AutoPaths
+from plumbing.cache import property_cached
 
 # Internal modules #
 from libcbm_runner.info.internal_data import InternalData
@@ -39,6 +40,7 @@ class OutputData(InternalData):
     /output/csv/parameters.csv.gz
     /output/csv/pools.csv.gz
     /output/csv/state.csv.gz
+    /output/csv/extras.csv.gz
     """
 
     def __init__(self, parent):
@@ -48,6 +50,17 @@ class OutputData(InternalData):
         self.sim    = self.runner.simulation
         # Directories #
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
+
+    #----------------------------- Properties --------------------------------#
+    @property_cached
+    def extras(self):
+        """
+        This is a dataframe that will contain custom reporting information.
+        The dataframe has one row for each year of the simulation run and
+        contains data that is filled in by the `dynamics_fun` of a running
+        simulation.
+        """
+        return pandas.DataFrame()
 
     #--------------------------- Special Methods -----------------------------#
     def __getitem__(self, item):
@@ -93,4 +106,6 @@ class OutputData(InternalData):
         self['parameters']  = self.runner.internal['parameters']
         self['pools']       = self.runner.internal['pools']
         self['state']       = self.runner.internal['state']
+        # Our extra information #
+        self['extras']      = self.extras.reset_index()
 
