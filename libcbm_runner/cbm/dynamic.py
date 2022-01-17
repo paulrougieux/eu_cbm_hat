@@ -287,6 +287,15 @@ class DynamicSimulation(Simulation):
         assert check_irw.empty
         assert check_fw.empty
 
+        # If there is no extra industrial roundwood needed, set to zero #
+        if remain_irw_vol <= 0.0:
+            remain_irw_vol = 0.0
+        else:
+            if df_fw['irw_vol'].sum() == 0.0:
+                msg = "There is remaining irw demand this year, but there " \
+                      "are no events that enable the creation of irw."
+f                raise Exception(msg)
+
         # Distribute evenly according to the potential irw volume produced #
         df_irw['irw_norm'] = df_irw['irw_pot'] / df_irw['irw_pot'].sum()
 
@@ -328,6 +337,9 @@ class DynamicSimulation(Simulation):
 
         # Put the two dataframes back together #
         df = pandas.concat([df_irw, df_fw])
+
+        # Filter out any events that have an amount of zero #
+        df  = df.query("amount != 0.0")
 
         # Prepare the remaining missing columns for the events #
         df['measurement_type'] = 'M'
