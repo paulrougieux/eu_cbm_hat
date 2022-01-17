@@ -291,7 +291,7 @@ class DynamicSimulation(Simulation):
         if remain_irw_vol <= 0.0:
             remain_irw_vol = 0.0
         else:
-            if df_fw['irw_vol'].sum() == 0.0:
+            if df_irw['irw_vol'].sum() == 0.0:
                 msg = "There is remaining irw demand this year, but there " \
                       "are no events that enable the creation of irw."
                 raise Exception(msg)
