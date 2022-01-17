@@ -9,7 +9,7 @@ Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
-import copy
+import copy, math
 
 # Third party modules #
 import pandas
@@ -247,24 +247,26 @@ class DynamicSimulation(Simulation):
         vols = df.apply(mass_to_volume, axis=1, result_type='expand')
         df = pandas.concat([df, vols], axis='columns')
 
-        # Group on classifiers and dist_type #
+        # Group our event candidates on classifiers and disturbance ID #
         grp_cols = cols + ['product_created']
 
-        # Aggregate on classifiers and dist_type #
-        event_cols = [col for col in events.columns if col not in grp_cols]
-        event_cols += ['skew', 'wood_density', 'bark_frac']
-        agg_cols = {col: 'unique' for col in event_cols}
+        # All these columns must have unique values for a given age range #
+        unique_cols = [col for col in events.columns if col not in grp_cols]
+        unique_cols += ['skew', 'wood_density', 'bark_frac']
+
+        # Keep all required columns after the aggregation and sum volumes #
+        agg_cols = {col: 'unique' for col in unique_cols}
         agg_cols['irw_vol'] = 'sum'
         agg_cols['fw_vol']  = 'sum'
 
-        # Groupby and aggreagte #
+        # Group-by and aggreagte so that age classes merge together #
         df = df.groupby(grp_cols)
         df = df.aggregate(agg_cols)
         df = df.reset_index()
 
-        # Explode and check the number of rows does not change #
+        # Explode the uniques and check the number of rows does not change #
         orig_len = len(df)
-        df = df.explode(event_cols)
+        df = df.explode(unique_cols)
         assert len(df) == orig_len
 
         # Integrate the dist_interval_bias and the market skew #
@@ -272,10 +274,8 @@ class DynamicSimulation(Simulation):
         df['fw_pot']  = df['fw_vol']  * df['skew'] / df['dist_interval_bias']
 
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
-        df_irw = df.query("product_created == 'irw_and_fw'")
-        df_fw  = df.query("product_created == 'fw_only'")
-        irwi = df_irw.index
-        fwi  = df_fw.index
+        df_irw = df.query("product_created == 'irw_and_fw'").copy()
+        df_fw  = df.query("product_created == 'fw_only'").copy()
 
         # Check `products_created` is correct and not lying #
         check_irw = df_irw.query("fw_vol == 0.0")
@@ -284,16 +284,17 @@ class DynamicSimulation(Simulation):
         assert check_fw.empty
 
         # Distribute evenly according to the potential irw volume produced #
-        df['irw_norm'] = df['irw_pot'] / df['irw_pot'].sum()
+        df_irw['irw_norm'] = df_irw['irw_pot'] / df_irw['irw_pot'].sum()
 
         # Calculate how much volume we need from each stand #
-        df['irw_need'] = self.remain_irw_vol * df['irw_norm']
+        df_irw['irw_need'] = self.remain_irw_vol * df_irw['irw_norm']
+        assert math.isclose(df_irw['irw_need'].sum(), self.remain_irw_vol)
 
         # How much is this volume as compared to the total volume possible #
-        df['irw_frac'] = df['irw_need'] / df['irw_vol']
+        df_irw['irw_frac'] = df_irw['irw_need'] / df_irw['irw_vol']
 
         # How much firewood would this give us as a collateral product #
-        df.loc[irwi, 'fw_colat'] = df['irw_frac'] * df['fw_vol']
+        df_irw['fw_colat'] = df_irw['irw_frac'] * df_irw['fw_vol']
 
         # Subtract from remaining firewood demand #
         self.remain_fw_vol -= df_irw['fw_colat'].sum()
@@ -308,18 +309,22 @@ class DynamicSimulation(Simulation):
                 raise Exception(msg)
 
         # If there is still firewood to satisfy, distribute it evenly #
-        df.loc[fwi, 'fw_norm'] = df['fw_pot'] / df.loc[fwi, 'fw_pot'].sum()
-        df.loc[fwi, 'fw_need'] = self.remain_fw_vol * df['fw_norm']
+        df_fw['fw_norm'] = df_fw['fw_pot'] / df_fw['fw_pot'].sum()
+        df_fw['fw_need'] = self.remain_fw_vol * df_fw['fw_norm']
+        assert math.isclose(df_fw['fw_need'].sum(), self.remain_fw_vol)
 
         # Convert to mass (we don't need to care about source pools) #
-        df.loc[irwi, 'amount'] = ((df['irw_need'] + df['fw_colat']) *
-                                  (0.49 * df['wood_density']) /
-                                  (1 - df['bark_frac']))
-        df.loc[fwi,  'amount']  = (df['fw_need'] *
-                                   (0.49 * df['wood_density']) /
-                                   (1 - df['bark_frac']))
+        df_irw['amount'] = ((df_irw['irw_need'] + df_irw['fw_colat']) *
+                            (0.49 * df_irw['wood_density']) /
+                            (1 - df_irw['bark_frac']))
+        df_fw['amount']  = (df_fw['fw_need'] *
+                            (0.49 * df_fw['wood_density']) /
+                            (1 - df_fw['bark_frac']))
 
-        # Prepare the remaining columns for the events #
+        # Put the two dataframes back together #
+        df = pandas.concat([df_irw, df_fw])
+
+        # Prepare the remaining missing columns for the events #
         df['measurement_type'] = 'M'
         df['step'] = timestep
         df = df.rename(columns={'disturbance_type': 'dist_type_name'})
@@ -328,7 +333,7 @@ class DynamicSimulation(Simulation):
         cols = self.runner.input_data['events'].columns
         events = df[cols].copy()
 
-        # Convert IDs back to the user standard #
+        # Convert IDs back from the SIT standard to the user standard #
         events = self.conv_dists(events)
         events = self.conv_clfrs(events)
 
@@ -343,12 +348,8 @@ class DynamicSimulation(Simulation):
         # Run the dynamic rule based processor #
         cbm_vars = dyn_proc.pre_dynamics_func(timestep, cbm_vars)
 
-        # Debug test #
-        if timestep == 19:
-            print("Timestep 19")
-
         # Print a message #
-        msg = f"Time step {timestep} (year {year}) is about to run."
+        msg = f"Time step {timestep} (year {year}) is about to finish."
         self.parent.log.info(msg)
 
         # Return #
