@@ -339,16 +339,29 @@ class DynamicSimulation(Simulation):
         df = pandas.concat([df_irw, df_fw])
 
         # Filter out any events that have an amount of zero #
-        df  = df.query("amount != 0.0").copy()
+        df = df.query("amount != 0.0")
+
+        # Save this dataframe in the output #
+        df.insert(0, 'year', self.year)
+        cols = ['year'] +  clfrs
+        cols += ['disturbance_type', 'product_created', 'dist_interval_bias',
+                 'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
+                 'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
+                 'sort_type', 'efficiency', 'skew', 'wood_density',
+                 'bark_frac', 'irw_vol', 'fw_vol', 'irw_pot', 'fw_pot',
+                 'irw_norm', 'irw_need', 'irw_frac', 'fw_colat', 'amount',
+                 'fw_norm', 'fw_need']
+        self.runner.output.events = self.runner.output.events.append(df[cols])
 
         # Prepare the remaining missing columns for the events #
-        df['measurement_type'] = 'M'
-        df['step'] = timestep
-        df = df.rename(columns={'disturbance_type': 'dist_type_name'})
+        events = df.copy()
+        events['measurement_type'] = 'M'
+        events['step'] = timestep
+        events = events.rename(columns={'disturbance_type': 'dist_type_name'})
 
         # Get only the right columns in the dataframe to send to `libcbm` #
         cols = self.runner.input_data['events'].columns
-        events = df[cols].copy()
+        events = events[cols].copy()
 
         # Convert IDs back from the SIT standard to the user standard #
         events = self.conv_dists(events)
