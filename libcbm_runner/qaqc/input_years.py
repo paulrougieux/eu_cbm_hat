@@ -34,10 +34,9 @@ class InputYears:
 
         >>> {key: max(value) for key, value in r.input_years.dict.items()}
 
-    Display the maximum year of the shortest time span input data:
+    Display the maximum year of the input having the shortest time span:
 
         >>> print(r.input_years.last_common())
-
 
     """
 
@@ -48,8 +47,9 @@ class InputYears:
     @property
     def dict(self):
         """Returns a dictionary with data set name as keys and lists of years as values"""
-        # Years in the harvest table
-        # Note we wanted to load with this method
+        # Years in the harvest factor table
+
+        # Note we wanted to load it with this method
         # harvest_cols = self.runner.silv.harvest.df.columns.to_list()
         # But it fails with
         # *** AttributeError: 'DynamicSimulation' object has no attribute 'sit'
@@ -57,6 +57,7 @@ class InputYears:
         # libcbm_runner/info/silviculture.py(111)df()
         #     110         # Convert the disturbance IDs to the real internal IDs #
         # --> 111         df = self.conv_dists(df)
+
         harvest_cols = pandas.read_csv(self.runner.silv.harvest.csv_path).columns
         harvest_years = (re.search(r"value_(\d+)", x) for x in harvest_cols)
         harvest_years = [int(m.group(1)) for m in harvest_years if m]
@@ -78,7 +79,7 @@ class InputYears:
         combo_config = self.runner.combo.config
         dict2 = {"combo_" + m: list(combo_config[m].keys()) for m in multi_year_input}
 
-        # Merge the two dicts
+        # Combine the two dictionaries
         dict1.update(dict2)
         return dict1
 
@@ -89,8 +90,6 @@ class InputYears:
 
     def last_common(self):
         """Returns the last common year available in all data sets
-
-
         """
         # Max value for each input data
         max_years = {key: max(value) for key, value in self.dict.items()}
