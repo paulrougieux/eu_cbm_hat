@@ -294,7 +294,7 @@ class DynamicSimulation(Simulation):
             if df_fw['irw_vol'].sum() == 0.0:
                 msg = "There is remaining irw demand this year, but there " \
                       "are no events that enable the creation of irw."
-f                raise Exception(msg)
+                raise Exception(msg)
 
         # Distribute evenly according to the potential irw volume produced #
         df_irw['irw_norm'] = df_irw['irw_pot'] / df_irw['irw_pot'].sum()
