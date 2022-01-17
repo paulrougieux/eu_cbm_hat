@@ -271,16 +271,6 @@ class DynamicSimulation(Simulation):
         df['irw_pot'] = df['irw_vol'] * df['skew'] / df['dist_interval_bias']
         df['fw_pot']  = df['fw_vol']  * df['skew'] / df['dist_interval_bias']
 
-        # Distribute evenly according to the potential irw volume produced #
-        df['irw_norm'] = df['irw_pot'] / df['irw_pot'].sum()
-
-        # Calculate how much volume we need from each stand #
-        df['irw_need'] = self.remain_irw_vol * df['irw_norm']
-
-        # How much firewood would this give us as a collateral product #
-        df['irw_frac'] = df['irw_need'] / df['irw_vol']
-        df['fw_colat'] = df['irw_frac'] * df['fw_vol']
-
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
         df_irw = df.query("product_created == 'irw_and_fw'")
         df_fw  = df.query("product_created == 'fw_only'")
@@ -292,6 +282,18 @@ class DynamicSimulation(Simulation):
         check_fw  = df_fw.query("irw_vol != 0.0")
         assert check_irw.empty
         assert check_fw.empty
+
+        # Distribute evenly according to the potential irw volume produced #
+        df['irw_norm'] = df['irw_pot'] / df['irw_pot'].sum()
+
+        # Calculate how much volume we need from each stand #
+        df['irw_need'] = self.remain_irw_vol * df['irw_norm']
+
+        # How much is this volume as compared to the total volume possible #
+        df['irw_frac'] = df['irw_need'] / df['irw_vol']
+
+        # How much firewood would this give us as a collateral product #
+        df.loc[irwi, 'fw_colat'] = df['irw_frac'] * df['fw_vol']
 
         # Subtract from remaining firewood demand #
         self.remain_fw_vol -= df_irw['fw_colat'].sum()
@@ -307,17 +309,17 @@ class DynamicSimulation(Simulation):
 
         # If there is still firewood to satisfy, distribute it evenly #
         df.loc[fwi, 'fw_norm'] = df['fw_pot'] / df.loc[fwi, 'fw_pot'].sum()
-        df['fw_need'] = self.remain_fw_vol * df['fw_norm']
+        df.loc[fwi, 'fw_need'] = self.remain_fw_vol * df['fw_norm']
 
-        # Convert mass (we don't need to care about source pools) #
-        df.loc[irwi, 'amount'] = (df['irw_need'] *
+        # Convert to mass (we don't need to care about source pools) #
+        df.loc[irwi, 'amount'] = ((df['irw_need'] + df['fw_colat']) *
                                   (0.49 * df['wood_density']) /
                                   (1 - df['bark_frac']))
         df.loc[fwi,  'amount']  = (df['fw_need'] *
                                    (0.49 * df['wood_density']) /
                                    (1 - df['bark_frac']))
 
-        # Our disturbances will all be proportional #
+        # Prepare the remaining columns for the events #
         df['measurement_type'] = 'M'
         df['step'] = timestep
         df = df.rename(columns={'disturbance_type': 'dist_type_name'})
