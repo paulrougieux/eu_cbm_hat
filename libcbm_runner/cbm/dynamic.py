@@ -82,16 +82,16 @@ class DynamicSimulation(Simulation):
         if timestep == 1: cbm_vars = self.switch_period(cbm_vars)
 
         # Retrieve the current year #
-        year = self.country.timestep_to_year(timestep)
+        self.year = self.country.timestep_to_year(timestep)
 
         # Optional debug messages #
-        if debug: print(timestep, year, self.country.base_year)
+        if debug: print(timestep, self.year, self.country.base_year)
 
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
         # Check if we are still in the historical period #
-        if year < self.country.base_year: return cbm_vars
+        if self.year < self.country.base_year: return cbm_vars
 
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)
@@ -136,7 +136,7 @@ class DynamicSimulation(Simulation):
         fluxes = fluxes.reset_index()
 
         # Join the `irw` fractions with the fluxes going to `products` #
-        irw_frac = self.runner.silv.irw_frac.get_year(year)
+        irw_frac = self.runner.silv.irw_frac.get_year(self.year)
         fluxes = fluxes.merge(irw_frac, how='left', on=cols)
 
         # Join the wood density and bark fraction parameters also #
@@ -159,7 +159,7 @@ class DynamicSimulation(Simulation):
         tot_flux_fw_vol  = tot_flux_to_vol(irw=False)
 
         # Get demand for the current year #
-        query  = "year == %s" % year
+        query  = "year == %s" % self.year
         demand_irw_vol = self.runner.demand.irw.query(query)['value']
         demand_fw_vol  = self.runner.demand.fw.query(query)['value']
 
@@ -170,13 +170,15 @@ class DynamicSimulation(Simulation):
         # Calculate unsatisfied demand #
         remain_irw_vol = demand_irw_vol - tot_flux_irw_vol
         remain_fw_vol  = demand_fw_vol  - tot_flux_fw_vol
+        self.out_var('remain_irw_vol', remain_irw_vol)
+        self.out_var('remain_fw_vol',  remain_fw_vol)
 
         # If there is no unsatisfied demand, we stop here #
         if (remain_irw_vol <= 0) and (remain_fw_vol <= 0):
             return cbm_vars
 
         # To distribute remaining demand, first load event templates #
-        events = self.runner.silv.events.get_year(year)
+        events = self.runner.silv.events.get_year(self.year)
 
         # Take only the stands that have not been disturbed yet #
         stands = stands.query("disturbance_type == 0")
@@ -211,10 +213,10 @@ class DynamicSimulation(Simulation):
         df = pandas.merge(df, props[cols], how='left', on='disturbance_type')
 
         # We will retrieve the harvest skew factors for the current year #
-        harvest = self.runner.silv.harvest.get_year(year)
+        harvest = self.runner.silv.harvest.get_year(self.year)
 
         # Only one of the columns matches the current year #
-        harvest = harvest.rename(columns = {'value_%i' % year: 'skew'})
+        harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
         cols = self.runner.silv.harvest.cols + ['product_created']
         df = pandas.merge(df, harvest[cols + ['skew']], how='inner', on=cols)
 
@@ -272,6 +274,8 @@ class DynamicSimulation(Simulation):
         # Integrate the dist_interval_bias and the market skew #
         df['irw_pot'] = df['irw_vol'] * df['skew'] / df['dist_interval_bias']
         df['fw_pot']  = df['fw_vol']  * df['skew'] / df['dist_interval_bias']
+        self.out_var('tot_irw_vol_pot', df['irw_pot'].sum())
+        self.out_var('tot_fw_vol_pot',  df['fw_pot'].sum())
 
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
         df_irw = df.query("product_created == 'irw_and_fw'").copy()
@@ -297,11 +301,12 @@ class DynamicSimulation(Simulation):
         df_irw['fw_colat'] = df_irw['irw_frac'] * df_irw['fw_vol']
 
         # Subtract from remaining firewood demand #
-        still_miss_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
+        still_remain_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
+        self.out_var('still_remain_fw_vol', still_remain_fw_vol)
 
         # If there is no extra firewood needed, set to zero #
-        if still_miss_fw_vol <= 0.0:
-            still_miss_fw_vol = 0.0
+        if still_remain_fw_vol <= 0.0:
+            still_remain_fw_vol = 0.0
         else:
             if df_fw['fw_vol'].sum() == 0.0:
                 msg = "There is remaining fw demand this year, but there " \
@@ -310,8 +315,8 @@ class DynamicSimulation(Simulation):
 
         # If there is still firewood to satisfy, distribute it evenly #
         df_fw['fw_norm'] = df_fw['fw_pot'] / df_fw['fw_pot'].sum()
-        df_fw['fw_need'] = still_miss_fw_vol * df_fw['fw_norm']
-        assert math.isclose(df_fw['fw_need'].sum(), still_miss_fw_vol)
+        df_fw['fw_need'] = still_remain_fw_vol * df_fw['fw_norm']
+        assert math.isclose(df_fw['fw_need'].sum(), still_remain_fw_vol)
 
         # Convert to mass (we don't need to care about source pools) #
         df_irw['amount'] = ((df_irw['irw_need'] + df_irw['fw_colat']) *
@@ -352,19 +357,8 @@ class DynamicSimulation(Simulation):
         if timestep == 16:
             print("Timestep 16")
 
-        # Record values for safe keeping in the output #
-        record = {'remain_irw_vol':    remain_fw_vol,
-                  'remain_fw_vol':     remain_fw_vol,
-                  'still_miss_fw_vol': still_miss_fw_vol,
-                  'tot_irw_vol_pot':   df['irw_pot'].sum(),
-                  'tot_fw_vol_pot':    df['fw_pot'].sum()}
-
-        # Save them in a dataframe owned by the output object #
-        for k,v in record.items():
-            self.runner.output.extras.loc[year, k] = v
-
         # Print a message #
-        msg = f"Time step {timestep} (year {year}) is about to finish."
+        msg = f"Time step {timestep} (year {self.year}) is about to finish."
         self.parent.log.info(msg)
 
         # Return #
@@ -524,4 +518,4 @@ class ExampleHarvestProcessor:
         # Make dataframe #
         df = pandas.concat(self.dynamic_stats_list).reset_index(drop=True)
         # Return #
-        return df
+        return df        self.runner.output.extras.loc[self.year, key] = value
