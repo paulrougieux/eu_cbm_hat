@@ -25,8 +25,8 @@ from libcbm_runner.core.continent import continent
 # Scenario itself is defined as code in `~/repos/libcbm_runner/libcbm_runner/combos/harvest_test.py`
 #combo   = continent.combos['harvest_test']
 
-# Scenario combination defined in the yaml file `~/repos/libcbm_data/combos/harvest_test.yaml`
-# Scenario itself is defined as code in `~/repos/libcbm_runner/libcbm_runner/combos/harvest_test.py`
+# Scenario combination defined in the yaml file `~/repos/libcbm_data/combos/special.yaml`
+# Scenario itself is defined as code in `~/repos/libcbm_runner/libcbm_runner/combos/special.py`
 combo   = continent.combos['special']
 runner  = combo.runners['LU'][-1]
 country = runner.country
