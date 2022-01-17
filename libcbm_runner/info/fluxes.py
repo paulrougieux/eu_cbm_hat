@@ -20,7 +20,6 @@ from plumbing.common import camel_to_snake
 # Internal modules #
 
 ###############################################################################
-
 class Fluxes:
     """
     Access to the information about fluxes that each disturbance creates.
