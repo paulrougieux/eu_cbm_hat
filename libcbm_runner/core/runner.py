@@ -19,15 +19,17 @@ from plumbing.timer       import LogTimer
 # Internal modules #
 import libcbm_runner
 from libcbm_runner.launch.create_json  import CreateJSON
-from libcbm_runner.launch.simulation   import Simulation
+from libcbm_runner.cbm.simulation      import Simulation
 from libcbm_runner.info.input_data     import InputData
-from libcbm_runner.pump.output_data    import OutputData
-from libcbm_runner.pump.internal_data  import InternalData
+from libcbm_runner.info.output_data    import OutputData
+from libcbm_runner.info.internal_data  import InternalData
+from libcbm_runner.info.demand         import Demand
+from libcbm_runner.info.fluxes         import Fluxes
+from libcbm_runner.info.silviculture   import Silviculture
 from libcbm_runner.pump.pre_processor  import PreProcessor
 from libcbm_runner.pump.post_processor import PostProcessor
 
 # Third party modules
-import pandas
 
 ###############################################################################
 class Runner(object):
@@ -76,7 +78,7 @@ class Runner(object):
         self.short_name += self.country.iso2_code + '/'
         self.short_name += str(self.num)
         # Where the data will be stored for this run #
-        self.data_dir = self.combo.combos_dir + self.short_name + '/'
+        self.data_dir = self.combo.output_dir + self.short_name + '/'
         # Automatically access paths based on a string of many subpaths #
         self.paths = AutoPaths(self.data_dir, self.all_paths)
 
@@ -114,6 +116,24 @@ class Runner(object):
         return InputData(self)
 
     @property_cached
+    def demand(self):
+        """Access the specific demand values for this simulation run."""
+        return Demand(self)
+
+    @property_cached
+    def silv(self):
+        """Access to silvicultural data."""
+        return Silviculture(self)
+
+    @property_cached
+    def fluxes(self):
+        """
+        Returns a dataframe linking disturbance to proportions sent to
+        the pool `products`.
+        """
+        return Fluxes(self)
+
+    @property_cached
     def output(self):
         """Create and access the output data to this run."""
         return OutputData(self)
@@ -130,8 +150,10 @@ class Runner(object):
     @property_cached
     def log(self):
         """
-        Each runner will have its own logger.
-        By default we clear the log file when we start logging.
+        Each runner will have its own logger. By default we clear the log file
+        when we start logging. This happens when you call this property for
+        the first time. If you want to view the log file of a previous run,
+        check the attribute `self.paths.log`.
         """
         # Pick console level #
         level = 'error'

@@ -14,16 +14,18 @@ Unit D1 Bioeconomy.
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.combos.base_combo import Combination
-from libcbm_runner.cbm.dynamic       import DynamicRunner
+from libcbm_runner.cbm.dynamic       import DynamicSimulation, DynamicRunner
+from libcbm_runner.combos.historical import Historical
+from libcbm_runner.core.runner       import Runner
 
 ###############################################################################
-class Special(Combination):
+class HarvestTest(Historical):
     """
-    An example Combination.
+    An integration test for the dynamic creation of disturbances during
+    the model run.
     """
 
-    short_name = 'special'
+    short_name = 'harvest_test'
 
     @property_cached
     def runners(self):

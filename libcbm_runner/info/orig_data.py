@@ -18,6 +18,7 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache import property_cached
 
 # Internal modules #
+from libcbm_runner.pump.long_or_wide import events_wide_to_long
 
 ###############################################################################
 class OrigData(object):
@@ -25,8 +26,8 @@ class OrigData(object):
     This class will provide access to the original data of a Country
     as several pandas data frames.
 
-    This data was taken from the original cbmcfs3 dataset composed by
-    Roberto P.
+    The data content itself for the historical period was taken from the
+    original `cbmcfs3` dataset composed by Roberto P.
 
     To copy all the data from the `cbmcfs3_data` repository do the following:
 
@@ -43,8 +44,10 @@ class OrigData(object):
     /common/age_classes.csv                # Static
     /common/classifiers.csv                # Static
     /common/disturbance_types.csv          # Static
-    /extras/product_types.csv              # Dynamic
-    /extras/silvicultural_practices.csv    # Dynamic
+    /silv/irw_frac_by_dist.csv             # Has scenario column
+    /silv/vol_to_mass_coefs.csv            # Has scenario column
+    /silv/events_templates.csv             # Has scenario column
+    /silv/harvest_factors.csv              # Has scenario column
     /activities/                           # Dynamic
     """
 
@@ -57,13 +60,22 @@ class OrigData(object):
 
     def __init__(self, parent):
         # Default attributes #
-        self.parent = parent
-        self.runner = parent
+        self.parent  = parent
+        self.country = parent
         # Directories #
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
 
     def __getitem__(self, item):
-        return pandas.read_csv(str(self.paths[item]))
+        # A single argument is used for the static files #
+        if isinstance(item, str):
+            return pandas.read_csv(str(self.paths[item]), dtype=str)
+        # Two arguments as a tuple indicates an activity #
+        elif len(item) == 2:
+            activity, file = item
+            path = self.paths.activities_dir + activity + '/' + file + '.csv'
+            return pandas.read_csv(str(path), dtype=str)
+        # Wrong number of arguments #
+        raise Exception("Undefined input data access '%s'." % str(item))
 
     #----------------------------- Properties --------------------------------#
     @property_cached
@@ -85,7 +97,7 @@ class OrigData(object):
         return result
 
     #------------------------------- Methods ---------------------------------#
-    def load(self, name, clfrs_names=False):
+    def load(self, name, clfrs_names=False, to_long=False):
         """
         Loads one of the dataframes in the orig data and adds information
         to it.
@@ -94,5 +106,7 @@ class OrigData(object):
         df = self[name]
         # Optionally rename classifiers #
         if clfrs_names: df = df.rename(columns=self.classif_names)
+        # Optionally convert to the long format #
+        if to_long: df = events_wide_to_long(self.country, df)
         # Return #
         return df

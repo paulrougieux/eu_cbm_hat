@@ -63,12 +63,12 @@ class Country(object):
 
     @property_cached
     def aidb(self):
-        """Archive Index Database also called cbm_defaults in libcbm."""
+        """Archive Index Database also called `cbm_defaults` in libcbm."""
         return AIDB(self)
 
     @property_cached
     def orig_data(self):
-        """Access the immutable original data."""
+        """Access to the immutable original data."""
         return OrigData(self)
 
     @property_cached
@@ -129,7 +129,7 @@ class Country(object):
         # The `inventory_start_year` is the oldest year in the inventory data
         # reported by the national forest inventory.
         row = ref_years.loc[ref_years['country'] == self.iso2_code].iloc[0]
-        self.inventory_start_year = row['ref_year']
+        self.inventory_start_year = row['inv_start_year']
 
     def timestep_to_year(self, timestep):
         """

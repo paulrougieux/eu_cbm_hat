@@ -18,6 +18,10 @@ from libcbm.model.cbm import cbm_simulator
 
 # Internal modules #
 
+# Constants #
+create_proc = sit_cbm_factory.create_sit_rule_based_processor
+create_func = cbm_simulator.create_in_memory_reporting_func
+
 ###############################################################################
 class Simulation(object):
     """This class will run a `libcbm_py` simulation."""
@@ -34,36 +38,43 @@ class Simulation(object):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
 
     #--------------------------- Special Methods -----------------------------#
-    def dynamics_func(self, timestep, cbm_vars):
+    def switch_period(self, cbm_vars):
         """
-        See the simulate method of the libcbm simulator:
-
-            https://github.com/cat-cfs/libcbm_py/blob/master/libcbm/
-            model/cbm/cbm_simulator.py#L148
-
         If t=1, we know this is the first timestep, and nothing has yet been
         done to the post-spinup pools. It is at this moment that we want to
         change the growth curves, and this can be done by switching the
         classifier value of each inventory record.
         """
-        # Check the timestep #
-        if timestep == 1:
-            # Print message #
-            msg = "Carbon pool initialization period is finished." \
-                  " Now starting the `current` period."
-            self.parent.log.info(msg)
-            # The name of our extra classifier #
-            key = 'growth_period'
-            # The value that the classifier should take for all timesteps #
-            val = "Cur"
-            # Get the corresponding ID in the libcbm simulation #
-            id_of_cur = self.sit.classifier_value_ids[key][val]
-            # Modify the whole column of the dataframe #
-            cbm_vars.classifiers[key] = id_of_cur
+        # Print message #
+        msg = "Carbon pool initialization period is finished." \
+              " Now starting the `current` period."
+        self.parent.log.info(msg)
+        # The name of our extra classifier #
+        key = 'growth_period'
+        # The value that the classifier should take for all timesteps #
+        val = "Cur"
+        # Get the corresponding ID in the libcbm simulation #
+        id_of_cur = self.sit.classifier_value_ids[key][val]
+        # Modify the whole column of the dataframe #
+        cbm_vars.classifiers[key] = id_of_cur
+        # Return #
+        return cbm_vars
+
+    def dynamics_func(self, timestep, cbm_vars):
+        """
+        See the simulate method of the `libcbm_py` simulator:
+
+            https://github.com/cat-cfs/libcbm_py/blob/master/libcbm/
+            model/cbm/cbm_simulator.py#L148
+        """
+        # Check if we want to switch growth period #
+        if timestep == 1: cbm_vars = self.switch_period(cbm_vars)
         # Print a message #
         self.parent.log.info(f"Time step {timestep} is about to run.")
+        # Run the usual rule based processor #
+        cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
         # Return #
-        return self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
+        return cbm_vars
 
     #------------------------------- Methods ---------------------------------#
     # noinspection PyBroadException
@@ -104,12 +115,10 @@ class Simulation(object):
         init_inv = sit_cbm_factory.initialize_inventory
         self.clfrs, self.inv = init_inv(self.sit)
         # This will contain results #
-        create_func = cbm_simulator.create_in_memory_reporting_func
         self.results, self.reporting_func = create_func()
         # Create a CBM object #
         with sit_cbm_factory.initialize_cbm(self.sit) as self.cbm:
             # Create a function to apply rule based events #
-            create_proc = sit_cbm_factory.create_sit_rule_based_processor
             self.rule_based_proc = create_proc(self.sit, self.cbm)
             # Message #
             self.runner.log.info("Calling the cbm_simulator.")

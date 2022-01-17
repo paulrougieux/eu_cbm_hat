@@ -32,7 +32,6 @@ class InputData:
         >>> combo = continent.combos['historical']
         >>> r = combo.runners['LU'][-1]
         >>> print(r.input_data.classifiers_list)
-
     """
 
     all_paths = """
@@ -90,7 +89,7 @@ class InputData:
             # The path to the file that we will create #
             out_path = self.paths[input_file]
             # What scenarios choices were made for this input file #
-            choices = getattr(self.combo, input_file, {})
+            choices = self.combo.config.get(input_file, {})
             # Initialize #
             result = pandas.DataFrame()
             # Optional debug message #
@@ -105,9 +104,10 @@ class InputData:
                     raise FileNotFoundError(msg % (activity, self.act_dir))
                 # Get the path to the file we will read #
                 in_path = self.act_dir + activity + '/' + input_file + '.csv'
-                # Read the file #
+                # Read the file, but it's ok if it is empty or absent #
                 try:
-                    df = pandas.read_csv(str(in_path))
+                    # We want to keep all values as objects and not floats #
+                    df = pandas.read_csv(str(in_path), dtype=str)
                 except (FileNotFoundError, pandas.errors.EmptyDataError):
                     continue
                 # The scenario chosen for this activity and this input #
@@ -121,11 +121,11 @@ class InputData:
                 result = result.append(df)
             # Remove the scenario column #
             if not result.empty: result = result.drop(columns=['scenario'])
-            # Optional debug message #
-            if debug: print("   * result -> %i rows total\n" % len(result))
+            # Optional debug messages #
+            if debug:
+                print("   * result -> %i rows total\n" % len(result))
+                print(result.dtypes[0:10], '\n-----------\n')
             # Write output #
             result.to_csv(str(out_path), index=False)
-        # Filter the rows for the `extras` files #
-        pass
         # Return #
         return csv_dir
