@@ -17,7 +17,8 @@ production from the perspective of the economic model.
 
 Usage:
 
-    >>> from libcbm_runner.info.demand import fuelwood, roundwood
+    >>> from libcbm_runner.info.demand import gftm_outputs
+    >>> from libcbm_runner.info.demand import combined
 
 Related issues:
 
