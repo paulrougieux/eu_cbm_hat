@@ -24,7 +24,7 @@ class InputYears:
     """
     This class will provide access to the years in all input files used by a runner
 
-    Example use:
+    Create a runner and list years used in its time dependent input data sets:
 
         >>> from libcbm_runner.core.continent import continent
         >>> r = continent.combos['special'].runners["LU"][-1]
@@ -65,11 +65,13 @@ class InputYears:
         # Years in the demand tables
         irw_demand_years = self.runner.demand.irw.year.to_list()
         fw_demand_years = self.runner.demand.fw.year.to_list()
+
+        # Place  the list of years in a dictionary
         dict1 = {"harvest_factor": harvest_years,
                  "irw_demand": irw_demand_years,
                  "fw_demand": fw_demand_years}
 
-        # Years as in the combo scenarios
+        # Load the lists of years used in the combo scenarios
         multi_year_input = ['events_templates',
                             'irw_frac_by_dist',
                             'harvest_factors',
