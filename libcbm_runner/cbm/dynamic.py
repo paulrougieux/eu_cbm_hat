@@ -339,7 +339,7 @@ class DynamicSimulation(Simulation):
         df = pandas.concat([df_irw, df_fw])
 
         # Filter out any events that have an amount of zero #
-        df  = df.query("amount != 0.0")
+        df  = df.query("amount != 0.0").copy()
 
         # Prepare the remaining missing columns for the events #
         df['measurement_type'] = 'M'
