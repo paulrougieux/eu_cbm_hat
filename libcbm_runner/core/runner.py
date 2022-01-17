@@ -21,6 +21,7 @@ import libcbm_runner
 from libcbm_runner.launch.create_json  import CreateJSON
 from libcbm_runner.cbm.simulation      import Simulation
 from libcbm_runner.info.input_data     import InputData
+from libcbm_runner.info.input_years    import InputYears
 from libcbm_runner.info.output_data    import OutputData
 from libcbm_runner.info.internal_data  import InternalData
 from libcbm_runner.info.demand         import Demand
@@ -114,6 +115,14 @@ class Runner(object):
         a modified version of the original country's CSV files.
         """
         return InputData(self)
+
+    @property_cached
+    def input_years(self):
+        """
+        Provide lists of years used in time dependent input files
+        and the maximum common year possible based on those input files.
+        """
+        return InputYears(self)
 
     @property_cached
     def demand(self):
