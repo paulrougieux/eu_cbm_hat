@@ -20,7 +20,7 @@ from libcbm_runner.cbm.dynamic       import DynamicRunner
 ###############################################################################
 class Special(Combination):
     """
-    An example Combination.
+    An example Combination with special rules.
     """
 
     short_name = 'special'
