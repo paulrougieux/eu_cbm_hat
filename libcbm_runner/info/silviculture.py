@@ -36,9 +36,10 @@ class Silviculture:
     * `silv.events`
     * `silv.harvest`
 
-    Loading this information will fail if you call `df` before a simulation
-    is launched, because we need the internal SIT classifier and disturbance
-    mapping.
+    Loading this information will fail if you call `df` before a simulation is
+    launched, because we need the internal SIT classifier and disturbance
+    mapping. Before the simulation starts, it is only possible to load the raw
+    versions of the input data as such: silv.harvest.raw.
     """
 
     def __init__(self, runner):

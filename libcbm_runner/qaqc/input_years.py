@@ -12,14 +12,11 @@ Unit D1 Bioeconomy.
 import re
 
 # Third party modules #
-import pandas
 
 # First party modules #
-from plumbing.cache       import property_cached
 
 # Internal modules #
 
-###############################################################################
 class InputYears:
     """
     This class will provide access to the years in all input files used by a runner
@@ -46,19 +43,15 @@ class InputYears:
 
     @property
     def dict(self):
-        """Returns a dictionary with data set name as keys and lists of years as values"""
+        """Returns a dictionary with data set name as keys and
+        lists of years as values.
+
+        The output dictionnary includes lists of year contained both
+        in the input csv files
+        and in the yaml definition of scenario combinations.
+        """
         # Years in the harvest factor table
-
-        # Note we wanted to load it with this method
-        # harvest_cols = self.runner.silv.harvest.df.columns.to_list()
-        # But it fails with
-        # *** AttributeError: 'DynamicSimulation' object has no attribute 'sit'
-        # Because sit doesn't exist when called by
-        # libcbm_runner/info/silviculture.py(111)df()
-        #     110         # Convert the disturbance IDs to the real internal IDs #
-        # --> 111         df = self.conv_dists(df)
-
-        harvest_cols = pandas.read_csv(self.runner.silv.harvest.csv_path).columns
+        harvest_cols = self.runner.silv.harvest.raw.columns
         harvest_years = (re.search(r"value_(\d+)", x) for x in harvest_cols)
         harvest_years = [int(m.group(1)) for m in harvest_years if m]
 
@@ -75,11 +68,10 @@ class InputYears:
         multi_year_input = ['events_templates',
                             'irw_frac_by_dist',
                             'harvest_factors',
-                            #'demand' # Why is it a data frame? The others are dicts
-                            # type(self.runner.combo.config["demand"])
                            ]
         combo_config = self.runner.combo.config
-        dict2 = {"combo_" + m: list(combo_config[m].keys()) for m in multi_year_input}
+        dict2 = {"combo_" + m: list(combo_config[m].keys())
+                 for m in multi_year_input}
 
         # Combine the two dictionaries
         dict1.update(dict2)
