@@ -69,7 +69,7 @@ class DynamicSimulation(Simulation):
         specific to harvesting. The full specification for the "Harvest
         Allocation Tool" (H.A.T.) is described in:
 
-             ../specifications/libcbm_hat_spec.md
+            docs/harvest_allocation_specification.md
 
         Information used during development included:
 
