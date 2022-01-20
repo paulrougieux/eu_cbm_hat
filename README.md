@@ -22,9 +22,13 @@ Installation instructions are available for two different platforms:
 * [Installation on Windows](docs/setup_on_windows.md)
 
 
-## Definitions
+## Definitions and specification
+
+- A specification for an Harvest Allocation Tool (HAT) is available at
+  [docs/harvest_allocation_specification.md](docs/harvest_allocation_specification.md)
 
 - Input files (disturbances, yield, inventory) defined in `libcbm_data` contain scenarios for the activities (afforestation, deforestation, reforestation, disturbances in forest remaining forest, wood use specified in the silviculture and product_types.csv tables)
+
 
 
 ## Extra documentation
