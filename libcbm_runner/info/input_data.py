@@ -31,7 +31,9 @@ class InputData:
         >>> from libcbm_runner.core.continent import continent
         >>> combo = continent.combos['historical']
         >>> r = combo.runners['LU'][-1]
-        >>> print(r.input_data.classifiers_list)
+        >>> print(r.input_data["classifiers"])
+        >>> print(r.input_data["events"])
+
     """
 
     all_paths = """
