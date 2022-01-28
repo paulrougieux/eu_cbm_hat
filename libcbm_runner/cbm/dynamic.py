@@ -339,9 +339,13 @@ class DynamicSimulation(Simulation):
         df = pandas.concat([df_irw, df_fw])
 
         # Filter out any events that have an amount of zero #
-        df = df.query("amount != 0.0")
+        df = df.query("amount != 0.0").copy()
 
-        # Save this dataframe in the output #
+        # Convert IDs back from the SIT standard to the user standard #
+        df = self.conv_dists(df)
+        df = self.conv_clfrs(df)
+
+        # Save some columns of this dataframe as a CSV in the output #
         df.insert(0, 'year', self.year)
         cols = ['year'] +  clfrs
         cols += ['disturbance_type', 'product_created', 'dist_interval_bias',
@@ -354,33 +358,24 @@ class DynamicSimulation(Simulation):
         self.runner.output.events = self.runner.output.events.append(df[cols])
 
         # Prepare the remaining missing columns for the events #
-        events = df.copy()
-        events['measurement_type'] = 'M'
-        events['step'] = timestep
-        events = events.rename(columns={'disturbance_type': 'dist_type_name'})
+        df['measurement_type'] = 'M'
+        df['step'] = timestep
+        df = df.rename(columns={'disturbance_type': 'dist_type_name'})
 
         # Get only the right columns in the dataframe to send to `libcbm` #
         cols = self.runner.input_data['events'].columns
-        events = events[cols].copy()
-
-        # Convert IDs back from the SIT standard to the user standard #
-        events = self.conv_dists(events)
-        events = self.conv_clfrs(events)
+        df = df[cols].copy()
 
         # Create disturbances #
         dyn_proc = sit_cbm_factory.create_sit_rule_based_processor(
             self.sit,
             self.cbm,
             reset_parameters = False,
-            sit_events = events
+            sit_events = df
         )
 
         # Run the dynamic rule based processor #
         cbm_vars = dyn_proc.pre_dynamics_func(timestep, cbm_vars)
-
-        # Debug test #
-        if timestep == 16:
-            print("Timestep 16")
 
         # Print a message #
         msg = f"Time step {timestep} (year {self.year}) is about to finish."
@@ -398,7 +393,7 @@ class DynamicSimulation(Simulation):
         # Get the conversion mapping #
         id_to_id = self.runner.simulation.sit.disturbance_id_map
         # Apply the mapping to the dataframe #
-        df['dist_type_name'] = df['dist_type_name'].map(id_to_id)
+        df['disturbance_type'] = df['disturbance_type'].map(id_to_id)
         # Return #
         return df
 
