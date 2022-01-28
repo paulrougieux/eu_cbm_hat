@@ -21,25 +21,22 @@ from libcbm_runner.core.continent import continent
 #############################################
 # Declare which scenario combination to run #
 #############################################
-# Scenario combination defined in the yaml file `~/repos/libcbm_data/combos/harvest_test.yaml`
-# Scenario itself is defined as code in `~/repos/libcbm_runner/libcbm_runner/combos/harvest_test.py`
-#combo   = continent.combos['harvest_test']
-
-# Scenario combination defined in the yaml file `~/repos/libcbm_data/combos/special.yaml`
-# Scenario itself is defined as code in `~/repos/libcbm_runner/libcbm_runner/combos/special.py`
-combo   = continent.combos['special']
+# Scenario combination defined in the yaml file 
+# `~/repos/libcbm_data/combos/harvest_test.yaml`
+# Scenario itself is defined as code in 
+# `~/repos/libcbm_runner/libcbm_runner/combos/harvest_test.py`
+combo   = continent.combos['historical']
 runner  = combo.runners['LU'][-1]
+runner.num_timesteps = 25
 country = runner.country
 
 # Run the model
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
-# Compare requested demand amounts to provided quantities in the products pool
-# Compare:
-# - fluxes to the products pool
-# - demand amount for irw and fw
-# Look at potential volume:
-# - 
-
+# Input events sent to libcbm
+events_input = runner.input_data["events"]
+# Events stored in the output
+events_output = runner.output.events
+output_extras = runner.output.extras
 
 

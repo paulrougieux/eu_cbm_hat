@@ -91,7 +91,9 @@ class DynamicSimulation(Simulation):
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
         # Check if we are still in the historical period #
-        if self.year < self.country.base_year: return cbm_vars
+        # If we are still in the historical period HAT doesn't apply
+        if self.year < self.country.base_year:
+            return cbm_vars
 
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)

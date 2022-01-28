@@ -16,12 +16,14 @@ Typically you would run this file from a command line like this:
 """
 
 from libcbm_runner.core.continent import continent
-combo   = continent.combos['historical']
+combo   = continent.combos['special']
 runner  = combo.runners['AT'][-1]
+runner.num_timesteps = 25
 country = runner.country
 
 # Run the model
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+
 # Input events sent to libcbm
 events_input = runner.input_data["events"]
 # Events stored in the output

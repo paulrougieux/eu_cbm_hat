@@ -26,6 +26,8 @@ class InputYears:
         >>> from libcbm_runner.core.continent import continent
         >>> r = continent.combos['special'].runners["LU"][-1]
         >>> print(r.input_years.dict)
+        >>> for key, value in r.input_years.dict.items():
+        >>>     print(key, value, "\n")
 
     Display the max year for each data set:
 
@@ -58,6 +60,12 @@ class InputYears:
         # Years in the demand tables
         irw_demand_years = self.runner.demand.irw.year.to_list()
         fw_demand_years = self.runner.demand.fw.year.to_list()
+
+        # Years in the input events files for all activities combined
+        timesteps = (self.runner.input_data["events"]
+                     .sort_values(by=["step"])
+                     .step.unique())
+        events_years = self.runner.country.timestep_to_year(timesteps)
 
         # Place  the list of years in a dictionary
         dict1 = {"harvest_factor": harvest_years,
