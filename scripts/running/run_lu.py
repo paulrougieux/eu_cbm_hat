@@ -25,7 +25,7 @@ from libcbm_runner.core.continent import continent
 # `~/repos/libcbm_data/combos/harvest_test.yaml`
 # Scenario itself is defined as code in 
 # `~/repos/libcbm_runner/libcbm_runner/combos/harvest_test.py`
-combo   = continent.combos['historical']
+combo   = continent.combos['hat']
 runner  = combo.runners['LU'][-1]
 runner.num_timesteps = 25
 country = runner.country
