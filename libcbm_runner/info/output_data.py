@@ -101,7 +101,7 @@ class OutputData(InternalData):
         with path.open('wb') as handle: return pickle.dump(df, handle)
 
     #------------------------------- Methods ---------------------------------#
-    def save(self):
+    def save(self, verbose=False):
         """
         Save all the information of interest from the simulation to disk before
         the whole cbm object is removed from memory.
@@ -111,13 +111,18 @@ class OutputData(InternalData):
         # The classifier values #
         self['values']      = self.sim.sit.classifier_value_ids
         # All the tables that are within the SimpleNamespace of `sim.results` #
-        self['area']        = self.runner.internal['area']
-        self['classifiers'] = self.runner.internal['classifiers']
-        self['flux']        = self.runner.internal['flux']
-        self['parameters']  = self.runner.internal['parameters']
-        self['pools']       = self.runner.internal['pools']
-        self['state']       = self.runner.internal['state']
+        tables = ['area', 'classifiers', 'flux', 'parameters',
+                  'pools', 'state']
+        # Loop and save them #
+        for table in tables:
+            if verbose:
+                self.parent.log.info("Writing and compressing `%s`." % table)
+            self[table] = self.runner.internal[table]
+            if verbose:
+                self.parent.timer.print_elapsed()
         # Our extra information #
         self['extras']      = self.extras.reset_index()
         self['events']      = self.events
+        # Timer #
+        self.parent.timer.print_elapsed()
 
