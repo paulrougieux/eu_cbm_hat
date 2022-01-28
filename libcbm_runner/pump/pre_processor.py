@@ -87,7 +87,7 @@ class PreProcessor(object):
 
     def raise_bad_timestep(self):
         """
-        Raise an Exception if there are are timesteps with a value below zero.
+        Raise an Exception if there are timesteps with a value below zero.
         """
         # Path to the file we want to check #
         path = str(self.input.paths.events)

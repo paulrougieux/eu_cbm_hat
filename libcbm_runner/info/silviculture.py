@@ -39,7 +39,7 @@ class Silviculture:
     Loading this information will fail if you call `df` before a simulation is
     launched, because we need the internal SIT classifier and disturbance
     mapping. Before the simulation starts, it is only possible to load the raw
-    versions of the input data as such: silv.harvest.raw.
+    versions of the input data as such: `silv.harvest.raw`.
     """
 
     def __init__(self, runner):
@@ -242,7 +242,7 @@ class EventsTemplates(BaseSilvInfo):
 
     @property
     def choices(self):
-        """Choices made for the events template in the current combo."""
+        """Choices made for the events templates in the current combo."""
         return self.combo.config['events_templates']
 
     @property

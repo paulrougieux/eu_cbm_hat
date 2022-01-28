@@ -7,7 +7,7 @@ Written by Lucas Sinclair and Paul Rougieux.
 JRC Biomass Project.
 Unit D1 Bioeconomy.
 
-A script to run the imaginary ZZ country to test the pipeline.
+A script to run the imaginary `ZZ` country to test the pipeline.
 
 Typically you would run this file from a command line like this:
 
