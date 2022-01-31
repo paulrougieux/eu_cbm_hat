@@ -18,6 +18,42 @@ from plumbing.cache import property_cached
 
 # Internal modules #
 
+def keep_clfrs_without_question_marks(df, classifiers):
+    """Check if there are questions mark in a classifier column
+    and return a list of index columns that:
+
+    - keeps a column if it contains no question marks
+
+    - returns an error if a column contains a mixture of question marks and
+      other values
+
+    - removes the column from output list if there are only question marks in
+      that column
+
+    :param (df) data frame of silviculture data
+    :param (classifiers) list of classifier columns to check
+    :output (list) list of classifiers that don't contain "?"
+
+    Example use (will only work after simulation start):
+
+
+        from libcbm_runner.core.continent import continent
+        runner  = continent.combos['special'].runners['LU'][-1]
+        irw_frac = runner.silv.irw_frac.get_year(2016)
+
+    """
+    # The error raised when there are a mixture of other values and
+    # question marks is raised in the BaseSilvInfo.conv_clfrs method.
+    output_classifiers = []
+    for classif_name in classifiers:
+        values = df[classif_name].unique().tolist()
+        if "?" in values:
+            continue
+        else:
+            output_classifiers.append(classif_name)
+    return output_classifiers
+
+
 ###############################################################################
 class Silviculture:
     """
@@ -136,10 +172,24 @@ class BaseSilvInfo:
         """
         # Get all the conversion mappings, for each classifier #
         all_maps = self.runner.simulation.sit.classifier_value_ids.items()
+
         # Apply each of them to the dataframe #
         for classif_name, str_to_id in all_maps:
-            if classif_name not in df.columns: continue
+            if classif_name not in df.columns:
+                continue
+
+            # Handle question marks
+            values = df[classif_name].unique()
+            if len(values) == 1 and values[0] == "?":
+                continue
+            if len(values) == 1 and "?" in values: 
+                msg =  "Mixture of question marks and other values"
+                msg += f"not allowed in %s, column {classif_name}"
+                raise ValueError(msg % self)
+
+            # Convert classifiers to their internal id
             df[classif_name] = df[classif_name].map(str_to_id)
+
         # Return #
         return df
 

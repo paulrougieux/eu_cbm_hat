@@ -22,10 +22,10 @@ from libcbm.model.cbm import cbm_variables
 # Internal modules #
 from libcbm_runner.cbm.simulation import Simulation
 from libcbm_runner.core.runner import Runner
-
+from libcbm_runner.info.silviculture import keep_clfrs_without_question_marks
 # Constants #
 
-###############################################################################
+
 class DynamicRunner(Runner):
     """
     Replaces the standard Simulation object with a DynamicSimulation instead.
@@ -139,7 +139,10 @@ class DynamicSimulation(Simulation):
 
         # Join the `irw` fractions with the fluxes going to `products` #
         irw_frac = self.runner.silv.irw_frac.get_year(self.year)
-        fluxes = fluxes.merge(irw_frac, how='left', on=cols)
+        clfrs_noq = keep_clfrs_without_question_marks(irw_frac, clfrs)
+        fluxes = fluxes.merge(irw_frac, how='left',
+                              on=clfrs_noq + ["disturbance_type"],
+                              suffixes=('_fluxes', ''))
 
         # Join the wood density and bark fraction parameters also #
         coefs = self.runner.silv.coefs.df
@@ -196,7 +199,9 @@ class DynamicSimulation(Simulation):
                                                   self.sources)))
 
         # We will merge the current stands with the events templates #
-        df = pandas.merge(stands, events, how='inner', on=clfrs)
+        clfrs_noq = keep_clfrs_without_question_marks(events, clfrs)
+        df = pandas.merge(stands, events, how='inner', on=clfrs_noq,
+                          suffixes=('_stands', ''))
 
         # We will filter on ages, `last_dist_id` and `min_since_last_dist` #
         df = df.query("age >= sw_start")
@@ -408,6 +413,10 @@ class DynamicSimulation(Simulation):
         all_maps = self.runner.simulation.sit.classifier_value_ids.items()
         # Apply each of them to the dataframe #
         for classif_name, str_to_id in all_maps:
+            # Keep question marks as is
+            if df[classif_name].unique()[0] == "?":
+                continue
+            # Convert other values
             mapping = {v:k for k,v in str_to_id.items()}
             df[classif_name] = df[classif_name].map(mapping)
         # Return #
