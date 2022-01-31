@@ -28,7 +28,6 @@ from libcbm_runner.core.continent import continent
 combo   = continent.combos['hat']
 runner  = combo.runners['LU'][-1]
 runner.num_timesteps = 25
-country = runner.country
 
 # Run the model
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
