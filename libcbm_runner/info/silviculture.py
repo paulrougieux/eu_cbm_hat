@@ -119,6 +119,7 @@ class BaseSilvInfo:
     #----------------------------- Properties --------------------------------#
     @property_cached
     def raw(self):
+        """Data frame available in the input data"""
         return pandas.read_csv(self.csv_path,
                                dtype = {c:'str' for c in self.cols})
 
@@ -133,6 +134,9 @@ class BaseSilvInfo:
 
     @property_cached
     def df(self):
+        """Data frame with disturbance IDs and classifiers IDs converted to the
+        internal IDs
+        """
         # Make a check of duplicated entries #
         self.duplication_check()
         # Optional extra checks #

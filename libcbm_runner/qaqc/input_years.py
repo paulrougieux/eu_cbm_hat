@@ -25,30 +25,31 @@ class InputYears:
 
         >>> from libcbm_runner.core.continent import continent
         >>> r = continent.combos['special'].runners["LU"][-1]
-        >>> print(r.input_years.dict)
-        >>> for key, value in r.input_years.dict.items():
+        >>> input_years_dict = r.qaqc.input_years.dict
+        >>> print(input_years_dict)
+        >>> for key, value in input_years_dict.items():
         >>>     print(key, value, "\n")
 
     Display the max year for each data set:
 
-        >>> {key: max(value) for key, value in r.input_years.dict.items()}
+        >>> {key: max(value) for key, value in input_years_dict.items()}
 
-    Display the maximum year of the input having the shortest time span:
+    Display the last year common to all input datasets:
 
-        >>> print(r.input_years.last_common())
+        >>> print(r.qaqc.input_years.last_common())
 
     """
 
-    def __init__(self, runner):
+    def __init__(self, qaqc):
         # Default attributes #
-        self.runner = runner
+        self.runner = qaqc.runner
 
     @property
     def dict(self):
         """Returns a dictionary with data set name as keys and
         lists of years as values.
 
-        The output dictionnary includes lists of year contained both
+        The output dictionary includes lists of year contained both
         in the input csv files
         and in the yaml definition of scenario combinations.
         """

@@ -27,7 +27,7 @@ from libcbm_runner.info.silviculture   import Silviculture
 from libcbm_runner.launch.create_json  import CreateJSON
 from libcbm_runner.pump.post_processor import PostProcessor
 from libcbm_runner.pump.pre_processor  import PreProcessor
-from libcbm_runner.qaqc.input_years    import InputYears
+from libcbm_runner.qaqc                import Qaqc
 import libcbm_runner
 
 # Third party modules
@@ -117,12 +117,11 @@ class Runner(object):
         return InputData(self)
 
     @property_cached
-    def input_years(self):
+    def qaqc(self):
         """
-        Provide lists of years used in time dependent input files
-        and the maximum common year possible based on those input files.
+        Quality Assurance and Quality Control on the runner input and output data.
         """
-        return InputYears(self)
+        return Qaqc(self)
 
     @property_cached
     def demand(self):
