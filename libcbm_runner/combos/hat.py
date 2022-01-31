@@ -20,7 +20,7 @@ from libcbm_runner.cbm.dynamic       import DynamicRunner
 ###############################################################################
 class Hat(Combination):
     """
-    An example Combination with special rules.
+    A Combination used for the Harvest Allocation Tool (HAT).
     """
 
     short_name = 'hat'
