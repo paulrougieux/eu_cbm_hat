@@ -63,7 +63,7 @@ class SilvCheck:
         agg_cols = {col: "sum" for col in val_cols}
         df_agg = df.groupby(["disturbance_type", "product_created"])
         df_agg = df_agg.agg(agg_cols)
-        if numpy.allclose(df_agg.sum(), 0):
+        if not numpy.allclose(df_agg.sum(), 0):
             msg = "fuel wood only disturbances "
             msg += "should not generate industrial roundwood:"
             raise ValueError(msg, df_agg)
