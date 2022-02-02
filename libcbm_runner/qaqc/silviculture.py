@@ -21,7 +21,7 @@ class SilvCheck:
     """
     Check the consistency of silviculture input files
 
-    Whenever possible tests are based on input files available before the run
+    Whenever possible tests are based on raw input files available before the run
     has started, when SIT is not available yet.
 
         >>> from libcbm_runner.core.continent import continent

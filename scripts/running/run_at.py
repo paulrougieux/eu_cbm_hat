@@ -25,8 +25,8 @@ output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 # Input events sent to libcbm
 events_input = runner.input_data["events"]
 # Events stored in the output
-events_output = runner.output.events
-output_extras = runner.output.extras
+events_output = runner.output["events"]
+output_extras = runner.output["extras"]
 
 
 
