@@ -355,13 +355,15 @@ class DynamicSimulation(Simulation):
         # Save some columns of this dataframe as a CSV in the output #
         df.insert(0, 'year', self.year)
         cols = ['year'] +  clfrs
+        df['irw_avail'] = df['irw_vol'] / df['dist_interval_bias']
+        df['fw_avail']  = df['fw_vol']  / df['dist_interval_bias']
         cols += ['disturbance_type', 'product_created', 'dist_interval_bias',
                  'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
                  'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
                  'sort_type', 'efficiency', 'skew', 'wood_density',
-                 'bark_frac', 'irw_vol', 'fw_vol', 'irw_pot', 'fw_pot',
-                 'irw_norm', 'irw_need', 'irw_frac', 'fw_colat', 'amount',
-                 'fw_norm', 'fw_need']
+                 'bark_frac', 'irw_avail', 'fw_avail',
+                 'irw_pot', 'fw_pot', 'irw_norm', 'irw_need', 'irw_frac',
+                 'fw_colat', 'amount', 'fw_norm', 'fw_need']
         self.runner.output.events = self.runner.output.events.append(df[cols])
 
         # Prepare the remaining missing columns for the events #
