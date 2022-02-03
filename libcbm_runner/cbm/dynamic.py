@@ -162,6 +162,8 @@ class DynamicSimulation(Simulation):
         # The argument is False for firewood and True for roundwood #
         tot_flux_irw_vol = tot_flux_to_vol(irw=True)
         tot_flux_fw_vol  = tot_flux_to_vol(irw=False)
+        self.out_var('irw_salvage', tot_flux_irw_vol)
+        self.out_var('fw_salvage',  tot_flux_fw_vol)
 
         # Get demand for the current year #
         query  = "year == %s" % self.year
@@ -357,6 +359,7 @@ class DynamicSimulation(Simulation):
         cols = ['year'] +  clfrs
         df['irw_avail'] = df['irw_vol'] / df['dist_interval_bias']
         df['fw_avail']  = df['fw_vol']  / df['dist_interval_bias']
+        
         cols += ['disturbance_type', 'product_created', 'dist_interval_bias',
                  'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
                  'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
