@@ -123,7 +123,7 @@ class DynamicSimulation(Simulation):
 
         # Fluxes and pools are scaled to tonnes per one hectare so fix it #
         stands[cols] = stands[cols].multiply(stands['area'], axis="index")
-        stands[cols] = stands[cols].multiply(1000, axis="index")
+#        stands[cols] = stands[cols].multiply(1000, axis="index")
 
         # Get the classifier columns #
         clfrs = list(self.country.orig_data.classif_names.values())
