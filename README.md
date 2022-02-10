@@ -21,6 +21,13 @@ Installation instructions are available for two different platforms:
 * [Installation on Linux](docs/setup_on_linux.md)
 * [Installation on Windows](docs/setup_on_windows.md)
 
+All dependencies are clearly stated in :
+
+.gitlab-ci.yml and the setup.py files at the root of the repository. In fact those 2 
+files are used to automatically install the package and run the "ZZ" country each time 
+we make a change to the model. You can see the output of these runs (successful or not) 
+in the CI-CD jobs page on gitlab.
+
 
 ## Definitions and specification
 
