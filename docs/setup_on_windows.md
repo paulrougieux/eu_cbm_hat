@@ -42,6 +42,18 @@ Use pip from an administrator shell:
     $ pip install tqdm
     $ pip install p_tqdm
 
+
+## sometiem is needed to upgrade some dependencies
+
+    for example plumbing
+    pip install --upgrade plumbing
+
+
+## set a specific variant 
+
+    pip install --upgrade pandas==1.3.5
+
+
 ## Set environment variables
 
 Set the environment variable that tells python where the modules are located:
