@@ -43,13 +43,13 @@ Use pip from an administrator shell:
     $ pip install p_tqdm
 
 
-## sometiem is needed to upgrade some dependencies
+## Upgrade dependencies if needed
 
     for example plumbing
     pip install --upgrade plumbing
 
-
-## set a specific variant 
+Set a specific variant of pandas to avoid warnings about the frame.append method as 
+documented in https://github.com/cat-cfs/libcbm_py/issues/27
 
     pip install --upgrade pandas==1.3.5
 
