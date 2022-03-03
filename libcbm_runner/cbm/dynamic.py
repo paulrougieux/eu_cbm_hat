@@ -311,7 +311,7 @@ class DynamicSimulation(Simulation):
 
         # Process salvage logging disturbances in priority if they are present
         # irw and fw potential from salvage logging disturbances
-        salv = df["last_dist_id"] != -1
+        salv = df_irw["last_dist_id"] != -1
         irw_salv_pot = df_irw.loc[salv, "irw_pot"].sum()
         fw_salv_pot = df_irw.loc[salv, "fw_pot"].sum()
 
