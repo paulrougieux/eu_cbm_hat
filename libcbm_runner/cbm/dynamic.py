@@ -208,12 +208,16 @@ class DynamicSimulation(Simulation):
         df = pandas.merge(stands, events, how='inner', on=clfrs_noq,
                           suffixes=('_stands', ''))
 
+        # Convert last_disturbance_type from the libcbm stands to the id used in events_templates input
+        dist_map = self.runner.simulation.sit.disturbance_id_map
+        df["last_disturbance_id"] = df["last_disturbance_type"].map(dist_map)
+        df["last_disturbance_id"] = df["last_disturbance_id"].astype(int)
 
         # We will filter on ages, `last_dist_id` and `min_since_last_dist` #
         df = df.query("age >= sw_start")
         df = df.query("age <= sw_end")
         df = df.query("last_dist_id == -1 | "
-                      "last_dist_id == last_disturbance_type")
+                      "last_dist_id == last_disturbance_id")
         df = df.query("min_since_last_dist == -1 | "
                       "min_since_last_dist <= time_since_last_disturbance")
 
