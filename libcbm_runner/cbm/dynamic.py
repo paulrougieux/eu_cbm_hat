@@ -199,7 +199,6 @@ class DynamicSimulation(Simulation):
         # Rename the pools to their snake case equivalent #
         stands = stands.rename(columns = dict(zip(self.sources_cbm,
                                                   self.sources)))
-
         # We will merge the current stands with the events templates #
         clfrs_noq = keep_clfrs_without_question_marks(events, clfrs)
         df = pandas.merge(stands, events, how='inner', on=clfrs_noq,
@@ -280,11 +279,17 @@ class DynamicSimulation(Simulation):
         df = df.explode(unique_cols)
         assert len(df) == orig_len
 
+# from logical perspective, to move here from 364 df['irw_avail']  and df['fw_avail']
         # Integrate the dist_interval_bias and the market skew #
+# change name from _pot to _silv, to reflect removals from actual silvicultural operations
         df['irw_pot'] = df['irw_vol'] * df['skew'] / df['dist_interval_bias']
         df['fw_pot']  = df['fw_vol']  * df['skew'] / df['dist_interval_bias']
         self.out_var('tot_irw_vol_pot', df['irw_pot'].sum())
         self.out_var('tot_fw_vol_pot',  df['fw_pot'].sum())
+
+# include the "con/broad" ratio and give 100% priority of the final cuts 
+# in consuming _avail 
+# The ratios of con and broad in total would be defined in 'harvest_factors.csv?'
 
         # Now we will work separately with `irw_and_fw` vs `fw_only` #
         df_irw = df.query("product_created == 'irw_and_fw'").copy()
@@ -309,14 +314,21 @@ class DynamicSimulation(Simulation):
         df_irw['irw_norm'] = df_irw['irw_pot'] / df_irw['irw_pot'].sum()
 
         # Calculate how much volume we need from each stand #
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         df_irw['irw_need'] = remain_irw_vol * df_irw['irw_norm']
         assert math.isclose(df_irw['irw_need'].sum(), remain_irw_vol)
 
         # How much is this volume as compared to the total volume possible #
+# this is not needed in the output, it is confusing
         df_irw['irw_frac'] = df_irw['irw_need'] / df_irw['irw_vol']
 
         # How much firewood would this give us as a collateral product #
         df_irw['fw_colat'] = df_irw['irw_frac'] * df_irw['fw_vol']
+# this FW seems an approximation, whu do not apply ratio of 1-IRW/IRW harvested? 
+# where IRW are the fractions 
 
         # Subtract from remaining firewood demand #
         still_remain_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
@@ -354,6 +366,7 @@ class DynamicSimulation(Simulation):
         df = self.conv_dists(df)
         df = self.conv_clfrs(df)
 
+# move 365-369 up on line 284 before calculation of df['irw_pot']and df['fw_pot']
         # Save some columns of this dataframe as a CSV in the output #
         df.insert(0, 'year', self.year)
         cols = ['year'] +  clfrs
