@@ -287,9 +287,10 @@ class DynamicSimulation(Simulation):
         df = df.explode(unique_cols)
         assert len(df) == orig_len
 
-# from logical perspective, to move here from 364 df['irw_avail']  and df['fw_avail']
+        # Save some columns of this dataframe as a CSV in the output #
+        df['irw_avail'] = df['irw_vol'] / df['dist_interval_bias']
+        df['fw_avail']  = df['fw_vol']  / df['dist_interval_bias']
         # Integrate the dist_interval_bias and the market skew #
-# change name from _pot to _silv, to reflect removals from actual silvicultural operations
         df['irw_pot'] = df['irw_vol'] * df['skew'] / df['dist_interval_bias']
         df['fw_pot']  = df['fw_vol']  * df['skew'] / df['dist_interval_bias']
         self.out_var('tot_irw_vol_pot', df['irw_pot'].sum())
@@ -407,13 +408,9 @@ class DynamicSimulation(Simulation):
         df = self.conv_dists(df)
         df = self.conv_clfrs(df)
 
-# move 365-369 up on line 284 before calculation of df['irw_pot']and df['fw_pot']
-        # Save some columns of this dataframe as a CSV in the output #
+
         df.insert(0, 'year', self.year)
         cols = ['year'] +  clfrs
-        df['irw_avail'] = df['irw_vol'] / df['dist_interval_bias']
-        df['fw_avail']  = df['fw_vol']  / df['dist_interval_bias']
-        
         cols += ['disturbance_type', 'product_created', 'dist_interval_bias',
                  'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
                  'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
