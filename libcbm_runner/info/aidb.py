@@ -77,6 +77,40 @@ class AIDB(object):
         from plumbing.databases.sqlite_database import SQLiteDatabase
         return SQLiteDatabase(self.paths.aidb)
 
+    @property
+    def vol_conv_to_biomass(self):
+        """Volume to biomass conversion factors
+
+        Example:
+
+            >>>> from libcbm_runner.core.continent import continent
+            >>>> r = continent.combos['hat'].runners['ZZ'][-1]
+            >>>> r.country.aidb.vol_conv_to_biomass
+
+        """
+        #load table with factors
+        vol_to_biomass_factors = (self.db.read_df('vol_to_bio_factor')
+                                  .drop_duplicates(subset=['a', 'b'], keep='last'))
+        #load the parameteres a and b for species from aidb
+        vol_to_bio_f = vol_to_biomass_factors.rename(columns = {'id':'vol_to_bio_factor_id'})
+        vol_to_bio_sp = (self.db.read_df('vol_to_bio_species')
+                         .drop_duplicates(subset=['species_id'], keep='last')
+                        )
+        # add species ids to a and b values
+        vol_to_bio_sp_f = vol_to_bio_sp.merge(vol_to_bio_f, how = 'inner')
+        species_name = self.db.read_df('species_tr')
+        sp_name = species_name.rename(columns = {'name': 'cbm_forest_name'})
+        # get the final database on spatial_units_ids and species or forest types
+        vol_to_bio_species_factors = (vol_to_bio_sp_f
+                                      .merge(sp_name, how = 'inner', on = 'species_id')
+                                      .drop(columns = 'vol_to_bio_factor_id')
+                                      .rename(columns = {'species_name':'forest_type'})                                                                )
+        #select only the relevant columns
+        colns = ['cbm_forest_name','spatial_unit_id', 'species_id', 'a', 'b']
+        cbm_biom = vol_to_bio_species_factors[colns]
+        return cbm_biom
+
+
     #------------------------------- Methods ---------------------------------#
     def symlink_single_aidb(self):
         """
@@ -111,3 +145,4 @@ class AIDB(object):
         self.repo_file.link_to(destin)
         # Return #
         return 'Symlink success for ' + self.parent.iso2_code + '.'
+
