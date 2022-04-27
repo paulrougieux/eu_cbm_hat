@@ -234,8 +234,13 @@ class DynamicSimulation(Simulation):
         # Only one of the columns matches the current year #
         harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
         cols = self.runner.silv.harvest.cols + ['product_created']
-        df = pandas.merge(df, harvest[cols + ['skew']], how='inner', on=cols)
 
+        # Keep only the columns that are not empty as join columns
+        join_cols = []
+        for col in cols:
+            if not any(harvest[col].isna()):
+                join_cols.append(col)
+        df = pandas.merge(df, harvest[join_cols + ['skew']], how='inner', on=join_cols)
         # We will add the fractions going to `irw` and `fw` #
         mapping  = {pool: pool + '_irw_frac' for pool in self.sources}
         irw_frac = irw_frac.rename(columns = mapping)

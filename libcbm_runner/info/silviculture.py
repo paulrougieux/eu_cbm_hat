@@ -334,4 +334,12 @@ class HarvestFactors(BaseSilvInfo):
 
     @property
     def cols(self):
-        return ['forest_type', 'mgmt_type', 'disturbance_type']
+        return ['forest_type', 'mgmt_type', 'disturbance_type', 'con_broad']
+
+    def extra_checks(self):
+        for col in self.cols:
+            if len(self.raw[col].isna().unique()) == 2:
+                msg = "A join column can either be completely empty or full, "
+                msg += "but it cannot be incomplete i.e. "
+                msg += "with some missing values and some values. Check column:"
+                raise ValueError(msg, col)
