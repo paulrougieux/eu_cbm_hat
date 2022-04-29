@@ -364,17 +364,23 @@ class DynamicSimulation(Simulation):
             assert math.isclose(df_irw.loc[~salv,"irw_need"].sum(),
                                 remain_irw_vol_after_salv)
 
+        # Create columns if they were not created in the if conditions above i.e.
+        # There was no IRW demand at all
+        if not "irw_need" in df_irw.columns:
+            df_irw["irw_need"] = 0
+            df_irw["irw_norm"] = 0
+
         # Check again whether the irw amount is fully allocated
         assert math.isclose(df_irw['irw_need'].sum(), remain_irw_vol)
 
         # Check the collateral fuel wood generated
         # How much is this volume as compared to the total volume possible #
-# this is not needed in the output, it is confusing
+        # viorel: this is not needed in the output, it is confusing
         df_irw['irw_frac'] = df_irw['irw_need'] / df_irw['irw_vol']
 
         # How much firewood would this give us as a collateral product #
         df_irw['fw_colat'] = df_irw['irw_frac'] * df_irw['fw_vol']
-# this FW seems an approximation, whu do not apply ratio of 1-IRW/IRW harvested? 
+        # Violre:   this FW seems an approximation, whu do not apply ratio of 1-IRW/IRW harvested? 
 # where IRW are the fractions 
 
         # Subtract from remaining firewood demand #
