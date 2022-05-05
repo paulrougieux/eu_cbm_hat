@@ -392,8 +392,9 @@ class DynamicSimulation(Simulation):
             still_remain_fw_vol = 0.0
         else:
             if df_fw['fw_vol'].sum() == 0.0:
-                msg = "There is remaining fw demand this year, but there " \
-                      "are no events that enable the creation of fw only."
+                msg = "There is remaining fw demand this year:"
+                msg += f"{round(still_remain_fw_vol)} m3, "
+                msg += "but there are no events that enable the creation of fw only."
                 raise Exception(msg)
 
         # If there is still firewood to satisfy, distribute it evenly #

@@ -11,7 +11,7 @@ A script to run Luxembourg.
 
 Typically you would run this file from a command line like this:
 
-     ipython3 -i -- ~/deploy/libcbm_runner/scripts/running/run_lu.py
+     ipython3 -i -- ~/deploy/libcbm_runner/scripts/running/run_at.py
 
 """
 
