@@ -216,6 +216,8 @@ class Runner(object):
         self.remove_directories()
         # Create the input data #
         self.input_data()
+        # Check silviculture input tables
+        self.silv.check()
         # Modify input data, combos can subclass this #
         self.modify_input()
         # Pre-processing #

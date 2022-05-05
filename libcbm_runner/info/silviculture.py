@@ -6,6 +6,13 @@ Written by Lucas Sinclair and Paul Rougieux.
 
 JRC Biomass Project.
 Unit D1 Bioeconomy.
+
+Check the silviculture input tables for inconsistencies
+
+    >>> from libcbm_runner.core.continent import continent
+    >>> runner  = continent.combos['hat'].runners['AT'][-1]
+    >>> runner.silv.check()
+
 """
 
 # Built-in modules #
@@ -100,6 +107,13 @@ class Silviculture:
     def harvest(self):
         return HarvestFactors(self)
 
+    def check(self):
+        """Check the consistency of silviculture input files"""
+        self.events.check()
+        self.coefs.check()
+        self.harvest.check()
+        self.irw_frac.check()
+
 ###############################################################################
 class BaseSilvInfo:
     """
@@ -132,21 +146,26 @@ class BaseSilvInfo:
     def dup_cols(self):
         return ['scenario'] + self.cols
 
+    def check(self):
+        """Perform various checks on the silviculture input tables"""
+        # Make a check of duplicated entries #
+        self.duplication_check()
+        # Optional extra checks #
+        if hasattr(self, 'extra_checks'): self.extra_checks()
+        # Make a consistency check between dist_name and dist_id #
+        if 'dist_type_name' in self.raw.columns:
+            self.consistency_check()
+
     @property_cached
     def df(self):
         """Data frame with disturbance IDs and classifiers IDs converted to the
         internal IDs
         """
-        # Make a check of duplicated entries #
-        self.duplication_check()
-        # Optional extra checks #
-        if hasattr(self, 'extra_checks'): self.extra_checks()
+        self.check()
         # Load #
         df = self.raw.copy()
         # Drop the names which are useless #
         if 'dist_type_name' in self.raw.columns:
-            # Make a consistency check between dist_name and dist_id #
-            self.consistency_check()
             df = df.drop(columns='dist_type_name')
         # Convert the disturbance IDs to the real internal IDs #
         df = self.conv_dists(df)
