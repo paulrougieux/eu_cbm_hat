@@ -233,9 +233,8 @@ class DynamicSimulation(Simulation):
 
         # Only one of the columns matches the current year #
         harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
-        cols = self.runner.silv.harvest.cols + ['product_created']
-
         # Keep only the columns that are not empty as join columns
+        cols = self.runner.silv.harvest.cols
         join_cols = []
         for col in cols:
             if not any(harvest[col].isna()):
@@ -369,6 +368,7 @@ class DynamicSimulation(Simulation):
         if not "irw_need" in df_irw.columns:
             df_irw["irw_need"] = 0
             df_irw["irw_norm"] = 0
+        1/0
 
         # Check again whether the irw amount is fully allocated
         assert math.isclose(df_irw['irw_need'].sum(), remain_irw_vol)

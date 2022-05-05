@@ -353,7 +353,9 @@ class HarvestFactors(BaseSilvInfo):
 
     @property
     def cols(self):
-        return ['forest_type', 'mgmt_type', 'disturbance_type', 'con_broad']
+        cols = ['forest_type', 'mgmt_type', 'disturbance_type', 'con_broad']
+        cols = cols + ['product_created']
+        return cols
 
     def extra_checks(self):
         for col in self.cols:
