@@ -50,8 +50,8 @@ from libcbm_runner.core.country import all_country_codes
 demand_dir = libcbm_data_dir + 'demand/'
 
 # Constant file names for every scenario #
-roundwood = "fw_demand.csv"
-fuelwood  = "irw_demand.csv"
+roundwood = "irw_demand.csv"
+fuelwood  = "fw_demand.csv"
 
 # A mapping between country names and codes #
 country_to_iso2 = all_country_codes[['country', 'iso2_code']]
