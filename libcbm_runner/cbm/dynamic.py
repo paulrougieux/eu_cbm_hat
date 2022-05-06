@@ -368,7 +368,6 @@ class DynamicSimulation(Simulation):
         if not "irw_need" in df_irw.columns:
             df_irw["irw_need"] = 0
             df_irw["irw_norm"] = 0
-        1/0
 
         # Check again whether the irw amount is fully allocated
         assert math.isclose(df_irw['irw_need'].sum(), remain_irw_vol)
