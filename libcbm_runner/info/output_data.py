@@ -93,6 +93,12 @@ class OutputData(InternalData):
         path = self.paths[item]
         # If it is a DataFrame #
         if isinstance(df, pandas.DataFrame):
+            # Convert disturbance ids from the model internal id to the input id
+            dist_map = self.sim.sit.disturbance_id_map
+            dist_map[0] = "0" # Keep the non disturbance fluxes
+            for dist_col in ["disturbance_type", "last_disturbance_type"]:
+                if dist_col in df.columns:
+                    df[dist_col] = df[dist_col].map(dist_map)
             return df.to_csv(str(path),
                              index        = False,
                              float_format = '%g',
