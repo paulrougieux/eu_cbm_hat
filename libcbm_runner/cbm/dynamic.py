@@ -422,25 +422,30 @@ class DynamicSimulation(Simulation):
 
         df.insert(0, 'year', self.year)
         cols = ['year'] +  clfrs
-        cols += ['disturbance_type', 'product_created', 'dist_interval_bias',
-                 'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
-                 'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
-                 'sort_type', 'efficiency', 'skew', 'wood_density',
-                 'bark_frac', 'irw_avail', 'fw_avail',
-                 'irw_pot', 'fw_pot', 'irw_norm', 'irw_need', 'irw_frac',
-                 'fw_colat', 'amount', 'fw_norm', 'fw_need']
-        self.runner.output.events = self.runner.output.events.append(df[cols])
 
         # Prepare the remaining missing columns for the events #
         df['measurement_type'] = 'M'
         df['step'] = timestep
         df = df.rename(columns={'disturbance_type': 'dist_type_name'})
 
+        # Select which events columns appear in the output record
+        # Note: dist_type_name is already an input dist id (not an internal dist id)
+        # It will not be converted by the outputdata.__setitem__() method
+        cols += ['dist_type_name', 'product_created', 'dist_interval_bias',
+                 'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
+                 'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
+                 'sort_type', 'efficiency', 'skew', 'wood_density',
+                 'bark_frac', 'irw_avail', 'fw_avail',
+                 'irw_pot', 'fw_pot', 'irw_norm', 'irw_need', 'irw_frac',
+                 'fw_colat', 'amount', 'fw_norm', 'fw_need']
+        # Write the events to an output file for the record
+        self.runner.output.events = self.runner.output.events.append(df[cols])
+
         # Get only the right columns in the dataframe to send to `libcbm` #
         cols = self.runner.input_data['events'].columns
         df = df[cols].copy()
 
-        # Create disturbances #
+        # Create disturbances and send the events to libcbm
         dyn_proc = sit_cbm_factory.create_sit_rule_based_processor(
             self.sit,
             self.cbm,

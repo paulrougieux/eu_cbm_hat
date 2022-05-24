@@ -7,7 +7,7 @@ Written by Lucas Sinclair and Paul Rougieux.
 JRC Biomass Project.
 Unit D1 Bioeconomy.
 
-A script to run Luxembourg.
+A script to run Austria.
 
 Typically you would run this file from a command line like this:
 

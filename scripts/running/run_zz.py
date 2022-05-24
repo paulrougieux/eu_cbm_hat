@@ -22,7 +22,6 @@ Typically you would run this file from a command line like this:
 
 # Internal modules #
 from libcbm_runner.core.continent import continent
-
 combo  = continent.combos['hat']
 runner = combo.runners['ZZ'][-1]
 # runner.country.base_year = 2020
