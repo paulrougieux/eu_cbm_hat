@@ -124,7 +124,7 @@ class Country(object):
     def set_years(self):
         """Update all the reference years for this country."""
         # This is the same for all countries #
-        self.base_year = 2020
+        self.base_year = 2021
         # This is different for each country.
         # The `inventory_start_year` is the oldest year in the inventory data
         # reported by the national forest inventory.
