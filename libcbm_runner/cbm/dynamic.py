@@ -329,6 +329,10 @@ class DynamicSimulation(Simulation):
         irw_salv_pot = df_irw.loc[salv, "irw_pot"].sum()
         fw_salv_pot = df_irw.loc[salv, "fw_pot"].sum()
 
+        # Harvest allocation happens here
+        # 1. Salvage logging disturbances
+        # 2. All other anthropogenic disturbances
+
         if any(salv):
             # Print a message #
             msg = f"Demand from the economic model {remain_irw_vol:.0f} m3. "
