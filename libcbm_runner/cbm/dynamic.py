@@ -176,6 +176,10 @@ class DynamicSimulation(Simulation):
         # Convert to a cubic meter float value #
         demand_irw_vol = demand_irw_vol.values[0] * 1000
         demand_fw_vol  = demand_fw_vol.values[0]  * 1000
+        
+        # add columns with demands
+        self.out_var('demand_irw_vol', demand_irw_vol)
+        self.out_var('demand_fw_vol',  demand_fw_vol)
 
         # Calculate unsatisfied demand #
         remain_irw_vol = demand_irw_vol - tot_flux_irw_vol
