@@ -387,6 +387,8 @@ class DynamicSimulation(Simulation):
                 msg = f"\nDemand is greater than the annualized potential by {excess_prct}%. "
                 msg += "Harvest will still be performed but this will lead to "
                 msg += "depletion of the forest stock and compromise future harvests."
+                msg += "Over a long period, this is a situation of unsustainable management "
+                msg += "of the forest resource."
                 warnings.warn(msg)
 
         # Create columns if they were not created in the if conditions above i.e.
