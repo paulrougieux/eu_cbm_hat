@@ -10,6 +10,7 @@ Unit D1 Bioeconomy.
 
 # Built-in modules #
 import copy, math
+import warnings
 
 # Third party modules #
 import pandas
@@ -336,11 +337,12 @@ class DynamicSimulation(Simulation):
         # Harvest allocation happens here
         # 1. Salvage logging disturbances
         # 2. All other anthropogenic disturbances
+        msg = f"Demand from the economic model {remain_irw_vol:.0f} m3. "
+        self.parent.log.info(msg)
 
         if any(salv):
             # Print a message #
-            msg = f"Demand from the economic model {remain_irw_vol:.0f} m3. "
-            msg += f"Potential amount available from salvage logging: "
+            msg = "Potential amount available from salvage logging: "
             msg += f"{irw_salv_pot:.0f} m3 irw and {fw_salv_pot:.0f} m3 fw."
             self.parent.log.info(msg)
 
@@ -361,15 +363,31 @@ class DynamicSimulation(Simulation):
         # Continue allocating disturbances
         if irw_salv_pot < remain_irw_vol:
             remain_irw_vol_after_salv = remain_irw_vol - irw_salv_pot
+            potential_irw = df_irw.loc[~salv, "irw_pot"].sum()
+            msg = f"Remaining demand after salvage logging {remain_irw_vol_after_salv:.0f} m3.\n"
+            msg += f"Potential IRW amount available from remaining disturbances: "
+            msg += f"{potential_irw:.0f} m3 IRW."
+            prct = 100 * remain_irw_vol / potential_irw
+            msg += f"\nIRW demand corresponds to {prct:.0f}% of the annualized potential.\n"
+            self.parent.log.info(msg)
             # Distribute evenly according to the potential irw volume produced #
             df_irw.loc[~salv, "irw_norm"] = (df_irw.loc[~salv, "irw_pot"] /
                                              df_irw.loc[~salv, "irw_pot"].sum())
 
             # Calculate how much volume we need from each stand #
-            df_irw.loc[~salv, "irw_need"] = (remain_irw_vol_after_salv * 
+            df_irw.loc[~salv, "irw_need"] = (remain_irw_vol_after_salv *
                                              df_irw.loc[~salv, "irw_norm"])
             assert math.isclose(df_irw.loc[~salv,"irw_need"].sum(),
                                 remain_irw_vol_after_salv)
+            # The user is free to over allocate, but will be a warning if the
+            # allocation is over the potential annualized availability.
+            if  remain_irw_vol > potential_irw:
+                excess_prct = remain_irw_vol / potential_irw - 1
+                excess_prct = round(excess_prct*100)
+                msg = f"\nDemand is greater than the annualized potential by {excess_prct}%. "
+                msg += "Harvest will still be performed but this will lead to "
+                msg += "depletion of the forest stock and compromise future harvests."
+                warnings.warn(msg)
 
         # Create columns if they were not created in the if conditions above i.e.
         # There was no IRW demand at all
