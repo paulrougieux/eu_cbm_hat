@@ -120,7 +120,7 @@ class InputData:
                 msg = "   * for activity '%s', scenario '%s': %i rows"
                 if debug: print(msg % (activity, scenario, len(df)))
                 # Append #
-                result = result.append(df)
+                result = pandas.concat([result, df])
             # Remove the scenario column #
             if not result.empty: result = result.drop(columns=['scenario'])
             # Optional debug messages #

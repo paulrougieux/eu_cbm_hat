@@ -53,6 +53,7 @@ documented in https://github.com/cat-cfs/libcbm_py/issues/27
 
     pip install --upgrade pandas==1.3.5
 
+See also issue https://gitlab.com/bioeconomy/libcbm/libcbm_runner/-/issues/38 
 
 ## Set environment variables
 

@@ -482,7 +482,7 @@ class DynamicSimulation(Simulation):
                  'irw_pot', 'fw_pot', 'irw_norm', 'irw_need', 'irw_frac',
                  'fw_colat', 'amount', 'fw_norm', 'fw_need']
         # Write the events to an output file for the record
-        self.runner.output.events = self.runner.output.events.append(df[cols])
+        self.runner.output.events = pandas.concat([self.runner.output.events, df[cols]])
 
         # Get only the right columns in the dataframe to send to `libcbm` #
         cols = self.runner.input_data['events'].columns
