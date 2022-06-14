@@ -428,9 +428,14 @@ class DynamicSimulation(Simulation):
         df_fw['fw_need'] = still_remain_fw_vol * df_fw['fw_norm']
         assert math.isclose(df_fw['fw_need'].sum(), still_remain_fw_vol)
 
+        potential_fw = df_fw['fw_pot'].sum()
+        demand_pot_percent = still_remain_fw_vol / potential_fw
+        msg = f"Still remaining fuel wood demand represents {demand_pot_percent*100:.0f}% "
+        msg += "of the annualized potential FW disturbances."
+        self.parent.log.info(msg)
+
         # The user is free to over allocate fw, but will be a warning if the
         # allocation is over the potential annualized availability.
-        potential_fw = df_fw['fw_pot'].sum()
         if  still_remain_fw_vol > potential_fw:
             excess_prct = still_remain_fw_vol / potential_fw - 1
             excess_prct = round(excess_prct*100)
