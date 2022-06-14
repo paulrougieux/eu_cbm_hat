@@ -324,7 +324,7 @@ class DynamicSimulation(Simulation):
             remain_irw_vol = 0.0
         else:
             if df_irw['irw_vol'].sum() == 0.0:
-                msg = "There is remaining irw demand this year, but there " \
+                msg = "There is remaining IRW demand this year, but there " \
                       "are no events that enable the creation of irw."
                 raise Exception(msg)
 
@@ -337,12 +337,12 @@ class DynamicSimulation(Simulation):
         # Harvest allocation happens here
         # 1. Salvage logging disturbances
         # 2. All other anthropogenic disturbances
-        msg = f"Demand from the economic model {remain_irw_vol:.0f} m3. "
+        msg = f"IRW demand {remain_irw_vol:.0f} m3."
         self.parent.log.info(msg)
 
         if any(salv):
             # Print a message #
-            msg = "Potential amount available from salvage logging: "
+            msg = "Potential IRW amount available from salvage logging: "
             msg += f"{irw_salv_pot:.0f} m3 irw and {fw_salv_pot:.0f} m3 fw."
             self.parent.log.info(msg)
 
@@ -364,7 +364,7 @@ class DynamicSimulation(Simulation):
         if irw_salv_pot < remain_irw_vol:
             remain_irw_vol_after_salv = remain_irw_vol - irw_salv_pot
             potential_irw = df_irw.loc[~salv, "irw_pot"].sum()
-            msg = f"Remaining demand after salvage logging {remain_irw_vol_after_salv:.0f} m3.\n"
+            msg = f"Remaining IRW demand after salvage logging {remain_irw_vol_after_salv:.0f} m3.\n"
             msg += f"Potential IRW amount available from remaining disturbances: "
             msg += f"{potential_irw:.0f} m3 IRW."
             prct = 100 * remain_irw_vol / potential_irw
@@ -379,16 +379,12 @@ class DynamicSimulation(Simulation):
                                              df_irw.loc[~salv, "irw_norm"])
             assert math.isclose(df_irw.loc[~salv,"irw_need"].sum(),
                                 remain_irw_vol_after_salv)
-            # The user is free to over allocate, but will be a warning if the
+            # The user is free to over allocate IRW, but will be a warning if the
             # allocation is over the potential annualized availability.
             if  remain_irw_vol > potential_irw:
                 excess_prct = remain_irw_vol / potential_irw - 1
                 excess_prct = round(excess_prct*100)
-                msg = f"\nDemand is greater than the annualized potential by {excess_prct}%. "
-                msg += "Harvest will still be performed but this will lead to "
-                msg += "depletion of the forest stock and compromise future harvests."
-                msg += "Over a long period, this is a situation of unsustainable management "
-                msg += "of the forest resource."
+                msg = f"\nIRW demand is greater than the annualized potential by {excess_prct}%."
                 warnings.warn(msg)
 
         # Create columns if they were not created in the if conditions above i.e.
@@ -402,17 +398,18 @@ class DynamicSimulation(Simulation):
 
         # Check the collateral fuel wood generated
         # How much is this volume as compared to the total volume possible #
-        # viorel: this is not needed in the output, it is confusing
         df_irw['irw_frac'] = df_irw['irw_need'] / df_irw['irw_vol']
 
         # How much firewood would this give us as a collateral product #
         df_irw['fw_colat'] = df_irw['irw_frac'] * df_irw['fw_vol']
-        # Violre:   this FW seems an approximation, whu do not apply ratio of 1-IRW/IRW harvested? 
-# where IRW are the fractions 
 
         # Subtract from remaining firewood demand #
         still_remain_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
         self.out_var('still_remain_fw_vol', still_remain_fw_vol)
+        colat_prct = (df_irw['fw_colat'].sum() / remain_fw_vol) * 100
+        msg = f"FW Demand {remain_fw_vol:.0f} m3. "
+        msg += f"Collateral FW from IRW disturbances represents {colat_prct:.0f}% of the demand"
+        self.parent.log.info(msg)
 
         # If there is no extra firewood needed, set to zero #
         if still_remain_fw_vol <= 0.0:
@@ -424,10 +421,23 @@ class DynamicSimulation(Simulation):
                 msg += "but there are no events that enable the creation of fw only."
                 raise Exception(msg)
 
-        # If there is still firewood to satisfy, distribute it evenly #
+        # If there is still firewood to satisfy, distribute it evenly
+        # Note: in case `still_remain_fw_vol` is equal to zero,
+        # the events amount equal to zero will be filtered out later
         df_fw['fw_norm'] = df_fw['fw_pot'] / df_fw['fw_pot'].sum()
         df_fw['fw_need'] = still_remain_fw_vol * df_fw['fw_norm']
         assert math.isclose(df_fw['fw_need'].sum(), still_remain_fw_vol)
+
+        # The user is free to over allocate fw, but will be a warning if the
+        # allocation is over the potential annualized availability.
+        potential_fw = df_fw['fw_pot'].sum()
+        if  still_remain_fw_vol > potential_fw:
+            excess_prct = still_remain_fw_vol / potential_fw - 1
+            excess_prct = round(excess_prct*100)
+            msg = "\nStill remaining fuel wood demand is greater than "
+            msg += "the annualized potential FW disturbances."
+            msg += f"by {excess_prct}%. "
+            warnings.warn(msg)
 
         # Convert to mass (we don't need to care about source pools) #
         df_irw['amount'] = ((df_irw['irw_need'] + df_irw['fw_colat']) *
