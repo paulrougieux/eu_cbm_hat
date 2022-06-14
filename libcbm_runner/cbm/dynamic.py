@@ -96,6 +96,9 @@ class DynamicSimulation(Simulation):
         if self.year < self.country.base_year:
             return cbm_vars
 
+        msg = f"Time step {timestep} (year {self.year})."
+        self.parent.log.info(msg)
+
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)
         end_vars = cbm_variables.prepare(end_vars)
@@ -368,7 +371,7 @@ class DynamicSimulation(Simulation):
             msg += f"Potential IRW amount available from remaining disturbances: "
             msg += f"{potential_irw:.0f} m3 IRW."
             prct = 100 * remain_irw_vol / potential_irw
-            msg += f"\nIRW demand corresponds to {prct:.0f}% of the annualized potential.\n"
+            msg += f"\nIRW demand corresponds to {prct:.0f}% of the annualized potential."
             self.parent.log.info(msg)
             # Distribute evenly according to the potential irw volume produced #
             df_irw.loc[~salv, "irw_norm"] = (df_irw.loc[~salv, "irw_pot"] /
@@ -500,7 +503,7 @@ class DynamicSimulation(Simulation):
         cbm_vars = dyn_proc.pre_dynamics_func(timestep, cbm_vars)
 
         # Print a message #
-        msg = f"Time step {timestep} (year {self.year}) is about to finish."
+        msg = f"Time step {timestep} (year {self.year}) is about to finish.\n"
         self.parent.log.info(msg)
 
         # Return #

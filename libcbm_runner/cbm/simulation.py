@@ -47,7 +47,7 @@ class Simulation(object):
         """
         # Print message #
         msg = "Carbon pool initialization period is finished." \
-              " Now starting the `current` period."
+              " Now starting the `current` period.\n"
         self.parent.log.info(msg)
         # The name of our extra classifier #
         key = 'growth_period'
