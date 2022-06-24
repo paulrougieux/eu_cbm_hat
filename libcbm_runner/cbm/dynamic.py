@@ -243,11 +243,12 @@ class DynamicSimulation(Simulation):
         harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
         # Keep only the columns that are not empty as join columns
         cols = self.runner.silv.harvest.cols
-        join_cols = []
+        harvest_join_cols = []
         for col in cols:
             if not any(harvest[col].isna()):
-                join_cols.append(col)
-        df = pandas.merge(df, harvest[join_cols + ['skew']], how='inner', on=join_cols)
+                harvest_join_cols.append(col)
+        df = pandas.merge(
+            df, harvest[harvest_join_cols + ['skew']], how='inner', on=harvest_join_cols)
         # We will add the fractions going to `irw` and `fw` #
         mapping  = {pool: pool + '_irw_frac' for pool in self.sources}
         irw_frac = irw_frac.rename(columns = mapping)
@@ -299,88 +300,119 @@ class DynamicSimulation(Simulation):
         df = df.explode(unique_cols)
         assert len(df) == orig_len
 
-        # Save some columns of this dataframe as a CSV in the output #
+        # Compute availability
         df['irw_avail'] = df['irw_vol'] / df['dist_interval_bias']
         df['fw_avail']  = df['fw_vol']  / df['dist_interval_bias']
-        # Integrate the dist_interval_bias and the market skew #
-        df['irw_pot'] = df['irw_vol'] * df['skew'] / df['dist_interval_bias']
-        df['fw_pot']  = df['fw_vol']  * df['skew'] / df['dist_interval_bias']
-        self.out_var('tot_irw_vol_pot', df['irw_pot'].sum())
-        self.out_var('tot_fw_vol_pot',  df['fw_pot'].sum())
-
-# include the "con/broad" ratio and give 100% priority of the final cuts 
-# in consuming _avail 
-# The ratios of con and broad in total would be defined in 'harvest_factors.csv?'
-
-        # Now we will work separately with `irw_and_fw` vs `fw_only` #
-        df_irw = df.query("product_created == 'irw_and_fw'").copy()
-        df_fw  = df.query("product_created == 'fw_only'").copy()
-
-        # Check `products_created` is correct and not lying #
-        check_irw = df_irw.query("fw_vol == 0.0")
-        check_fw  = df_fw.query("irw_vol != 0.0")
-        assert check_irw.empty
-        assert check_fw.empty
 
         # If there is no extra industrial roundwood needed, set to zero #
         if remain_irw_vol <= 0.0:
             remain_irw_vol = 0.0
         else:
-            if df_irw['irw_vol'].sum() == 0.0:
+            if df['irw_vol'].sum() == 0.0:
                 msg = "There is remaining IRW demand this year, but there " \
                       "are no events that enable the creation of irw."
                 raise Exception(msg)
 
-        # Process salvage logging disturbances in priority if they are present
-        # irw and fw potential from salvage logging disturbances
-        salv = df_irw["last_dist_id"] != -1
-        irw_salv_pot = df_irw.loc[salv, "irw_pot"].sum()
-        fw_salv_pot = df_irw.loc[salv, "fw_pot"].sum()
-
-        # Harvest allocation happens here
-        # 1. Salvage logging disturbances
-        # 2. All other anthropogenic disturbances
         msg = f"IRW demand {remain_irw_vol:.0f} m3."
         self.parent.log.info(msg)
 
+        ######################
+        # Harvest allocation #
+        ######################
+        # 1. Salvage logging disturbances
+        #    - generate IRW and FW as a collateral
+        #    - based on the normalized value of irw_avail
+        # 2. Normal silviculture disturbances
+        #    - generate IRW and FW as a collateral
+        #    - based on the normalized value of irw_avail including a skew factor
+        #    - the skew factor leads to a reshuffling of the harvest proportion by
+        #      grouping variables such as by coniferous and broadleaves
+        #      (but this is flexible as it depends only on the columns that are
+        #      filled in the harvest_factors.csv file)
+        # 3. Fuel wood only disturbances
+        #    - generate FW only
+        #    - based on the normalized value of irw_avail
+        # Separate the disturbances data frame between
+        # salvage logging, `irw_and_fw` and `fw_only`
+        salv = (df["last_dist_id"] != -1) & (df["product_created"] == "irw_and_fw")
+        silv = (df["last_dist_id"] == -1) & (df["product_created"] == "irw_and_fw")
+        fw_only = (df["product_created"] == "fw_only")
+        df_irw_salv = df.loc[salv].copy()
+        df_irw_silv = df.loc[silv].copy()
+        df_fw  = df.loc[fw_only].copy()
+
+        # Check that all rows are covered once and only once by the sub data frames
+        alloc_check = (salv.astype(int) + silv + fw_only) == 1
+        if not all(alloc_check):
+            msg = "Some disturbances are present in more than one category"
+            msg += f"\n{df.loc[alloc_check]}"
+            raise Exception(msg)
+        assert all(salv | silv | fw_only)
+        assert(len(df) == len(df_irw_salv) + len(df_irw_silv) + len(df_fw))
+
+        # Check `products_created` is correct and not lying #
+        check_irw = df_irw_silv.query("fw_vol == 0.0")
+        check_fw  = df_fw.query("irw_vol != 0.0")
+        assert check_irw.empty
+        assert check_fw.empty
+
+        # Process salvage logging disturbances in priority if they are present
         if any(salv):
+            # irw and fw potential from salvage logging disturbances
+            irw_salv_avail = df_irw_salv["irw_avail"].sum()
+            fw_salv_avail = df_irw_salv["fw_avail"].sum()
             # Print a message #
-            msg = "Potential IRW amount available from salvage logging: "
-            msg += f"{irw_salv_pot:.0f} m3 irw and {fw_salv_pot:.0f} m3 fw."
+            msg = "Potential amount available from salvage logging: "
+            msg += f"{irw_salv_avail:.0f} m3 IRW and "
+            msg += f"{fw_salv_avail:.0f} m3 fw (colateral of IRW)."
             self.parent.log.info(msg)
 
             # If the demand is greater than the potential, allocate only the potential
-            irw_to_allocate = min(irw_salv_pot, remain_irw_vol)
+            irw_to_allocate = min(irw_salv_avail, remain_irw_vol)
 
             # Distribute evenly according to the potential irw volume produced
             # compute the proportion only for the salvage logging disturbances
-            df_irw.loc[salv, "irw_norm"] = (df_irw.loc[salv, "irw_pot"] /
-                                            df_irw.loc[salv, "irw_pot"].sum())
+            df_irw_salv["irw_norm"] = (df_irw_salv["irw_avail"] /
+                                            df_irw_salv["irw_avail"].sum())
 
             # Calculate how much volume we need from each stand #
-            df_irw.loc[salv, 'irw_need'] = irw_to_allocate * df_irw['irw_norm']
-            assert math.isclose(df_irw.loc[salv, "irw_need"].sum(),
+            df_irw_salv['irw_need'] = irw_to_allocate * df_irw_salv['irw_norm']
+            assert math.isclose(df_irw_salv["irw_need"].sum(),
                                 irw_to_allocate)
+        else:
+            irw_salv_avail = 0
+            fw_salv_avail = 0
 
         # If salvage logging didn't satisfies all demand
         # Continue allocating disturbances
-        if irw_salv_pot < remain_irw_vol:
-            remain_irw_vol_after_salv = remain_irw_vol - irw_salv_pot
-            potential_irw = df_irw.loc[~salv, "irw_pot"].sum()
+        if irw_salv_avail < remain_irw_vol:
+            remain_irw_vol_after_salv = remain_irw_vol - irw_salv_avail
             msg = f"Remaining IRW demand after salvage logging {remain_irw_vol_after_salv:.0f} m3.\n"
+            self.parent.log.info(msg)
+            # Distribute evenly according to the potential irw volume produced #
+            df_irw_silv["irw_norm"] = (df_irw_silv["irw_avail"] /
+                                             df_irw_silv["irw_avail"].sum())
+
+            # Aggregate the normalized value by groups
+            df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
+            # Skew the normalized value based on the harvest skew factors
+            df_irw_silv["irw_norm_skew"] = (df_irw_silv["irw_norm"]
+                                            * df_irw_silv["skew"]
+                                            / df_irw_silv["irw_norm_agg"])
+
+            potential_irw = df_irw_silv["irw_avail"].sum()
             msg += f"Potential IRW amount available from remaining disturbances: "
             msg += f"{potential_irw:.0f} m3 IRW."
             prct = 100 * remain_irw_vol / potential_irw
-            msg += f"\nIRW demand corresponds to {prct:.0f}% of the annualized potential."
+            msg += f"\nIRW demand corresponds to {prct:.0f}% of the annualized available potential."
             self.parent.log.info(msg)
-            # Distribute evenly according to the potential irw volume produced #
-            df_irw.loc[~salv, "irw_norm"] = (df_irw.loc[~salv, "irw_pot"] /
-                                             df_irw.loc[~salv, "irw_pot"].sum())
+
+            #df_irw_silv["prop"] = df_irw_silv[
 
             # Calculate how much volume we need from each stand #
-            df_irw.loc[~salv, "irw_need"] = (remain_irw_vol_after_salv *
-                                             df_irw.loc[~salv, "irw_norm"])
-            assert math.isclose(df_irw.loc[~salv,"irw_need"].sum(),
+            df_irw_silv["irw_need"] = (remain_irw_vol_after_salv *
+                                             df_irw_silv["irw_norm_skew"])
+            assert math.isclose(df_irw_silv["irw_need"].sum(),
                                 remain_irw_vol_after_salv)
             # The user is free to over allocate IRW, but will be a warning if the
             # allocation is over the potential annualized availability.
@@ -390,8 +422,11 @@ class DynamicSimulation(Simulation):
                 msg = f"\nIRW demand is greater than the annualized potential by {excess_prct}%."
                 warnings.warn(msg)
 
-        # Create columns if they were not created in the if conditions above i.e.
-        # There was no IRW demand at all
+        # Combine IRW disturbance from salvage logging with normal silviculture operations
+        df_irw = pandas.concat([df_irw_salv, df_irw_silv])
+
+        # Create columns if they were not created above i.e.
+        # in case there was no IRW demand at all
         if not "irw_need" in df_irw.columns:
             df_irw["irw_need"] = 0
             df_irw["irw_norm"] = 0
@@ -427,11 +462,11 @@ class DynamicSimulation(Simulation):
         # If there is still firewood to satisfy, distribute it evenly
         # Note: in case `still_remain_fw_vol` is equal to zero,
         # the events amount equal to zero will be filtered out later
-        df_fw['fw_norm'] = df_fw['fw_pot'] / df_fw['fw_pot'].sum()
+        df_fw['fw_norm'] = df_fw['fw_avail'] / df_fw['fw_avail'].sum()
         df_fw['fw_need'] = still_remain_fw_vol * df_fw['fw_norm']
         assert math.isclose(df_fw['fw_need'].sum(), still_remain_fw_vol)
 
-        potential_fw = df_fw['fw_pot'].sum()
+        potential_fw = df_fw['fw_avail'].sum()
         demand_pot_percent = still_remain_fw_vol / potential_fw
         msg = f"Still remaining fuel wood demand represents {demand_pot_percent*100:.0f}% "
         msg += "of the annualized potential FW disturbances."
@@ -474,6 +509,10 @@ class DynamicSimulation(Simulation):
         df['step'] = timestep
         df = df.rename(columns={'disturbance_type': 'dist_type_name'})
 
+        # Save some columns of this dataframe as a CSV in the output
+        self.out_var('tot_irw_vol_avail', df['irw_avail'].sum())
+        self.out_var('tot_fw_vol_avail',  df['fw_avail'].sum())
+
         # Select which events columns appear in the output record
         # Note: dist_type_name is already an input dist id (not an internal dist id)
         # It will not be converted by the outputdata.__setitem__() method
@@ -482,7 +521,7 @@ class DynamicSimulation(Simulation):
                  'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
                  'sort_type', 'efficiency', 'skew', 'wood_density',
                  'bark_frac', 'irw_avail', 'fw_avail',
-                 'irw_pot', 'fw_pot', 'irw_norm', 'irw_need', 'irw_frac',
+                 'irw_norm', 'irw_need', 'irw_frac',
                  'fw_colat', 'amount', 'fw_norm', 'fw_need']
         # Write the events to an output file for the record
         self.runner.output.events = pandas.concat([self.runner.output.events, df[cols]])
