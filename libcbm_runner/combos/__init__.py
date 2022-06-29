@@ -15,11 +15,12 @@ A list of all combo classes.
 # First party modules #
 
 # Internal modules #
-from libcbm_runner.combos.hat          import Hat
-from libcbm_runner.combos.special      import Special
-from libcbm_runner.combos.historical   import Historical
-from libcbm_runner.combos.harvest_test import HarvestTest
+from libcbm_runner.combos.hat               import Hat
+from libcbm_runner.combos.special           import Special
+from libcbm_runner.combos.historical        import Historical
+from libcbm_runner.combos.harvest_test      import HarvestTest
+from libcbm_runner.combos.potencia_baseline import Potencia_baseline
 
 ###############################################################################
 # List all combo classes to be loaded #
-combo_classes = [Historical, Special, HarvestTest, Hat]
+combo_classes = [Historical, Special, HarvestTest, Hat, Potencia_baseline]
