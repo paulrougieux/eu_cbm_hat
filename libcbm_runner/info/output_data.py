@@ -126,7 +126,7 @@ class OutputData(InternalData):
             self[table] = self.runner.internal[table]
             if verbose:
                 self.parent.timer.print_elapsed()
-        # Our extra information #
+        # Save extra information to csv files using the above __setitem__() method
         self['extras']      = self.extras.reset_index()
         self['events']      = self.events
         # Timer #
