@@ -376,3 +376,11 @@ class HarvestFactors(BaseSilvInfo):
                 msg += "but it cannot be incomplete i.e. "
                 msg += "with some missing values and some values. Check column:"
                 raise ValueError(msg, col)
+        # Check that the skew factor sums to one for the irw product
+        df_long = self.raw.melt(id_vars = self.cols + ["scenario"])
+        index = ["scenario", "product_created", "variable"]
+        df_long["value_sum"] = df_long.groupby(index)["value"].transform(sum)
+        df_long_irw = df_long.query("product_created=='irw_and_fw'")
+        if not all(df_long_irw["value_sum"] == 1):
+            msg = "The following skew factors do not sum to one"
+            raise ValueError(msg, df_long_irw.query("value_sum !=1"))
