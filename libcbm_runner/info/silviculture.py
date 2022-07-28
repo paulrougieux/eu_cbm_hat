@@ -183,6 +183,14 @@ class BaseSilvInfo:
         # Get the conversion mapping and invert it #
         id_to_id = self.runner.simulation.sit.disturbance_id_map
         id_to_id = {v:k for k,v in id_to_id.items()}
+        # Check that all IDs can be converted to an internal ID
+        cannot_convert = df['disturbance_type'].map(id_to_id).isna()
+        if any(cannot_convert):
+            msg = f"In the file {self.csv_path}, the disturbance type(s) "
+            msg += f"{df['disturbance_type'][cannot_convert].unique()} "
+            msg += "cannot be converted to an internal disturbance id, using the "
+            msg += "following mapping dictionary."
+            raise ValueError(msg, id_to_id)
         # Apply the mapping to the dataframe #
         df['disturbance_type'] = df['disturbance_type'].map(id_to_id)
         # Return #
@@ -358,6 +366,10 @@ class HarvestFactors(BaseSilvInfo):
         return cols
 
     def extra_checks(self):
+        """Check the raw data for empty columns.
+
+        Check the raw data frame so it an be checked at the beginning of the simulation.
+        """
         for col in self.cols:
             if len(self.raw[col].isna().unique()) == 2:
                 msg = "A join column can either be completely empty or full, "
