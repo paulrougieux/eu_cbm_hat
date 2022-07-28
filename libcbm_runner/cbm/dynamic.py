@@ -241,15 +241,15 @@ class DynamicSimulation(Simulation):
 
         # Only one of the columns matches the current year #
         harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
+
         # Keep only the columns that are not empty as join columns
-        cols = self.runner.silv.harvest.cols
-        harvest_join_cols = []
-        for col in cols:
-            if not any(harvest[col].isna()):
-                harvest_join_cols.append(col)
+        harvest_join_cols = self.runner.silv.harvest.join_cols
+
+        # Merge disturbances and harvest factors
         df = pandas.merge(
             df, harvest[harvest_join_cols + ['skew']], how='inner', on=harvest_join_cols)
-        # We will add the fractions going to `irw` and `fw` #
+
+        # Add the fractions going to `irw` and `fw` #
         mapping  = {pool: pool + '_irw_frac' for pool in self.sources}
         irw_frac = irw_frac.rename(columns = mapping)
         cols     = clfrs + ["disturbance_type"]

@@ -365,8 +365,18 @@ class HarvestFactors(BaseSilvInfo):
         cols = cols + ['product_created']
         return cols
 
+    @property
+    def join_cols(self):
+        """Keep only columns that are not empty as join columns"""
+        join_cols = []
+        for col in self.cols:
+            if not any(self.df[col].isna()):
+                join_cols.append(col)
+        return join_cols
+
+
     def extra_checks(self):
-        """Check the raw data for empty columns.
+        """Check the raw data for empty columns, proportions that sum to one.
 
         Check the raw data frame so it an be checked at the beginning of the simulation.
         """
