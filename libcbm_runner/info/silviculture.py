@@ -184,7 +184,7 @@ class BaseSilvInfo:
         id_to_id = self.runner.simulation.sit.disturbance_id_map
         id_to_id = {v:k for k,v in id_to_id.items()}
         # Check that all IDs can be converted to an internal ID
-        cannot_convert = df['disturbance_type'].map(id_to_id).isna()
+        cannot_convert = df['disturbance_type'].dropna().map(id_to_id).isna()
         if any(cannot_convert):
             msg = f"In the file {self.csv_path}, the disturbance type(s) "
             msg += f"{df['disturbance_type'][cannot_convert].unique()} "
