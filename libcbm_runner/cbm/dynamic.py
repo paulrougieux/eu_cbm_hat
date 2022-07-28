@@ -526,7 +526,7 @@ class DynamicSimulation(Simulation):
                  'sort_type', 'efficiency', 'skew', 'wood_density',
                  'bark_frac', 'irw_avail', 'fw_avail',
                  'irw_norm', 'irw_need', 'irw_frac',
-                 'fw_colat', 'amount', 'fw_norm', 'fw_need']
+                 'fw_colat', 'fw_norm', 'fw_need', 'amount']
         # Write the events to an output file for the record
         self.runner.output.events = pandas.concat([self.runner.output.events, df[cols]])
 
