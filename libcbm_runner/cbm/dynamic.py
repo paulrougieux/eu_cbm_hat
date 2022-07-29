@@ -236,19 +236,6 @@ class DynamicSimulation(Simulation):
         cols = self.runner.fluxes.cols + ['disturbance_type']
         df = pandas.merge(df, props[cols], how='left', on='disturbance_type')
 
-        # We will retrieve the harvest skew factors for the current year #
-        harvest = self.runner.silv.harvest.get_year(self.year)
-
-        # Only one of the columns matches the current year #
-        harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
-
-        # Keep only the columns that are not empty as join columns
-        harvest_join_cols = self.runner.silv.harvest.join_cols
-
-        # Merge disturbances and harvest factors
-        df = pandas.merge(
-            df, harvest[harvest_join_cols + ['skew']], how='inner', on=harvest_join_cols)
-
         # Add the fractions going to `irw` and `fw` #
         mapping  = {pool: pool + '_irw_frac' for pool in self.sources}
         irw_frac = irw_frac.rename(columns = mapping)
@@ -283,7 +270,7 @@ class DynamicSimulation(Simulation):
 
         # All these columns must have unique values for a given age range #
         unique_cols = [col for col in events.columns if col not in grp_cols]
-        unique_cols += ['skew', 'wood_density', 'bark_frac']
+        unique_cols += ['wood_density', 'bark_frac']
 
         # Keep all required columns after the aggregation and sum volumes #
         agg_cols = {col: 'unique' for col in unique_cols}
@@ -397,9 +384,30 @@ class DynamicSimulation(Simulation):
             df_irw_silv["irw_norm"] = (df_irw_silv["irw_avail"] /
                                              df_irw_silv["irw_avail"].sum())
 
+            # Skew the normalized value based on the harvest skew factors
+            # We will retrieve the harvest skew factors for the current year #
+            harvest = self.runner.silv.harvest.get_year(self.year)
+
+            # Only one of the columns matches the current year #
+            harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
+
+            # Keep only IRW coefficients
+            harvest = harvest[harvest["product_created"] == "irw_and_fw"]
+
+            # Keep only the columns that are not empty as join columns
+            harvest_join_cols = []
+            for col in self.runner.silv.harvest.cols:
+                if not any(harvest[col].isna()):
+                    harvest_join_cols.append(col)
+
             # Aggregate the normalized value by groups
             df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
-            # Skew the normalized value based on the harvest skew factors
+            
+            # Merge disturbances and harvest factors
+            df_irw_silv = pandas.merge(df_irw_silv,
+                                       harvest[harvest_join_cols + ['skew']],
+                                       how='inner', on=harvest_join_cols)
+
             df_irw_silv["irw_norm_skew"] = (df_irw_silv["irw_norm"]
                                             * df_irw_silv["skew"]
                                             / df_irw_silv["irw_norm_agg"])
