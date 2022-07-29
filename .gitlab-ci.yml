@@ -3,6 +3,7 @@ default:
   before_script:
   - python --version
   - pip install .[extras]
+  - pip install pytest
   - git clone https://github.com/cat-cfs/libcbm_py.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/libcbm/libcbm_aidb.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/libcbm/libcbm_data.git
@@ -21,3 +22,8 @@ libcbm_run:
   stage: test
   script:
     - python scripts/running/run_zz.py
+    - pytest --junitxml=report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
