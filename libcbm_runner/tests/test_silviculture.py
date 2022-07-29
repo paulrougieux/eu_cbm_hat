@@ -24,32 +24,20 @@ harvest_factors_1 = {'scenario': ['reference', 'reference', 'reference', 'no_ske
                      'value_2015': [0.3, 0.7, 1.0, 1.0, 1.0]}
 harvest_factors_1 = pandas.DataFrame(harvest_factors_1)
 
-harvest_factors_2 = {'scenario': ['reference', 'reference', 'reference', 'no_skew', 'no_skew'],
-                     'product_created': ['irw_and_fw', 'irw_and_fw', 'fw_only', 'irw_and_fw', 'fw_only'],
-                     'forest_type': np.nan,
-                     'mgmt_type': np.nan,
-                     'con_broad': ['con', np.nan, np.nan, np.nan, np.nan],
-                     'disturbance_type': np.nan,
-                     'value_2015': [0.3, 0.7, 1.0, 1.0, 1.0]}
-harvest_factors_2 = pandas.DataFrame(harvest_factors_2)
+harvest_factors_2 = harvest_factors_1.copy()
+harvest_factors_2["con_broad"] = ['con', np.nan, np.nan, np.nan, np.nan]
 
-harvest_factors_3 = {'scenario': ['reference', 'reference', 'reference', 'no_skew', 'no_skew'],
-                     'product_created': ['irw_and_fw', 'irw_and_fw', 'fw_only', 'irw_and_fw', 'fw_only'],
-                     'forest_type': np.nan,
-                     'mgmt_type': np.nan,
-                     'con_broad': ['con', 'broad', np.nan, np.nan, np.nan],
-                     'disturbance_type': np.nan,
-                     'value_2015': [0.3, 0.8, 1.0, 1.0, 2.0]}
-harvest_factors_3 = pandas.DataFrame(harvest_factors_3)
+harvest_factors_3 = harvest_factors_1.copy()
+harvest_factors_3["value_2015"] = [0.3, 0.8, 1.0, 1.0, 2.0]
 
 def test_correct_harvest_factors_input():
-    """Test the function that checks harvest_factors input files, 
+    """Test the function that checks harvest_factors input files,
     with correct input"""
     runner.silv.harvest.raw = harvest_factors_1
     runner.silv.harvest.extra_checks()
 
 def test_incomplete_columns_returns_error():
-    """Test the function that checks harvest_factors input files, 
+    """Test the function that checks harvest_factors input files,
     with incomplete classifier column"""
     runner.silv.harvest.raw = harvest_factors_2
     with pytest.raises(ValueError) as excinfo:
