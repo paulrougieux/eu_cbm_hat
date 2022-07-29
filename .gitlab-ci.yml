@@ -22,7 +22,7 @@ libcbm_run:
   stage: test
   script:
     - python scripts/running/run_zz.py
-    - pytest --junitxml=report.xml
+    - pytest --junitxml=report.xml libcbm_runner
   artifacts:
     when: always
     reports:
