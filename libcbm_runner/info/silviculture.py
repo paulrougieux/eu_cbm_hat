@@ -374,19 +374,24 @@ class HarvestFactors(BaseSilvInfo):
                 join_cols.append(col)
         return join_cols
 
-
     def extra_checks(self):
         """Check the raw data for empty columns, proportions that sum to one.
 
         Check the raw data frame so it an be checked at the beginning of the simulation.
         """
-        for col in self.cols:
-            if len(self.raw[col].isna().unique()) == 2:
-                msg = "A join column can either be completely empty or full, "
+        index = ["scenario", "product_created"]
+        cols = list(set(self.cols) - set(["product_created"]))
+        df_check = self.raw.groupby(index)[cols].agg(lambda x: len(x.isna().unique()))
+        for col in cols:
+            if any(df_check[col]>1):
+                df_wrong = df_check[df_check[col]>1]
+                msg = "For a given scenario and a given product, "
+                msg += "A join column can either be completely empty or full, "
                 msg += "but it cannot be incomplete i.e. "
-                msg += "with some missing values and some values. Check column:"
-                raise ValueError(msg, col)
-        # Check that the skew factor sums to one for the irw product
+                msg += "with some missing values and some values."
+                msg += f"Check column: {col} in scenario {df_wrong.index.to_list()}"
+                raise ValueError(msg)
+        # Check that the skew factors sum to one by scenario and product group
         df_long = self.raw.melt(id_vars = self.cols + ["scenario"])
         index = ["scenario", "product_created", "variable"]
         df_long["value_sum"] = df_long.groupby(index)["value"].transform(sum)
