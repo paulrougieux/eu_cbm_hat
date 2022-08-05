@@ -1,0 +1,29 @@
+dist_type_name,dist_desc_input
+1,Generic 5%
+2,Fire
+3,Generic 50% (FIRE)
+4,Generic 85% (STORM Stand replacing)
+5,Generic 60% (STORM widespread)
+6,Generic 55% (Salvage logging)
+7,Deforestation
+8,Afforestation
+9,10% commercial thinning
+10,generic 10%
+11,Generic 15%
+12,15% commercial thinning
+13,Generic 20%
+14,20% commercial thinning
+15,35% commercial thinning
+16,30% commercial thinning
+17,50% Commercial thinning
+18,Generic 25%
+19,Generic 95%
+20,Clearcut harvesting with salvage
+21,Clearcut  with slash bum (broadl based on area)
+22,Generic 90 % mortality (Clearcut conif on area)
+23,Clearcut  with slash burn H
+27,Generic 65% (FIRE Stand Replacing)
+28,Salvage after fire matrix
+29,Salvage year 1 post-storm id4
+30,Salvage year 2 post-storm id4
+31,Salvage year 3 post-storm id4

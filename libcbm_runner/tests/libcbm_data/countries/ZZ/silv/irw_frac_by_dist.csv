@@ -1,0 +1,85 @@
+scenario,status,forest_type,region,mgmt_type,mgmt_strategy,climate,con_broad,site_index,growth_period,disturbance_type,dist_type_name,softwood_merch,softwood_other,softwood_stem_snag,softwood_branch_snag,hardwood_merch,hardwood_other,hardwood_stem_snag,hardwood_branch_snag
+reference,For,PA,LU00,H,E,35,con,1,Cur,4,Generic 85% (STORM Stand replacing),0.5,0.1,0.5,0.05,0.1,0.5,0.1,0.5
+reference,For,PA,LU00,H,E,45,con,1,Cur,4,Generic 85% (STORM Stand replacing),0.5,0.1,0.5,0.05,0.1,0.5,0.1,0.5
+reference,For,DF,LU00,H,E,35,con,1,Cur,5,Generic 60% (STORM widespread),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,FS,LU00,H,E,35,broad,1,Cur,5,Generic 60% (STORM widespread),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OB,LU00,H,E,35,broad,1,Cur,5,Generic 60% (STORM widespread),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,35,con,1,Cur,5,Generic 60% (STORM widespread),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,35,con,1,Cur,5,Generic 60% (STORM widespread),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,QR,LU00,H,E,35,broad,1,Cur,5,Generic 60% (STORM widespread),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,45,con,1,Cur,6,Generic 55% (Salvage logging),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,FS,LU00,H,E,45,broad,1,Cur,6,Generic 55% (Salvage logging),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OB,LU00,H,E,45,broad,1,Cur,6,Generic 55% (Salvage logging),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,45,con,1,Cur,6,Generic 55% (Salvage logging),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,45,con,1,Cur,6,Generic 55% (Salvage logging),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,QR,LU00,H,E,45,broad,1,Cur,6,Generic 55% (Salvage logging),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,QR,LU00,C,E,45,broad,1,Cur,6,Generic 55% (Salvage logging),0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,45,con,1,Cur,7,Deforestation,0.5,0.2,0.1,0,0.5,0.5,0.2,0.1
+reference,For,FS,LU00,H,E,45,broad,1,Cur,7,Deforestation,0.5,0.2,0.1,0,0.5,0.5,0.2,0.1
+reference,For,OB,LU00,H,E,45,broad,1,Cur,7,Deforestation,0.5,0.2,0.1,0,0.5,0.5,0.2,0.1
+reference,For,OC,LU00,H,E,45,con,1,Cur,7,Deforestation,0.5,0.2,0.1,0,0.5,0.5,0.2,0.1
+reference,For,PA,LU00,H,E,45,con,1,Cur,7,Deforestation,0.5,0.2,0.1,0,0.5,0.5,0.2,0.1
+reference,For,QR,LU00,H,E,45,broad,1,Cur,7,Deforestation,0.5,0.2,0.1,0,0.5,0.5,0.2,0.1
+reference,For,QR,LU00,C,E,45,broad,1,Cur,7,Deforestation,0.5,0.2,0.1,0,0.5,0.5,0.2,0.1
+reference,For,QR,LU00,H,E,35,broad,1,Cur,15,35% commercial thinning,0.8,0.2,0.2,0.05,0.8,0.8,0.2,0.2
+reference,For,QR,LU00,H,E,45,broad,1,Cur,15,35% commercial thinning,0.8,0.2,0.2,0.05,0.8,0.8,0.2,0.2
+reference,For,QR,LU00,H,E,35,broad,1,Cur,17,50% Commercial thinning,0.8,0.2,0.2,0.05,0.8,0.8,0.2,0.2
+reference,For,QR,LU00,H,E,45,broad,1,Cur,17,50% Commercial thinning,0.8,0.2,0.2,0.05,0.8,0.8,0.2,0.2
+reference,For,QR,LU00,H,E,35,broad,1,Cur,23,Clearcut  with slash burn H,0.8,0.2,0.2,0.05,0.8,0.8,0.2,0.2
+reference,For,QR,LU00,H,E,45,broad,1,Cur,23,Clearcut  with slash burn H,0.8,0.2,0.2,0.05,0.8,0.8,0.2,0.2
+reference,For,PA,LU00,H,E,35,con,1,Cur,20,Clearcut harvesting with salvage,0.9,0.05,0.1,0,0.9,0.9,0.05,0.1
+reference,For,PA,LU00,H,E,45,con,1,Cur,20,Clearcut harvesting with salvage,0.9,0.05,0.1,0,0.9,0.9,0.05,0.1
+reference,For,FS,LU00,H,E,35,broad,1,Cur,11,Generic 15%,0.2,0.2,0,0,0.2,0.2,0.2,0
+reference,For,OB,LU00,H,E,35,broad,1,Cur,11,Generic 15%,0.2,0.2,0,0,0.2,0.2,0.2,0
+reference,For,QR,LU00,H,E,35,broad,1,Cur,11,Generic 15%,0.2,0.2,0,0,0.2,0.2,0.2,0
+reference,For,FS,LU00,H,E,45,broad,1,Cur,11,Generic 15%,0.2,0.2,0,0,0.2,0.2,0.2,0
+reference,For,OB,LU00,H,E,45,broad,1,Cur,11,Generic 15%,0.2,0.2,0,0,0.2,0.2,0.2,0
+reference,For,QR,LU00,H,E,45,broad,1,Cur,11,Generic 15%,0.2,0.2,0,0,0.2,0.2,0.2,0
+reference,For,FS,LU00,H,E,35,broad,1,Cur,21,Clearcut  with slash bum (broadl based on area),0.8,0.2,0,0.05,0.8,0.8,0.2,0
+reference,For,OB,LU00,H,E,35,broad,1,Cur,21,Clearcut  with slash bum (broadl based on area),0.8,0.2,0,0.05,0.8,0.8,0.2,0
+reference,For,QR,LU00,C,E,35,broad,1,Cur,21,Clearcut  with slash bum (broadl based on area),0.8,0.2,0,0.05,0.8,0.8,0.2,0
+reference,For,FS,LU00,H,E,45,broad,1,Cur,21,Clearcut  with slash bum (broadl based on area),0.8,0.2,0,0.05,0.8,0.8,0.2,0
+reference,For,OB,LU00,H,E,45,broad,1,Cur,21,Clearcut  with slash bum (broadl based on area),0.8,0.2,0,0.05,0.8,0.8,0.2,0
+reference,For,QR,LU00,C,E,45,broad,1,Cur,21,Clearcut  with slash bum (broadl based on area),0.8,0.2,0,0.05,0.8,0.8,0.2,0
+reference,For,DF,LU00,H,E,35,con,1,Cur,12,15% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,35,con,1,Cur,12,15% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,35,con,1,Cur,12,15% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,45,con,1,Cur,12,15% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,45,con,1,Cur,12,15% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,45,con,1,Cur,12,15% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,35,con,1,Cur,14,20% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,35,con,1,Cur,14,20% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,35,con,1,Cur,14,20% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,45,con,1,Cur,14,20% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,45,con,1,Cur,14,20% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,45,con,1,Cur,14,20% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,35,con,1,Cur,16,30% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,35,con,1,Cur,16,30% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,35,con,1,Cur,16,30% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,45,con,1,Cur,16,30% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,OC,LU00,H,E,45,con,1,Cur,16,30% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,PA,LU00,H,E,45,con,1,Cur,16,30% commercial thinning,0.5,0.2,0.5,0.05,0.5,0.5,0.2,0.5
+reference,For,DF,LU00,H,E,35,con,1,Cur,22,Generic 90 % mortality (Clearcut conif on area),0.9,0.05,0,0.05,0.9,0.9,0.05,0
+reference,For,OC,LU00,H,E,35,con,1,Cur,22,Generic 90 % mortality (Clearcut conif on area),0.9,0.05,0,0.05,0.9,0.9,0.05,0
+reference,For,PA,LU00,H,E,35,con,1,Cur,22,Generic 90 % mortality (Clearcut conif on area),0.9,0.05,0,0.05,0.9,0.9,0.05,0
+reference,For,DF,LU00,H,E,45,con,1,Cur,22,Generic 90 % mortality (Clearcut conif on area),0.9,0.05,0,0.05,0.9,0.9,0.05,0
+reference,For,OC,LU00,H,E,45,con,1,Cur,22,Generic 90 % mortality (Clearcut conif on area),0.9,0.05,0,0.05,0.9,0.9,0.05,0
+reference,For,PA,LU00,H,E,45,con,1,Cur,22,Generic 90 % mortality (Clearcut conif on area),0.9,0.05,0,0.05,0.9,0.9,0.05,0
+reference,For,PA,LU00,H,E,35,con,1,Cur,29,Salvage year 1 post-storm id4,0,0,0.9,0,0,0,0.9,0
+reference,For,PA,LU00,H,E,45,con,1,Cur,29,Salvage year 1 post-storm id4,0,0,0.9,0,0,0,0.9,0
+reference,For,PA,LU00,H,E,35,con,1,Cur,30,Salvage year 2 post-storm id4,0,0,0.1,0,0,0,0.1,0
+reference,For,PA,LU00,H,E,45,con,1,Cur,30,Salvage year 2 post-storm id4,0,0,0.1,0,0,0,0.1,0
+reference,For,FS,LU00,H,E,35,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,OB,LU00,H,E,35,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,QR,LU00,H,E,35,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,QR,LU00,C,E,35,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,FS,LU00,H,E,45,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,OB,LU00,H,E,45,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,QR,LU00,H,E,45,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,QR,LU00,C,E,45,broad,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,DF,LU00,H,E,35,con,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,OC,LU00,H,E,35,con,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,PA,LU00,H,E,35,con,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,DF,LU00,H,E,45,con,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,OC,LU00,H,E,45,con,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0
+reference,For,PA,LU00,H,E,45,con,1,Cur,18,Generic 25%,0,0,0,0,0,0,0,0

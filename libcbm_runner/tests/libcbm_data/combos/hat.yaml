@@ -1,0 +1,175 @@
+--- # Combination 'hat'
+
+inventory:
+  afforestation: reference
+  deforestation: reference
+  mgmt:          reference
+  nd_nsr:        reference
+  nd_sr:         reference
+
+events:
+  afforestation: reference
+  deforestation: reference
+  mgmt:          reference
+  nd_nsr:        reference
+  nd_sr:         reference
+
+growth_curves:
+  afforestation: reference
+  deforestation: reference
+  mgmt:          reference
+  nd_nsr:        reference
+  nd_sr:         reference
+
+transitions:
+  afforestation: reference
+  deforestation: reference
+  mgmt:          reference
+  nd_nsr:        reference
+  nd_sr:         reference
+
+events_templates:
+  2015: reference
+  2016: reference
+  2017: reference
+  2018: reference
+  2019: reference
+  2020: reference
+  2021: reference
+  2022: reference
+  2023: reference
+  2024: reference
+  2025: reference
+  2026: reference
+  2027: reference
+  2028: reference
+  2029: reference
+  2030: reference
+  2031: reference
+  2032: reference
+  2033: reference
+  2034: reference
+  2035: reference
+  2036: reference
+  2037: reference
+  2038: reference
+  2039: reference
+  2040: reference
+  2041: reference
+  2042: reference
+  2043: reference
+  2044: reference
+  2045: reference
+  2046: reference
+  2047: reference
+  2048: reference
+  2049: reference
+  2050: reference
+  2051: reference
+  2052: reference
+  2053: reference
+  2054: reference
+  2055: reference
+  2056: reference
+  2057: reference
+  2058: reference
+  2059: reference
+  2060: reference
+
+irw_frac_by_dist:
+  2015: reference
+  2016: reference
+  2017: reference
+  2018: reference
+  2019: reference
+  2020: reference
+  2021: reference
+  2022: reference
+  2023: reference
+  2024: reference
+  2025: reference
+  2026: reference
+  2027: reference
+  2028: reference
+  2029: reference
+  2030: reference
+  2031: reference
+  2032: reference
+  2033: reference
+  2034: reference
+  2035: reference
+  2036: reference
+  2037: reference
+  2038: reference
+  2039: reference
+  2040: reference
+  2041: reference
+  2042: reference
+  2043: reference
+  2044: reference
+  2045: reference
+  2046: reference
+  2047: reference
+  2048: reference
+  2049: reference
+  2050: reference
+  2051: reference
+  2052: reference
+  2053: reference
+  2054: reference
+  2055: reference
+  2056: reference
+  2057: reference
+  2058: reference
+  2059: reference
+  2060: reference
+
+harvest_factors:
+  2015: reference
+  2016: reference
+  2017: reference
+  2018: reference
+  2019: reference
+  2020: reference
+  2021: reference
+  2022: reference
+  2023: reference
+  2024: reference
+  2025: reference
+  2026: reference
+  2027: reference
+  2028: reference
+  2029: reference
+  2030: reference
+  2031: reference
+  2032: reference
+  2033: reference
+  2034: reference
+  2035: reference
+  2036: reference
+  2037: reference
+  2038: reference
+  2039: reference
+  2040: reference
+  2041: reference
+  2042: reference
+  2043: reference
+  2044: reference
+  2045: reference
+  2046: reference
+  2047: reference
+  2048: reference
+  2049: reference
+  2050: reference
+  2051: reference
+  2052: reference
+  2053: reference
+  2054: reference
+  2055: reference
+  2056: reference
+  2057: reference
+  2058: reference
+  2059: reference
+  2060: reference
+
+demand: reference

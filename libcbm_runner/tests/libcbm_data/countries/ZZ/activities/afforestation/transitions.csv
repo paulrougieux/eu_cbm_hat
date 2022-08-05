@@ -1,0 +1,15 @@
+scenario,from_status,from_forest_type,from_region,from_mgmt_type,from_mgmt_strategy,from_climate,from_con_broad,from_site_index,from_growth_period,using_id,sw_start,sw_end,hw_start,hw_end,dist_type_name,to_status,to_forest_type,to_region,to_mgmt_type,to_mgmt_strategy,to_climate,to_con_broad,to_site_index,to_growth_period,regen_delay,reset_age,percent
+reference,NF,NF_FS,LU00,H,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,FS,LU00,H,E,35,broad,1,Cur,0,0,1
+reference,NF,NF_PA,LU00,H,E,35,con,1,Cur,FALSE,0,200,0,200,8,AR,PA,LU00,H,E,35,con,1,Cur,0,0,1
+reference,NF,NF_DF,LU00,H,E,35,con,1,Cur,FALSE,0,200,0,200,8,AR,DF,LU00,H,E,35,con,1,Cur,0,0,1
+reference,NF,NF_OB,LU00,H,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,OB,LU00,H,E,35,broad,1,Cur,0,0,1
+reference,NF,NF_OC,LU00,H,E,35,con,1,Cur,FALSE,0,200,0,200,8,AR,OC,LU00,H,E,35,con,1,Cur,0,0,1
+reference,NF,NF_QR,LU00,H,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,QR,LU00,H,E,35,broad,1,Cur,0,0,1
+reference,NF,NF_QR,LU00,C,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,QR,LU00,C,E,35,broad,1,Cur,0,0,1
+enhanced_growth,NF,NF_FS,LU00,H,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,FS,LU00,H,E,35,broad,1,Cur,0,0,1
+enhanced_growth,NF,NF_PA,LU00,H,E,35,con,1,Cur,FALSE,0,200,0,200,8,AR,PA,LU00,H,E,35,con,1,Cur,0,0,1
+enhanced_growth,NF,NF_DF,LU00,H,E,35,con,1,Cur,FALSE,0,200,0,200,8,AR,DF,LU00,H,E,35,con,1,Cur,0,0,1
+enhanced_growth,NF,NF_OB,LU00,H,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,OB,LU00,H,E,35,broad,1,Cur,0,0,1
+enhanced_growth,NF,NF_OC,LU00,H,E,35,con,1,Cur,FALSE,0,200,0,200,8,AR,OC,LU00,H,E,35,con,1,Cur,0,0,1
+enhanced_growth,NF,NF_QR,LU00,H,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,QR,LU00,H,E,35,broad,1,Cur,0,0,1
+enhanced_growth,NF,NF_QR,LU00,C,E,35,broad,1,Cur,FALSE,0,200,0,200,8,AR,QR,LU00,C,E,35,broad,1,Cur,0,0,1

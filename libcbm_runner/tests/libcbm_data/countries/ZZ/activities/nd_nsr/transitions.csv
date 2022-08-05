@@ -1,0 +1,15 @@
+scenario,from_status,from_forest_type,from_region,from_mgmt_type,from_mgmt_strategy,from_climate,from_con_broad,from_site_index,from_growth_period,using_id,sw_start,sw_end,hw_start,hw_end,dist_type_name,to_status,to_forest_type,to_region,to_mgmt_type,to_mgmt_strategy,to_climate,to_con_broad,to_site_index,to_growth_period,regen_delay,reset_age,percent
+reference,For,QR,LU00,C,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,QR,LU00,C,E,?,broad,1,Cur,0,1,1
+reference,For,DF,LU00,H,E,?,con,1,Cur,FALSE,60,200,60,200,6,For,DF,LU00,H,E,?,con,1,Cur,0,1,1
+reference,For,OC,LU00,H,E,?,con,1,Cur,FALSE,60,200,60,200,6,For,OC,LU00,H,E,?,con,1,Cur,0,1,1
+reference,For,PA,LU00,H,E,?,con,1,Cur,FALSE,60,200,60,200,6,For,PA,LU00,H,E,?,con,1,Cur,0,1,1
+reference,For,OB,LU00,H,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,OB,LU00,H,E,?,broad,1,Cur,0,1,1
+reference,For,FS,LU00,H,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,FS,LU00,H,E,?,broad,1,Cur,0,1,1
+reference,For,QR,LU00,H,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,QR,LU00,H,E,?,broad,1,Cur,0,1,1
+insect_outbreak,For,QR,LU00,C,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,QR,LU00,C,E,?,broad,1,Cur,0,1,1
+insect_outbreak,For,DF,LU00,H,E,?,con,1,Cur,FALSE,60,200,60,200,6,For,DF,LU00,H,E,?,con,1,Cur,0,1,1
+insect_outbreak,For,OC,LU00,H,E,?,con,1,Cur,FALSE,60,200,60,200,6,For,OC,LU00,H,E,?,con,1,Cur,0,1,1
+insect_outbreak,For,PA,LU00,H,E,?,con,1,Cur,FALSE,60,200,60,200,6,For,PA,LU00,H,E,?,con,1,Cur,0,1,1
+insect_outbreak,For,OB,LU00,H,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,OB,LU00,H,E,?,broad,1,Cur,0,1,1
+insect_outbreak,For,FS,LU00,H,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,FS,LU00,H,E,?,broad,1,Cur,0,1,1
+insect_outbreak,For,QR,LU00,H,E,?,broad,1,Cur,FALSE,60,200,60,200,6,For,QR,LU00,H,E,?,broad,1,Cur,0,1,1

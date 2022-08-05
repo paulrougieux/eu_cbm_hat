@@ -23,6 +23,8 @@ libcbm_run:
   script:
     - python scripts/running/run_zz.py
     - pytest --junitxml=report.xml libcbm_runner
+    # This test doesn't depend on the libcbm_data repository
+    - python scripts/running/run_zz_in_temp_file_without_libcbm_data.py
   artifacts:
     when: always
     reports:
