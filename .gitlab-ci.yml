@@ -4,12 +4,9 @@ default:
   - python --version
   - pip install .[extras]
   - pip install pytest
-  - git clone https://github.com/cat-cfs/libcbm_py.git
+  - pip install git+https://github.com/cat-cfs/libcbm_py.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/libcbm/libcbm_aidb.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/libcbm/libcbm_data.git
-  # Tell python where the libcbm and libcbm_runner packages are located
-  - export PYTHONPATH="$CI_PROJECT_DIR/libcbm_py/":$PYTHONPATH
-  - export PYTHONPATH="$CI_PROJECT_DIR/libcbm_runner/":$PYTHONPATH
   # Tell libcbm_runner where the data are located
   - export LIBCBM_DATA="$CI_PROJECT_DIR/libcbm_data/"
   - export LIBCBM_AIDB="$CI_PROJECT_DIR/libcbm_aidb/"
@@ -23,7 +20,7 @@ libcbm_run:
   script:
     - python scripts/running/run_zz.py
     - pytest --junitxml=report.xml libcbm_runner
-    # This test doesn't depend on the libcbm_data repository
+    # The following test doesn't depend on the libcbm_data repository
     - python scripts/running/run_zz_in_temp_dir_without_libcbm_data.py
   artifacts:
     when: always
