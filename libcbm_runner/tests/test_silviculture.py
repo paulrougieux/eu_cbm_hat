@@ -1,5 +1,5 @@
 """
-Test salvage logging methods
+Test salvage silviculture methods
 
 Execute the test suite from bash with py.test as follows:
 
