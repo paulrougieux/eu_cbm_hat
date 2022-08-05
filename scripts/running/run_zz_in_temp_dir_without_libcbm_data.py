@@ -12,7 +12,7 @@ This version runs with the environment variable set to a temporary file.
 
 Typically you would run this file from a command line like this:
 
-    ipython3 -i -- ~/deploy/libcbm_runner/scripts/running/run_zz_in_temp_file_without_libcbm_data.py
+    ipython3 -i -- ~/deploy/libcbm_runner/scripts/running/run_zz_in_temp_dir_without_libcbm_data.py
 
 
 """
