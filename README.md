@@ -45,23 +45,12 @@ where the data and AIDB are located. Shell commands to define the environment va
 Copy test data to your local `libcbm_data` folder (location defined above in the 
 environment variable `LIBCBM_DATA`):
 
-import shutil
-from pathlib import Path
-from libcbm_runner import module_dir, libcbm_data_dir
-orig_path = Path(module_dir) / "tests/libcbm_data"
-dest_path = Path(libcbm_data_dir)
-# Create the data folder if it doesn't exist
-dest_path.mkdir(exist_ok=True, parents=True)
-# Copy ZZ test data to the libcbm_data directory
-shutil.copytree(orig_path, dest_path)
-
-
-
+    from libcbm_runner.tests.copy_data import copy_test_data
+    copy_test_data()
 
 Clone the repository containing the AIDB (with a deploy token)
 
     git clone https://jrc:9Bv2ZN9fWBgJaHe2jWxz@gitlab.com/bioeconomy/libcbm/libcbm_aidb.git
-
 
 Before running the model, you need to create AIDB symlinks at a python prompt:
 
