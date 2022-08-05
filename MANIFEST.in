@@ -1,5 +1,9 @@
 include README.md
 include LICENCE.md
-include libcbm_runner/tests/libcbm_data/
+include libcbm_runner/tests/libcbm_data
+include libcbm_runner/tests/libcbm_data/combos
+include libcbm_runner/tests/libcbm_data/common
+include libcbm_runner/tests/libcbm_data/countries
+include libcbm_runner/tests/libcbm_data/demand
 recursive-include *.csv
 
