@@ -132,3 +132,30 @@ class OutputData(InternalData):
         # Timer #
         self.parent.timer.print_elapsed()
 
+    @property_cached
+    def pool_flux(self):
+        """Load and merge the main output files:
+            area, params, flux, state, pools
+
+        Example usage:
+
+            from libcbm_runner.core.continent import continent
+            runner = continent.combos['hat'].runners['ZZ'][-1]
+            runner.output.pool_flux
+
+        """
+        params = self.load('parameters', with_clfrs=False)
+        flux = self.load('flux', with_clfrs=False)
+        state = self.load('state', with_clfrs=False)
+        pools = self.load('pools', with_clfrs=False)
+        classifiers = self.classif_df
+        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
+        index = ['identifier', 'year']
+        df = (params
+              .merge(flux, 'left', on = index)
+              .merge(state, 'left', on = index)
+              .merge(classifiers, 'left', on = index)
+              .merge(pools, 'left', on = index)
+             )
+        return df
+
