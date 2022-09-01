@@ -22,10 +22,6 @@ installer for python. The repository is currently private, but you can install t
 
     pip install git+https://jrc:xyVzrCMS4fs7GRe7pZPq@gitlab.com/bioeconomy/libcbm/libcbm_runner.git
 
-Optionally upgrade the package to a newer version
-
-    pip install --upgrade git+https://jrc:xyVzrCMS4fs7GRe7pZPq@gitlab.com/bioeconomy/libcbm/libcbm_runner.git
-
 Note that the deploy token will not be necessary once the package is public. This 
 installation method will change, and the updated installation method will be made 
 available in the repository: https://gitlab.com/bioeconomy/libcbm/libcbm_runner
