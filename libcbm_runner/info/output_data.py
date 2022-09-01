@@ -145,6 +145,13 @@ class OutputData(InternalData):
               .merge(result['pools'], 'left', on = index)
               .merge(classifiers, 'left', on = index)
              )
+        # Keep the internal id for debugging purposes
+        df["disturbance_type_internal"] = df["disturbance_type"]
+        # Convert the disturbance IDs from their internal simulation IDs that
+        # are defined by SIT into the user defined equivalent string.
+        id_to_id = self.runner.simulation.sit.disturbance_id_map
+        df["disturbance_type"] = df["disturbance_type"].map(id_to_id)
+        # Write to a parquet file
         df.to_parquet(self.paths["results"])
         # Timer #
         self.parent.timer.print_elapsed()
