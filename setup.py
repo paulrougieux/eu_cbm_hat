@@ -20,7 +20,7 @@ with open(readme_path, encoding='utf-8') as handle: readme = handle.read()
 # Call setup #
 setup(
     name             = 'libcbm_runner',
-    version          = '0.3.2',
+    version          = '0.3.3',
     description      = 'libcbm_runner is a python package for running carbon'
                        ' budget simulations.',
     license          = 'MIT',
