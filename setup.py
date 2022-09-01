@@ -30,7 +30,7 @@ setup(
     packages         = find_namespace_packages(),
     install_requires = ['autopaths>=1.6.0', 'plumbing>=2.11.1',
                         'pymarktex>=1.4.6', 'pandas', 'simplejson', 'pyyaml',
-                        'tqdm', 'p_tqdm'],
+                        'tqdm', 'p_tqdm', 'pyarrow'],
     extras_require   = {'extras': ['pystache', 'matplotlib', 'numexpr']},
     python_requires  = ">=3.8,!=3.10.*",
     long_description = readme,
