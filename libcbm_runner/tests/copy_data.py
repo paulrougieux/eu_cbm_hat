@@ -16,11 +16,11 @@ def copy_test_data():
     orig_path = Path(module_dir) / "tests/libcbm_data"
     dest_path = Path(libcbm_data_dir)
     # Create the data folder if it doesn't exist
-    dest_path.mkdir(exist_ok=True, parents=True)
+    # dest_path.mkdir(exist_ok=True, parents=True)
     # Copy ZZ test data to the libcbm_data directory
     # msg = f"\nIf the {dest_path} contains data already, "
     # msg += "this command will erase and replace the data :\n - "
     # if input(msg + "\nPlease confirm [y/n]:") != "y":
     #     print("Cancelled.")
     # else:
-    shutil.copytree(orig_path, dest_path)
+    shutil.copytree(orig_path, dest_path, dirs_exist_ok=False)
