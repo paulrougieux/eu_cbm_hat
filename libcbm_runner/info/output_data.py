@@ -31,6 +31,10 @@ class OutputData(InternalData):
         >>> print(runner.output.load('flux'))
     """
 
+    # The file "results.parquet" is called "results" because
+    # calling it flux_pool.parquet would return an auto_paths error:
+    #   Exception: Found several paths matching 'flux'
+    # We want to avoid this error so that existing notebooks remain compatible.
     all_paths = """
     /output/csv/
     /output/csv/values.pickle
@@ -42,6 +46,7 @@ class OutputData(InternalData):
     /output/csv/state.csv.gz
     /output/csv/extras.csv.gz
     /output/csv/events.csv.gz
+    /output/csv/results.parquet
     """
 
     def __init__(self, parent):
@@ -129,33 +134,48 @@ class OutputData(InternalData):
         # Save extra information to csv files using the above __setitem__() method
         self['extras']      = self.extras.reset_index()
         self['events']      = self.events
+        # Merge all pools and fluxes and save them to a parquet file
+        result = self.runner.internal
+        classifiers = self.classif_df
+        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
+        index = ['identifier', 'timestep']
+        df = (result['parameters']
+              .merge(result['flux'], 'left', on = index)
+              .merge(result['state'], 'left', on = index)
+              .merge(result['pools'], 'left', on = index)
+              .merge(classifiers, 'left', on = index)
+             )
+        df.to_parquet(self.paths["results"])
         # Timer #
         self.parent.timer.print_elapsed()
 
     @property_cached
     def pool_flux(self):
-        """Load and merge the main output files:
-            area, params, flux, state, pools
+        """Load the main result data frame where the following tables have been
+        merged: area, params, flux, state, pools
 
         Example usage:
 
             from libcbm_runner.core.continent import continent
             runner = continent.combos['hat'].runners['ZZ'][-1]
-            runner.output.pool_flux
+            pool_flux = runner.output.pool_flux
+
+        This loads faster than the following equivalent code
+
+            params = runner.output.load('parameters', with_clfrs=False)
+            flux = runner.output.load('flux', with_clfrs=False)
+            state = runner.output.load('state', with_clfrs=False)
+            pools = runner.output.load('pools', with_clfrs=False)
+            classifiers = runner.output.classif_df
+            classifiers["year"] = runner.output.runner.country.timestep_to_year(classifiers["timestep"])
+            index = ['identifier', 'year']
+            df = (params
+                  .merge(flux, 'left', on = index)
+                  .merge(state, 'left', on = index)
+                  .merge(classifiers, 'left', on = index)
+                  .merge(pools, 'left', on = index)
+                 )
+            df.equals(pool_flux)
 
         """
-        params = self.load('parameters', with_clfrs=False)
-        flux = self.load('flux', with_clfrs=False)
-        state = self.load('state', with_clfrs=False)
-        pools = self.load('pools', with_clfrs=False)
-        classifiers = self.classif_df
-        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
-        index = ['identifier', 'year']
-        df = (params
-              .merge(flux, 'left', on = index)
-              .merge(state, 'left', on = index)
-              .merge(classifiers, 'left', on = index)
-              .merge(pools, 'left', on = index)
-             )
-        return df
-
+        return pandas.read_parquet(self.paths["results"])
