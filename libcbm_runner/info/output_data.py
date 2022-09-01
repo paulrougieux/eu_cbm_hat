@@ -151,6 +151,7 @@ class OutputData(InternalData):
         # are defined by SIT into the user defined equivalent string.
         id_to_id = self.runner.simulation.sit.disturbance_id_map
         df["disturbance_type"] = df["disturbance_type"].map(id_to_id)
+        df["disturbance_type"] = df["disturbance_type"].astype(int)
         # Write to a parquet file
         df.to_parquet(self.paths["results"])
         # Timer #
