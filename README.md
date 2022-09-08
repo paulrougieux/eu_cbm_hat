@@ -81,7 +81,8 @@ Inspect the output of the model
 
     # Input events sent to libcbm
     events_input = runner.input_data["events"]
-    # Events stored in the output
+    # Events stored in the output including the ones related to the harvest
+    # allocation tool HAT
     events_output = runner.output.events
     # Available volumes used by the Harvest Allocation Tool
     output_extras = runner.output.extras

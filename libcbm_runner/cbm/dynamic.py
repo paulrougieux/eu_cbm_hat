@@ -220,6 +220,9 @@ class DynamicSimulation(Simulation):
         df["last_disturbance_id"] = df["last_disturbance_type"].map(dist_map)
         df["last_disturbance_id"] = df["last_disturbance_id"].astype(int)
 
+        ################################
+        # Filter eligible disturbances #
+        ################################
         # We will filter on ages, `last_dist_id` and `min_since_last_dist` #
         df = df.query("age >= sw_start")
         df = df.query("age <= sw_end")
