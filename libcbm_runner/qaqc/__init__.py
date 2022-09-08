@@ -18,6 +18,7 @@ import re
 # Internal modules #
 from libcbm_runner.qaqc.input_years import InputYears
 from libcbm_runner.qaqc.silviculture import SilvCheck
+from libcbm_runner.qaqc.expected_provided import ExpectedProvided
 
 
 class Qaqc:
@@ -38,3 +39,8 @@ class Qaqc:
     def silv_check(self):
         """Check the consistency of silviculture input files"""
         return SilvCheck(self)
+
+    @property
+    def expected_provided(self):
+        """Check harvest expected versus provided"""
+        return ExpectedProvided(self)
