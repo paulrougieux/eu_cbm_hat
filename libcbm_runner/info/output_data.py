@@ -152,6 +152,9 @@ class OutputData(InternalData):
         id_to_id = self.runner.simulation.sit.disturbance_id_map
         df["disturbance_type"] = df["disturbance_type"].map(id_to_id)
         df["disturbance_type"] = df["disturbance_type"].astype(int)
+        # Add age class information
+        df['age_class'] = df.age // 10 + 1
+        df['age_class'] = 'AGEID' + df.age_class.astype(str)
         # Write to a parquet file
         df.to_parquet(self.paths["results"])
         # Timer #
