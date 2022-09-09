@@ -89,9 +89,10 @@ class ExpectedProvided:
         missing_events_cols = set(index) - set(events.columns)
         missing_pf_cols = set(index) - set(pool_flux.columns)
         if missing_events_cols:
-            raise ValueError(f"The following columns are not present in the events data \n{missing_events_cols}")
+            msg = "The following columns are not present in the "
+            raise ValueError(msg + f"events data \n{missing_events_cols}")
         if missing_pf_cols:
-            raise ValueError(f"The following columns are not present in the pool_flux data \n{missing_pf_cols}")
+            raise ValueError(msg + f"pool_flux data \n{missing_pf_cols}")
 
         # Make sure "site_index" is of type character if present
         if "site_index" in index:
