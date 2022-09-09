@@ -123,7 +123,7 @@ class ExpectedProvided:
         flux_agg = flux_agg.reset_index()
 
         # Merge tables on the index
-        # Full merge require so we don't loose lines
+        # Full outer merge so we don't loose lines
         df = events_agg.merge(flux_agg, how="outer", on=index)
 
         # Compute the diff
