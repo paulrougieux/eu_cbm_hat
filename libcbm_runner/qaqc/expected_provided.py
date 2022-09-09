@@ -138,5 +138,6 @@ class ExpectedProvided:
                  'softwood_branch_snag_to_product', 'hardwood_merch_to_product',
                  'hardwood_other_to_product', 'hardwood_stem_snag_to_product',
                  'hardwood_branch_snag_to_product']
+        assert set(df.columns).issubset(cols)
 
         return df[cols]
