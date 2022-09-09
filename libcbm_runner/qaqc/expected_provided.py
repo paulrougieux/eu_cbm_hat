@@ -129,4 +129,14 @@ class ExpectedProvided:
         # Compute the diff
         df["diff_m"] = df["amount_m"] - df["sum_flux_to_product"]
 
-        return df
+        # Reorder columns
+        cols =  events_agg.columns.to_list()
+        cols += ['sum_flux_to_product', 'diff_m',
+                 'age_min', 'age_max',
+                 'softwood_merch_to_product',
+                 'softwood_other_to_product', 'softwood_stem_snag_to_product',
+                 'softwood_branch_snag_to_product', 'hardwood_merch_to_product',
+                 'hardwood_other_to_product', 'hardwood_stem_snag_to_product',
+                 'hardwood_branch_snag_to_product']
+
+        return df[cols]
