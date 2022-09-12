@@ -7,7 +7,7 @@ Written by Lucas Sinclair and Paul Rougieux.
 JRC Biomass Project.
 Unit D1 Bioeconomy.
 """
-
+import warnings
 import pandas
 
 class ExpectedProvided:
@@ -40,12 +40,19 @@ class ExpectedProvided:
     def events(self):
         """All events including input events mostly natural disturbances and hat events
         """
-        # After a model run input disturbances
+        # Load input disturbances, available here after a model run
         events_input = self.runner.input_data["events"]
         # Add year
         events_input["year"] = self.runner.country.timestep_to_year(events_input["step"])
 
-        # Output disturbances related to HAT
+        # check if there are HAT related events
+        path_events_hat = self.runner.output.paths["events"]
+        if not path_events_hat.exists:
+            warnings.warn("There are no events related to HAT in: \n{path_events_hat}")
+            # In the absence of HAT events, return only the events_input
+            return events_input
+
+        # Load output disturbances related to HAT
         events_hat = self.runner.output["events"]
         events_hat["step"] = self.runner.country.year_to_timestep(events_hat["year"])
 
