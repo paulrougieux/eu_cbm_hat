@@ -9,6 +9,7 @@ Unit D1 Bioeconomy.
 """
 import warnings
 import pandas
+from pandas.errors import EmptyDataError
 
 class ExpectedProvided:
     """
@@ -45,16 +46,19 @@ class ExpectedProvided:
         # Add year
         events_input["year"] = self.runner.country.timestep_to_year(events_input["step"])
 
-        # check if there are HAT related events
-        path_events_hat = self.runner.output.paths["events"]
-        if not path_events_hat.exists:
+        # Note previous approach checked the path to check if there are HAT
+        # related events but it doesn't work because if there are no HAT events
+        # an empty file is written at that location
+        # path_events_hat = self.runner.output.paths["events"]
+        # if not path_events_hat.exists:
+        try:
+            # Load output disturbances related to HAT
+            events_hat = self.runner.output["events"]
+            events_hat["step"] = self.runner.country.year_to_timestep(events_hat["year"])
+        except ValueError:
             warnings.warn("There are no events related to HAT in: \n{path_events_hat}")
             # In the absence of HAT events, return only the events_input
             return events_input
-
-        # Load output disturbances related to HAT
-        events_hat = self.runner.output["events"]
-        events_hat["step"] = self.runner.country.year_to_timestep(events_hat["year"])
 
         # Concatenate the events files
         events_cols = ['status', 'forest_type', 'region', 'mgmt_type', 'mgmt_strategy',
