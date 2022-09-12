@@ -131,6 +131,8 @@ class ExpectedProvided:
         # Add age information
         flux_agg["age_min"] = pool_flux.groupby(index)["age"].agg(min)
         flux_agg["age_max"] = pool_flux.groupby(index)["age"].agg(max)
+        # Add the area
+        flux_agg["area"] = pool_flux.groupby(index)["area"].agg(sum)
         flux_agg = flux_agg.reset_index()
 
         # Merge tables on the index
@@ -139,10 +141,11 @@ class ExpectedProvided:
 
         # Compute the diff
         df["diff_m"] = df["amount_m"] - df["sum_flux_to_product"]
+        df["diff_a"] = df["amount_a"] - df["area"]
 
         # Reorder columns
         cols =  events_agg.columns.to_list()
-        cols += ['sum_flux_to_product', 'diff_m',
+        cols += ['area', 'diff_a', 'sum_flux_to_product', 'diff_m',
                  'age_min', 'age_max',
                  'softwood_merch_to_product',
                  'softwood_other_to_product', 'softwood_stem_snag_to_product',
