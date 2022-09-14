@@ -111,16 +111,20 @@ class ExpectedProvided:
             events["site_index"] = events["site_index"].astype(str)
 
         # Aggregate the events table
-        index_events = index + ["sw_start","sw_end"]
         events["measurement_type"] = "amount_" + events["measurement_type"].str.lower()
         events_agg = (events
-                      .groupby(index_events + ["measurement_type"])
+                      .groupby(index + ["measurement_type"])
                       .agg(amount = ("amount", sum))
                       .reset_index()
                       # Reshape measurement type in columns
-                      .pivot(index = index_events, columns="measurement_type", values="amount")
-                      .reset_index()
+                      .pivot(index = index, columns="measurement_type", values="amount")
                      )
+        # Add start and end age information
+        events_agg["sw_start_min"] = events.groupby(index)["sw_start"].agg(min)
+        events_agg["sw_end_max"] = events.groupby(index)["sw_end"].agg(max)
+
+        # Make index columns available for merging
+        events_agg = events_agg.reset_index()
 
         # Aggregate the pool_flux table
         product_cols = ['softwood_merch_to_product', 'softwood_other_to_product',
