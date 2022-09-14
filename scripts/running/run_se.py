@@ -7,6 +7,12 @@ Typically you would run this file from a command line like this:
 
      ipython3 -i -- ~/deploy/libcbm_runner/scripts/running/run_se.py
 """
+
 from libcbm_runner.core.continent import continent
 runner = continent.combos['hat'].runners['SE'][-1]
+
+# Run the model
 runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+
+# Check expected provided
+runner.qaqc.expected_provided.by(index=["forest_type", "disturbance_type"])

@@ -40,6 +40,8 @@ pool_flux = runner.output.pool_flux
 # pool_flux.disturbance_type.unique()
 # array([ 0,  7,  9, 13, 10, 12,  4,  8,  6, 11,  5, 16,  3], dtype=int32)
 
+# Expected provided
+runner.qaqc.expected_provided.by(index=["forest_type", "disturbance_type"])
 
 
 
