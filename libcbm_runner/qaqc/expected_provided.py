@@ -56,7 +56,8 @@ class ExpectedProvided:
             events_hat = self.runner.output["events"]
             events_hat["step"] = self.runner.country.year_to_timestep(events_hat["year"])
         except ValueError:
-            warnings.warn("There are no events related to HAT in: \n{path_events_hat}")
+            path_events_hat = self.runner.output.paths["events"]
+            warnings.warn(f"There are no events related to HAT in: \n{path_events_hat}")
             # In the absence of HAT events, return only the events_input
             return events_input
 
@@ -134,6 +135,11 @@ class ExpectedProvided:
         # Add the area
         flux_agg["area"] = pool_flux.groupby(index)["area"].agg(sum)
         flux_agg = flux_agg.reset_index()
+
+        # Assert that there are no repetition in the index columns
+        # It could be the case if additional variables have been added to the index
+        assert len(events_agg.set_index(index).index.unique()) == len(events_agg)
+        assert len(flux_agg.set_index(index).index.unique()) == len(flux_agg)
 
         # Merge tables on the index
         # Full outer merge so we don't loose lines
