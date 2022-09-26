@@ -25,16 +25,16 @@ class SilvCheck:
     has started, when SIT is not available yet.
 
         >>> from libcbm_runner.core.continent import continent
-        >>> r = continent.combos['special'].runners["LU"][-1]
+        >>> runner = continent.combos['special'].runners["ZZ"][-1]
 
     Input `events_templates`and `irw_frac_by_dist`
 
-        >>> r.silv.events.raw
-        >>> r.silv.irw_frac.raw
+        >>> runner.silv.events.raw
+        >>> runner.silv.irw_frac.raw
 
     Check that fuel wood disturbances don't generate industrial roundwood:
 
-        >>> r.qaqc.silv_check.fw_doesnt_create_irw()
+        >>> runner.qaqc.silv_check.fw_doesnt_create_irw()
 
     """
 
@@ -65,8 +65,9 @@ class SilvCheck:
         df_agg = df_agg.agg(agg_cols)
         if not numpy.allclose(df_agg.sum(), 0):
             msg = "fuel wood only disturbances "
-            msg += "should not generate industrial roundwood:"
-            raise ValueError(msg, df_agg)
+            msg += "should not generate industrial roundwood:\n"
+            msg += f"{df_agg}"
+            raise ValueError(msg)
 
 
 
