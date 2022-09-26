@@ -27,20 +27,23 @@ class SilvCheck:
         >>> from libcbm_runner.core.continent import continent
         >>> runner = continent.combos['special'].runners["ZZ"][-1]
 
-    Input `events_templates`and `irw_frac_by_dist`
-
-        >>> runner.silv.events.raw
-        >>> runner.silv.irw_frac.raw
-
     Check that fuel wood disturbances don't generate industrial roundwood:
 
         >>> runner.qaqc.silv_check.fw_doesnt_create_irw()
+
+    The check is based on the `events_templates`and `irw_frac_by_dist`
+
+        >>> runner.silv.events.raw
+        >>> runner.silv.irw_frac.raw
 
     """
 
     def __init__(self, qaqc):
         # Default attributes #
         self.runner = qaqc.runner
+        # Disturbance mapping
+        assoc_df = self.runner.country.associations.df
+        self.assoc = assoc_df.loc[assoc_df["category"] == "MapDisturbanceType"]
 
     def fw_doesnt_create_irw(self):
         """Check that fuel wood only disturbances don't generate industrial roundwood"""
@@ -69,12 +72,16 @@ class SilvCheck:
             msg += f"{df_agg}"
             raise ValueError(msg)
 
+    def dist_ids_activities(self):
+        """List disturbance ids used in the input data "activities" folder"""
+        df = self.runner.input_data["events"]
+        df = df.value_counts("dist_type_name")
+        df = df.reset_index(name="number_of_rows")
+        return df
 
-
-
-
-
-
-
-
-
+    def dist_ids_silv_events_templates(self):
+        """List disturbance ids used in the "silv" events_templates.csv"""
+        df = self.runner.silv.events.raw
+        df = df.value_counts(["disturbance_type", "dist_type_name"])
+        df = df.reset_index(name="number_of_rows")
+        return df
