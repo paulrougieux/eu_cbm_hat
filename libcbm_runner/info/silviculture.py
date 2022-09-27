@@ -29,17 +29,19 @@ def keep_clfrs_without_question_marks(df, classifiers):
     """Check if there are questions mark in a classifier column
     and return a list of index columns that:
 
-    - keeps a column if it contains no question marks
-
-    - returns an error if a column contains a mixture of question marks and
-      other values
-
-    - removes the column from output list if there are only question marks in
-      that column
-
     :param (df) data frame of silviculture data
     :param (classifiers) list of classifier columns to check
     :output (list) list of classifiers that don't contain "?"
+
+    The function performs the following:
+
+    - keep a column if it contains no question marks
+
+    - return an error if a column contains a mixture of question marks and
+      other values
+
+    - remove the column from output list if there are only question marks in
+      that column
 
     Example use (will only work after simulation start):
 
