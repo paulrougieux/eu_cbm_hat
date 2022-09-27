@@ -17,6 +17,17 @@ import numpy
 
 # Internal modules #
 
+def check_question_marks(df, df_name, classifiers):
+    """Raise an error if classifiers have a mixture of
+    question mark and no question mark"""
+    for classif_name in classifiers:
+        values = df[classif_name].unique().tolist()
+        if len(values) > 1 and "?" in values:
+            msg =  "Mixture of question marks and other values "
+            msg += f"not allowed in {df_name}.\n"
+            msg += f"The unique values of the {classif_name} column are: {values}"
+            raise ValueError(msg)
+
 class SilvCheck:
     """
     Check the consistency of silviculture input files
@@ -44,6 +55,10 @@ class SilvCheck:
         >>> runner.input_data()
         >>> runner.qaqc.silv_check.dist_ids_activities()
         >>> runner.qaqc.silv_check.dist_ids_silv_events_templates()
+
+    Check classifiers with question marks
+
+        >>> runner.qaqc.silv_check.check_classifier_with_question_marks()
 
     """
     def __init__(self, qaqc):
@@ -93,3 +108,12 @@ class SilvCheck:
         df = df.value_counts(["disturbance_type", "dist_type_name"])
         df = df.reset_index(name="number_of_rows")
         return df
+
+    def check_classifier_with_question_marks(self):
+        """Check the input tables for classifiers with question marks"""
+        clfrs = list(self.runner.country.orig_data.classif_names.values())
+        irw_frac = self.runner.country.orig_data.load("irw_frac")
+        check_question_marks(irw_frac, "irw_frac", clfrs)
+        input_events = self.runner.input_data["events"]
+        check_question_marks(input_events, "input events from the activities folder", clfrs)
+
