@@ -36,8 +36,16 @@ class SilvCheck:
         >>> runner.silv.events.raw
         >>> runner.silv.irw_frac.raw
 
-    """
+    List disturbance ids used in the input data "activities" directory and in
+    the "silv" events_templates.csv.
 
+        >>> # Fetch the data from the country folder. This call is only
+        >>> # necessary in case the runner has not been run yet.
+        >>> runner.input_data()
+        >>> runner.qaqc.silv_check.dist_ids_activities()
+        >>> runner.qaqc.silv_check.dist_ids_silv_events_templates()
+
+    """
     def __init__(self, qaqc):
         # Default attributes #
         self.runner = qaqc.runner

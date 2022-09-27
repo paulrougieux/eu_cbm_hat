@@ -29,10 +29,12 @@ class InputData:
     Example use:
 
         >>> from libcbm_runner.core.continent import continent
-        >>> combo = continent.combos['historical']
-        >>> r = combo.runners['LU'][-1]
-        >>> print(r.input_data["classifiers"])
-        >>> print(r.input_data["events"])
+        >>> runner = continent.combos['special'].runners["ZZ"][-1]
+        >>> # Fetch the data from the country folder. 
+        >>> # Necessary in case the runner has not been run yet.
+        >>> runner.input_data()
+        >>> print(runner.input_data["classifiers"])
+        >>> print(runner.input_data["events"])
 
     """
 
