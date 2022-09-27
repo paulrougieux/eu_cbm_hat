@@ -213,7 +213,7 @@ class BaseSilvInfo:
             values = df[classif_name].unique()
             if len(values) == 1 and values[0] == "?":
                 continue
-            if len(values) == 1 and "?" in values: 
+            if len(values) > 1 and "?" in values:
                 msg =  "Mixture of question marks and other values"
                 msg += f"not allowed in %s, column {classif_name}"
                 raise ValueError(msg % self)
