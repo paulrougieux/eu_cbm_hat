@@ -45,21 +45,30 @@ def keep_clfrs_without_question_marks(df, classifiers):
 
     Example use (will only work after simulation start):
 
-
-        from libcbm_runner.core.continent import continent
-        runner  = continent.combos['special'].runners['LU'][-1]
-        irw_frac = runner.silv.irw_frac.get_year(2016)
+        >>> from libcbm_runner.info.silviculture import keep_clfrs_without_question_marks
+        >>> from libcbm_runner.core.continent import continent
+        >>> runner  = continent.combos['special'].runners['ZZ'][-1]
+        >>> irw_frac = runner.silv.irw_frac.get_year(2016)
+        >>> clfrs = list(runner.country.orig_data.classif_names.values())
+        >>> keep_clfrs_without_question_marks(irw_frac, clfrs)
 
     """
-    # The error raised when there are a mixture of other values and
-    # question marks is raised in the BaseSilvInfo.conv_clfrs method.
+    # TODO: The error raised when there are a mixture of other values and
+    # question marks should be raised in the BaseSilvInfo.conv_clfrs() method.
+    # Why is this not the case for irw_frac and the events_template?
     output_classifiers = []
     for classif_name in classifiers:
         values = df[classif_name].unique().tolist()
+        if len(values) > 1 and "?" in values:
+            msg =  "Mixture of question marks and other values"
+            msg += f"not allowed in, column {classif_name}.\n"
+            msg += f"The data frame contains the following columns:\n{df.columns}."
+            raise ValueError(msg)
+        # Remove classifiers that contain question marks only
         if "?" in values:
             continue
-        else:
-            output_classifiers.append(classif_name)
+        # Add classifiers that don't contain question marks
+        output_classifiers.append(classif_name)
     return output_classifiers
 
 
