@@ -45,6 +45,13 @@ class DynamicSimulation(Simulation):
     can specify their disturbances just-in-time as the model is running.
     This is in contrast to standard simulations which must have all
     disturbances predefined before the model run.
+
+    To see the simulation object:
+
+        >>> from libcbm_runner.core.continent import continent
+        >>> runner = continent.combos['special'].runners["ZZ"][-1]
+        >>> runner.simulation.sources
+
     """
 
     # These are the dataframe (as attributes) returned by `cbm.step()` #
@@ -144,13 +151,17 @@ class DynamicSimulation(Simulation):
         # Join the `irw` fractions with the fluxes going to `products` #
         irw_frac = self.runner.silv.irw_frac.get_year(self.year)
         clfrs_noq = keep_clfrs_without_question_marks(irw_frac, clfrs)
+        cols_to_product = [s + "_to_product" for s in self.sources]
+        sum_flux_before_merge = fluxes[cols_to_product].sum().sum()
         fluxes = fluxes.merge(irw_frac, how='left',
                               on=clfrs_noq + ["disturbance_type"],
                               suffixes=('_fluxes', ''))
+        assert sum_flux_before_merge == fluxes[cols_to_product].sum().sum()
 
         # Join the wood density and bark fraction parameters also #
         coefs = self.runner.silv.coefs.df
         fluxes = fluxes.merge(coefs, how='left', on=['forest_type'])
+        assert sum_flux_before_merge == fluxes[cols_to_product].sum().sum()
 
         # Calculate the total `flux_irw` and `flux_fw` for this year #
         def tot_flux_to_vol(irw=True):
@@ -180,7 +191,7 @@ class DynamicSimulation(Simulation):
         # Convert to a cubic meter float value #
         demand_irw_vol = demand_irw_vol.values[0] * 1000
         demand_fw_vol  = demand_fw_vol.values[0]  * 1000
-        
+
         # add columns with demands
         self.out_var('demand_irw_vol', demand_irw_vol)
         self.out_var('demand_fw_vol',  demand_fw_vol)
