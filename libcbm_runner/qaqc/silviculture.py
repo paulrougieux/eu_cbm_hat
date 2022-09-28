@@ -114,6 +114,7 @@ class SilvCheck:
         clfrs = list(self.runner.country.orig_data.classif_names.values())
         irw_frac = self.runner.country.orig_data.load("irw_frac")
         check_question_marks(irw_frac, "irw_frac", clfrs)
-        input_events = self.runner.input_data["events"]
-        check_question_marks(input_events, "input events from the activities folder", clfrs)
+        # Do not check the input events
+        # input_events = self.runner.input_data["events"]
+        # check_question_marks(input_events, "input events from the activities folder", clfrs)
 
