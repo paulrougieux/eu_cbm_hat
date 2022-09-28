@@ -47,7 +47,7 @@ def keep_clfrs_without_question_marks(df, classifiers):
 
         >>> from libcbm_runner.info.silviculture import keep_clfrs_without_question_marks
         >>> from libcbm_runner.core.continent import continent
-        >>> runner  = continent.combos['special'].runners['ZZ'][-1]
+        >>> runner  = continent.combos['hat'].runners['ZZ'][-1]
         >>> irw_frac = runner.silv.irw_frac.get_year(2016)
         >>> clfrs = list(runner.country.orig_data.classif_names.values())
         >>> keep_clfrs_without_question_marks(irw_frac, clfrs)
