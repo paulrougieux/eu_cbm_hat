@@ -9,6 +9,7 @@ Typically you would run this file from a command line like this:
 """
 
 from libcbm_runner.core.continent import continent
+runner.num_timesteps = 40
 runner = continent.combos['hat'].runners['SE'][-1]
 
 # Run the model
