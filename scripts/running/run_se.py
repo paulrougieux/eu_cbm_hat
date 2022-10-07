@@ -9,8 +9,8 @@ Typically you would run this file from a command line like this:
 """
 
 from libcbm_runner.core.continent import continent
-runner.num_timesteps = 40
 runner = continent.combos['hat'].runners['SE'][-1]
+runner.num_timesteps = 40
 
 # Run the model
 runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
