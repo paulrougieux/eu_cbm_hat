@@ -48,11 +48,11 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache       import property_cached
 
 # Where is the data, default case #
-aidb_repo = DirectoryPath(&#34;~/repos/libcbm_aidb/&#34;)
+aidb_repo = DirectoryPath(&#34;~/repos/eu_cbm_aidb/&#34;)
 
 # But you can override that with an environment variable #
-if os.environ.get(&#34;LIBCBM_AIDB&#34;):
-    aidb_repo = DirectoryPath(os.environ[&#39;LIBCBM_AIDB&#39;])
+if os.environ.get(&#34;EU_CBM_AIDB&#34;):
+    aidb_repo = DirectoryPath(os.environ[&#39;EU_CBM_AIDB&#39;])
 
 ###############################################################################
 class AIDB(object):

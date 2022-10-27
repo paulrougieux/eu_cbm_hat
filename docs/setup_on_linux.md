@@ -21,7 +21,7 @@ The first step is to clone the needed git repositories. We will clone all the pr
 
 Next, we must obtain a copy the European "cbm_defaults" sqlite3 database. As it's a bit larger, it's not included in the `libcbm_data` repository. Instead, it's in a standalone one.
 
-    $ git clone git@gitlab.com:bioeconomy/libcbm/libcbm_aidb.git
+    $ git clone git@gitlab.com:bioeconomy/libcbm/eu_cbm_aidb.git
 
  To link to those aidb inside `libcbm_data` use the `symlink_all_aidb` method provided in `eu_cbm_hat/pump/aidb.py`.
 
@@ -51,7 +51,7 @@ The next step is to set the environment variable `$PYTHONPATH` so that our inter
     export PYTHONPATH="$HOME/repos/libcbm_py/":$PYTHONPATH
     export PYTHONPATH="$HOME/repos/eu_cbm_hat/":$PYTHONPATH
     export LIBCBM_DATA="$HOME/repos/libcbm_data/"
-    export LIBCBM_AIDB="$HOME/repos/libcbm_aidb/"
+    export EU_CBM_AIDB="$HOME/repos/eu_cbm_aidb/"
 
 ## Run one country
 

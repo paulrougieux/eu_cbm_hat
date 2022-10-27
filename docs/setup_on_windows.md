@@ -29,7 +29,7 @@ Run these commands from an administrator PowerShell:
     $ git clone https://github.com/cat-cfs/libcbm_py.git
     $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
     $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_data.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_aidb.git
+    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_aidb.git
 
 ## Install python packages
 
@@ -67,7 +67,7 @@ Set the environment variable that tells `eu_cbm_hat` where the simulation data i
 
 Set the environment variable that tells `eu_cbm_hat` where the special AIDBs are located:
 
-    $ SETX LIBCBM_AIDB "$HOME\repos\libcbm_aidb"
+    $ SETX EU_CBM_AIDB "$HOME\repos\eu_cbm_aidb"
 
 ## Symlink AIDBs
 

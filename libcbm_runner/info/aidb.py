@@ -19,11 +19,11 @@ from plumbing.cache       import property_cached
 # Internal modules #
 
 # Where is the data, default case #
-aidb_repo = DirectoryPath("~/repos/libcbm_aidb/")
+aidb_repo = DirectoryPath("~/repos/eu_cbm_aidb/")
 
 # But you can override that with an environment variable #
-if os.environ.get("LIBCBM_AIDB"):
-    aidb_repo = DirectoryPath(os.environ['LIBCBM_AIDB'])
+if os.environ.get("EU_CBM_AIDB"):
+    aidb_repo = DirectoryPath(os.environ['EU_CBM_AIDB'])
 
 ###############################################################################
 class AIDB(object):

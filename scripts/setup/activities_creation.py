@@ -62,7 +62,7 @@ class MakeActivities(object):
         │   ├── classifiers.csv
         │   └── disturbance_types.csv
         ├── orig
-        │   ├── aidb.db -> libcbm_aidb/countries/ZZ/orig/config/aidb.db
+        │   ├── aidb.db -> eu_cbm_aidb/countries/ZZ/orig/config/aidb.db
         │   └── associations.csv
         └── silv
             ├── product_types.csv

@@ -11,7 +11,7 @@ This python module uses pandas data frames to manipulate and store most data.
 
 * `libcbm_data` contains the model's input and output data located at https://gitlab.com/bioeconomy/libcbm/libcbm_data
 
-* `libcbm_aidb` contains the "Archive Index Databases" in a separate repository located at https://github.com/xapple/libcbm_aidb
+* `eu_cbm_aidb` contains the "Archive Index Databases" in a separate repository located at https://github.com/xapple/eu_cbm_aidb
 
 
 ## Installation
@@ -31,12 +31,12 @@ Install libcbm using pip:
     pip install git+https://github.com/cat-cfs/libcbm_py.git
 
 By default, the data is located in "~/repos/libcbm_data/" and the AIBD in 
-“~/repos/libcbm_aidb/”. The model will work if you make sure these folders exist on your 
+“~/repos/eu_cbm_aidb/”. The model will work if you make sure these folders exist on your 
 system. Optionally, you can define the following environment variables to tell the model 
 where the data and AIDB are located. Shell commands to define the environment variables:
 
     export LIBCBM_DATA="path_on_your_computer/libcbm_data/"
-    export LIBCBM_AIDB="path_on_your_computer/libcbm_aidb/"
+    export EU_CBM_AIDB="path_on_your_computer/eu_cbm_aidb/"
 
 Copy test data to your local `libcbm_data` folder (location defined above in the 
 environment variable `LIBCBM_DATA`):
@@ -46,7 +46,7 @@ environment variable `LIBCBM_DATA`):
 
 Clone the repository containing the AIDB (with a deploy token)
 
-    git clone https://jrc:9Bv2ZN9fWBgJaHe2jWxz@gitlab.com/bioeconomy/libcbm/libcbm_aidb.git
+    git clone https://jrc:9Bv2ZN9fWBgJaHe2jWxz@gitlab.com/bioeconomy/libcbm/eu_cbm_aidb.git
 
 Before running the model, you need to create AIDB symlinks at a python prompt:
 
