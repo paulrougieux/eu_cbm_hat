@@ -96,7 +96,7 @@ The `libcbm` model does not report in its state variable the fluxes between pool
 
 * The demand value is expressed as thousands of cubic meters under bark.
 
-* The demand from the economic model can vary according to a scenario. Each economic scenario is placed in a different directory under `repos/libcbm_data/common/gftmx/reference/xyz.csv`.
+* The demand from the economic model can vary according to a scenario. Each economic scenario is placed in a different directory under `repos/eu_cbm_data/common/gftmx/reference/xyz.csv`.
 
 * For every year and every country, there are two values. These two values are `demand_irw_vol` and `demand_fw_vol`.
 
@@ -105,7 +105,7 @@ The `libcbm` model does not report in its state variable the fluxes between pool
 
 ## Historical period
 
-The HAT mechanisms only apply to the `simulation_period`. In the `historical_period` all disturbances are predetermined in the repository `libcbm_data` and none are generated dynamically.
+The HAT mechanisms only apply to the `simulation_period`. In the `historical_period` all disturbances are predetermined in the repository `eu_cbm_data` and none are generated dynamically.
 
 NB: The variable `sim_base_year` must remain flexible. It is defined in `country.py`.
 
@@ -231,7 +231,7 @@ The aggregated fluxes from each of the source pools of interest to the `products
 
 ## The files `irw_demand.csv` and `fw_demand.csv`
 
-We load demand targets from the files `irw_demand.csv` and `fw_demand.csv` for the given scenarios specified in a combination. The demand for each time step is contained in various demand files originating from the economic model called Global Forest Trade Model (GFTM). Currently, the files are in `libcbm_data/demand/scenario_name/` and are named `irw_demand.csv` or `fw_demand.csv`.
+We load demand targets from the files `irw_demand.csv` and `fw_demand.csv` for the given scenarios specified in a combination. The demand for each time step is contained in various demand files originating from the economic model called Global Forest Trade Model (GFTM). Currently, the files are in `eu_cbm_data/demand/scenario_name/` and are named `irw_demand.csv` or `fw_demand.csv`.
 
 
 ## Determine remaining demand

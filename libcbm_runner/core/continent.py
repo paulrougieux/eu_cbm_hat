@@ -17,7 +17,7 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache       import property_cached
 
 # Internal modules #
-from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat.core.country import Country
 from eu_cbm_hat.combos       import combo_classes
 
@@ -43,7 +43,7 @@ class Continent(object):
         # The base directory #
         self.base_dir = base_dir
         # Automatically access paths based on a string of many subpaths #
-        self.paths = AutoPaths(libcbm_data_dir, self.all_paths)
+        self.paths = AutoPaths(eu_cbm_data_dir, self.all_paths)
         # Where the input data will be stored #
         self.countries_dir = self.paths.countries_dir
         # Where the output data will be stored #
@@ -80,5 +80,5 @@ class Continent(object):
 
 ###############################################################################
 # Create singleton #
-continent = Continent(libcbm_data_dir)
+continent = Continent(eu_cbm_data_dir)
 

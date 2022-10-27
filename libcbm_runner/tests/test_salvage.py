@@ -27,8 +27,8 @@ def test_dist_4_followed_by_29():
 
 
     # check the method "__call__" in "info/input_data.py" to see
-    # who the data is copied from libcbm_data/countries/zz
-    # to libcbm_data/output/hat/ZZ/0/input/csv before the model run
+    # who the data is copied from eu_cbm_data/countries/zz
+    # to eu_cbm_data/output/hat/ZZ/0/input/csv before the model run
     # Some files are transformed from wide to long format in this process.
 
     # Overwrite the events template

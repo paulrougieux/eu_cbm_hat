@@ -1,3 +1,3 @@
 include README.md
 include LICENCE.md
-graft eu_cbm_hat/tests/libcbm_data
+graft eu_cbm_hat/tests/eu_cbm_data

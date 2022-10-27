@@ -9,7 +9,7 @@ Unit D1 Bioeconomy.
 
 This script loads the demand that originates from the economic model
 called "GFTMX". This economic model is not run dymamically, instead it
-was run once in the past and the outputs recorded in the `libcbm_data`
+was run once in the past and the outputs recorded in the `eu_cbm_data`
 repository.
 
 The wood product demand used in the `eu_cbm_hat` simulations is seen as the
@@ -43,11 +43,11 @@ import pandas
 from plumbing.cache import property_cached
 
 # Internal modules #
-from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat.core.country import all_country_codes
 
 # Constant directory for all the data #
-demand_dir = libcbm_data_dir + 'demand/'
+demand_dir = eu_cbm_data_dir + 'demand/'
 
 # Constant file names for every scenario #
 roundwood = "irw_demand.csv"

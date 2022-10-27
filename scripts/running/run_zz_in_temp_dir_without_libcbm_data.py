@@ -12,7 +12,7 @@ This version runs with the environment variable set to a temporary file.
 
 Typically you would run this file from a command line like this:
 
-    ipython3 -i -- ~/deploy/eu_cbm_hat/scripts/running/run_zz_in_temp_dir_without_libcbm_data.py
+    ipython3 -i -- ~/deploy/eu_cbm_hat/scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py
 
 
 """
@@ -23,14 +23,14 @@ import os
 import shutil
 
 temp_dir = TemporaryDirectory()
-dest_path = Path(temp_dir.name) / "libcbm_data"
+dest_path = Path(temp_dir.name) / "eu_cbm_data"
 # Define the environment variable
 # This has to happen before we import anything from eu_cbm_hat
-os.environ["LIBCBM_DATA"] = str(dest_path)
+os.environ["EU_CBM_DATA"] = str(dest_path)
 
 # Internal modules
 from eu_cbm_hat import module_dir
-orig_path = Path(module_dir) / "tests/libcbm_data"
+orig_path = Path(module_dir) / "tests/eu_cbm_data"
 # Copy ZZ test data to a temporary directory
 shutil.copytree(orig_path, dest_path)
 

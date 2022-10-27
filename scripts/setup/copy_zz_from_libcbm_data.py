@@ -1,29 +1,29 @@
-""" This script copies the ZZ data from the libcbm_data repository
+""" This script copies the ZZ data from the eu_cbm_data repository
 
-It has to be run on a machine that has the libcbm_data repository. ZZ data is
+It has to be run on a machine that has the eu_cbm_data repository. ZZ data is
 treated in an identical manner to any other country and remains under version
-control in the libcbm_data repository. However, for users who do not have
-access to the private libcbm_data repository, we disseminate this data as part
+control in the eu_cbm_data repository. However, for users who do not have
+access to the private eu_cbm_data repository, we disseminate this data as part
 of the eu_cbm_hat package. The purpose of this script is to copy data
-necessary to run ZZ from the libcbm_data folder to a folder inside this package
-eu_cbm_hat/tests/libcbm_data
+necessary to run ZZ from the eu_cbm_data folder to a folder inside this package
+eu_cbm_hat/tests/eu_cbm_data
 """
 
 from pathlib import Path
 import shutil
-from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat import module_dir
 
 # Path to copy data to
-test_data_dir = Path(module_dir) / "tests/libcbm_data"
+test_data_dir = Path(module_dir) / "tests/eu_cbm_data"
 if not test_data_dir.exists():
     test_data_dir.mkdir(parents=True)
 
 # File paths to copy data from
 # After deleting all files not necessary to run ZZ
-# from the libcbm_data repository
+# from the eu_cbm_data repository
 # I copied the output of the bash command
-#     cd ~/rp/libcbm_data
+#     cd ~/rp/eu_cbm_data
 #     find  combos/ common/ countries/ demand/ -type f
 # To obtain the following lines of files necessary to run ZZ
 files = """combos/hat.yaml
@@ -61,7 +61,7 @@ demand/reference/fw_demand.csv
 demand/reference/irw_demand.csv"""
 
 for line in files.splitlines():
-    orig_file = Path(libcbm_data_dir) / line
+    orig_file = Path(eu_cbm_data_dir) / line
     dest_file = test_data_dir / line
     dest_file.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(orig_file, dest_file)

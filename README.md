@@ -9,7 +9,7 @@ This python module uses pandas data frames to manipulate and store most data.
 
 * `libcbm` is a C++ library with python binding developed by the Canadian Forest Service. It is bundled into the libcbm_py python package available at https://github.com/cat-cfs/libcbm_py
 
-* `libcbm_data` contains the model's input and output data located at https://gitlab.com/bioeconomy/libcbm/libcbm_data
+* `eu_cbm_data` contains the model's input and output data located at https://gitlab.com/bioeconomy/libcbm/eu_cbm_data
 
 * `eu_cbm_aidb` contains the "Archive Index Databases" in a separate repository located at https://github.com/xapple/eu_cbm_aidb
 
@@ -30,16 +30,16 @@ Install libcbm using pip:
 
     pip install git+https://github.com/cat-cfs/libcbm_py.git
 
-By default, the data is located in "~/repos/libcbm_data/" and the AIBD in 
+By default, the data is located in "~/repos/eu_cbm_data/" and the AIBD in 
 “~/repos/eu_cbm_aidb/”. The model will work if you make sure these folders exist on your 
 system. Optionally, you can define the following environment variables to tell the model 
 where the data and AIDB are located. Shell commands to define the environment variables:
 
-    export LIBCBM_DATA="path_on_your_computer/libcbm_data/"
+    export EU_CBM_DATA="path_on_your_computer/eu_cbm_data/"
     export EU_CBM_AIDB="path_on_your_computer/eu_cbm_aidb/"
 
-Copy test data to your local `libcbm_data` folder (location defined above in the 
-environment variable `LIBCBM_DATA`):
+Copy test data to your local `eu_cbm_data` folder (location defined above in the 
+environment variable `EU_CBM_DATA`):
 
     from eu_cbm_hat.tests.copy_data import copy_test_data
     copy_test_data()
@@ -121,7 +121,7 @@ well as running a mock country called "ZZ". You can see the output of these runs
 - A specification for an Harvest Allocation Tool (HAT) is available at
   [docs/harvest_allocation_specification.md](docs/harvest_allocation_specification.md)
 
-- Input files (disturbances, yield, inventory) defined in `libcbm_data` contain scenarios for the activities (afforestation, deforestation, reforestation, disturbances in forest remaining forest, wood use specified in the silviculture and product_types.csv tables)
+- Input files (disturbances, yield, inventory) defined in `eu_cbm_data` contain scenarios for the activities (afforestation, deforestation, reforestation, disturbances in forest remaining forest, wood use specified in the silviculture and product_types.csv tables)
 
 
 

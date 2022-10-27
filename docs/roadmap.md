@@ -120,7 +120,7 @@ Current solution is to use one AIDB dfor each country.
 - Transfer the static_demand disturbances to the orig/csv/events.csv
   from
   /home/paul/rp/cbmcfs3_data/scenarios/static_demand/LU/0/input/csv/disturbance_events.csv
-  to /libcbm_data/countries/LU/orig/csv/
+  to /eu_cbm_data/countries/LU/orig/csv/
 
 * Add an 8th classifier for site index classifiers to all countries like is already the
   case in Bulgaria.

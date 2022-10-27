@@ -22,7 +22,7 @@ from eu_cbm_hat.core.continent import continent
 # Declare which scenario combination to run #
 #############################################
 # Scenario combination defined in the yaml file 
-# `~/repos/libcbm_data/combos/harvest_test.yaml`
+# `~/repos/eu_cbm_data/combos/harvest_test.yaml`
 # Scenario itself is defined as code in 
 # `~/repos/eu_cbm_hat/eu_cbm_hat/combos/harvest_test.py`
 combo   = continent.combos['hat']

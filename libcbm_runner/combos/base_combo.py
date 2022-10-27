@@ -21,11 +21,11 @@ from plumbing.cache import property_cached
 from plumbing.timer import Timer
 
 # Internal modules #
-from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat.core.runner import Runner
 
 # Constant directory for all the data #
-yaml_dir = libcbm_data_dir + 'combos/'
+yaml_dir = eu_cbm_data_dir + 'combos/'
 
 ###############################################################################
 class Combination(object):

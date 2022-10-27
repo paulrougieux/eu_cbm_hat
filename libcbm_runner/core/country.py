@@ -18,17 +18,17 @@ from autopaths.dir_path   import DirectoryPath
 from plumbing.cache       import property_cached
 
 # Internal modules #
-from eu_cbm_hat                     import libcbm_data_dir
+from eu_cbm_hat                     import eu_cbm_data_dir
 from eu_cbm_hat.launch.associations import Associations
 from eu_cbm_hat.info.orig_data      import OrigData
 from eu_cbm_hat.info.aidb           import AIDB
 
 # Country codes #
-all_country_codes = libcbm_data_dir + 'common/country_codes.csv'
+all_country_codes = eu_cbm_data_dir + 'common/country_codes.csv'
 all_country_codes = pandas.read_csv(str(all_country_codes))
 
 # Country reference years #
-ref_years = libcbm_data_dir + 'common/reference_years.csv'
+ref_years = eu_cbm_data_dir + 'common/reference_years.csv'
 ref_years = pandas.read_csv(str(ref_years))
 
 ###############################################################################

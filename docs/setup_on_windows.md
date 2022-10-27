@@ -1,6 +1,6 @@
 # Installation
 
-This guide shows how to set up the `libcbm_data` and `eu_cbm_hat` projects together on a Windows system to run the 26 EU carbon budget simulations with `libcbm_py` automatically.
+This guide shows how to set up the `eu_cbm_data` and `eu_cbm_hat` projects together on a Windows system to run the 26 EU carbon budget simulations with `libcbm_py` automatically.
 
 ## Install Python 3
 
@@ -28,7 +28,7 @@ Run these commands from an administrator PowerShell:
     $ cd $HOME/repos
     $ git clone https://github.com/cat-cfs/libcbm_py.git
     $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_data.git
+    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_data.git
     $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_aidb.git
 
 ## Install python packages
@@ -63,7 +63,7 @@ Set the environment variable that tells python where the modules are located:
 
 Set the environment variable that tells `eu_cbm_hat` where the simulation data is located:
 
-    $ SETX LIBCBM_DATA "$HOME\repos\libcbm_data"
+    $ SETX EU_CBM_DATA "$HOME\repos\eu_cbm_data"
 
 Set the environment variable that tells `eu_cbm_hat` where the special AIDBs are located:
 

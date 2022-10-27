@@ -19,13 +19,13 @@ import pandas
 from autopaths.auto_paths import AutoPaths
 
 # Internal modules #
-from eu_cbm_hat                    import libcbm_data_dir
+from eu_cbm_hat                    import eu_cbm_data_dir
 from eu_cbm_hat.core.continent     import continent
 from eu_cbm_hat.pump.long_or_wide  import events_long_to_wide
 from eu_cbm_hat.pump.pre_processor import PreProcessor
 
 # Constants #
-interface_dir = libcbm_data_dir + 'interface/'
+interface_dir = eu_cbm_data_dir + 'interface/'
 
 ###############################################################################
 class MakeActivities(object):
@@ -270,7 +270,7 @@ class MakeActivities(object):
         """
         In the end, the only way to make this `interface` work is to have a
         script copy every file in the flat hierarchy back to it's expected
-        place within the `libcbm_data` repository.
+        place within the `eu_cbm_data` repository.
         """
         # Same case for all of: "Common, Silv, Config" #
         for item in self.common_list + self.silv_list + self.config_list:

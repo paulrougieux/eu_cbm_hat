@@ -65,11 +65,11 @@ repos_dir = module_dir.directory
 git_repo = GitRepo(repos_dir, empty=True)
 
 # Where is the data, default case #
-libcbm_data_dir = DirectoryPath(&#34;~/repos/libcbm_data/&#34;)
+eu_cbm_data_dir = DirectoryPath(&#34;~/repos/eu_cbm_data/&#34;)
 
 # But you can override that with an environment variable #
-if os.environ.get(&#34;LIBCBM_DATA&#34;):
-    libcbm_data_dir = DirectoryPath(os.environ[&#39;LIBCBM_DATA&#39;])</code></pre>
+if os.environ.get(&#34;EU_CBM_DATA&#34;):
+    eu_cbm_data_dir = DirectoryPath(os.environ[&#39;EU_CBM_DATA&#39;])</code></pre>
 </details>
 </section>
 <section>
