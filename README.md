@@ -1,8 +1,14 @@
 # `eu_cbm_hat` version 0.2.2
 
-`eu_cbm_hat` is a python package for dealing with the automation and running of a complex series of models involving forest growth, the European economy, carbon budgets and their interactions. It uses the `libcbm` model developed by Canada under the hood.
+The forest carbon model `eu_cbm_hat` is a python package that enables the assessment of 
+forest CO2 emissions and removals under scenarios of forest management, natural 
+disturbances, forest-related land use changes.
 
-This python module uses pandas data frames to manipulate and store most data.
+It uses the [libcbm model](https://github.com/cat-cfs/libcbm_py) developed by Forest 
+Carbon Accounting team of the Canadian Forest Service.
+
+This python module uses [pandas data frames](https://pandas.pydata.org/) to manipulate 
+and store most data.
 
 
 ## Dependencies
@@ -16,9 +22,9 @@ This python module uses pandas data frames to manipulate and store most data.
 
 ## Installation
 
-Install `eu_cbm_hat` and HAT using [pip](https://pip.pypa.io/en/stable/), the package 
-installer for python. The repository is currently private, but you can install the 
-`eu_cbm_hat` package from python with a deploy token.
+Install `eu_cbm_hat` using [pip](https://pip.pypa.io/en/stable/), the package installer 
+for python. The repository is currently private, but you can install the `eu_cbm_hat` 
+package from python with a deploy token.
 
     pip install git+https://jrc:xyVzrCMS4fs7GRe7pZPq@gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 
