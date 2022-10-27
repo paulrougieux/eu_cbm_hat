@@ -27,9 +27,9 @@ Run these commands from an administrator PowerShell:
     $ New-Item -ItemType Directory -Path $HOME/repos
     $ cd $HOME/repos
     $ git clone https://github.com/cat-cfs/libcbm_py.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_data.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_aidb.git
+    $ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
+    $ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
+    $ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
 
 ## Install python packages
 
@@ -53,7 +53,7 @@ documented in https://github.com/cat-cfs/libcbm_py/issues/27
 
     pip install --upgrade pandas==1.3.5
 
-See also issue https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat/-/issues/38 
+See also issue https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/38 
 
 ## Set environment variables
 

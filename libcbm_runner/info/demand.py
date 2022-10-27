@@ -22,7 +22,7 @@ Usage:
 
 Related issues:
 
-* https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat/-/issues/8
+* https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/8
 
 This script provides a dictionary `gftm_outputs` that looks like this:
 

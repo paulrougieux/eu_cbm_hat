@@ -9,7 +9,7 @@ This python module uses pandas data frames to manipulate and store most data.
 
 * `libcbm` is a C++ library with python binding developed by the Canadian Forest Service. It is bundled into the libcbm_py python package available at https://github.com/cat-cfs/libcbm_py
 
-* `eu_cbm_data` contains the model's input and output data located at https://gitlab.com/bioeconomy/libcbm/eu_cbm_data
+* `eu_cbm_data` contains the model's input and output data located at https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data
 
 * `eu_cbm_aidb` contains the "Archive Index Databases" in a separate repository located at https://github.com/xapple/eu_cbm_aidb
 
@@ -20,11 +20,11 @@ Install `eu_cbm_hat` and HAT using [pip](https://pip.pypa.io/en/stable/), the pa
 installer for python. The repository is currently private, but you can install the 
 `eu_cbm_hat` package from python with a deploy token.
 
-    pip install git+https://jrc:xyVzrCMS4fs7GRe7pZPq@gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
+    pip install git+https://jrc:xyVzrCMS4fs7GRe7pZPq@gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 
 Note that the deploy token will not be necessary once the package is public. This 
 installation method will change, and the updated installation method will be made 
-available in the repository: https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat
+available in the repository: https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat
 
 Install libcbm using pip:
 
@@ -46,7 +46,7 @@ environment variable `EU_CBM_DATA`):
 
 Clone the repository containing the AIDB (with a deploy token)
 
-    git clone https://jrc:9Bv2ZN9fWBgJaHe2jWxz@gitlab.com/bioeconomy/libcbm/eu_cbm_aidb.git
+    git clone https://jrc:9Bv2ZN9fWBgJaHe2jWxz@gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
 
 Before running the model, you need to create AIDB symlinks at a python prompt:
 

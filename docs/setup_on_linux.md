@@ -14,14 +14,14 @@ The first step is to clone the needed git repositories. We will clone all the pr
     $ mkdir repos
     $ cd repos
     $ git clone git@github.com:cat-cfs/libcbm_py.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_data.git
+    $ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
+    $ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
 
 ## The EU AIDB
 
 Next, we must obtain a copy the European "cbm_defaults" sqlite3 database. As it's a bit larger, it's not included in the `eu_cbm_data` repository. Instead, it's in a standalone one.
 
-    $ git clone git@gitlab.com:bioeconomy/libcbm/eu_cbm_aidb.git
+    $ git clone git@gitlab.com:bioeconomy/eu_cbm/eu_cbm_aidb.git
 
  To link to those aidb inside `eu_cbm_data` use the `symlink_all_aidb` method provided in `eu_cbm_hat/pump/aidb.py`.
 

@@ -155,7 +155,7 @@ Current solution is to use one AIDB dfor each country.
   for example replacing the print statements with a mechanism that enables logging.
   Example of print statements providing information on the status of the run available
   on this old commit
-  [ab62642d6bcb](https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat/-/commit/ab62642d6bcb13e88f79973814f9a4735f7a2cbf).
+  [ab62642d6bcb](https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/commit/ab62642d6bcb13e88f79973814f9a4735f7a2cbf).
 
 
 ## Lower case variable names
