@@ -23,7 +23,7 @@ class InputYears:
 
     Create a runner and list years used in its time dependent input data sets:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> r = continent.combos['special'].runners["LU"][-1]
         >>> input_years_dict = r.qaqc.input_years.dict
         >>> print(input_years_dict)

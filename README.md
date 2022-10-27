@@ -1,6 +1,6 @@
-# `libcbm_runner` version 0.2.2
+# `eu_cbm_hat` version 0.2.2
 
-`libcbm_runner` is a python package for dealing with the automation and running of a complex series of models involving forest growth, the European economy, carbon budgets and their interactions. It uses the `libcbm` model developed by Canada under the hood.
+`eu_cbm_hat` is a python package for dealing with the automation and running of a complex series of models involving forest growth, the European economy, carbon budgets and their interactions. It uses the `libcbm` model developed by Canada under the hood.
 
 This python module uses pandas data frames to manipulate and store most data.
 
@@ -16,15 +16,15 @@ This python module uses pandas data frames to manipulate and store most data.
 
 ## Installation
 
-Install `libcbm_runner` and HAT using [pip](https://pip.pypa.io/en/stable/), the package 
+Install `eu_cbm_hat` and HAT using [pip](https://pip.pypa.io/en/stable/), the package 
 installer for python. The repository is currently private, but you can install the 
-`libcbm_runner` package from python with a deploy token.
+`eu_cbm_hat` package from python with a deploy token.
 
-    pip install git+https://jrc:xyVzrCMS4fs7GRe7pZPq@gitlab.com/bioeconomy/libcbm/libcbm_runner.git
+    pip install git+https://jrc:xyVzrCMS4fs7GRe7pZPq@gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
 
 Note that the deploy token will not be necessary once the package is public. This 
 installation method will change, and the updated installation method will be made 
-available in the repository: https://gitlab.com/bioeconomy/libcbm/libcbm_runner
+available in the repository: https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat
 
 Install libcbm using pip:
 
@@ -41,7 +41,7 @@ where the data and AIDB are located. Shell commands to define the environment va
 Copy test data to your local `libcbm_data` folder (location defined above in the 
 environment variable `LIBCBM_DATA`):
 
-    from libcbm_runner.tests.copy_data import copy_test_data
+    from eu_cbm_hat.tests.copy_data import copy_test_data
     copy_test_data()
 
 Clone the repository containing the AIDB (with a deploy token)
@@ -50,7 +50,7 @@ Clone the repository containing the AIDB (with a deploy token)
 
 Before running the model, you need to create AIDB symlinks at a python prompt:
 
-    from libcbm_runner.core.continent import continent
+    from eu_cbm_hat.core.continent import continent
     for country in continent: country.aidb.symlink_all_aidb()
 
 
@@ -69,7 +69,7 @@ instructions are available for two different platforms:
 
 Run the test country ZZ at a python prompt:
 
-    from libcbm_runner.core.continent import continent
+    from eu_cbm_hat.core.continent import continent
     runner = continent.combos['hat'].runners['ZZ'][-1]
     runner.num_timesteps = 30
     runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
@@ -129,8 +129,8 @@ well as running a mock country called "ZZ". You can see the output of these runs
 
 More documentation is available at:
 
-<http://xapple.github.io/libcbm_runner/libcbm_runner>
+<http://xapple.github.io/eu_cbm_hat/eu_cbm_hat>
 
 This documentation is simply generated with:
 
-    $ pdoc --html --output-dir docs --force libcbm_runner
+    $ pdoc --html --output-dir docs --force eu_cbm_hat

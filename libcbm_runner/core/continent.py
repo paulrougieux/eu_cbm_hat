@@ -17,9 +17,9 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache       import property_cached
 
 # Internal modules #
-from libcbm_runner import libcbm_data_dir
-from libcbm_runner.core.country import Country
-from libcbm_runner.combos       import combo_classes
+from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat.core.country import Country
+from eu_cbm_hat.combos       import combo_classes
 
 ###############################################################################
 class Continent(object):

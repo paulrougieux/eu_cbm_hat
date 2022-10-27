@@ -1,6 +1,6 @@
 # Installation
 
-This guide shows how to set up the `libcbm_data` and `libcbm_runner` projects together on a fresh Ubuntu system to run the 26 EU carbon budget simulations with `libcbm_py` automatically.
+This guide shows how to set up the `libcbm_data` and `eu_cbm_hat` projects together on a fresh Ubuntu system to run the 26 EU carbon budget simulations with `libcbm_py` automatically.
 
 ## Fresh OS
 
@@ -14,7 +14,7 @@ The first step is to clone the needed git repositories. We will clone all the pr
     $ mkdir repos
     $ cd repos
     $ git clone git@github.com:cat-cfs/libcbm_py.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_runner.git
+    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
     $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_data.git
 
 ## The EU AIDB
@@ -23,7 +23,7 @@ Next, we must obtain a copy the European "cbm_defaults" sqlite3 database. As it'
 
     $ git clone git@gitlab.com:bioeconomy/libcbm/libcbm_aidb.git
 
- To link to those aidb inside `libcbm_data` use the `symlink_all_aidb` method provided in `libcbm_runner/pump/aidb.py`.
+ To link to those aidb inside `libcbm_data` use the `symlink_all_aidb` method provided in `eu_cbm_hat/pump/aidb.py`.
 
  This temporary solution with a single AIDB for each country is meant to be changed once the AIDBs have been harmonized to a single AIDB for all countries.
 
@@ -49,7 +49,7 @@ These modules themselves have dependencies that will be auto-installed.
 The next step is to set the environment variable `$PYTHONPATH` so that our interpreter can find the repositories we just cloned. We will edit the `~/.profile` file and add these lines to it:
 
     export PYTHONPATH="$HOME/repos/libcbm_py/":$PYTHONPATH
-    export PYTHONPATH="$HOME/repos/libcbm_runner/":$PYTHONPATH
+    export PYTHONPATH="$HOME/repos/eu_cbm_hat/":$PYTHONPATH
     export LIBCBM_DATA="$HOME/repos/libcbm_data/"
     export LIBCBM_AIDB="$HOME/repos/libcbm_aidb/"
 
@@ -59,7 +59,7 @@ Run a given country from the historical scenario.
 
 You can use these commands in python:
 
-    >>> from libcbm_runner.core.continent import continent
+    >>> from eu_cbm_hat.core.continent import continent
     >>> scenario = continent.scenarios['historical']
     >>> runner_libcbm = scenario.runners['LU'][-1]
     >>> runner_libcbm.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
@@ -68,6 +68,6 @@ You can use these commands in python:
 
 To run a full scenario, proceed as so:
 
-     >>> from libcbm_runner.core.continent import continent
+     >>> from eu_cbm_hat.core.continent import continent
      >>> scen = continent.scenarios['historical']
      >>> scen()

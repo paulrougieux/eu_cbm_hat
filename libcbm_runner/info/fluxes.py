@@ -113,7 +113,7 @@ class Fluxes:
 
         # Modify column names #
         df.columns = df.columns.to_series().apply(camel_to_snake)
-        from libcbm_runner.cbm.dynamic import DynamicSimulation
+        from eu_cbm_hat.cbm.dynamic import DynamicSimulation
         sources   = DynamicSimulation.sources
         self.cols = [pool + '_prod_prop' for pool in sources]
         mapping   = dict(zip(sources, self.cols))

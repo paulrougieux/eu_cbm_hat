@@ -7,7 +7,7 @@ default:
   - pip install git+https://github.com/cat-cfs/libcbm_py.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/libcbm/libcbm_aidb.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/libcbm/libcbm_data.git
-  # Tell libcbm_runner where the data are located
+  # Tell eu_cbm_hat where the data are located
   - export LIBCBM_DATA="$CI_PROJECT_DIR/libcbm_data/"
   - export LIBCBM_AIDB="$CI_PROJECT_DIR/libcbm_aidb/"
   - python scripts/setup/aidb_symlink.py
@@ -20,9 +20,9 @@ libcbm_run:
   script:
     # The following test depends on ZZ data stored in the (private) libcbm_data repository
     - python scripts/running/run_zz.py
-    - pytest --junitxml=report.xml libcbm_runner
+    - pytest --junitxml=report.xml eu_cbm_hat
     # The following test doesn't depend on the libcbm_data repository.
-    # It uses ZZ data stored in the (public) libcbm_runner package.
+    # It uses ZZ data stored in the (public) eu_cbm_hat package.
     - python scripts/running/run_zz_in_temp_dir_without_libcbm_data.py
   artifacts:
     when: always

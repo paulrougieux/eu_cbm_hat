@@ -17,18 +17,18 @@ from plumbing.logger      import create_file_logger
 from plumbing.timer       import LogTimer
 
 # Internal modules #
-from libcbm_runner.cbm.simulation      import Simulation
-from libcbm_runner.info.demand         import Demand
-from libcbm_runner.info.fluxes         import Fluxes
-from libcbm_runner.info.input_data     import InputData
-from libcbm_runner.info.internal_data  import InternalData
-from libcbm_runner.info.output_data    import OutputData
-from libcbm_runner.info.silviculture   import Silviculture
-from libcbm_runner.launch.create_json  import CreateJSON
-from libcbm_runner.pump.post_processor import PostProcessor
-from libcbm_runner.pump.pre_processor  import PreProcessor
-from libcbm_runner.qaqc                import Qaqc
-import libcbm_runner
+from eu_cbm_hat.cbm.simulation      import Simulation
+from eu_cbm_hat.info.demand         import Demand
+from eu_cbm_hat.info.fluxes         import Fluxes
+from eu_cbm_hat.info.input_data     import InputData
+from eu_cbm_hat.info.internal_data  import InternalData
+from eu_cbm_hat.info.output_data    import OutputData
+from eu_cbm_hat.info.silviculture   import Silviculture
+from eu_cbm_hat.launch.create_json  import CreateJSON
+from eu_cbm_hat.pump.post_processor import PostProcessor
+from eu_cbm_hat.pump.pre_processor  import PreProcessor
+from eu_cbm_hat.qaqc                import Qaqc
+import eu_cbm_hat
 
 # Third party modules
 
@@ -42,7 +42,7 @@ class Runner(object):
 
     You can run a combo like this:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> combo  = continent.combos['historical']
         >>> runner = combo.runners['LU'][0]
         >>> runner.run()
@@ -207,7 +207,7 @@ class Runner(object):
         # Verbosity level #
         self.verbose = verbose
         # Messages #
-        self.log.info("Using %s." % libcbm_runner)
+        self.log.info("Using %s." % eu_cbm_hat)
         self.log.info("Runner '%s' starting." % self.short_name)
         # Start the timer #
         self.timer = LogTimer(self.log)

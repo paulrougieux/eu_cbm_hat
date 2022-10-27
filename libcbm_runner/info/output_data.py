@@ -19,7 +19,7 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.info.internal_data import InternalData
+from eu_cbm_hat.info.internal_data import InternalData
 
 ###############################################################################
 class OutputData(InternalData):
@@ -167,7 +167,7 @@ class OutputData(InternalData):
 
         Example usage:
 
-            from libcbm_runner.core.continent import continent
+            from eu_cbm_hat.core.continent import continent
             runner = continent.combos['hat'].runners['ZZ'][-1]
             pool_flux = runner.output.pool_flux
 

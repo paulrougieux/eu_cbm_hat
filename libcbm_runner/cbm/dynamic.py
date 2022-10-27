@@ -21,9 +21,9 @@ from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm import cbm_variables
 
 # Internal modules #
-from libcbm_runner.cbm.simulation import Simulation
-from libcbm_runner.core.runner import Runner
-from libcbm_runner.info.silviculture import keep_clfrs_without_question_marks
+from eu_cbm_hat.cbm.simulation import Simulation
+from eu_cbm_hat.core.runner import Runner
+from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
 # Constants #
 
 
@@ -48,7 +48,7 @@ class DynamicSimulation(Simulation):
 
     To see the simulation object:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> runner = continent.combos['special'].runners["ZZ"][-1]
         >>> runner.simulation.sources
 

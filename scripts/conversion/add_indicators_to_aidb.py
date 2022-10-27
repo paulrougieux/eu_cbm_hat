@@ -26,7 +26,7 @@ from plumbing.cache import property_cached
 from plumbing.timer import Timer
 
 # Internal modules #
-from libcbm_runner.core.continent import continent
+from eu_cbm_hat.core.continent import continent
 
 ###############################################################################
 class AddIndicators(object):

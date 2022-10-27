@@ -17,7 +17,7 @@ class ExpectedProvided:
 
     Usage:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> runner = continent.combos['hat'].runners["ZZ"][-1]
         >>> # All events including input events and HAT events
         >>> runner.qaqc.expected_provided.events

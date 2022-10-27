@@ -13,7 +13,7 @@ CBM-CFS3 to the new SQLite format supported by libcbm.
 Typically you would run this file from a command line like this on a windows
  system which has repositories in the home directory:
 
-     ipython3.exe -i -- %HOMEPATH%/repos/libcbm_runner/scripts/conversion/aidb.py
+     ipython3.exe -i -- %HOMEPATH%/repos/eu_cbm_hat/scripts/conversion/aidb.py
 
 You need to run this on a machine that has a Microsoft Access driver installed.
 So likely this will require a Windows machine.
@@ -43,7 +43,7 @@ from plumbing.cache import property_cached
 from plumbing.timer import Timer
 
 # Internal modules #
-from libcbm_runner.core.continent import continent as libcbm_continent
+from eu_cbm_hat.core.continent import continent as libcbm_continent
 
 # Continents #
 from cbmcfs3_runner.core.continent import continent as cbmcfs3_continent

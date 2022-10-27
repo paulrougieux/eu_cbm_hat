@@ -19,12 +19,12 @@ with open(readme_path, encoding='utf-8') as handle: readme = handle.read()
 
 # Call setup #
 setup(
-    name             = 'libcbm_runner',
+    name             = 'eu_cbm_hat',
     version          = '0.3.6',
-    description      = 'libcbm_runner is a python package for running carbon'
+    description      = 'eu_cbm_hat is a python package for running carbon'
                        ' budget simulations.',
     license          = 'MIT',
-    url              = 'https://github.com/xapple/libcbm_runner',
+    url              = 'https://github.com/xapple/eu_cbm_hat',
     author           = 'Lucas Sinclair',
     author_email     = 'lucas.sinclair@me.com',
     packages         = find_namespace_packages(),

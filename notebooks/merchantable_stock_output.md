@@ -16,7 +16,7 @@ jupyter:
 
 ```python
 # Import
-from libcbm_runner.core.continent import continent
+from eu_cbm_hat.core.continent import continent
 # Init
 scenario = continent.scenarios['historical']
 runner_libcbm = scenario.runners['LU'][-1]

@@ -21,8 +21,8 @@ from plumbing.cache import property_cached
 from plumbing.timer import Timer
 
 # Internal modules #
-from libcbm_runner import libcbm_data_dir
-from libcbm_runner.core.runner import Runner
+from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat.core.runner import Runner
 
 # Constant directory for all the data #
 yaml_dir = libcbm_data_dir + 'combos/'
@@ -39,13 +39,13 @@ class Combination(object):
 
     You can run a combo like this:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> combo = continent.combos['historical']
         >>> combo()
 
     You can run a specific runner from a given country like this:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> combo = continent.combos['historical']
         >>> r = combo.runners['LU'][-1]
         >>> r.run(True, True, True)

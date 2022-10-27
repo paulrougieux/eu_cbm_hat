@@ -11,8 +11,8 @@ Created on Mon Jul  4 16:28:26 2022
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.combos.base_combo import Combination
-from libcbm_runner.cbm.dynamic       import DynamicRunner
+from eu_cbm_hat.combos.base_combo import Combination
+from eu_cbm_hat.cbm.dynamic       import DynamicRunner
 
 ###############################################################################
 class Potencia_necp_bme_up200(Combination):

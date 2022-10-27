@@ -9,7 +9,7 @@ Unit D1 Bioeconomy.
 
 Check the silviculture input tables for inconsistencies
 
-    >>> from libcbm_runner.core.continent import continent
+    >>> from eu_cbm_hat.core.continent import continent
     >>> runner  = continent.combos['hat'].runners['AT'][-1]
     >>> runner.silv.check()
 
@@ -45,8 +45,8 @@ def keep_clfrs_without_question_marks(df, classifiers):
 
     Example use (will only work after simulation start):
 
-        >>> from libcbm_runner.info.silviculture import keep_clfrs_without_question_marks
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
+        >>> from eu_cbm_hat.core.continent import continent
         >>> runner  = continent.combos['hat'].runners['ZZ'][-1]
         >>> irw_frac = runner.silv.irw_frac.get_year(2016)
         >>> clfrs = list(runner.country.orig_data.classif_names.values())

@@ -11,8 +11,8 @@ Created on Wed Jun 29 16:09:00 2022
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.combos.base_combo import Combination
-from libcbm_runner.cbm.dynamic       import DynamicRunner
+from eu_cbm_hat.combos.base_combo import Combination
+from eu_cbm_hat.cbm.dynamic       import DynamicRunner
 
 ###############################################################################
 class Potencia_baseline(Combination):

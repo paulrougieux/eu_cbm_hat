@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>libcbm_runner.combos.historical API documentation</title>
+<title>eu_cbm_hat.combos.historical API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair and Paul Rougieux …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>libcbm_runner.combos.historical</code></h1>
+<h1 class="title">Module <code>eu_cbm_hat.combos.historical</code></h1>
 </header>
 <section id="section-intro">
 <p>Written by Lucas Sinclair and Paul Rougieux.</p>
@@ -45,8 +45,8 @@ Unit D1 Bioeconomy.
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.combos.base_combo import Combination
-from libcbm_runner.core.runner import Runner
+from eu_cbm_hat.combos.base_combo import Combination
+from eu_cbm_hat.core.runner import Runner
 
 ###############################################################################
 class Historical(Combination):
@@ -111,7 +111,7 @@ class HistoricalRunner(Runner):
         Compute the number of years we have to run the simulation for.
         Print all resulting years for each country:
 
-            &gt;&gt;&gt; from libcbm_runner.core.continent import continent
+            &gt;&gt;&gt; from eu_cbm_hat.core.continent import continent
             &gt;&gt;&gt; combo = continent.combos[&#39;historical&#39;]
             &gt;&gt;&gt; for code, steps in combo.runners.items():
             &gt;&gt;&gt;     r = steps[-1]
@@ -135,7 +135,7 @@ class HistoricalRunner(Runner):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="libcbm_runner.combos.historical.Historical"><code class="flex name class">
+<dt id="eu_cbm_hat.combos.historical.Historical"><code class="flex name class">
 <span>class <span class="ident">Historical</span></span>
 <span>(</span><span>continent)</span>
 </code></dt>
@@ -202,45 +202,45 @@ GFTM model.</p></div>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="libcbm_runner.combos.base_combo.Combination" href="base_combo.html#libcbm_runner.combos.base_combo.Combination">Combination</a></li>
+<li><a title="eu_cbm_hat.combos.base_combo.Combination" href="base_combo.html#eu_cbm_hat.combos.base_combo.Combination">Combination</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="libcbm_runner.combos.historical.Historical.events"><code class="name">var <span class="ident">events</span></code></dt>
+<dt id="eu_cbm_hat.combos.historical.Historical.events"><code class="name">var <span class="ident">events</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="libcbm_runner.combos.historical.Historical.growth_curves"><code class="name">var <span class="ident">growth_curves</span></code></dt>
+<dt id="eu_cbm_hat.combos.historical.Historical.growth_curves"><code class="name">var <span class="ident">growth_curves</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="libcbm_runner.combos.historical.Historical.inventory"><code class="name">var <span class="ident">inventory</span></code></dt>
+<dt id="eu_cbm_hat.combos.historical.Historical.inventory"><code class="name">var <span class="ident">inventory</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="libcbm_runner.combos.historical.Historical.short_name"><code class="name">var <span class="ident">short_name</span></code></dt>
+<dt id="eu_cbm_hat.combos.historical.Historical.short_name"><code class="name">var <span class="ident">short_name</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="libcbm_runner.combos.historical.Historical.silv"><code class="name">var <span class="ident">silv</span></code></dt>
+<dt id="eu_cbm_hat.combos.historical.Historical.silv"><code class="name">var <span class="ident">silv</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="libcbm_runner.combos.historical.Historical.transitions"><code class="name">var <span class="ident">transitions</span></code></dt>
+<dt id="eu_cbm_hat.combos.historical.Historical.transitions"><code class="name">var <span class="ident">transitions</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="libcbm_runner.combos.base_combo.Combination" href="base_combo.html#libcbm_runner.combos.base_combo.Combination">Combination</a></b></code>:
+<li><code><b><a title="eu_cbm_hat.combos.base_combo.Combination" href="base_combo.html#eu_cbm_hat.combos.base_combo.Combination">Combination</a></b></code>:
 <ul class="hlist">
-<li><code><a title="libcbm_runner.combos.base_combo.Combination.runners" href="base_combo.html#libcbm_runner.combos.base_combo.Combination.runners">runners</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.base_combo.Combination.runners" href="base_combo.html#eu_cbm_hat.combos.base_combo.Combination.runners">runners</a></code></li>
 </ul>
 </li>
 </ul>
 </dd>
-<dt id="libcbm_runner.combos.historical.HistoricalRunner"><code class="flex name class">
+<dt id="eu_cbm_hat.combos.historical.HistoricalRunner"><code class="flex name class">
 <span>class <span class="ident">HistoricalRunner</span></span>
 <span>(</span><span>combo, country, num)</span>
 </code></dt>
@@ -261,7 +261,7 @@ GFTM model.</p></div>
         Compute the number of years we have to run the simulation for.
         Print all resulting years for each country:
 
-            &gt;&gt;&gt; from libcbm_runner.core.continent import continent
+            &gt;&gt;&gt; from eu_cbm_hat.core.continent import continent
             &gt;&gt;&gt; combo = continent.combos[&#39;historical&#39;]
             &gt;&gt;&gt; for code, steps in combo.runners.items():
             &gt;&gt;&gt;     r = steps[-1]
@@ -277,15 +277,15 @@ GFTM model.</p></div>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="libcbm_runner.core.runner.Runner" href="../core/runner.html#libcbm_runner.core.runner.Runner">Runner</a></li>
+<li><a title="eu_cbm_hat.core.runner.Runner" href="../core/runner.html#eu_cbm_hat.core.runner.Runner">Runner</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="libcbm_runner.combos.historical.HistoricalRunner.num_timesteps"><code class="name">var <span class="ident">num_timesteps</span></code></dt>
+<dt id="eu_cbm_hat.combos.historical.HistoricalRunner.num_timesteps"><code class="name">var <span class="ident">num_timesteps</span></code></dt>
 <dd>
 <div class="desc"><p>Compute the number of years we have to run the simulation for.
 Print all resulting years for each country:</p>
-<pre><code>&gt;&gt;&gt; from libcbm_runner.core.continent import continent
+<pre><code>&gt;&gt;&gt; from eu_cbm_hat.core.continent import continent
 &gt;&gt;&gt; combo = continent.combos['historical']
 &gt;&gt;&gt; for code, steps in combo.runners.items():
 &gt;&gt;&gt;     r = steps[-1]
@@ -321,20 +321,20 @@ Print all resulting years for each country:</p>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="libcbm_runner.core.runner.Runner" href="../core/runner.html#libcbm_runner.core.runner.Runner">Runner</a></b></code>:
+<li><code><b><a title="eu_cbm_hat.core.runner.Runner" href="../core/runner.html#eu_cbm_hat.core.runner.Runner">Runner</a></b></code>:
 <ul class="hlist">
-<li><code><a title="libcbm_runner.core.runner.Runner.create_json" href="../core/runner.html#libcbm_runner.core.runner.Runner.create_json">create_json</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.input_data" href="../core/runner.html#libcbm_runner.core.runner.Runner.input_data">input_data</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.internal" href="../core/runner.html#libcbm_runner.core.runner.Runner.internal">internal</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.log" href="../core/runner.html#libcbm_runner.core.runner.Runner.log">log</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.modify_input" href="../core/runner.html#libcbm_runner.core.runner.Runner.modify_input">modify_input</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.output" href="../core/runner.html#libcbm_runner.core.runner.Runner.output">output</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.post_processor" href="../core/runner.html#libcbm_runner.core.runner.Runner.post_processor">post_processor</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.pre_processor" href="../core/runner.html#libcbm_runner.core.runner.Runner.pre_processor">pre_processor</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.remove_directories" href="../core/runner.html#libcbm_runner.core.runner.Runner.remove_directories">remove_directories</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.run" href="../core/runner.html#libcbm_runner.core.runner.Runner.run">run</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.simulation" href="../core/runner.html#libcbm_runner.core.runner.Runner.simulation">simulation</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.tail" href="../core/runner.html#libcbm_runner.core.runner.Runner.tail">tail</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.create_json" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.create_json">create_json</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.input_data" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.input_data">input_data</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.internal" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.internal">internal</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.log" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.log">log</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.modify_input" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.modify_input">modify_input</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.output" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.output">output</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.post_processor" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.post_processor">post_processor</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.pre_processor" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.pre_processor">pre_processor</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.remove_directories" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.remove_directories">remove_directories</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.run" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.run">run</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.simulation" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.simulation">simulation</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.tail" href="../core/runner.html#eu_cbm_hat.core.runner.Runner.tail">tail</a></code></li>
 </ul>
 </li>
 </ul>
@@ -350,26 +350,26 @@ Print all resulting years for each country:</p>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="libcbm_runner.combos" href="index.html">libcbm_runner.combos</a></code></li>
+<li><code><a title="eu_cbm_hat.combos" href="index.html">eu_cbm_hat.combos</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="libcbm_runner.combos.historical.Historical" href="#libcbm_runner.combos.historical.Historical">Historical</a></code></h4>
+<h4><code><a title="eu_cbm_hat.combos.historical.Historical" href="#eu_cbm_hat.combos.historical.Historical">Historical</a></code></h4>
 <ul class="two-column">
-<li><code><a title="libcbm_runner.combos.historical.Historical.events" href="#libcbm_runner.combos.historical.Historical.events">events</a></code></li>
-<li><code><a title="libcbm_runner.combos.historical.Historical.growth_curves" href="#libcbm_runner.combos.historical.Historical.growth_curves">growth_curves</a></code></li>
-<li><code><a title="libcbm_runner.combos.historical.Historical.inventory" href="#libcbm_runner.combos.historical.Historical.inventory">inventory</a></code></li>
-<li><code><a title="libcbm_runner.combos.historical.Historical.short_name" href="#libcbm_runner.combos.historical.Historical.short_name">short_name</a></code></li>
-<li><code><a title="libcbm_runner.combos.historical.Historical.silv" href="#libcbm_runner.combos.historical.Historical.silv">silv</a></code></li>
-<li><code><a title="libcbm_runner.combos.historical.Historical.transitions" href="#libcbm_runner.combos.historical.Historical.transitions">transitions</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.historical.Historical.events" href="#eu_cbm_hat.combos.historical.Historical.events">events</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.historical.Historical.growth_curves" href="#eu_cbm_hat.combos.historical.Historical.growth_curves">growth_curves</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.historical.Historical.inventory" href="#eu_cbm_hat.combos.historical.Historical.inventory">inventory</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.historical.Historical.short_name" href="#eu_cbm_hat.combos.historical.Historical.short_name">short_name</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.historical.Historical.silv" href="#eu_cbm_hat.combos.historical.Historical.silv">silv</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.historical.Historical.transitions" href="#eu_cbm_hat.combos.historical.Historical.transitions">transitions</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="libcbm_runner.combos.historical.HistoricalRunner" href="#libcbm_runner.combos.historical.HistoricalRunner">HistoricalRunner</a></code></h4>
+<h4><code><a title="eu_cbm_hat.combos.historical.HistoricalRunner" href="#eu_cbm_hat.combos.historical.HistoricalRunner">HistoricalRunner</a></code></h4>
 <ul class="">
-<li><code><a title="libcbm_runner.combos.historical.HistoricalRunner.num_timesteps" href="#libcbm_runner.combos.historical.HistoricalRunner.num_timesteps">num_timesteps</a></code></li>
+<li><code><a title="eu_cbm_hat.combos.historical.HistoricalRunner.num_timesteps" href="#eu_cbm_hat.combos.historical.HistoricalRunner.num_timesteps">num_timesteps</a></code></li>
 </ul>
 </li>
 </ul>

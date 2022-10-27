@@ -16,7 +16,7 @@ import pandas
 # First party modules #
 
 # Internal modules #
-from libcbm_runner.pump.long_or_wide import events_wide_to_long
+from eu_cbm_hat.pump.long_or_wide import events_wide_to_long
 
 ###############################################################################
 class PreProcessor(object):

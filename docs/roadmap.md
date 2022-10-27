@@ -1,10 +1,10 @@
 [[_TOC_]]
 
-# Bring libcbm_runner to feature parity with cbmcfs3_runner
+# Bring eu_cbm_hat to feature parity with cbmcfs3_runner
 
 - Show comparison of output pool from cbmcfs3 and libcbm. To illustrate the similarities.
 
-- Check between libcbm_runner and cbmcfs3_data scenario of the static demand the remaining inconsistency of pools specifically for the DOM and soil pools
+- Check between eu_cbm_hat and cbmcfs3_data scenario of the static demand the remaining inconsistency of pools specifically for the DOM and soil pools
 
 For some reason the AIDB of cbmcfs3 (latest AIDB from online) contains different values for the following turnovers:
 
@@ -109,9 +109,9 @@ Current solution is to use one AIDB dfor each country.
 - Better error message in the case where the AIDB is absent (or an empty symbolic link).
   Current message is table species missing.
 
-## Bring libcbm_runner to feature parity with cbmcfs3_runner
+## Bring eu_cbm_hat to feature parity with cbmcfs3_runner
 
-- Bring libcbm_runner to feature parity with cbmcfs3_runner in terms of running CBM on
+- Bring eu_cbm_hat to feature parity with cbmcfs3_runner in terms of running CBM on
   the harmonized input data for the 26 EU countries.
 
 - As of June 2021 the model output is volatile in memory. Add a mechanism to write the
@@ -140,7 +140,7 @@ Current solution is to use one AIDB dfor each country.
 
 - Creating a mechanism to define and run scenarios
 
-- Check between libcbm_runner and cbmcfs3_data scenario of the static demand the
+- Check between eu_cbm_hat and cbmcfs3_data scenario of the static demand the
   consistency of pools for merchantable, Living Biomass, Soil Organic Carbon
 
 - notebooks available
@@ -155,7 +155,7 @@ Current solution is to use one AIDB dfor each country.
   for example replacing the print statements with a mechanism that enables logging.
   Example of print statements providing information on the status of the run available
   on this old commit
-  [ab62642d6bcb](https://gitlab.com/bioeconomy/libcbm/libcbm_runner/-/commit/ab62642d6bcb13e88f79973814f9a4735f7a2cbf).
+  [ab62642d6bcb](https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat/-/commit/ab62642d6bcb13e88f79973814f9a4735f7a2cbf).
 
 
 ## Lower case variable names

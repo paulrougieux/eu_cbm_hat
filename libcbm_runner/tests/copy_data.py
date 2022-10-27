@@ -2,13 +2,13 @@
 
 Usage:
 
-    from libcbm_runner.tests.copy_data import copy_test_data
+    from eu_cbm_hat.tests.copy_data import copy_test_data
     copy_test_data()
 
 """
 import shutil
 from pathlib import Path
-from libcbm_runner import module_dir, libcbm_data_dir
+from eu_cbm_hat import module_dir, libcbm_data_dir
 
 def copy_test_data():
     """Copy tests data from the package internal test folder

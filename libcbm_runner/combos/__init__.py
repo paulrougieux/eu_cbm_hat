@@ -15,15 +15,15 @@ A list of all combo classes.
 # First party modules #
 
 # Internal modules #
-from libcbm_runner.combos.hat               import Hat
-from libcbm_runner.combos.special           import Special
-from libcbm_runner.combos.historical        import Historical
-from libcbm_runner.combos.harvest_test      import HarvestTest
-from libcbm_runner.combos.potencia_baseline import Potencia_baseline
-from libcbm_runner.combos.potencia_necp_bme_up100 import Potencia_necp_bme_up100
-from libcbm_runner.combos.potencia_necp_bme_up200 import Potencia_necp_bme_up200
-from libcbm_runner.combos.potencia_necp_bms_down50 import Potencia_necp_bms_down50
-from libcbm_runner.combos.potencia_necp_bms_down90 import Potencia_necp_bms_down90
+from eu_cbm_hat.combos.hat               import Hat
+from eu_cbm_hat.combos.special           import Special
+from eu_cbm_hat.combos.historical        import Historical
+from eu_cbm_hat.combos.harvest_test      import HarvestTest
+from eu_cbm_hat.combos.potencia_baseline import Potencia_baseline
+from eu_cbm_hat.combos.potencia_necp_bme_up100 import Potencia_necp_bme_up100
+from eu_cbm_hat.combos.potencia_necp_bme_up200 import Potencia_necp_bme_up200
+from eu_cbm_hat.combos.potencia_necp_bms_down50 import Potencia_necp_bms_down50
+from eu_cbm_hat.combos.potencia_necp_bms_down90 import Potencia_necp_bms_down90
 
 ###############################################################################
 # List all combo classes to be loaded #

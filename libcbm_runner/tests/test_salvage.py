@@ -3,14 +3,14 @@ Test salvage logging methods
 
 Execute the test suite from bash with py.test as follows:
 
-    cd ~/repos/libcbm_runner/libcbm_runner
+    cd ~/repos/eu_cbm_hat/eu_cbm_hat
     py.test
 
 Inspired by the use in pandas
 https://github.com/pandas-dev/pandas/blob/main/pandas/tests/strings/test_find_replace.py
 """
 
-from libcbm_runner.core.continent import continent
+from eu_cbm_hat.core.continent import continent
 
 combo  = continent.combos['hat']
 runner = combo.runners['ZZ'][-1]

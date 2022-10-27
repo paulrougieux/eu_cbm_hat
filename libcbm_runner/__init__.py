@@ -20,8 +20,8 @@ from autopaths.dir_path import DirectoryPath
 from plumbing.git import GitRepo
 
 # Constants #
-project_name = 'libcbm_runner'
-project_url  = 'https://github.com/xapple/libcbm_runner'
+project_name = 'eu_cbm_hat'
+project_url  = 'https://github.com/xapple/eu_cbm_hat'
 
 # Get paths to module #
 self       = sys.modules[__name__]

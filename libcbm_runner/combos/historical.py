@@ -14,8 +14,8 @@ Unit D1 Bioeconomy.
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.combos.base_combo import Combination
-from libcbm_runner.core.runner import Runner
+from eu_cbm_hat.combos.base_combo import Combination
+from eu_cbm_hat.core.runner import Runner
 
 ###############################################################################
 class Historical(Combination):
@@ -53,7 +53,7 @@ class HistoricalRunner(Runner):
         Compute the number of years we have to run the simulation for.
         Print all resulting years for each country:
 
-            >>> from libcbm_runner.core.continent import continent
+            >>> from eu_cbm_hat.core.continent import continent
             >>> combo = continent.combos['historical']
             >>> for code, steps in combo.runners.items():
             >>>     r = steps[-1]

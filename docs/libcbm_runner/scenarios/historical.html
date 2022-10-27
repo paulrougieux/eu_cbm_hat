@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>libcbm_runner.scenarios.historical API documentation</title>
+<title>eu_cbm_hat.scenarios.historical API documentation</title>
 <meta name="description" content="This scenarios represents a demand that is pre-calculated and is not a function of the
 maximum wood supply (no interaction yet with the GFTM model)." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -20,7 +20,7 @@ maximum wood supply (no interaction yet with the GFTM model)." />
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>libcbm_runner.scenarios.historical</code></h1>
+<h1 class="title">Module <code>eu_cbm_hat.scenarios.historical</code></h1>
 </header>
 <section id="section-intro">
 <p>This scenarios represents a demand that is pre-calculated and is not a function of the
@@ -43,8 +43,8 @@ maximum wood supply (no interaction yet with the GFTM model).
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.scenarios.base_scen import Scenario
-from libcbm_runner.core.runner import Runner
+from eu_cbm_hat.scenarios.base_scen import Scenario
+from eu_cbm_hat.core.runner import Runner
 
 ###############################################################################
 class Historical(Scenario):
@@ -71,7 +71,7 @@ class Historical(Scenario):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="libcbm_runner.scenarios.historical.Historical"><code class="flex name class">
+<dt id="eu_cbm_hat.scenarios.historical.Historical"><code class="flex name class">
 <span>class <span class="ident">Historical</span></span>
 <span>(</span><span>continent)</span>
 </code></dt>
@@ -98,18 +98,18 @@ the <country.start_year> until 2015, but no further.</p></div>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="libcbm_runner.scenarios.base_scen.Scenario" href="base_scen.html#libcbm_runner.scenarios.base_scen.Scenario">Scenario</a></li>
+<li><a title="eu_cbm_hat.scenarios.base_scen.Scenario" href="base_scen.html#eu_cbm_hat.scenarios.base_scen.Scenario">Scenario</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="libcbm_runner.scenarios.historical.Historical.short_name"><code class="name">var <span class="ident">short_name</span></code></dt>
+<dt id="eu_cbm_hat.scenarios.historical.Historical.short_name"><code class="name">var <span class="ident">short_name</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="libcbm_runner.scenarios.historical.Historical.runners"><code class="name">var <span class="ident">runners</span></code></dt>
+<dt id="eu_cbm_hat.scenarios.historical.Historical.runners"><code class="name">var <span class="ident">runners</span></code></dt>
 <dd>
 <div class="desc"><p>A dictionary of country codes as keys with a list of runners as values.</p></div>
 <details class="source">
@@ -142,9 +142,9 @@ the <country.start_year> until 2015, but no further.</p></div>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="libcbm_runner.scenarios.base_scen.Scenario" href="base_scen.html#libcbm_runner.scenarios.base_scen.Scenario">Scenario</a></b></code>:
+<li><code><b><a title="eu_cbm_hat.scenarios.base_scen.Scenario" href="base_scen.html#eu_cbm_hat.scenarios.base_scen.Scenario">Scenario</a></b></code>:
 <ul class="hlist">
-<li><code><a title="libcbm_runner.scenarios.base_scen.Scenario.scenarios_dir" href="base_scen.html#libcbm_runner.scenarios.base_scen.Scenario.scenarios_dir">scenarios_dir</a></code></li>
+<li><code><a title="eu_cbm_hat.scenarios.base_scen.Scenario.scenarios_dir" href="base_scen.html#eu_cbm_hat.scenarios.base_scen.Scenario.scenarios_dir">scenarios_dir</a></code></li>
 </ul>
 </li>
 </ul>
@@ -160,16 +160,16 @@ the <country.start_year> until 2015, but no further.</p></div>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="libcbm_runner.scenarios" href="index.html">libcbm_runner.scenarios</a></code></li>
+<li><code><a title="eu_cbm_hat.scenarios" href="index.html">eu_cbm_hat.scenarios</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="libcbm_runner.scenarios.historical.Historical" href="#libcbm_runner.scenarios.historical.Historical">Historical</a></code></h4>
+<h4><code><a title="eu_cbm_hat.scenarios.historical.Historical" href="#eu_cbm_hat.scenarios.historical.Historical">Historical</a></code></h4>
 <ul class="">
-<li><code><a title="libcbm_runner.scenarios.historical.Historical.runners" href="#libcbm_runner.scenarios.historical.Historical.runners">runners</a></code></li>
-<li><code><a title="libcbm_runner.scenarios.historical.Historical.short_name" href="#libcbm_runner.scenarios.historical.Historical.short_name">short_name</a></code></li>
+<li><code><a title="eu_cbm_hat.scenarios.historical.Historical.runners" href="#eu_cbm_hat.scenarios.historical.Historical.runners">runners</a></code></li>
+<li><code><a title="eu_cbm_hat.scenarios.historical.Historical.short_name" href="#eu_cbm_hat.scenarios.historical.Historical.short_name">short_name</a></code></li>
 </ul>
 </li>
 </ul>

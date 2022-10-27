@@ -1,6 +1,6 @@
 # Installation
 
-This guide shows how to set up the `libcbm_data` and `libcbm_runner` projects together on a Windows system to run the 26 EU carbon budget simulations with `libcbm_py` automatically.
+This guide shows how to set up the `libcbm_data` and `eu_cbm_hat` projects together on a Windows system to run the 26 EU carbon budget simulations with `libcbm_py` automatically.
 
 ## Install Python 3
 
@@ -27,7 +27,7 @@ Run these commands from an administrator PowerShell:
     $ New-Item -ItemType Directory -Path $HOME/repos
     $ cd $HOME/repos
     $ git clone https://github.com/cat-cfs/libcbm_py.git
-    $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_runner.git
+    $ git clone https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat.git
     $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_data.git
     $ git clone https://gitlab.com/bioeconomy/libcbm/libcbm_aidb.git
 
@@ -53,19 +53,19 @@ documented in https://github.com/cat-cfs/libcbm_py/issues/27
 
     pip install --upgrade pandas==1.3.5
 
-See also issue https://gitlab.com/bioeconomy/libcbm/libcbm_runner/-/issues/38 
+See also issue https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat/-/issues/38 
 
 ## Set environment variables
 
 Set the environment variable that tells python where the modules are located:
 
-    $ SETX PYTHONPATH "$HOME/repos/libcbm_runner;$HOME/repos/libcbm_py"
+    $ SETX PYTHONPATH "$HOME/repos/eu_cbm_hat;$HOME/repos/libcbm_py"
 
-Set the environment variable that tells `libcbm_runner` where the simulation data is located:
+Set the environment variable that tells `eu_cbm_hat` where the simulation data is located:
 
     $ SETX LIBCBM_DATA "$HOME\repos\libcbm_data"
 
-Set the environment variable that tells `libcbm_runner` where the special AIDBs are located:
+Set the environment variable that tells `eu_cbm_hat` where the special AIDBs are located:
 
     $ SETX LIBCBM_AIDB "$HOME\repos\libcbm_aidb"
 
@@ -73,7 +73,7 @@ Set the environment variable that tells `libcbm_runner` where the special AIDBs 
 
 Create symlinks for these special files (requires administrator privileges):
 
-    $ ipython -i -c "from libcbm_runner.core.continent import continent as ct; print([c.aidb.symlink_all_aidb() for c in ct])"
+    $ ipython -i -c "from eu_cbm_hat.core.continent import continent as ct; print([c.aidb.symlink_all_aidb() for c in ct])"
 
 ## Run one country
 
@@ -81,7 +81,7 @@ Run a given country from the historical scenario.
 
 You can use these commands in python:
 
-    >>> from libcbm_runner.core.continent import continent
+    >>> from eu_cbm_hat.core.continent import continent
     >>> scenario = continent.scenarios['historical']
     >>> runner_libcbm = scenario.runners['LU'][-1]
     >>> runner_libcbm.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
@@ -90,7 +90,7 @@ You can use these commands in python:
 
 To run a full scenario, proceed as so:
 
-     >>> from libcbm_runner.core.continent import continent
+     >>> from eu_cbm_hat.core.continent import continent
      >>> scen = continent.scenarios['historical']
      >>> scen()
 

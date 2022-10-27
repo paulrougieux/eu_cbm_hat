@@ -20,7 +20,7 @@ from tqdm import tqdm
 from autopaths import Path
 
 # Internal modules #
-from libcbm_runner.core.continent import continent
+from eu_cbm_hat.core.continent import continent
 
 ###############################################################################
 class OrigClassifRenamer(object):

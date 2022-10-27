@@ -16,7 +16,7 @@ Unit D1 Bioeconomy.
 from plumbing.common import camel_to_snake
 
 # Internal modules #
-from libcbm_runner.pump.classifiers import make_classif_df
+from eu_cbm_hat.pump.classifiers import make_classif_df
 
 ###############################################################################
 class InternalData(object):

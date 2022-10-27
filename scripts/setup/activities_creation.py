@@ -19,10 +19,10 @@ import pandas
 from autopaths.auto_paths import AutoPaths
 
 # Internal modules #
-from libcbm_runner                    import libcbm_data_dir
-from libcbm_runner.core.continent     import continent
-from libcbm_runner.pump.long_or_wide  import events_long_to_wide
-from libcbm_runner.pump.pre_processor import PreProcessor
+from eu_cbm_hat                    import libcbm_data_dir
+from eu_cbm_hat.core.continent     import continent
+from eu_cbm_hat.pump.long_or_wide  import events_long_to_wide
+from eu_cbm_hat.pump.pre_processor import PreProcessor
 
 # Constants #
 interface_dir = libcbm_data_dir + 'interface/'

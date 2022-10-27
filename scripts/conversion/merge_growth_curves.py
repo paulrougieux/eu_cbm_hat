@@ -32,7 +32,7 @@ from tqdm import tqdm
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.core.continent import continent as libcbm_continent
+from eu_cbm_hat.core.continent import continent as libcbm_continent
 
 # Continents #
 from cbmcfs3_runner.core.continent import continent as cbmcfs3_continent

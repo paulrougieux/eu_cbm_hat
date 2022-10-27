@@ -28,7 +28,7 @@ class InputData:
 
     Example use:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> runner = continent.combos['special'].runners["ZZ"][-1]
         >>> # Fetch the data from the country folder. 
         >>> # Necessary in case the runner has not been run yet.

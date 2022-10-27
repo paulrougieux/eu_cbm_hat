@@ -16,9 +16,9 @@ import re
 # First party modules #
 
 # Internal modules #
-from libcbm_runner.qaqc.input_years import InputYears
-from libcbm_runner.qaqc.silviculture import SilvCheck
-from libcbm_runner.qaqc.expected_provided import ExpectedProvided
+from eu_cbm_hat.qaqc.input_years import InputYears
+from eu_cbm_hat.qaqc.silviculture import SilvCheck
+from eu_cbm_hat.qaqc.expected_provided import ExpectedProvided
 
 
 class Qaqc:

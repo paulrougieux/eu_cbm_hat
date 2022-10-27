@@ -16,7 +16,7 @@ import pandas
 # First party modules #
 
 # Internal modules #
-from libcbm_runner.pump.column_order import events_cols
+from eu_cbm_hat.pump.column_order import events_cols
 
 ###############################################################################
 #------------------------ Dataframe conversions --------------------------#

@@ -4,15 +4,15 @@ It has to be run on a machine that has the libcbm_data repository. ZZ data is
 treated in an identical manner to any other country and remains under version
 control in the libcbm_data repository. However, for users who do not have
 access to the private libcbm_data repository, we disseminate this data as part
-of the libcbm_runner package. The purpose of this script is to copy data
+of the eu_cbm_hat package. The purpose of this script is to copy data
 necessary to run ZZ from the libcbm_data folder to a folder inside this package
-libcbm_runner/tests/libcbm_data
+eu_cbm_hat/tests/libcbm_data
 """
 
 from pathlib import Path
 import shutil
-from libcbm_runner import libcbm_data_dir
-from libcbm_runner import module_dir
+from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat import module_dir
 
 # Path to copy data to
 test_data_dir = Path(module_dir) / "tests/libcbm_data"

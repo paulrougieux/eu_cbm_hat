@@ -18,7 +18,7 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner.pump.long_or_wide import events_wide_to_long
+from eu_cbm_hat.pump.long_or_wide import events_wide_to_long
 
 ###############################################################################
 class OrigData(object):
@@ -31,7 +31,7 @@ class OrigData(object):
 
     To copy all the data from the `cbmcfs3_data` repository do the following:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> for country in continent: country.orig_data.copy_from_cbmcfs3()
 
     This was done at some point before the data was reorganized and changed

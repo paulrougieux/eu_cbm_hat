@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>libcbm_runner.core.runner API documentation</title>
+<title>eu_cbm_hat.core.runner API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair and Paul Rougieux …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>libcbm_runner.core.runner</code></h1>
+<h1 class="title">Module <code>eu_cbm_hat.core.runner</code></h1>
 </header>
 <section id="section-intro">
 <p>Written by Lucas Sinclair and Paul Rougieux.</p>
@@ -48,14 +48,14 @@ from plumbing.logger      import create_file_logger
 from plumbing.timer       import LogTimer
 
 # Internal modules #
-import libcbm_runner
-from libcbm_runner.launch.create_json  import CreateJSON
-from libcbm_runner.launch.simulation   import Simulation
-from libcbm_runner.info.input_data     import InputData
-from libcbm_runner.pump.output_data    import OutputData
-from libcbm_runner.pump.internal_data  import InternalData
-from libcbm_runner.pump.pre_processor  import PreProcessor
-from libcbm_runner.pump.post_processor import PostProcessor
+import eu_cbm_hat
+from eu_cbm_hat.launch.create_json  import CreateJSON
+from eu_cbm_hat.launch.simulation   import Simulation
+from eu_cbm_hat.info.input_data     import InputData
+from eu_cbm_hat.pump.output_data    import OutputData
+from eu_cbm_hat.pump.internal_data  import InternalData
+from eu_cbm_hat.pump.pre_processor  import PreProcessor
+from eu_cbm_hat.pump.post_processor import PostProcessor
 
 # Third party modules
 import pandas
@@ -70,7 +70,7 @@ class Runner(object):
 
     You can run a combo like this:
 
-        &gt;&gt;&gt; from libcbm_runner.core.continent import continent
+        &gt;&gt;&gt; from eu_cbm_hat.core.continent import continent
         &gt;&gt;&gt; combo  = continent.combos[&#39;historical&#39;]
         &gt;&gt;&gt; runner = combo.runners[&#39;LU&#39;][0]
         &gt;&gt;&gt; runner.run()
@@ -208,7 +208,7 @@ class Runner(object):
         # Verbosity level #
         self.verbose = verbose
         # Messages #
-        self.log.info(&#34;Using %s.&#34; % libcbm_runner)
+        self.log.info(&#34;Using %s.&#34; % eu_cbm_hat)
         self.log.info(&#34;Runner &#39;%s&#39; starting.&#34; % self.short_name)
         # Start the timer #
         self.timer = LogTimer(self.log)
@@ -274,7 +274,7 @@ class Runner(object):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="libcbm_runner.core.runner.Runner"><code class="flex name class">
+<dt id="eu_cbm_hat.core.runner.Runner"><code class="flex name class">
 <span>class <span class="ident">Runner</span></span>
 <span>(</span><span>combo, country, num)</span>
 </code></dt>
@@ -284,7 +284,7 @@ from a few input tables, such as an inventory and a list of disturbances
 and to bring this data all the way to the predicted carbon stock and
 fluxes.</p>
 <p>You can run a combo like this:</p>
-<pre><code>&gt;&gt;&gt; from libcbm_runner.core.continent import continent
+<pre><code>&gt;&gt;&gt; from eu_cbm_hat.core.continent import continent
 &gt;&gt;&gt; combo  = continent.combos['historical']
 &gt;&gt;&gt; runner = combo.runners['LU'][0]
 &gt;&gt;&gt; runner.run()
@@ -314,7 +314,7 @@ information from disk.
 
     You can run a combo like this:
 
-        &gt;&gt;&gt; from libcbm_runner.core.continent import continent
+        &gt;&gt;&gt; from eu_cbm_hat.core.continent import continent
         &gt;&gt;&gt; combo  = continent.combos[&#39;historical&#39;]
         &gt;&gt;&gt; runner = combo.runners[&#39;LU&#39;][0]
         &gt;&gt;&gt; runner.run()
@@ -452,7 +452,7 @@ information from disk.
         # Verbosity level #
         self.verbose = verbose
         # Messages #
-        self.log.info(&#34;Using %s.&#34; % libcbm_runner)
+        self.log.info(&#34;Using %s.&#34; % eu_cbm_hat)
         self.log.info(&#34;Runner &#39;%s&#39; starting.&#34; % self.short_name)
         # Start the timer #
         self.timer = LogTimer(self.log)
@@ -510,18 +510,18 @@ information from disk.
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="libcbm_runner.combos.historical.HistoricalRunner" href="../combos/historical.html#libcbm_runner.combos.historical.HistoricalRunner">HistoricalRunner</a></li>
+<li><a title="eu_cbm_hat.combos.historical.HistoricalRunner" href="../combos/historical.html#eu_cbm_hat.combos.historical.HistoricalRunner">HistoricalRunner</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="libcbm_runner.core.runner.Runner.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="libcbm_runner.core.runner.Runner.create_json"><code class="name">var <span class="ident">create_json</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.create_json"><code class="name">var <span class="ident">create_json</span></code></dt>
 <dd>
 <div class="desc"><p>If you see the current source code in a seemingly unrelated part of
 an auto-generated documentation, it means the program making the
@@ -553,7 +553,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.input_data"><code class="name">var <span class="ident">input_data</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.input_data"><code class="name">var <span class="ident">input_data</span></code></dt>
 <dd>
 <div class="desc"><p>Access the input data to this run. This data can be
 a modified version of the original country's CSV files.</p></div>
@@ -584,7 +584,7 @@ a modified version of the original country's CSV files.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.internal"><code class="name">var <span class="ident">internal</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.internal"><code class="name">var <span class="ident">internal</span></code></dt>
 <dd>
 <div class="desc"><p>Access and format data concerning the simulation as it is being
 run.</p></div>
@@ -615,7 +615,7 @@ run.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.log"><code class="name">var <span class="ident">log</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.log"><code class="name">var <span class="ident">log</span></code></dt>
 <dd>
 <div class="desc"><p>Each runner will have its own logger.
 By default we clear the log file when we start logging.</p></div>
@@ -646,7 +646,7 @@ By default we clear the log file when we start logging.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.num_timesteps"><code class="name">var <span class="ident">num_timesteps</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.num_timesteps"><code class="name">var <span class="ident">num_timesteps</span></code></dt>
 <dd>
 <div class="desc"><p>Compute the default number of years we have to run the simulation for.
 To do this, we select the disturbance with the highest time step.</p></div>
@@ -677,7 +677,7 @@ To do this, we select the disturbance with the highest time step.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.output"><code class="name">var <span class="ident">output</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.output"><code class="name">var <span class="ident">output</span></code></dt>
 <dd>
 <div class="desc"><p>Create and access the output data to this run.</p></div>
 <details class="source">
@@ -707,7 +707,7 @@ To do this, we select the disturbance with the highest time step.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.post_processor"><code class="name">var <span class="ident">post_processor</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.post_processor"><code class="name">var <span class="ident">post_processor</span></code></dt>
 <dd>
 <div class="desc"><p>Update or convert the output data to this run using some rules.</p></div>
 <details class="source">
@@ -737,7 +737,7 @@ To do this, we select the disturbance with the highest time step.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.pre_processor"><code class="name">var <span class="ident">pre_processor</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.pre_processor"><code class="name">var <span class="ident">pre_processor</span></code></dt>
 <dd>
 <div class="desc"><p>Update the input data to this run using some rules.</p></div>
 <details class="source">
@@ -767,7 +767,7 @@ To do this, we select the disturbance with the highest time step.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.simulation"><code class="name">var <span class="ident">simulation</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.simulation"><code class="name">var <span class="ident">simulation</span></code></dt>
 <dd>
 <div class="desc"><p>The object that can run <code>libcbm</code> simulations.</p></div>
 <details class="source">
@@ -797,7 +797,7 @@ To do this, we select the disturbance with the highest time step.</p></div>
     return result</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.tail"><code class="name">var <span class="ident">tail</span></code></dt>
+<dt id="eu_cbm_hat.core.runner.Runner.tail"><code class="name">var <span class="ident">tail</span></code></dt>
 <dd>
 <div class="desc"><p>A short summary showing just the end of the log file.</p></div>
 <details class="source">
@@ -816,7 +816,7 @@ def tail(self):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="libcbm_runner.core.runner.Runner.modify_input"><code class="name flex">
+<dt id="eu_cbm_hat.core.runner.Runner.modify_input"><code class="name flex">
 <span>def <span class="ident">modify_input</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -830,7 +830,7 @@ def tail(self):
     pass</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.remove_directories"><code class="name flex">
+<dt id="eu_cbm_hat.core.runner.Runner.remove_directories"><code class="name flex">
 <span>def <span class="ident">remove_directories</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -858,7 +858,7 @@ Note: we need to keep the log we are writing to currently.</p></div>
             element.remove()</code></pre>
 </details>
 </dd>
-<dt id="libcbm_runner.core.runner.Runner.run"><code class="name flex">
+<dt id="eu_cbm_hat.core.runner.Runner.run"><code class="name flex">
 <span>def <span class="ident">run</span></span>(<span>self, keep_in_ram=False, verbose=True, interrupt_on_error=False)</span>
 </code></dt>
 <dd>
@@ -876,7 +876,7 @@ and a given step.</p></div>
     # Verbosity level #
     self.verbose = verbose
     # Messages #
-    self.log.info(&#34;Using %s.&#34; % libcbm_runner)
+    self.log.info(&#34;Using %s.&#34; % eu_cbm_hat)
     self.log.info(&#34;Runner &#39;%s&#39; starting.&#34; % self.short_name)
     # Start the timer #
     self.timer = LogTimer(self.log)
@@ -925,28 +925,28 @@ and a given step.</p></div>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="libcbm_runner.core" href="index.html">libcbm_runner.core</a></code></li>
+<li><code><a title="eu_cbm_hat.core" href="index.html">eu_cbm_hat.core</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="libcbm_runner.core.runner.Runner" href="#libcbm_runner.core.runner.Runner">Runner</a></code></h4>
+<h4><code><a title="eu_cbm_hat.core.runner.Runner" href="#eu_cbm_hat.core.runner.Runner">Runner</a></code></h4>
 <ul class="two-column">
-<li><code><a title="libcbm_runner.core.runner.Runner.all_paths" href="#libcbm_runner.core.runner.Runner.all_paths">all_paths</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.create_json" href="#libcbm_runner.core.runner.Runner.create_json">create_json</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.input_data" href="#libcbm_runner.core.runner.Runner.input_data">input_data</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.internal" href="#libcbm_runner.core.runner.Runner.internal">internal</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.log" href="#libcbm_runner.core.runner.Runner.log">log</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.modify_input" href="#libcbm_runner.core.runner.Runner.modify_input">modify_input</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.num_timesteps" href="#libcbm_runner.core.runner.Runner.num_timesteps">num_timesteps</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.output" href="#libcbm_runner.core.runner.Runner.output">output</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.post_processor" href="#libcbm_runner.core.runner.Runner.post_processor">post_processor</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.pre_processor" href="#libcbm_runner.core.runner.Runner.pre_processor">pre_processor</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.remove_directories" href="#libcbm_runner.core.runner.Runner.remove_directories">remove_directories</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.run" href="#libcbm_runner.core.runner.Runner.run">run</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.simulation" href="#libcbm_runner.core.runner.Runner.simulation">simulation</a></code></li>
-<li><code><a title="libcbm_runner.core.runner.Runner.tail" href="#libcbm_runner.core.runner.Runner.tail">tail</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.all_paths" href="#eu_cbm_hat.core.runner.Runner.all_paths">all_paths</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.create_json" href="#eu_cbm_hat.core.runner.Runner.create_json">create_json</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.input_data" href="#eu_cbm_hat.core.runner.Runner.input_data">input_data</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.internal" href="#eu_cbm_hat.core.runner.Runner.internal">internal</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.log" href="#eu_cbm_hat.core.runner.Runner.log">log</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.modify_input" href="#eu_cbm_hat.core.runner.Runner.modify_input">modify_input</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.num_timesteps" href="#eu_cbm_hat.core.runner.Runner.num_timesteps">num_timesteps</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.output" href="#eu_cbm_hat.core.runner.Runner.output">output</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.post_processor" href="#eu_cbm_hat.core.runner.Runner.post_processor">post_processor</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.pre_processor" href="#eu_cbm_hat.core.runner.Runner.pre_processor">pre_processor</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.remove_directories" href="#eu_cbm_hat.core.runner.Runner.remove_directories">remove_directories</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.run" href="#eu_cbm_hat.core.runner.Runner.run">run</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.simulation" href="#eu_cbm_hat.core.runner.Runner.simulation">simulation</a></code></li>
+<li><code><a title="eu_cbm_hat.core.runner.Runner.tail" href="#eu_cbm_hat.core.runner.Runner.tail">tail</a></code></li>
 </ul>
 </li>
 </ul>

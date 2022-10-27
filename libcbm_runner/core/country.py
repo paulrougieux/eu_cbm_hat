@@ -18,10 +18,10 @@ from autopaths.dir_path   import DirectoryPath
 from plumbing.cache       import property_cached
 
 # Internal modules #
-from libcbm_runner                     import libcbm_data_dir
-from libcbm_runner.launch.associations import Associations
-from libcbm_runner.info.orig_data      import OrigData
-from libcbm_runner.info.aidb           import AIDB
+from eu_cbm_hat                     import libcbm_data_dir
+from eu_cbm_hat.launch.associations import Associations
+from eu_cbm_hat.info.orig_data      import OrigData
+from eu_cbm_hat.info.aidb           import AIDB
 
 # Country codes #
 all_country_codes = libcbm_data_dir + 'common/country_codes.csv'
@@ -154,7 +154,7 @@ class Country(object):
 
         Checking the consistency between the 2 functions:
 
-            >>> from libcbm_runner.core.continent import continent
+            >>> from eu_cbm_hat.core.continent import continent
             >>> country = continent.countries['ZZ']
             >>> year = country.timestep_to_year([1,2])
             >>> country.year_to_timestep(year)

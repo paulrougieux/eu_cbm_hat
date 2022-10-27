@@ -12,17 +12,17 @@ called "GFTMX". This economic model is not run dymamically, instead it
 was run once in the past and the outputs recorded in the `libcbm_data`
 repository.
 
-The wood product demand used in the `libcbm_runner` simulations is seen as the
+The wood product demand used in the `eu_cbm_hat` simulations is seen as the
 production from the perspective of the economic model.
 
 Usage:
 
-    >>> from libcbm_runner.info.demand import gftm_outputs
-    >>> from libcbm_runner.info.demand import combined
+    >>> from eu_cbm_hat.info.demand import gftm_outputs
+    >>> from eu_cbm_hat.info.demand import combined
 
 Related issues:
 
-* https://gitlab.com/bioeconomy/libcbm/libcbm_runner/-/issues/8
+* https://gitlab.com/bioeconomy/libcbm/eu_cbm_hat/-/issues/8
 
 This script provides a dictionary `gftm_outputs` that looks like this:
 
@@ -43,8 +43,8 @@ import pandas
 from plumbing.cache import property_cached
 
 # Internal modules #
-from libcbm_runner import libcbm_data_dir
-from libcbm_runner.core.country import all_country_codes
+from eu_cbm_hat import libcbm_data_dir
+from eu_cbm_hat.core.country import all_country_codes
 
 # Constant directory for all the data #
 demand_dir = libcbm_data_dir + 'demand/'

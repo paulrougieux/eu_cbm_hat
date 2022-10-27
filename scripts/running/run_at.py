@@ -11,11 +11,11 @@ A script to run Austria.
 
 Typically you would run this file from a command line like this:
 
-     ipython3 -i -- ~/deploy/libcbm_runner/scripts/running/run_at.py
+     ipython3 -i -- ~/deploy/eu_cbm_hat/scripts/running/run_at.py
 
 """
 
-from libcbm_runner.core.continent import continent
+from eu_cbm_hat.core.continent import continent
 runner  = continent.combos['hat'].runners['AT'][-1]
 runner.num_timesteps = 25
 

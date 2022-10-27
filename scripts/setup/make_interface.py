@@ -16,7 +16,7 @@ from tqdm import tqdm
 # First party modules #
 
 # Internal modules #
-from libcbm_runner.core.continent import continent
+from eu_cbm_hat.core.continent import continent
 from activities_creation import MakeActivities
 
 ###############################################################################

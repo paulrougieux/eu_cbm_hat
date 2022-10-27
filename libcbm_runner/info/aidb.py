@@ -34,12 +34,12 @@ class AIDB(object):
 
     To symlink the single test database to all countries do the following:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> for country in continent: country.aidb.symlink_single_aidb()
 
     To symlink every AIDB from every countries do the following:
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> for country in continent: country.aidb.symlink_all_aidb()
     """
 
@@ -83,7 +83,7 @@ class AIDB(object):
 
         Example:
 
-            >>>> from libcbm_runner.core.continent import continent
+            >>>> from eu_cbm_hat.core.continent import continent
             >>>> r = continent.combos['hat'].runners['ZZ'][-1]
             >>>> r.country.aidb.vol_conv_to_biomass
 

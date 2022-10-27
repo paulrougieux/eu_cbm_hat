@@ -35,7 +35,7 @@ class SilvCheck:
     Whenever possible tests are based on raw input files available before the run
     has started, when SIT is not available yet.
 
-        >>> from libcbm_runner.core.continent import continent
+        >>> from eu_cbm_hat.core.continent import continent
         >>> runner = continent.combos['special'].runners["ZZ"][-1]
 
     Check that fuel wood disturbances don't generate industrial roundwood:
