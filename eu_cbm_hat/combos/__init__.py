@@ -24,6 +24,7 @@ from eu_cbm_hat.combos.potencia_necp_bme_up100 import Potencia_necp_bme_up100
 from eu_cbm_hat.combos.potencia_necp_bme_up200 import Potencia_necp_bme_up200
 from eu_cbm_hat.combos.potencia_necp_bms_down50 import Potencia_necp_bms_down50
 from eu_cbm_hat.combos.potencia_necp_bms_down90 import Potencia_necp_bms_down90
+from eu_cbm_hat.combos.no_market_forcing import NoMarketForcing
 
 ###############################################################################
 # List all combo classes to be loaded #
@@ -32,5 +33,6 @@ combo_classes = [Historical, Special, HarvestTest, Hat,
                  Potencia_necp_bme_up100,
                  Potencia_necp_bme_up200,
                  Potencia_necp_bms_down50,
-                 Potencia_necp_bms_down90
+                 Potencia_necp_bms_down90,
+                 NoMarketForcing
                  ]
