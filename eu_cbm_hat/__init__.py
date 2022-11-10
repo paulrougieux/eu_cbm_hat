@@ -34,8 +34,15 @@ repos_dir = module_dir.directory
 git_repo = GitRepo(repos_dir, empty=True)
 
 # Where is the data, default case #
-eu_cbm_data_dir = DirectoryPath("~/repos/eu_cbm_data/")
+eu_cbm_data_dir = DirectoryPath("~/eu_cbm/eu_cbm_data/")
 
 # But you can override that with an environment variable #
 if os.environ.get("EU_CBM_DATA"):
     eu_cbm_data_dir = DirectoryPath(os.environ['EU_CBM_DATA'])
+
+# Where are the AIDBs, default case
+eu_cbm_aidb_dir = DirectoryPath("~/eu_cbm/eu_cbm_aidb/")
+
+# But you can override that with an environment variable #
+if os.environ.get("EU_CBM_AIDB"):
+    eu_cbm_aidb_dir = DirectoryPath(os.environ['EU_CBM_AIDB'])

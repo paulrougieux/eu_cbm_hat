@@ -17,13 +17,8 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache       import property_cached
 
 # Internal modules #
+from eu_cbm_hat import eu_cbm_aidb_dir
 
-# Where is the data, default case #
-aidb_repo = DirectoryPath("~/repos/eu_cbm_aidb/")
-
-# But you can override that with an environment variable #
-if os.environ.get("EU_CBM_AIDB"):
-    aidb_repo = DirectoryPath(os.environ['EU_CBM_AIDB'])
 
 ###############################################################################
 class AIDB(object):
@@ -53,7 +48,7 @@ class AIDB(object):
         # Directories #
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
         # Path to the database in a separate repository #
-        self.repo_file = aidb_repo + 'countries/' + self.parent.iso2_code \
+        self.repo_file = eu_cbm_aidb_dir + 'countries/' + self.parent.iso2_code \
                          + '/aidb.db'
 
     def __bool__(self):
@@ -118,7 +113,7 @@ class AIDB(object):
         that all countries can share and that is found in another repository.
         """
         # The path to the SQLite3 file #
-        source = DirectoryPath(aidb_repo + 'aidb.db')
+        source = DirectoryPath(eu_cbm_aidb_dir + 'aidb.db')
         # Check it exists #
         try:
             assert source
