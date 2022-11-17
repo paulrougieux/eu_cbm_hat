@@ -47,11 +47,11 @@ from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat.core.country import all_country_codes
 
 # Constant directory for all the data #
-demand_dir = eu_cbm_data_dir + 'demand/'
+demand_dir = eu_cbm_data_dir + 'domestic_harvest/'
 
 # Constant file names for every scenario #
-roundwood = "irw_demand.csv"
-fuelwood  = "fw_demand.csv"
+roundwood = "irw_harvest.csv"
+fuelwood  = "fw_harvest.csv"
 
 # A mapping between country names and codes #
 country_to_iso2 = all_country_codes[['country', 'iso2_code']]
