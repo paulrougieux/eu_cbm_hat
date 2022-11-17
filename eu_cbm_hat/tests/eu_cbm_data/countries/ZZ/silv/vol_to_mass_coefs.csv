@@ -1,7 +1,7 @@
-forest_type,wood_density,bark_frac,cbm_wd_value,coef_wd_value,diff(%)
-FS,0.602,0.2,0.602,0.58,8%
-OB,0.379,0.2,0.379,0.5,72%
-QR,0.596,0.2,0.596,0.58,9%
-PA,0.413,0.2,0.413,0.4,-3%
-DF,0.445,0.2,0.445,0.45,-10%
-OC,0.436,0.2,0.436,0.4,-8%
+forest_type,wood_density,bark_frac
+FS,0.58,0.2
+OB,0.5,0.2
+QR,0.58,0.2
+PA,0.4,0.2
+DF,0.45,0.2
+OC,0.4,0.2

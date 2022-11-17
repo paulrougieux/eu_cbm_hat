@@ -12,8 +12,12 @@ This version runs with the environment variable set to a temporary file.
 
 Typically you would run this file from a command line like this:
 
-    ipython3 -i -- ~/deploy/eu_cbm_hat/scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py
+    ipython3 -i -- ~/deploy/eu_cbm/eu_cbm_hat/scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py
 
+
+On a development machine, you can update the ZZ dataset stored inside this repository with:
+
+    ipython3 -i -- ~/deploy/eu_cbm/eu_cbm_hat/scripts/setup/copy_zz_from_libcbm_data.py
 
 """
 
