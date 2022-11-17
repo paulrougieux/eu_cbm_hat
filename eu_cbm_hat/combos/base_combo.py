@@ -88,7 +88,7 @@ class Combination(object):
         with open(yaml_path, "r") as handle:
             result = yaml.safe_load(handle)
         # Convert silvicultural choices to dataframes #
-        key = 'demand'
+        key = 'harvest'
         value = result[key]
         if not isinstance(value, str):
             df = pandas.DataFrame.from_dict(value,

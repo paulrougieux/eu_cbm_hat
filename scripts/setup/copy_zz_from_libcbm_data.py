@@ -24,7 +24,7 @@ if not test_data_dir.exists():
 # from the eu_cbm_data repository
 # I copied the output of the bash command
 #     cd ~/rp/eu_cbm_data
-#     find  combos/ common/ countries/ demand/ -type f
+#     find  combos/ common/ countries/ harvest/ -type f
 # To obtain the following lines of files necessary to run ZZ
 files = """combos/hat.yaml
 common/reference_years.csv
@@ -57,8 +57,8 @@ countries/ZZ/activities/afforestation/growth_curves.csv
 countries/ZZ/activities/afforestation/transitions.csv
 countries/ZZ/activities/afforestation/events.csv
 countries/ZZ/config/associations.csv
-demand/reference/fw_demand.csv
-demand/reference/irw_demand.csv"""
+domestic_harvest/reference/fw_harvest.csv
+domestic_harvest/reference/irw_harvest.csv"""
 
 for line in files.splitlines():
     orig_file = Path(eu_cbm_data_dir) / line

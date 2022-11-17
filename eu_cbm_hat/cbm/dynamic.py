@@ -73,7 +73,7 @@ class DynamicSimulation(Simulation):
     #--------------------------- Special Methods -----------------------------#
     def dynamics_func(self, timestep, cbm_vars, debug=False):
         """
-        First apply predetermined disturbances, then apply demand
+        First apply predetermined disturbances, then apply harvest
         specific to harvesting. The full specification for the "Harvest
         Allocation Tool" (H.A.T.) is described in:
 
@@ -183,30 +183,30 @@ class DynamicSimulation(Simulation):
         self.out_var('irw_predetermined', tot_flux_irw_vol)
         self.out_var('fw_predetermined',  tot_flux_fw_vol)
 
-        # Get demand for the current year #
+        # Get harvest for the current year #
         query  = "year == %s" % self.year
-        demand_irw_vol = self.runner.demand.irw.query(query)['value']
-        demand_fw_vol  = self.runner.demand.fw.query(query)['value']
+        harvest_irw_vol = self.runner.harvest.irw.query(query)['value']
+        harvest_fw_vol  = self.runner.harvest.fw.query(query)['value']
 
         # Convert to a cubic meter float value #
-        demand_irw_vol = demand_irw_vol.values[0] * 1000
-        demand_fw_vol  = demand_fw_vol.values[0]  * 1000
+        harvest_irw_vol = harvest_irw_vol.values[0] * 1000
+        harvest_fw_vol  = harvest_fw_vol.values[0]  * 1000
 
-        # add columns with demands
-        self.out_var('demand_irw_vol', demand_irw_vol)
-        self.out_var('demand_fw_vol',  demand_fw_vol)
+        # add columns with harvests
+        self.out_var('harvest_irw_vol', harvest_irw_vol)
+        self.out_var('harvest_fw_vol',  harvest_fw_vol)
 
-        # Calculate unsatisfied demand #
-        remain_irw_vol = demand_irw_vol - tot_flux_irw_vol
-        remain_fw_vol  = demand_fw_vol  - tot_flux_fw_vol
-        self.out_var('remain_irw_demand', remain_irw_vol)
-        self.out_var('remain_fw_demand',  remain_fw_vol)
+        # Calculate unsatisfied harvest #
+        remain_irw_vol = harvest_irw_vol - tot_flux_irw_vol
+        remain_fw_vol  = harvest_fw_vol  - tot_flux_fw_vol
+        self.out_var('remain_irw_harvest', remain_irw_vol)
+        self.out_var('remain_fw_harvest',  remain_fw_vol)
 
-        # If there is no unsatisfied demand, we stop here #
+        # If there is no unsatisfied harvest, we stop here #
         if (remain_irw_vol <= 0) and (remain_fw_vol <= 0):
             return cbm_vars
 
-        # To distribute remaining demand, first load event templates #
+        # To distribute remaining harvest, first load event templates #
         events = self.runner.silv.events.get_year(self.year)
 
         # Take only the stands that have not been disturbed yet #
@@ -310,11 +310,11 @@ class DynamicSimulation(Simulation):
             remain_irw_vol = 0.0
         else:
             if df['irw_vol'].sum() == 0.0:
-                msg = "There is remaining IRW demand this year, but there " \
+                msg = "There is remaining IRW harvest this year, but there " \
                       "are no events that enable the creation of irw."
                 raise Exception(msg)
 
-        msg = f"IRW demand {remain_irw_vol:.0f} m3."
+        msg = f"IRW harvest {remain_irw_vol:.0f} m3."
         self.parent.log.info(msg)
 
         ######################
@@ -368,7 +368,7 @@ class DynamicSimulation(Simulation):
             msg += f"{fw_salv_avail:.0f} m3 fw (colateral of IRW)."
             self.parent.log.info(msg)
 
-            # If the demand is greater than the potential, allocate only the potential
+            # If the harvest is greater than the potential, allocate only the potential
             irw_to_allocate = min(irw_salv_avail, remain_irw_vol)
 
             # Distribute evenly according to the potential irw volume produced
@@ -388,11 +388,11 @@ class DynamicSimulation(Simulation):
         self.out_var('irw_salv_avail', irw_salv_avail)
         self.out_var('fw_salv_avail', fw_salv_avail)
 
-        # If salvage logging didn't satisfies all demand
+        # If salvage logging didn't satisfies all harvest
         # Continue allocating disturbances
         if irw_salv_avail < remain_irw_vol:
             remain_irw_vol_after_salv = remain_irw_vol - irw_salv_avail
-            msg = f"Remaining IRW demand after salvage logging {remain_irw_vol_after_salv:.0f} m3.\n"
+            msg = f"Remaining IRW harvest after salvage logging {remain_irw_vol_after_salv:.0f} m3.\n"
             self.parent.log.info(msg)
             # Distribute evenly according to the potential irw volume produced #
             df_irw_silv["irw_norm"] = (df_irw_silv["irw_avail"] /
@@ -430,7 +430,7 @@ class DynamicSimulation(Simulation):
             msg += f"Potential IRW amount available from remaining disturbances: "
             msg += f"{potential_irw:.0f} m3 IRW."
             prct = 100 * remain_irw_vol / potential_irw
-            msg += f"\nIRW demand corresponds to {prct:.0f}% of the annualized available potential."
+            msg += f"\nIRW harvest corresponds to {prct:.0f}% of the annualized available potential."
             self.parent.log.info(msg)
 
             #df_irw_silv["prop"] = df_irw_silv[
@@ -445,14 +445,14 @@ class DynamicSimulation(Simulation):
             if  remain_irw_vol > potential_irw:
                 excess_prct = remain_irw_vol / potential_irw - 1
                 excess_prct = round(excess_prct*100)
-                msg = f"\nIRW demand is greater than the annualized potential by {excess_prct}%."
+                msg = f"\nIRW harvest is greater than the annualized potential by {excess_prct}%."
                 warnings.warn(msg)
 
         # Combine IRW disturbance from salvage logging with normal silviculture operations
         df_irw = pandas.concat([df_irw_salv, df_irw_silv])
 
         # Create columns if they were not created above i.e.
-        # in case there was no IRW demand at all
+        # in case there was no IRW harvest at all
         if not "irw_need" in df_irw.columns:
             df_irw["irw_need"] = 0
             df_irw["irw_norm"] = 0
@@ -467,12 +467,12 @@ class DynamicSimulation(Simulation):
         # How much firewood would this give us as a collateral product #
         df_irw['fw_colat'] = df_irw['irw_frac'] * df_irw['fw_vol']
 
-        # Subtract from remaining firewood demand #
+        # Subtract from remaining firewood harvest #
         still_remain_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
         self.out_var('still_remain_fw_vol', still_remain_fw_vol)
         colat_prct = (df_irw['fw_colat'].sum() / remain_fw_vol) * 100
         msg = f"FW Demand {remain_fw_vol:.0f} m3. "
-        msg += f"Collateral FW from IRW disturbances represents {colat_prct:.0f}% of the demand"
+        msg += f"Collateral FW from IRW disturbances represents {colat_prct:.0f}% of the harvest"
         self.parent.log.info(msg)
 
         # If there is no extra firewood needed, set to zero #
@@ -480,7 +480,7 @@ class DynamicSimulation(Simulation):
             still_remain_fw_vol = 0.0
         else:
             if df_fw['fw_vol'].sum() == 0.0:
-                msg = "There is remaining fw demand this year:"
+                msg = "There is remaining fw harvest this year:"
                 msg += f"{round(still_remain_fw_vol)} m3, "
                 msg += "but there are no events that enable the creation of fw only."
                 raise Exception(msg)
@@ -493,8 +493,8 @@ class DynamicSimulation(Simulation):
         assert math.isclose(df_fw['fw_need'].sum(), still_remain_fw_vol)
 
         potential_fw = df_fw['fw_avail'].sum()
-        demand_pot_percent = still_remain_fw_vol / potential_fw
-        msg = f"Still remaining fuel wood demand represents {demand_pot_percent*100:.0f}% "
+        harvest_pot_percent = still_remain_fw_vol / potential_fw
+        msg = f"Still remaining fuel wood harvest represents {harvest_pot_percent*100:.0f}% "
         msg += "of the annualized potential FW disturbances."
         self.parent.log.info(msg)
 
@@ -503,7 +503,7 @@ class DynamicSimulation(Simulation):
         if  still_remain_fw_vol > potential_fw:
             excess_prct = still_remain_fw_vol / potential_fw - 1
             excess_prct = round(excess_prct*100)
-            msg = "\nStill remaining fuel wood demand is greater than "
+            msg = "\nStill remaining fuel wood harvest is greater than "
             msg += "the annualized potential FW disturbances."
             msg += f"by {excess_prct}%. "
             warnings.warn(msg)

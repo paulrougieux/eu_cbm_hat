@@ -58,9 +58,9 @@ class InputYears:
         harvest_years = (re.search(r"value_(\d+)", x) for x in harvest_cols)
         harvest_years = [int(m.group(1)) for m in harvest_years if m]
 
-        # Years in the demand tables
-        irw_demand_years = self.runner.demand.irw.year.to_list()
-        fw_demand_years = self.runner.demand.fw.year.to_list()
+        # Years in the harvest tables
+        irw_harvest_years = self.runner.harvest.irw.year.to_list()
+        fw_harvest_years = self.runner.harvest.fw.year.to_list()
 
         # Years in the input events files for all activities combined
         timesteps = (self.runner.input_data["events"]
@@ -70,8 +70,8 @@ class InputYears:
 
         # Place  the list of years in a dictionary
         dict1 = {"harvest_factor": harvest_years,
-                 "irw_demand": irw_demand_years,
-                 "fw_demand": fw_demand_years}
+                 "irw_harvest": irw_harvest_years,
+                 "fw_harvest": fw_harvest_years}
 
         # Load the lists of years used in the combo scenarios
         multi_year_input = ['events_templates',

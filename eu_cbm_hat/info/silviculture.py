@@ -329,7 +329,7 @@ class VolToMassCoefs(BaseSilvInfo):
 class EventsTemplates(BaseSilvInfo):
     """
     Gives access to the dynamic events that have to be generated to
-    satisfy the demand.
+    satisfy the harvest.
     """
 
     @property

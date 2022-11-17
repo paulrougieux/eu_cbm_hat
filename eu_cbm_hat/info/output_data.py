@@ -64,7 +64,7 @@ class OutputData(InternalData):
         This is a dataframe that will contain custom reporting information
         that is filled in by the `dynamics_fun` of a running simulation.
         It has one row for each year of the simulation run and contains
-        information about demand volumes.
+        information about harvest volumes.
         """
         return pandas.DataFrame()
 

@@ -25,7 +25,7 @@ class Historical(Combination):
 
     It uses the `reference` scenario for all activities.
 
-    This combo represents a demand that is pre-calculated and is not a
+    This combo represents a harvest that is pre-calculated and is not a
     function of the maximum wood supply. There is no interaction yet with the
     GFTM model.
     """

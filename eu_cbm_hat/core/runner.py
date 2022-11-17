@@ -18,7 +18,7 @@ from plumbing.timer       import LogTimer
 
 # Internal modules #
 from eu_cbm_hat.cbm.simulation      import Simulation
-from eu_cbm_hat.info.demand         import Demand
+from eu_cbm_hat.info.harvest         import Demand
 from eu_cbm_hat.info.fluxes         import Fluxes
 from eu_cbm_hat.info.input_data     import InputData
 from eu_cbm_hat.info.internal_data  import InternalData
@@ -124,8 +124,8 @@ class Runner(object):
         return Qaqc(self)
 
     @property_cached
-    def demand(self):
-        """Access the specific demand values for this simulation run."""
+    def harvest(self):
+        """Access the specific harvest values for this simulation run."""
         return Demand(self)
 
     @property_cached
