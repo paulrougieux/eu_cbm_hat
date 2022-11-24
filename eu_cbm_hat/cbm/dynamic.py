@@ -422,6 +422,7 @@ class DynamicSimulation(Simulation):
                                        harvest[harvest_join_cols + ['skew']],
                                        how='inner', on=harvest_join_cols)
 
+            # Modify the harvest distribution coefficient by the skew along each grouping variable
             df_irw_silv["irw_norm_skew"] = (df_irw_silv["irw_norm"]
                                             * df_irw_silv["skew"]
                                             / df_irw_silv["irw_norm_agg"])
