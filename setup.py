@@ -23,7 +23,7 @@ setup(
     version          = '0.4.0',
     description      = 'eu_cbm_hat is a python package for running carbon'
                        ' budget simulations.',
-    license          = 'MIT',
+    license          = 'EUPL',
     url              = 'https://github.com/xapple/eu_cbm_hat',
     author           = 'Lucas Sinclair',
     author_email     = 'lucas.sinclair@me.com',
