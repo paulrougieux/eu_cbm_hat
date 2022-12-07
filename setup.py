@@ -24,7 +24,7 @@ setup(
     description      = 'eu_cbm_hat is a python package for running carbon'
                        ' budget simulations.',
     license          = 'EUPL',
-    url              = 'https://github.com/xapple/eu_cbm_hat',
+    url              = 'https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat',
     author           = 'Lucas Sinclair',
     author_email     = 'lucas.sinclair@me.com',
     packages         = find_namespace_packages(),

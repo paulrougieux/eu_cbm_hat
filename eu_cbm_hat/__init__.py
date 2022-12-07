@@ -21,7 +21,7 @@ from plumbing.git import GitRepo
 
 # Constants #
 project_name = 'eu_cbm_hat'
-project_url  = 'https://github.com/xapple/eu_cbm_hat'
+project_url  = 'https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat'
 
 # Get paths to module #
 self       = sys.modules[__name__]
