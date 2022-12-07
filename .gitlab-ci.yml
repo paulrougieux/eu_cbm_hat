@@ -14,8 +14,19 @@ default:
   - python scripts/setup/aidb_symlink.py
 
 stages:
-  - test
   - document
+  - test
+
+pages:
+  stage: document
+  script:
+  - pdoc -o docs ./eu_cbm_hat
+  artifacts:
+    paths:
+    - docs/eu_cbm_hat
+  only:
+  - main
+  interruptible: true
 
 libcbm_run:
   stage: test
@@ -31,13 +42,3 @@ libcbm_run:
     reports:
       junit: report.xml
 
-pages:
-  stage: document
-  script:
-  - pdoc --html --output-dir docs --force eu_cbm_hat
-  artifacts:
-    paths:
-    - docs/eu_cbm_hat
-  only:
-  - main
-  interruptible: true
