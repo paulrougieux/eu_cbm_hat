@@ -4,6 +4,7 @@ default:
   - python --version
   - pip install .[extras]
   - pip install pytest
+  - pip install pdoc
   - pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
@@ -14,6 +15,7 @@ default:
 
 stages:
   - test
+  - document
 
 libcbm_run:
   stage: test
@@ -28,3 +30,14 @@ libcbm_run:
     when: always
     reports:
       junit: report.xml
+
+pages:
+  stage: document
+  script:
+  - pdoc --html --output-dir docs --force eu_cbm_hat
+  artifacts:
+    paths:
+    - docs/eu_cbm_hat
+  only:
+  - main
+  interruptible: true
