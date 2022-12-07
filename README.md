@@ -1,28 +1,34 @@
-# `eu_cbm_hat` version 0.2.2
+# EU-CBM-HAT
 
 The forest carbon model `eu_cbm_hat` is a python package that enables the assessment of 
 forest CO2 emissions and removals under scenarios of forest management, natural 
 disturbances, forest-related land use changes.
+
+EU-CBM-HAT depends on the [libcbm model](https://github.com/cat-cfs/libcbm_py) developed 
+by Forest Carbon Accounting team of the Canadian Forest Service. Both python modules use 
+[pandas data frames](https://pandas.pydata.org/) to transform and load data.
+
+
+## Licence
 
 This program is free software: you can redistribute it and/or modify it under the terms 
 of the European Union Public Licence, either version 1.2 of the License, or (at your 
 option) any later version. See [LICENCE.txt](LICENCE.txt) and [NOTICE.txt](NOTICE.txt) 
 for more information on the licence of components.
 
-It uses the [libcbm model](https://github.com/cat-cfs/libcbm_py) developed by Forest 
-Carbon Accounting team of the Canadian Forest Service.
-
-This python module uses [pandas data frames](https://pandas.pydata.org/) to manipulate 
-and store most data.
-
 
 ## Dependencies
 
-* `libcbm` is a C++ library with python binding developed by the Canadian Forest Service. It is bundled into the libcbm_py python package available at https://github.com/cat-cfs/libcbm_py
+* `libcbm` is a C++ library with python binding developed by the Canadian Forest 
+  Service. It is bundled into the libcbm_py python package available at 
+  https://github.com/cat-cfs/libcbm_py
 
-* `eu_cbm_data` contains the model's input and output data located at https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data
+* `eu_cbm_data` contains the model's input and output data located at 
+  https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data . In 2022, this is a private 
+  repository subject to ongoing research.
 
-* `eu_cbm_aidb` contains the "Archive Index Databases" in a separate repository located at https://github.com/xapple/eu_cbm_aidb
+* `eu_cbm_aidb` contains the "Archive Index Databases" in a separate repository located 
+  at https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb
 
 
 ## Installation

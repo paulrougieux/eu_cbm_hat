@@ -16,3 +16,6 @@
 # which are automatically synchronized with `jupytext`
 *.ipynb
 .ipynb_checkpoints
+
+# Generated documentation
+docs
