@@ -27,6 +27,7 @@ setup(
     url              = 'https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat',
     author           = 'Lucas Sinclair',
     author_email     = 'lucas.sinclair@me.com',
+    maintainer       = 'Paul Rougieux',
     packages         = find_namespace_packages(),
     install_requires = ['autopaths>=1.6.0', 'plumbing>=2.11.1',
                         'pymarktex>=1.4.6', 'pandas', 'simplejson', 'pyyaml',
