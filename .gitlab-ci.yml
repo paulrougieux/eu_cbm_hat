@@ -20,10 +20,9 @@ stages:
 pages:
   stage: document
   script:
-  - pdoc -o docs ./eu_cbm_hat
   # GitLab Pages will only publish files in the public directory
-  - mkdir public
-  - cp -r docs/eu_cbm_hat/* public/
+  - pdoc -o public ./eu_cbm_hat
+  #- pdoc -o test ./eu_cbm_hat/core
   artifacts:
     paths:
     - public
