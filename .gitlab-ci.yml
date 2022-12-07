@@ -21,9 +21,9 @@ pages:
   stage: document
   script:
   - pdoc -o docs ./eu_cbm_hat
-  artifacts:
-    paths:
-    - docs/eu_cbm_hat
+  # GitLab Pages will only publish files in the public directory
+  - mkdir public
+  - cp -r docs/eu_cbm_hat/* public/
   only:
   - main
   interruptible: true
