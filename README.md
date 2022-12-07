@@ -145,9 +145,9 @@ well as running a mock country called "ZZ". You can see the output of these runs
 ## Extra documentation
 
 More documentation is available at:
+https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html 
 
-<http://xapple.github.io/eu_cbm_hat/eu_cbm_hat>
+This documentation is simply generated in `.gitlab-ci.yml` with:
 
-This documentation is simply generated with:
+    $ pdoc -o public ./eu_cbm_hat
 
-    $ pdoc --html --output-dir docs --force eu_cbm_hat
