@@ -24,6 +24,9 @@ pages:
   # GitLab Pages will only publish files in the public directory
   - mkdir public
   - cp -r docs/eu_cbm_hat/* public/
+  artifacts:
+    paths:
+    - public
   only:
   - main
   interruptible: true
