@@ -4,6 +4,11 @@ The forest carbon model `eu_cbm_hat` is a python package that enables the assess
 forest CO2 emissions and removals under scenarios of forest management, natural 
 disturbances, forest-related land use changes.
 
+This program is free software: you can redistribute it and/or modify it under the terms 
+of the European Union Public Licence, either version 1.2 of the License, or (at your 
+option) any later version. See [NOTICE.txt](NOTICE.txt) for more information on the 
+licence of components.
+
 It uses the [libcbm model](https://github.com/cat-cfs/libcbm_py) developed by Forest 
 Carbon Accounting team of the Canadian Forest Service.
 
