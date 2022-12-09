@@ -6,6 +6,14 @@ Written by Lucas Sinclair and Paul Rougieux.
 
 JRC Biomass Project.
 Unit D1 Bioeconomy.
+
+- The core simulation tools are documented at `eu_cbm_hat.core`.
+- Scenario combinations are defined in `eu_cbm_hat.combos` (the current
+mechanism is subjected to change to allow user defined scenarios, provide
+feedback under [issue
+50](https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/50) ).
+- The Harvest Allocation Tool is implemented in `eu_cbm_hat.cbm.dynamic`.
+
 """
 
 # Special variables #
