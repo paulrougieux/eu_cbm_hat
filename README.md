@@ -38,10 +38,6 @@ for python.
 
     pip install git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 
-Note that the deploy token will not be necessary once the package is public. This 
-installation method will change, and the updated installation method will be made 
-available in the repository: https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat
-
 Install libcbm using pip - currently only version 1 is supported:
 
     pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
