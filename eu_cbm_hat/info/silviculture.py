@@ -373,7 +373,7 @@ class HarvestFactors(BaseSilvInfo):
     @property
     def cols(self):
         cols = ['forest_type', 'mgmt_type', 'disturbance_type', 'con_broad']
-        cols = cols + ['product_created']
+        cols = cols + ['product_created', 'silv_practice']
         return cols
 
     @property
