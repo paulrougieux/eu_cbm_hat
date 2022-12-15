@@ -49,8 +49,13 @@ class DynamicSimulation(Simulation):
     To see the simulation object:
 
         >>> from eu_cbm_hat.core.continent import continent
-        >>> runner = continent.combos['special'].runners["ZZ"][-1]
+        >>> runner = continent.combos['hat'].runners["ZZ"][-1]
         >>> runner.simulation.sources
+
+    Compare to another scenario with skew by clear cut and thinning disturbances
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['skewccth'].runners["ZZ"][-1]
 
     """
 
@@ -414,6 +419,13 @@ class DynamicSimulation(Simulation):
                 if not any(harvest[col].isna()):
                     harvest_join_cols.append(col)
 
+            # If silv_practice is defined in harvest factors then use
+            # self.runner.fluxes.df to add the silv_practice column to
+            # df_irw_silv
+            if "silv_practice" in harvest_join_cols:
+                df_silv_practice = self.runner.fluxes.df[["disturbance_type", "silv_practice"]]
+                df_irw_silv = df_irw_silv.merge(df_silv_practice, on="disturbance_type")
+
             # Aggregate the normalized value by groups
             df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
             
@@ -439,6 +451,7 @@ class DynamicSimulation(Simulation):
             # Calculate how much volume we need from each stand #
             df_irw_silv["irw_need"] = (remain_irw_vol_after_salv *
                                              df_irw_silv["irw_norm_skew"])
+            breakpoint()
             assert math.isclose(df_irw_silv["irw_need"].sum(),
                                 remain_irw_vol_after_salv)
             # The user is free to over allocate IRW, but will be a warning if the
