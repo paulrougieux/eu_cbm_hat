@@ -34,8 +34,7 @@ for more information on the licence of components.
 ## Installation
 
 Install `eu_cbm_hat` using [pip](https://pip.pypa.io/en/stable/), the package installer 
-for python. The repository is currently private, but you can install the `eu_cbm_hat` 
-package from python with a deploy token.
+for python.
 
     pip install git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 
@@ -47,27 +46,31 @@ Install libcbm using pip - currently only version 1 is supported:
 
     pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
 
-By default, the data is located in your home folder:
+By default, the data is located in your home folder. You can display the location where 
+the data should be with these python commands:
 
-- On Unix the data is in `"~/eu_cbm/eu_cbm_data/` and the AIBD in 
-  `~/eu_cbm/eu_cbm_aidb/`
-- On windows the data is `C:\Users\user_name\eu_cbm\eu_cbm_data` and the AIBD in 
-  `C:\Users\user_name\eu_cbm\eu_cbm_aidb`
+    import eu_cbm_hat
+    eu_cbm_hat.eu_cbm_data_dir
+    eu_cbm_hat.eu_cbm_aidb_dir
 
-The model will work if you make sure these folders exist on your system. Optionally, you 
-can define the following environment variables to tell the model where the data and AIDB 
-are located. Shell commands to define the environment variables:
+|                        | On Unix                 | On windows                              |
+| ---------------------- | ----------------------- | --------------------------------------- |
+| Data                   | `~/eu_cbm/eu_cbm_data/` | `C:\Users\user_name\eu_cbm\eu_cbm_data` |
+| Archive Index Database | `~/eu_cbm/eu_cbm_aidb/` | `C:\Users\user_name\eu_cbm\eu_cbm_aidb` |
 
-    export EU_CBM_DATA="path_on_your_computer/eu_cbm_data/"
-    export EU_CBM_AIDB="path_on_your_computer/eu_cbm_aidb/"
 
-Copy test data to your local `eu_cbm_data` folder (location defined above in the 
-environment variable `EU_CBM_DATA`):
+The model will work once these folders exist on your system. Optionally, you can define 
+the environment variables `EU_CBM_DATA` and `EU_CBM_AIDB` to tell the model where the 
+data and AIDB are located.
+
+Copy test data to your local `eu_cbm_data` folder (location defined above in python in 
+`eu_cbm_hat.eu_cbm_data_dir`):
 
     from eu_cbm_hat.tests.copy_data import copy_test_data
     copy_test_data()
 
-Clone the repository containing the AIDB (with a deploy token)
+Clone the repository containing the AIDB (with a deploy token) inside your home folder 
+in the parent directory of the path given by `eu_cbm_hat.eu_cbm_aidb_dir`:
 
     git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
 
