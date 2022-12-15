@@ -118,3 +118,34 @@ class SilvCheck:
         # input_events = self.runner.input_data["events"]
         # check_question_marks(input_events, "input events from the activities folder", clfrs)
 
+    def cc_th_and_dist_matrix_proportion(self):
+        """Check that clear cut disturbances are the ones that remove most of the merch biomass
+
+        Rank fluxes to merchantable pool to check clear cut disturbances
+        are actually the ones with the highest proportion in the dist matrix
+
+        ! requires SIT
+
+        Example use :
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['hat'].runners['ZZ'][-1]
+            >>> # Run at least one present time step so that SIT is available
+            >>> runner.num_timesteps = runner.country.base_year - runner.country.inventory_start_year + 1
+            >>> runner.run()
+            >>> runner.qaqc.silv_check.cc_th_and_dist_matrix_proportion()
+
+        """
+        cols = ['user_name', 'silv_practice', 'hardwood_merch_prod_prop', 'softwood_merch_prod_prop']
+        df = self.runner.fluxes.df.sort_values("hardwood_merch_prod_prop", ascending=False)[cols]
+        return df
+
+    def check_cc_th_and_dist_matrix_proportion(self, threshold=0.79):
+        merch_cols = ['hardwood_merch_prod_prop', 'softwood_merch_prod_prop']
+        df = self.runner.cc_th_and_dist_matrix_proportion()
+        assert all(df.loc[df["silv_practice"]=="th"][merch_cols] < threshold)
+        assert all(df.loc[df["silv_practice"]=="cc"][merch_cols] > threshold)
+
+
+
+

@@ -24,6 +24,19 @@ class Fluxes:
     """
     Access to the information about fluxes that each disturbance creates.
     This data is extracted from the AIDB.
+
+    Example use check that clear cut disturbances are the ones that remove most of the merch biomass:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['hat'].runners['ZZ'][-1]
+        >>> # Run at least one present time step so that SIT is available
+        >>> runner.num_timesteps = runner.country.base_year - runner.country.inventory_start_year + 1
+        >>> runner.run()
+        >>> # Rank fluxes to merchantable pool to check clear cut disturbances
+        >>> # are actually the ones with the highest proportion in the dist matrix
+        >>> cols = ['user_name', 'silv_practice', 'hardwood_merch_prod_prop', 'softwood_merch_prod_prop']
+        >>> runner.fluxes.df.sort_values("hardwood_merch_prod_prop", ascending=False)[cols]
+
     """
 
     def __init__(self, runner, debug=False):
