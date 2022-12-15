@@ -47,10 +47,16 @@ Install libcbm using pip - currently only version 1 is supported:
 
     pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
 
-By default, the data is located in "~/repos/eu_cbm_data/" and the AIBD in 
-“~/repos/eu_cbm_aidb/”. The model will work if you make sure these folders exist on your 
-system. Optionally, you can define the following environment variables to tell the model 
-where the data and AIDB are located. Shell commands to define the environment variables:
+By default, the data is located in your home folder:
+
+- On Unix the data is in `"~/eu_cbm/eu_cbm_data/` and the AIBD in 
+  `~/eu_cbm/eu_cbm_aidb/`
+- On windows the data is `C:\Users\user_name\eu_cbm\eu_cbm_data` and the AIBD in 
+  `C:\Users\user_name\eu_cbm\eu_cbm_aidb`
+
+The model will work if you make sure these folders exist on your system. Optionally, you 
+can define the following environment variables to tell the model where the data and AIDB 
+are located. Shell commands to define the environment variables:
 
     export EU_CBM_DATA="path_on_your_computer/eu_cbm_data/"
     export EU_CBM_AIDB="path_on_your_computer/eu_cbm_aidb/"
