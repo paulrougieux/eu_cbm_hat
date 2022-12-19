@@ -15,6 +15,7 @@ A list of all combo classes.
 # First party modules #
 
 # Internal modules #
+from eu_cbm_hat.combos.reference               import Reference
 from eu_cbm_hat.combos.hat               import Hat
 from eu_cbm_hat.combos.skewccth          import Skewccth
 from eu_cbm_hat.combos.special           import Special
@@ -29,7 +30,8 @@ from eu_cbm_hat.combos.no_market_forcing import NoMarketForcing
 
 ###############################################################################
 # List all combo classes to be loaded #
-combo_classes = [Historical,
+combo_classes = [Reference, 
+                 Historical,
                  HarvestTest,
                  Hat,
                  NoMarketForcing,
