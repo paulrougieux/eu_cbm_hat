@@ -441,7 +441,7 @@ class DynamicSimulation(Simulation):
             
 
             # Merge disturbances and harvest factors
-            df_irw_silv = pandas.merge(df_irw_silv, 
+            df_irw_silv = pandas.merge(df_irw_silv,
                                        harvest[harvest_join_cols + ['skew']],
                                        how='inner',
                                        on=harvest_join_cols)
@@ -450,6 +450,19 @@ class DynamicSimulation(Simulation):
             df_irw_silv["irw_norm_skew"] = (df_irw_silv["irw_norm"]
                                             * df_irw_silv["skew"]
                                             / df_irw_silv["irw_norm_agg"])
+
+            # Raise an error if irw_norm_skew sums to one
+            if not math.isclose(df_irw_silv["irw_norm_skew"].sum(), 1):
+                msg = "IRW norm skew doesn't sum to one."
+                msg += "The normalized available merchantable roundwood is distributed as follows:\n"
+                msg += f"{df_irw_silv.groupby(harvest_join_cols)['irw_norm_agg'].unique()}\n"
+                msg += "The harvest factors are distributed as follows:\n"
+                msg += f"{ harvest[harvest_join_cols + ['skew']]}\n "
+                msg += "This means that some combinations of silvicultural practices "
+                msg += "are either not present in the events template "
+                msg += "or not eligible in the stock."
+                msg += "Correct the input in havest_factors.csv."
+                raise ValueError(msg)
 
             potential_irw = df_irw_silv["irw_avail"].sum()
             msg += f"Potential IRW amount available from remaining disturbances: "
@@ -463,7 +476,6 @@ class DynamicSimulation(Simulation):
             # Calculate how much volume we need from each stand #
             df_irw_silv["irw_need"] = (remain_irw_vol_after_salv *
                                              df_irw_silv["irw_norm_skew"])
-            breakpoint()
             assert math.isclose(df_irw_silv["irw_need"].sum(), remain_irw_vol_after_salv)
             # The user is free to over allocate IRW, but will be a warning if the
             # allocation is over the potential annualized availability.
