@@ -3,7 +3,7 @@ Test salvage silviculture methods
 
 Execute the test suite from bash with py.test as follows:
 
-    cd ~/repos/eu_cbm_hat/eu_cbm_hat
+    cd ~/repos/eu_cbm/eu_cbm_hat/eu_cbm_hat
     pytest
 
 """
@@ -18,6 +18,7 @@ runner = combo.runners['ZZ'][-1]
 harvest_factors_1 = {'scenario': ['reference', 'reference', 'reference', 'no_skew', 'no_skew'],
                      'product_created': ['irw_and_fw', 'irw_and_fw', 'fw_only', 'irw_and_fw', 'fw_only'],
                      'forest_type': np.nan,
+                     'silv_practice': np.nan,
                      'mgmt_type': np.nan,
                      'con_broad': ['con', 'broad', np.nan, np.nan, np.nan],
                      'disturbance_type': np.nan,
