@@ -55,7 +55,7 @@ class DynamicSimulation(Simulation):
     Compare to another scenario with skew by clear cut and thinning disturbances
 
         >>> from eu_cbm_hat.core.continent import continent
-        >>> runner = continent.combos['skewccth'].runners["ZZ"][-1]
+        >>> runner = continent.combos['skewfcth'].runners["ZZ"][-1]
 
     """
 

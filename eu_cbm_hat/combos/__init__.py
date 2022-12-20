@@ -16,7 +16,7 @@ A list of all combo classes.
 
 # Internal modules #
 from eu_cbm_hat.combos.hat               import Hat
-from eu_cbm_hat.combos.skewccth          import Skewccth
+from eu_cbm_hat.combos.skewfcth          import Skewfcth
 from eu_cbm_hat.combos.special           import Special
 from eu_cbm_hat.combos.historical        import Historical
 from eu_cbm_hat.combos.harvest_test      import HarvestTest
@@ -38,6 +38,6 @@ combo_classes = [Historical,
                  Potencia_necp_bme_up200,
                  Potencia_necp_bms_down50,
                  Potencia_necp_bms_down90,
-                 Skewccth,
+                 Skewfcth,
                  Special,
                  ]
