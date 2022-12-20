@@ -401,7 +401,7 @@ class DynamicSimulation(Simulation):
             self.parent.log.info(msg)
             # Distribute evenly according to the potential irw volume produced #
             df_irw_silv["irw_norm"] = (df_irw_silv["irw_avail"] /
-                                             df_irw_silv["irw_avail"].sum())
+                                       df_irw_silv["irw_avail"].sum())
 
             # Skew the normalized value based on the harvest skew factors
             # We will retrieve the harvest skew factors for the current year #
@@ -426,13 +426,25 @@ class DynamicSimulation(Simulation):
                 df_silv_practice = self.runner.fluxes.df[["disturbance_type", "silv_practice"]]
                 df_irw_silv = df_irw_silv.merge(df_silv_practice, on="disturbance_type")
 
+                # Check silv practices are actually present in disturbance_types.csv
+                hfsp = harvest.silv_practice.unique()
+                distsp = self.runner.fluxes.df["silv_practice"].unique()
+                if not set(hfsp).issubset(distsp):
+                    msg = "silv_practice defined in harvest_factors.csv: "
+                    msg += f"{hfsp}"
+                    msg +=  " do not match the ones in disturbance_types.csv: "
+                    msg += f"{distsp}"
+                    raise ValueError(msg)
+
             # Aggregate the normalized value by groups
             df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
             
+
             # Merge disturbances and harvest factors
-            df_irw_silv = pandas.merge(df_irw_silv,
+            df_irw_silv = pandas.merge(df_irw_silv, 
                                        harvest[harvest_join_cols + ['skew']],
-                                       how='inner', on=harvest_join_cols)
+                                       how='inner',
+                                       on=harvest_join_cols)
 
             # Modify the harvest distribution coefficient by the skew along each grouping variable
             df_irw_silv["irw_norm_skew"] = (df_irw_silv["irw_norm"]
@@ -452,8 +464,7 @@ class DynamicSimulation(Simulation):
             df_irw_silv["irw_need"] = (remain_irw_vol_after_salv *
                                              df_irw_silv["irw_norm_skew"])
             breakpoint()
-            assert math.isclose(df_irw_silv["irw_need"].sum(),
-                                remain_irw_vol_after_salv)
+            assert math.isclose(df_irw_silv["irw_need"].sum(), remain_irw_vol_after_salv)
             # The user is free to over allocate IRW, but will be a warning if the
             # allocation is over the potential annualized availability.
             if  remain_irw_vol > potential_irw:
