@@ -18,12 +18,12 @@ from eu_cbm_hat.combos.base_combo import Combination
 from eu_cbm_hat.cbm.dynamic       import DynamicRunner
 
 ###############################################################################
-class Skewccth(Combination):
+class Skewfcth(Combination):
     """
     A Combination used for the Harvest Allocation Tool (HAT).
     """
 
-    short_name = 'skewccth'
+    short_name = 'skewfcth'
 
     @property_cached
     def runners(self):

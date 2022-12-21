@@ -49,8 +49,13 @@ class DynamicSimulation(Simulation):
     To see the simulation object:
 
         >>> from eu_cbm_hat.core.continent import continent
-        >>> runner = continent.combos['special'].runners["ZZ"][-1]
+        >>> runner = continent.combos['hat'].runners["ZZ"][-1]
         >>> runner.simulation.sources
+
+    Compare to another scenario with skew by clear cut and thinning disturbances
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['skewfcth'].runners["ZZ"][-1]
 
     """
 
@@ -396,7 +401,7 @@ class DynamicSimulation(Simulation):
             self.parent.log.info(msg)
             # Distribute evenly according to the potential irw volume produced #
             df_irw_silv["irw_norm"] = (df_irw_silv["irw_avail"] /
-                                             df_irw_silv["irw_avail"].sum())
+                                       df_irw_silv["irw_avail"].sum())
 
             # Skew the normalized value based on the harvest skew factors
             # We will retrieve the harvest skew factors for the current year #
@@ -414,18 +419,50 @@ class DynamicSimulation(Simulation):
                 if not any(harvest[col].isna()):
                     harvest_join_cols.append(col)
 
+            # If silv_practice is defined in harvest factors then use
+            # self.runner.fluxes.df to add the silv_practice column to
+            # df_irw_silv
+            if "silv_practice" in harvest_join_cols:
+                df_silv_practice = self.runner.fluxes.df[["disturbance_type", "silv_practice"]]
+                df_irw_silv = df_irw_silv.merge(df_silv_practice, on="disturbance_type")
+
+                # Check silv practices are actually present in disturbance_types.csv
+                hfsp = harvest.silv_practice.unique()
+                distsp = self.runner.fluxes.df["silv_practice"].unique()
+                if not set(hfsp).issubset(distsp):
+                    msg = "silv_practice defined in harvest_factors.csv: "
+                    msg += f"{hfsp}"
+                    msg +=  " do not match the ones in disturbance_types.csv: "
+                    msg += f"{distsp}"
+                    raise ValueError(msg)
+
             # Aggregate the normalized value by groups
             df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
             
+
             # Merge disturbances and harvest factors
             df_irw_silv = pandas.merge(df_irw_silv,
                                        harvest[harvest_join_cols + ['skew']],
-                                       how='inner', on=harvest_join_cols)
+                                       how='inner',
+                                       on=harvest_join_cols)
 
             # Modify the harvest distribution coefficient by the skew along each grouping variable
             df_irw_silv["irw_norm_skew"] = (df_irw_silv["irw_norm"]
                                             * df_irw_silv["skew"]
                                             / df_irw_silv["irw_norm_agg"])
+
+            # Raise an error if irw_norm_skew sums to one
+            if not math.isclose(df_irw_silv["irw_norm_skew"].sum(), 1):
+                msg = "IRW norm skew doesn't sum to one."
+                msg += "The normalized available merchantable roundwood is distributed as follows:\n"
+                msg += f"{df_irw_silv.groupby(harvest_join_cols)['irw_norm_agg'].unique()}\n"
+                msg += "The harvest factors are distributed as follows:\n"
+                msg += f"{ harvest[harvest_join_cols + ['skew']]}\n "
+                msg += "This means that some combinations of silvicultural practices "
+                msg += "are either not present in the events template "
+                msg += "or not eligible in the stock."
+                msg += "Correct the input in havest_factors.csv."
+                raise ValueError(msg)
 
             potential_irw = df_irw_silv["irw_avail"].sum()
             msg += f"Potential IRW amount available from remaining disturbances: "
@@ -439,8 +476,7 @@ class DynamicSimulation(Simulation):
             # Calculate how much volume we need from each stand #
             df_irw_silv["irw_need"] = (remain_irw_vol_after_salv *
                                              df_irw_silv["irw_norm_skew"])
-            assert math.isclose(df_irw_silv["irw_need"].sum(),
-                                remain_irw_vol_after_salv)
+            assert math.isclose(df_irw_silv["irw_need"].sum(), remain_irw_vol_after_salv)
             # The user is free to over allocate IRW, but will be a warning if the
             # allocation is over the potential annualized availability.
             if  remain_irw_vol > potential_irw:

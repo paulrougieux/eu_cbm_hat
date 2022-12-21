@@ -54,7 +54,6 @@ the data should be with these python commands:
 | Data                   | `~/eu_cbm/eu_cbm_data/` | `C:\Users\user_name\eu_cbm\eu_cbm_data` |
 | Archive Index Database | `~/eu_cbm/eu_cbm_aidb/` | `C:\Users\user_name\eu_cbm\eu_cbm_aidb` |
 
-
 The model will work once these folders exist on your system. Optionally, you can define 
 the environment variables `EU_CBM_DATA` and `EU_CBM_AIDB` to tell the model where the 
 data and AIDB are located.
