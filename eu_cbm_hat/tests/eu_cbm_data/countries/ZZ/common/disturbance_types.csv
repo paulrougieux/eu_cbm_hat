@@ -1,17 +1,17 @@
-dist_type_name,dist_desc_input
-2,Fire
-3,Wild Fire
-4,Generic 85% (STORM stand replacing)
-5,Generic 60% (INSECTS widespread)
-7,Deforestation
-8,Afforestation
-11,Generic 15%
-12,15% commercial thinning
-14,20% commercial thinning
-16,30% commercial thinning
-18,35% commercial thinning
-21,Clearcut  with slash burn (broad based on area)
-22,Generic 90 % mortality (clearcut conif on area)
-29,Salvage year 1 post-storm id4
-30,Salvage year 2 post-storm id4
-42,Insects with salvage logging (within year)
+dist_type_name,dist_desc_input,silv_practice
+2,Fire,#NA
+3,Wild Fire,#NA
+4,Generic 85% (STORM stand replacing),sr
+5,Generic 60% (INSECTS widespread),nr
+7,Deforestation,sr
+8,Afforestation,#NA
+11,Generic 15%,th
+12,15% commercial thinning,th
+14,20% commercial thinning,th
+16,30% commercial thinning,th
+18,35% commercial thinning,th
+21,Clearcut  with slash burn (broad based on area),fc
+22,Generic 90 % mortality (clearcut conif on area),fc
+29,Salvage year 1 post-storm id4,sr
+30,Salvage year 2 post-storm id4,sr
+42,Insects with salvage logging (within year),nr
