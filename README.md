@@ -38,9 +38,17 @@ for python.
 
     pip install git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 
-Install libcbm using pip - currently only version 1 is supported:
+
+Install libcbm using pip. Note: currently only version 1 is supported. Update to version 
+2 is under discussion in [issue 
+53](https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/53):
 
     pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
+
+Over time it's important to regularly upgrade the 2 packages with:
+
+    pip install --upgrade git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
+    pip install --upgrade git+https://github.com/cat-cfs/libcbm_py.git@1.x
 
 By default, the data is located in your home folder. You can display the location where 
 the data should be with these python commands:
