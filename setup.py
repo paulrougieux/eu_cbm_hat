@@ -34,6 +34,7 @@ setup(
                         'tqdm', 'p_tqdm', 'pyarrow'],
     extras_require   = {'extras': ['pystache', 'matplotlib', 'numexpr']},
     python_requires  = ">=3.8",
+    scripts=['scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py'],
     long_description = readme,
     long_description_content_type = 'text/markdown',
     include_package_data = True,
