@@ -13,6 +13,8 @@ Unit D1 Bioeconomy.
 # Third party modules #
 from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm import cbm_simulator
+from libcbm.model.cbm.cbm_output import CBMOutput
+from libcbm.storage.backends import BackendType
 
 # First party modules #
 
@@ -20,7 +22,6 @@ from libcbm.model.cbm import cbm_simulator
 
 # Constants #
 create_proc = sit_cbm_factory.create_sit_rule_based_processor
-create_func = cbm_simulator.create_in_memory_reporting_func
 
 ###############################################################################
 class Simulation(object):
@@ -115,7 +116,7 @@ class Simulation(object):
         init_inv = sit_cbm_factory.initialize_inventory
         self.clfrs, self.inv = init_inv(self.sit)
         # This will contain results #
-        self.results, self.reporting_func = create_func()
+        self.cbm_output = CBMOutput(backend_type=BackendType.numpy)
         # Create a CBM object #
         with sit_cbm_factory.initialize_cbm(self.sit) as self.cbm:
             # Create a function to apply rule based events #
@@ -129,12 +130,12 @@ class Simulation(object):
                 classifiers       = self.clfrs,
                 inventory         = self.inv,
                 pre_dynamics_func = self.dynamics_func,
-                reporting_func    = self.reporting_func
+                reporting_func    = self.cbm_output.append_simulation_result,
             )
         # If we got here then we did not encounter any simulation error #
         self.error = False
         # Return for convenience #
-        return self.results
+        return self.cbm_output
 
     def clear(self):
         """
@@ -147,3 +148,4 @@ class Simulation(object):
         if hasattr(self, 'inv'):            del self.inv
         if hasattr(self, 'results'):        del self.results
         if hasattr(self, 'reporting_func'): del self.reporting_func
+        if hasattr(self, 'cbm_output'):     del self.cbm_output
