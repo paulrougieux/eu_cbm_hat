@@ -14,7 +14,10 @@ Unit D1 Bioeconomy.
 from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm import cbm_simulator
 from libcbm.model.cbm.cbm_output import CBMOutput
+from libcbm.model.cbm.cbm_variables import CBMVariables
+from libcbm.storage import dataframe
 from libcbm.storage.backends import BackendType
+
 
 # First party modules #
 
@@ -39,7 +42,7 @@ class Simulation(object):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
 
     #--------------------------- Special Methods -----------------------------#
-    def switch_period(self, cbm_vars):
+    def switch_period(self, cbm_vars: CBMVariables) -> CBMVariables:
         """
         If t=1, we know this is the first timestep, and nothing has yet been
         done to the post-spinup pools. It is at this moment that we want to
@@ -57,11 +60,15 @@ class Simulation(object):
         # Get the corresponding ID in the libcbm simulation #
         id_of_cur = self.sit.classifier_value_ids[key][val]
         # Modify the whole column of the dataframe #
-        cbm_vars.classifiers[key] = id_of_cur
+        classifiers = cbm_vars.classifiers.to_pandas()
+        classifiers[key] = id_of_cur
+        # Default would be int64 but libcbm_matrix expects an int32
+        classifiers[key] = classifiers[key].astype("int32")
+        cbm_vars.classifiers = dataframe.from_pandas(classifiers)
         # Return #
         return cbm_vars
 
-    def dynamics_func(self, timestep, cbm_vars):
+    def dynamics_func(self, timestep:int, cbm_vars: CBMVariables) -> CBMVariables:
         """
         See the simulate method of the `libcbm_py` simulator:
 
