@@ -60,11 +60,7 @@ class Simulation(object):
         # Get the corresponding ID in the libcbm simulation #
         id_of_cur = self.sit.classifier_value_ids[key][val]
         # Modify the whole column of the dataframe #
-        classifiers = cbm_vars.classifiers.to_pandas()
-        classifiers[key] = id_of_cur
-        # Default would be int64 but libcbm_matrix expects an int32
-        classifiers[key] = classifiers[key].astype("int32")
-        cbm_vars.classifiers = dataframe.from_pandas(classifiers)
+        cbm_vars.classifiers[key].assign(id_of_cur)
         # Return #
         return cbm_vars
 
