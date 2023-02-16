@@ -15,7 +15,6 @@ from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm import cbm_simulator
 from libcbm.model.cbm.cbm_output import CBMOutput
 from libcbm.model.cbm.cbm_variables import CBMVariables
-from libcbm.storage import dataframe
 from libcbm.storage.backends import BackendType
 
 

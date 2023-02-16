@@ -113,11 +113,11 @@ class DynamicSimulation(Simulation):
 
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)
-        end_vars = cbm_variables.prepare(end_vars)
+        # end_vars = cbm_variables.prepare(end_vars)
         end_vars = self.cbm.step(end_vars)
 
-        # Check we always have the same sized dataframes #
-        get_num_rows = lambda name: len(getattr(end_vars, name))
+        # Check that all data frames in cbm_vars have the same size #
+        get_num_rows = lambda name: getattr(end_vars, name).n_rows
         assert len({get_num_rows(name) for name in self.df_names}) == 1
 
         # The age and land_class columns appears twice #
