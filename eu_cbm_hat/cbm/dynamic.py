@@ -128,9 +128,8 @@ class DynamicSimulation(Simulation):
         get_num_rows = lambda name: getattr(end_vars, name).n_rows
         assert len({get_num_rows(name) for name in self.df_names}) == 1
 
-
         # Concatenate dataframes together by columns into one big df #
-        stands = pandas.concat([cbm_vars_to_df(end_vars,name) 
+        stands = pandas.concat([cbm_vars_to_df(end_vars,name)
                                 for name in self.df_names], axis=1)
 
         # Check that the 'Input' column is always one and remove #
