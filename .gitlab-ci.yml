@@ -5,7 +5,7 @@ default:
   - pip install .[extras]
   - pip install pytest
   - pip install pdoc
-  - pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
+  - pip install git+https://github.com/cat-cfs/libcbm_py.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
   # Tell eu_cbm_hat where the data are located
