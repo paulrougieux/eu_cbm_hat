@@ -28,20 +28,6 @@ reference,For,PA,LU00,H,E,35,con,1,Cur,16,30% commercial thinning,0.85,0.1,0.5,0
 reference,For,DF,LU00,H,E,45,con,1,Cur,16,30% commercial thinning,0.85,0.1,0.5,0,0.85,0.1,0.5,0
 reference,For,OC,LU00,H,E,45,con,1,Cur,16,30% commercial thinning,0.85,0.1,0.5,0,0.85,0.1,0.5,0
 reference,For,PA,LU00,H,E,45,con,1,Cur,16,30% commercial thinning,0.85,0.1,0.5,0,0.85,0.1,0.5,0
-reference,For,FS,LU00,H,E,35,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,OB,LU00,H,E,35,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,QR,LU00,H,E,35,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,QR,LU00,C,E,35,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,FS,LU00,H,E,45,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,OB,LU00,H,E,45,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,QR,LU00,H,E,45,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,QR,LU00,C,E,45,broad,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,DF,LU00,H,E,35,con,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,OC,LU00,H,E,35,con,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,PA,LU00,H,E,35,con,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,DF,LU00,H,E,45,con,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,OC,LU00,H,E,45,con,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
-reference,For,PA,LU00,H,E,45,con,1,Cur,18,35% commercial thinning,0,0,0,0,0,0,0,0
 reference,For,FS,LU00,H,E,35,broad,1,Cur,21,Clearcut  with slash burn (broad based on area),0.75,0.1,0.5,0,0.75,0.1,0.5,0
 reference,For,OB,LU00,H,E,35,broad,1,Cur,21,Clearcut  with slash burn (broad based on area),0.75,0.1,0.5,0,0.75,0.1,0.5,0
 reference,For,QR,LU00,C,E,35,broad,1,Cur,21,Clearcut  with slash burn (broad based on area),0.75,0.1,0.5,0,0.75,0.1,0.5,0
@@ -60,5 +46,7 @@ reference,For,PA,LU00,H,E,35,con,1,Cur,30,Salvage year 2 post-storm id4,0,0,0.1,
 reference,For,PA,LU00,H,E,45,con,1,Cur,30,Salvage year 2 post-storm id4,0,0,0.1,0,0,0,0.1,0
 reference,For,PA,LU00,H,E,35,con,1,Cur,42,Insects with salvage logging (within year),0.85,0,0.5,0,0.85,0,0.5,0
 reference,For,PA,LU00,H,E,45,con,1,Cur,42,Insects with salvage logging (within year),0.85,0,0.5,0,0.85,0,0.5,0
-reference,AR,QR,LU00,H,E,35,broad,1,Cur,18,35% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
-reference,AR,QR,LU00,H,E,45,broad,1,Cur,18,35% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+reference,For,FS,LU00,H,E,35,broad,1,Cur,18,35% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+reference,For,OB,LU00,H,E,35,broad,1,Cur,18,35% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+reference,For,FS,LU00,H,E,45,broad,1,Cur,18,35% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+reference,For,OB,LU00,H,E,45,broad,1,Cur,18,35% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
