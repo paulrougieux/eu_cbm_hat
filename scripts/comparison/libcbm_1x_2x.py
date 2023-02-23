@@ -80,6 +80,10 @@ shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_2.parquet
 zz1 = pandas.read_parquet(comp_dir / "zz_output_libcbm_1.parquet")
 zz2 = pandas.read_parquet(comp_dir / "zz_output_libcbm_2.parquet")
 
+
+#################################
+# Dumb comparison line for line #
+#################################
 # Check the ones with different disturbance types
 zz3 = zz2.copy()
 zz3["diff"] = zz1["disturbance_type"] - zz2["disturbance_type"]
@@ -88,7 +92,6 @@ zz3["disturbance_type_v2"] = zz2["disturbance_type"]
 zz3.query("diff!=0")
 # It seems the data frames are not aligned
 
-# Sort values
 index = ['timestep',
          'disturbance_type',
          'status',
@@ -103,6 +106,7 @@ index = ['timestep',
          'year',
          'age_class',
         ]
+# Sort values by the index
 zz1.sort_values(index, inplace=True)
 zz1.reset_index(inplace=True, drop=True)
 zz2.sort_values(index, inplace=True)
@@ -114,7 +118,7 @@ zz4["diff"] = zz1["disturbance_type"] - zz2["disturbance_type"]
 zz4["disturbance_type_v1"] = zz1["disturbance_type"]
 zz4["disturbance_type_v2"] = zz2["disturbance_type"]
 zz4.query("diff!=0")
-# It seems the data frames are not aligned
+# zz4.query("diff!=0").to_csv("/tmp/zz4.csv")
 
 
 print("zz1.equals(zz2):", zz1.equals(zz2))
@@ -126,6 +130,26 @@ for col in zz1.columns:
         print(diff)
     else:
         print(f"{col} is of string type")
+
+
+############################
+# Summarise by index variables and merge #
+############################
+# Aggregate
+variables = ['hardwood_merch',
+             'softwood_merch',
+             'softwood_merch_to_product',
+             'hardwood_merch_to_product',
+            ]
+zz1_agg = zz1.groupby(index)[variables].agg(sum).reset_index()
+zz2_agg = zz2.groupby(index)[variables].agg(sum).reset_index()
+
+# Merge
+zz5_agg = zz1_agg.merge(zz2_agg, on=index, how="outer")
+
+# diff 
+zz5_agg["hwm_diff"]  = zz5_agg["hardwood_merch_y"] - zz5_agg["hardwood_merch_x"]
+# zz5_agg.query("hwm_diff !=0").to_csv("/tmp/hwmdiff.csv")
 
 
 
