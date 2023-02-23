@@ -38,8 +38,9 @@ r_zz.num_timesteps = 30
 # Checkout the libcbm 1x branch and tag v of eu_cbm_hat
 # cd ~/repos/eu_cbm/libcbm_py/
 # git checkout 1.x
+# eu_cbm_hat v0.6.1 is still compatible with libcbm version 1
 # cd ~/repos/eu_cbm/eu_cbm_hat/
-# git checkout main
+# git checkout tags/v0.6.1
 
 # Run the models
 r_at.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
@@ -50,6 +51,7 @@ r_zz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 
 # Copy resulting parquet files to a specific folder in eu_cbm_data
+shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_1.parquet")
 
 ######################################################################
 # Run Libcbm version 2 and store results in the comparison directory #
