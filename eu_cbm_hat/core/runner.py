@@ -208,7 +208,11 @@ class Runner(object):
         self.verbose = verbose
         # Messages #
         self.log.info("Using %s." % eu_cbm_hat)
+        self.log.info("")
+        self.log.info("Running the '%s' combination of scenarios" % self.combo.short_name)
+        self.log.info("for %s " % self.country.country_name)
         self.log.info("Runner '%s' starting." % self.short_name)
+        self.log.info("")
         # Start the timer #
         self.timer = LogTimer(self.log)
         self.timer.print_start()
