@@ -77,6 +77,57 @@ shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_2.parquet
 ###################
 # Compare the resulting parquet files
 
-zzout1 = pandas.read_parquet(comp_dir / "zz_output_libcbm_1.parquet")
-zzout2 = pandas.read_parquet(comp_dir / "zz_output_libcbm_2.parquet")
+zz1 = pandas.read_parquet(comp_dir / "zz_output_libcbm_1.parquet")
+zz2 = pandas.read_parquet(comp_dir / "zz_output_libcbm_2.parquet")
+
+# Check the ones with different disturbance types
+zz3 = zz2.copy()
+zz3["diff"] = zz1["disturbance_type"] - zz2["disturbance_type"]
+zz3["disturbance_type_v1"] = zz1["disturbance_type"]
+zz3["disturbance_type_v2"] = zz2["disturbance_type"]
+zz3.query("diff!=0")
+# It seems the data frames are not aligned
+
+# Sort values
+index = ['timestep',
+         'disturbance_type',
+         'status',
+         'forest_type',
+         'region',
+         'mgmt_type',
+         'mgmt_strategy',
+         'climate',
+         'con_broad',
+         'site_index',
+         'growth_period',
+         'year',
+         'age_class',
+        ]
+zz1.sort_values(index, inplace=True)
+zz1.reset_index(inplace=True, drop=True)
+zz2.sort_values(index, inplace=True)
+zz2.reset_index(inplace=True, drop=True)
+
+# There are less differences now
+zz4 = zz2.copy()
+zz4["diff"] = zz1["disturbance_type"] - zz2["disturbance_type"]
+zz4["disturbance_type_v1"] = zz1["disturbance_type"]
+zz4["disturbance_type_v2"] = zz2["disturbance_type"]
+zz4.query("diff!=0")
+# It seems the data frames are not aligned
+
+
+print("zz1.equals(zz2):", zz1.equals(zz2))
+
+for col in zz1.columns:
+    if pandas.api.types.is_numeric_dtype(zz1[col]):
+        diff = zz1[col] - zz2[col]
+        print(f"\n{col}:", diff.abs().sum() / zz1[col].sum())
+        print(diff)
+    else:
+        print(f"{col} is of string type")
+
+
+
+
 
