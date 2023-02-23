@@ -35,10 +35,10 @@ r_zz.num_timesteps = 30
 ######################################################################
 # Run Libcbm version 1 and store results in the comparison directory #
 ######################################################################
-# Checkout the libcbm 1x branch and tag v of eu_cbm_hat
+# eu_cbm_hat v0.6.1 is compatible with libcbm version 1
+# Checkout the libcbm 1x branch and tag v0.6.1 of eu_cbm_hat
 # cd ~/repos/eu_cbm/libcbm_py/
 # git checkout 1.x
-# eu_cbm_hat v0.6.1 is still compatible with libcbm version 1
 # cd ~/repos/eu_cbm/eu_cbm_hat/
 # git checkout tags/v0.6.1
 
@@ -56,7 +56,7 @@ shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_1.parquet
 ######################################################################
 # Run Libcbm version 2 and store results in the comparison directory #
 ######################################################################
-# Checkout the libcm 2x branch and the libcbm 2 branch of eu_cbm_hat
+# Checkout the libcm 2x branch and the libcbm2 branch of eu_cbm_hat
 # cd ~/repos/eu_cbm/libcbm_py/
 # git checkout 2.x
 # cd ~/repos/eu_cbm/eu_cbm_hat/
