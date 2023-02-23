@@ -37,9 +37,9 @@ r_zz.num_timesteps = 30
 ######################################################################
 # Checkout the libcbm 1x branch and tag v of eu_cbm_hat
 # cd ~/repos/eu_cbm/libcbm_py/
-# git checkout 2.x
+# git checkout 1.x
 # cd ~/repos/eu_cbm/eu_cbm_hat/
-# git checkout libcbm2
+# git checkout main
 
 # Run the models
 r_at.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
