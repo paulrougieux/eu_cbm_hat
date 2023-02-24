@@ -46,6 +46,8 @@ r_zz.num_timesteps = 30
 # cd ~/repos/eu_cbm/eu_cbm_hat/
 # git checkout tags/v0.6.1
 
+# TODO: create a function run_and_store_in_comp(runner, version)
+# That runs the model and stores the comparison resulting file
 if RUN_LIBCBM1:
     # Run the models
     r_at.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
