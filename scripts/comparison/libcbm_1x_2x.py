@@ -16,6 +16,10 @@ from pathlib import Path
 import pandas
 from eu_cbm_hat.core.continent import continent
 
+
+RUN_LIBCBM1 = False
+RUN_LIBCBM2 = False
+
 # Destination directory to store and compare results
 comp_dir = Path(continent.base_dir) / "output" / "comparison"
 if not comp_dir.exists():
@@ -42,16 +46,14 @@ r_zz.num_timesteps = 30
 # cd ~/repos/eu_cbm/eu_cbm_hat/
 # git checkout tags/v0.6.1
 
-# Run the models
-r_at.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-r_cz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-r_se.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-r_zz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-
-
-
-# Copy resulting parquet files to a specific folder in eu_cbm_data
-shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_1.parquet")
+if RUN_LIBCBM1:
+    # Run the models
+    r_at.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    r_cz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    r_se.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    r_zz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    # Copy resulting parquet files to a specific folder in eu_cbm_data
+    shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_1.parquet")
 
 ######################################################################
 # Run Libcbm version 2 and store results in the comparison directory #
@@ -62,14 +64,14 @@ shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_1.parquet
 # cd ~/repos/eu_cbm/eu_cbm_hat/
 # git checkout libcbm2
 
-# Run the models
-r_at.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-r_cz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-r_se.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-r_zz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-
-# Copy resulting parquet files to a specific folder in eu_cbm_data
-shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_2.parquet")
+if RUN_LIBCBM2:
+    # Run the models
+    r_at.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    r_cz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    r_se.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    r_zz.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    # Copy resulting parquet files to a specific folder in eu_cbm_data
+    shutil.copy(r_zz.output.paths["results"], comp_dir / "zz_output_libcbm_2.parquet")
 
 
 ###################
@@ -106,6 +108,7 @@ index = ['timestep',
          'year',
          'age_class',
         ]
+
 # Sort values by the index
 zz1.sort_values(index, inplace=True)
 zz1.reset_index(inplace=True, drop=True)
@@ -147,9 +150,10 @@ zz2_agg = zz2.groupby(index)[variables].agg(sum).reset_index()
 # Merge
 zz5_agg = zz1_agg.merge(zz2_agg, on=index, how="outer")
 
-# diff 
+# diff
 zz5_agg["hwm_diff"]  = zz5_agg["hardwood_merch_y"] - zz5_agg["hardwood_merch_x"]
-# zz5_agg.query("hwm_diff !=0").to_csv("/tmp/hwmdiff.csv")
+zz5_agg["swm_diff"]  = zz5_agg["softwood_merch_y"] - zz5_agg["softwood_merch_x"]
+# zz5_agg.query("hwm_diff !=0 or swm_diff !=0").to_csv("/tmp/hwmdiff.csv", index=False)
 
 
 
