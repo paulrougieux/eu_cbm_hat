@@ -12,8 +12,6 @@ Typically you would run this file from a command line like this:
 
 from eu_cbm_hat.core.continent import continent
 runner = continent.combos['reference'].runners['FI'][-1]
-r.country.base_year=2021
-reference_year = r.country.inventory_start_year
-r.num_timesteps = 2050 - reference_year
-country_name = r.country.country_name
-r.run(True, True, True)
+runner.country.base_year = 2021
+runner.num_timesteps = 2050 - runner.country.inventory_start_year
+runner.run(True, True, True)
