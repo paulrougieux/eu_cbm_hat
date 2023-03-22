@@ -12,6 +12,11 @@ A script to run the imaginary `ZZ` country to test the pipeline.
 Typically you would run this file from a command line like this:
 
      ipython3 -i ~/repos/eu_cbm/eu_cbm_hat/scripts/running/run_zz.py
+
+Run with the profiler
+
+    %run -i -p run_zz.py
+
 """
 
 # Internal modules #

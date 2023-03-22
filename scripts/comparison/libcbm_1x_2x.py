@@ -161,3 +161,10 @@ zz5_agg["swm_diff"]  = zz5_agg["softwood_merch_y"] - zz5_agg["softwood_merch_x"]
 
 
 
+
+####################################################################
+# Make a reproducible data set that can be run with libcbm_py only #
+####################################################################
+
+
+
