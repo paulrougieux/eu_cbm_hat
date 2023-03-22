@@ -162,6 +162,14 @@ class DynamicSimulation(Simulation):
                               on=clfrs_noq + ["disturbance_type"],
                               suffixes=('_fluxes', ''))
         assert sum_flux_before_merge == fluxes[cols_to_product].sum().sum()
+        missing_irw_frac = fluxes[self.sources].isna().any(axis=1)
+        has_flux_to_prod =  fluxes[cols_to_product].sum(axis=1)>1
+        selector = missing_irw_frac & has_flux_to_prod
+        if any(selector):
+            msg = "Industrial roundwood fractions defined in irw_frac_by_dist.csv "
+            msg += "do not have irw fractions for the following classifiers:\n"
+            msg += f"{fluxes[selector]}"
+            raise ValueError(msg)
 
         # Join the wood density and bark fraction parameters also #
         coefs = self.runner.silv.coefs.df
