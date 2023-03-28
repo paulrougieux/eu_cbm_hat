@@ -6,6 +6,13 @@ Written by Lucas Sinclair and Paul Rougieux.
 
 JRC Biomass Project.
 Unit D1 Bioeconomy.
+
+Usage:
+
+    >>> from eu_cbm_hat.core.continent import continent
+    >>> runner = continent.combos['special'].runners["ZZ"][-1]
+    >>> runner.qaqc.aidb_check.run_all_checks()
+
 """
 
 # Built-in modules #
@@ -34,7 +41,7 @@ class AIDBCheck:
         self.runner = qaqc.runner
         self.aidb = self.runner.country.aidb
 
-    def run_all_check(self):
+    def run_all_checks(self):
         """Run all AIDB checks"""
         self.check_vol_to_bio_factor_id_duplication()
 
