@@ -18,6 +18,7 @@ import re
 # Internal modules #
 from eu_cbm_hat.qaqc.input_years import InputYears
 from eu_cbm_hat.qaqc.silviculture import SilvCheck
+from eu_cbm_hat.qaqc.aidb import AIDBCheck
 from eu_cbm_hat.qaqc.expected_provided import ExpectedProvided
 
 
@@ -44,3 +45,8 @@ class Qaqc:
     def expected_provided(self):
         """Check harvest expected versus provided"""
         return ExpectedProvided(self)
+
+    @property
+    def aidb_check(self):
+        """Check the consistency of the aidb"""
+        return AIDBCheck(self)
