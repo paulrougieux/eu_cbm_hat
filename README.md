@@ -1,46 +1,51 @@
 # EU-CBM-HAT
 
-The forest carbon model `eu_cbm_hat` is a python package that enables the assessment of 
-forest CO2 emissions and removals under scenarios of forest management, natural 
+The forest carbon model `eu_cbm_hat` is a python package that enables the assessment of
+forest CO2 emissions and removals under scenarios of forest management, natural
 disturbances, forest-related land use changes.
 
-EU-CBM-HAT depends on the [libcbm model](https://github.com/cat-cfs/libcbm_py) developed 
-by Forest Carbon Accounting team of the Canadian Forest Service. Both python modules use 
+EU-CBM-HAT depends on the [libcbm model](https://github.com/cat-cfs/libcbm_py) developed
+by Forest Carbon Accounting team of the Canadian Forest Service. Both python modules use
 [pandas data frames](https://pandas.pydata.org/) to transform and load data.
 
 
 ## Licence
 
-This program is free software: you can redistribute it and/or modify it under the terms 
-of the European Union Public Licence, either version 1.2 of the License, or (at your 
-option) any later version. See [LICENCE.txt](LICENCE.txt) and [NOTICE.txt](NOTICE.txt) 
+This program is free software: you can redistribute it and/or modify it under the terms
+of the European Union Public Licence, either version 1.2 of the License, or (at your
+option) any later version. See [LICENCE.txt](LICENCE.txt) and [NOTICE.txt](NOTICE.txt)
 for more information on the licence of components.
 
 
 ## Dependencies
 
-* `libcbm` is a C++ library with python binding developed by the Canadian Forest 
-  Service. It is bundled into the libcbm_py python package available at 
+* `libcbm` is a C++ library with python binding developed by the Canadian Forest
+  Service. It is bundled into the libcbm_py python package available at
   https://github.com/cat-cfs/libcbm_py
 
-* `eu_cbm_data` contains the model's input and output data located at 
-  https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data . In 2022, this is a private 
+* `eu_cbm_data` contains the model's input and output data located at
+  https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data . In 2022, this is a private
   repository subject to ongoing research.
 
-* `eu_cbm_aidb` contains the "Archive Index Databases" in a separate repository located 
+* `eu_cbm_aidb` contains the "Archive Index Databases" in a separate repository located
   at https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb
 
 
 ## Installation
 
-Install `eu_cbm_hat` using [pip](https://pip.pypa.io/en/stable/), the package installer 
+If you have never used python before and if you are on Windows, you might want to
+[install Anaconda](https://www.anaconda.com/) on your system, it will help you with
+managing packages dependencies. You also need to [install
+git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) in order to install
+python packages from git repositories.
+
+Install `eu_cbm_hat` using [pip](https://pip.pypa.io/en/stable/), the package installer
 for python.
 
     pip install git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 
-
-Install libcbm using pip. Note: currently only version 1 is supported. Update to version 
-2 is under discussion in [issue 
+Install libcbm using pip. Note: currently only version 1 is supported. Update to version
+2 is under discussion in [issue
 53](https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/53):
 
     pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
@@ -50,8 +55,8 @@ Over time it's important to regularly upgrade the 2 packages with:
     pip install --upgrade git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
     pip install --upgrade git+https://github.com/cat-cfs/libcbm_py.git@1.x
 
-By default, the data is located in your home folder. You can display the location where 
-the data should be with these python commands:
+By default, the data is located in your home folder. You can display the default
+location where the data should be with these python commands:
 
     import eu_cbm_hat
     eu_cbm_hat.eu_cbm_data_dir
@@ -62,17 +67,17 @@ the data should be with these python commands:
 | Data                   | `~/eu_cbm/eu_cbm_data/` | `C:\Users\user_name\eu_cbm\eu_cbm_data` |
 | Archive Index Database | `~/eu_cbm/eu_cbm_aidb/` | `C:\Users\user_name\eu_cbm\eu_cbm_aidb` |
 
-The model will work once these folders exist on your system. Optionally, you can define 
-the environment variables `EU_CBM_DATA` and `EU_CBM_AIDB` to tell the model where the 
+The model will work once these folders exist on your system. Optionally, you can define
+the environment variables `EU_CBM_DATA` and `EU_CBM_AIDB` to tell the model where the
 data and AIDB are located.
 
-Copy test data to your local `eu_cbm_data` folder (location defined above in python in 
+Copy test data to your local `eu_cbm_data` folder (location defined above in python in
 `eu_cbm_hat.eu_cbm_data_dir`):
 
     from eu_cbm_hat.tests.copy_data import copy_test_data
     copy_test_data()
 
-Clone the repository containing the AIDB (with a deploy token) inside your home folder 
+Clone the repository containing the AIDB (with a deploy token) inside your home folder
 in the parent directory of the path given by `eu_cbm_hat.eu_cbm_aidb_dir`:
 
     git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
@@ -85,9 +90,9 @@ Before running the model, you need to create AIDB symlinks at a python prompt:
 
 ### Installation for development purposes
 
-Skip this section if you do not intend to change the code of the model. For development 
-purposes, these instruction leave the capability to modify the code of the model and 
-submit changes to the git repositories composing the model. Extensive installation 
+Skip this section if you do not intend to change the code of the model. For development
+purposes, these instruction leave the capability to modify the code of the model and
+submit changes to the git repositories composing the model. Extensive installation
 instructions are available for two different platforms:
 
 * [Installation on Linux](docs/setup_on_linux.md)
@@ -99,7 +104,7 @@ instructions are available for two different platforms:
 Run the test country ZZ at a python prompt:
 
     from eu_cbm_hat.core.continent import continent
-    runner = continent.combos['hat'].runners['ZZ'][-1]
+    runner = continent.combos['reference'].runners['ZZ'][-1]
     runner.num_timesteps = 30
     runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
@@ -138,10 +143,10 @@ Inspect the output of the model
 
 ### Testing
 
-All dependencies are clearly stated in `.gitlab-ci.yml` and the `setup.py` files at the 
-root of the repository. In fact those 2 files are used to automatically install and test 
-the install  each time we make a change to the model. The test consist in unit tests as 
-well as running a mock country called "ZZ". You can see the output of these runs 
+All dependencies are clearly stated in `.gitlab-ci.yml` and the `setup.py` files at the
+root of the repository. In fact those 2 files are used to automatically install and test
+the install  each time we make a change to the model. The test consist in unit tests as
+well as running a mock country called "ZZ". You can see the output of these runs
 (successful or not) in the CI-CD jobs page on gitlab.
 
 
@@ -157,7 +162,7 @@ well as running a mock country called "ZZ". You can see the output of these runs
 ## Extra documentation
 
 More documentation is available at:
-https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html 
+https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html
 
 This documentation is simply generated in `.gitlab-ci.yml` with:
 
