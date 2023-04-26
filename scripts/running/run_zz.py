@@ -16,7 +16,7 @@ Typically you would run this file from a command line like this:
 
 # Internal modules #
 from eu_cbm_hat.core.continent import continent
-runner = continent.combos['hat'].runners['ZZ'][-1]
+runner = continent.combos['reference'].runners['ZZ'][-1]
 # runner.country.base_year = 2020
 runner.num_timesteps = 30
 runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)

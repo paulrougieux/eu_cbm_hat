@@ -1,2 +1,1 @@
-scenario,from_status,from_forest_type,from_region,from_mgmt_type,from_mgmt_strategy,from_climate,from_con_broad,from_site_index,from_growth_period,using_id,sw_start,sw_end,hw_start,hw_end,dist_type_name,to_status,to_forest_type,to_region,to_mgmt_type,to_mgmt_strategy,to_climate,to_con_broad,to_site_index,to_growth_period,regen_delay,reset_age,percent
-reference,For,OC,LU00,H,E,?,con,1,Cur,FALSE,40,120,40,120,4,For,OC,LU00,H,E,?,con,1,Cur,0,1,100
+

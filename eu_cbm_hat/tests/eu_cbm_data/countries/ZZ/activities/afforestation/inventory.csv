@@ -1,3 +1,1 @@
-scenario,status,forest_type,region,mgmt_type,mgmt_strategy,climate,con_broad,site_index,growth_period,using_id,age,area,delay,unfcccl,hist_dist,last_dist
-reference,NF,NF_QR,LU00,H,E,35,broad,1,Init,TRUE,AGEID0,10000,0,2,2,2
-reference,NF,NF_QR,LU00,H,E,45,broad,1,Init,TRUE,AGEID0,10000,0,2,2,2
+

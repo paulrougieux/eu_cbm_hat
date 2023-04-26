@@ -1,4 +1,4 @@
---- # Combination 'hat'
+--- # Combination 'reference'
 
 inventory:
   afforestation: reference
@@ -75,6 +75,17 @@ events_templates:
   2058: reference
   2059: reference
   2060: reference
+  2061: reference
+  2062: reference
+  2063: reference
+  2064: reference
+  2065: reference
+  2065: reference
+  2066: reference
+  2067: reference
+  2068: reference
+  2069: reference
+  2070: reference
 
 irw_frac_by_dist:
   2015: reference
@@ -123,6 +134,17 @@ irw_frac_by_dist:
   2058: reference
   2059: reference
   2060: reference
+  2061: reference
+  2062: reference
+  2063: reference
+  2064: reference
+  2065: reference
+  2065: reference
+  2066: reference
+  2067: reference
+  2068: reference
+  2069: reference
+  2070: reference
 
 harvest_factors:
   2015: reference
@@ -171,5 +193,16 @@ harvest_factors:
   2058: reference
   2059: reference
   2060: reference
+  2061: reference
+  2062: reference
+  2063: reference
+  2064: reference
+  2065: reference
+  2065: reference
+  2066: reference
+  2067: reference
+  2068: reference
+  2069: reference
+  2070: reference
 
 harvest: reference

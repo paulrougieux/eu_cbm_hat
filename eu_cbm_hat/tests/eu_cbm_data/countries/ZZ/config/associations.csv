@@ -14,17 +14,17 @@ MapSpecies,OB_BL,OB_BL
 MapSpecies,OC_BL,OC_BL
 MapSpecies,PA_BL,PA_BL
 MapSpecies,QR_BL,QR_BL
-MapDisturbanceType,Fire,Wild Fire
 MapDisturbanceType,Wild Fire,Wild Fire
 MapDisturbanceType,Deforestation,Deforestation
 MapDisturbanceType,Afforestation,Afforestation
 MapDisturbanceType,Generic 15%,generic 15% mortality
+MapDisturbanceType,Generic 20%,generic 20% mortality
 MapDisturbanceType,Generic 25%,generic 25% mortality
 MapDisturbanceType,Generic 60% (INSECTS widespread),generic 60% mortality
-MapDisturbanceType,Generic 85% (STORM stand replacing),generic 85% mortality
+MapDisturbanceType,"Windstorm, with some salvage logging in the initial year","Windstorm, with some salvage logging in the initial year"
 MapDisturbanceType,Generic 90 % mortality (clearcut conif on area),generic 90% mortality
-MapDisturbanceType,Salvage year 1 post-storm id4,Salvage logging after fire
-MapDisturbanceType,Salvage year 2 post-storm id4,generic 50% mortality
+MapDisturbanceType,Salvage year 1 post-windstorm,Salvage year 1 post-windstorm
+MapDisturbanceType,Salvage year 2 post-windstorm,Salvage year 2 post-windstorm
 MapDisturbanceType,Clearcut  with slash burn (broad based on area),Clearcut with slash-burn
 MapDisturbanceType,10% commercial thinning,10% Commercial thinning
 MapDisturbanceType,15% commercial thinning,15% Commercial thinning
@@ -32,6 +32,9 @@ MapDisturbanceType,20% commercial thinning,20% Commercial thinning
 MapDisturbanceType,30% commercial thinning,30% Commercial thinning
 MapDisturbanceType,35% commercial thinning,35% Commercial thinning
 MapDisturbanceType,Insects with salvage logging (within year),generic 60% mortality
+MapDisturbanceType,Final cut intervention 1,generic 30% mortality
+MapDisturbanceType,Final cut intervention 2,generic 55% mortality
+MapDisturbanceType,Final cut intervention 3,generic 95% mortality
 MapSpecies,non-forest to PA,Average
 MapSpecies,non-forest to FS,Average
 MapSpecies,non-forest to DF,Average
