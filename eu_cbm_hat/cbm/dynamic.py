@@ -459,7 +459,7 @@ class DynamicSimulation(Simulation):
                                             * df_irw_silv["skew"]
                                             / df_irw_silv["irw_norm_agg"])
 
-            # Raise an error if irw_norm_skew sums to one
+            # Raise an error if irw_norm_skew does not sum to one
             if not math.isclose(df_irw_silv["irw_norm_skew"].sum(), 1):
                 msg = "IRW norm skew doesn't sum to one."
                 msg += "The normalized available merchantable roundwood is distributed as follows:\n"
