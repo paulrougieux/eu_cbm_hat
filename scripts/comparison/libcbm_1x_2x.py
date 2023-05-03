@@ -1,5 +1,9 @@
 """ The purpose of this script is to compare libcbm 1x and libcbm 2x
 
+Warning: This script will only work on a development machin which has libcbm_py
+and eu_cbm_hat installed from git repositories and given as a path through the
+PYTHONPATH environment variable.
+
 - Results are written to a parquet file in eu_cbm_hat/info/output_data.py
 - This result dataframe is a merge of all results data frames from the cbm_output object
 - These data frames are read in the `__getitem__` method of the class InternalData
