@@ -518,8 +518,8 @@ class DynamicSimulation(Simulation):
         still_remain_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
         self.out_var('still_remain_fw_vol', still_remain_fw_vol)
         colat_prct = (df_irw['fw_colat'].sum() / remain_fw_vol) * 100
-        msg = f"FW Demand {remain_fw_vol:.0f} m3. "
-        msg += f"Collateral FW from IRW disturbances represents {colat_prct:.0f}% of the harvest"
+        msg = f"FW Demand {remain_fw_vol:.0f} m3 (remaining after FW salvage) "
+        msg += f"Collateral FW represents {colat_prct:.0f}% off IRW disturbances"
         self.parent.log.info(msg)
 
         # If there is no extra firewood needed, set to zero #
