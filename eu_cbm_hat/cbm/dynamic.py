@@ -461,15 +461,17 @@ class DynamicSimulation(Simulation):
 
             # Raise an error if irw_norm_skew does not sum to one
             if not math.isclose(df_irw_silv["irw_norm_skew"].sum(), 1):
-                msg = "IRW norm skew doesn't sum to one."
+                msg = "IRW norm skew doesn't sum to one:"
+                msg += f"{df_irw_silv.groupby(harvest_join_cols)['irw_norm_skew'].sum()}\n"
                 msg += "The normalized available merchantable roundwood is distributed as follows:\n"
                 msg += f"{df_irw_silv.groupby(harvest_join_cols)['irw_norm_agg'].unique()}\n"
                 msg += "The harvest factors are distributed as follows:\n"
                 msg += f"{ harvest[harvest_join_cols + ['skew']]}\n "
                 msg += "This means that some combinations of silvicultural practices "
-                msg += "are either not present in the events template "
-                msg += "or not eligible in the stock."
+                msg += "are not present in the events template."
                 msg += "Correct the input in havest_factors.csv."
+                msg += "It could also be that the share of industrial roundwood is not specified."
+                msg += "Check the irw_frac_by_dist.csv"
                 raise ValueError(msg)
 
             potential_irw = df_irw_silv["irw_avail"].sum()
