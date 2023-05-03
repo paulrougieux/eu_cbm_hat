@@ -1,6 +1,6 @@
 """ The purpose of this script is to compare libcbm 1x and libcbm 2x
 
-Warning: This script will only work on a development machin which has libcbm_py
+Warning: This script will only work on a development machine which has libcbm_py
 and eu_cbm_hat installed from git repositories and given as a path through the
 PYTHONPATH environment variable.
 
