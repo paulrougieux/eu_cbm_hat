@@ -27,6 +27,14 @@ def events_wide_to_long(country, events):
     # We want to pivot on all columns except two #
     skip  = ['step', 'amount']
     cols  = [col for col in events_cols if col not in skip]
+    # Check wide column names are within the range
+    year_range = range(1900, 2101)
+    amount_list = [f"amount_{year}" for year in year_range]
+    cols_not_in_range = set(events.columns) - set(cols) - set(amount_list)
+    if not cols_not_in_range:
+        msg = f"Column name {cols_not_in_range} in the input data"
+        msg += f"is not in the {year_range}."
+        raise ValueError(msg)
     # Reshape from wide to long format #
     try:
         df = pandas.wide_to_long(df,
