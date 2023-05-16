@@ -9,6 +9,20 @@ by Forest Carbon Accounting team of the Canadian Forest Service. Both python mod
 [pandas data frames](https://pandas.pydata.org/) to transform and load data.
 
 
+# Documentation
+
+The model was described in a 2022 JRC Technical Report called [The JRC Forest Carbon
+Model: description of
+EU-CBM-HAT](https://publications.jrc.ec.europa.eu/repository/handle/JRC130609)
+
+See also
+
+- Installation instructions below
+
+- Software documentation at
+  https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html
+
+
 ## Licence
 
 This program is free software: you can redistribute it and/or modify it under the terms
