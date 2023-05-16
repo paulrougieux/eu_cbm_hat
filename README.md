@@ -42,18 +42,25 @@ python packages from git repositories.
 Install `eu_cbm_hat` using [pip](https://pip.pypa.io/en/stable/), the package installer
 for python in the shell (or conda console).
 
-    pip install git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
+    pip install eu_cbm_hat
+    # or
+    python -m pip install eu_cbm_hat
 
 Install libcbm using pip. Note: currently only version 1 is supported. Update to version
 2 is under discussion in [issue
 53](https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/53):
 
-    pip install git+https://github.com/cat-cfs/libcbm_py.git@1.x
+    python -m pip install https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
 
 Over time it's important to regularly upgrade the 2 packages with:
 
-    pip install --upgrade git+https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
-    pip install --upgrade git+https://github.com/cat-cfs/libcbm_py.git@1.x
+    python -m pip install --upgrade eu_cbm_hat
+    python -m pip install --upgrade https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
+
+In case you need to install the latest development version, use the --upgrade parameter
+and install from the main branch of the gitlab repository:
+
+    python -m pip install --upgrade --force-reinstall https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/archive/main/eu_cbm_hat-main.tar.gz
 
 By default, the data is located in your home folder. You can display the default
 location where the data should be with these commands in python:
