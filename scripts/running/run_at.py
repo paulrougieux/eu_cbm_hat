@@ -16,7 +16,7 @@ Typically you would run this file from a command line like this:
 """
 
 from eu_cbm_hat.core.continent import continent
-runner  = continent.combos['hat'].runners['AT'][-1]
+runner  = continent.combos['reference'].runners['AT'][-1]
 runner.num_timesteps = 25
 
 # Run the model
