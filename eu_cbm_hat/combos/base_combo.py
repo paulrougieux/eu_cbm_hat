@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-Written by Lucas Sinclair and Paul Rougieux.
+Written by Lucas Sinclair, Paul Rougieux and Viorel Blujdea.
 
 JRC Biomass Project.
 Unit D1 Bioeconomy.
+
 """
 
 # Built-in modules #
