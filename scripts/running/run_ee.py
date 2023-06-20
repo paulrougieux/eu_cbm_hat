@@ -18,7 +18,7 @@ from eu_cbm_hat.core.continent import continent
 #############################################
 combo   = continent.combos['reference']
 runner  = combo.runners['EE'][-1]
-runner.num_timesteps = 25
+runner.num_timesteps = 2050 -  runner.country.inventory_start_year
 
 # Run the model
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
