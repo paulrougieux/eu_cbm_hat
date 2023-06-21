@@ -27,7 +27,7 @@ from eu_cbm_hat.core.continent import continent
 
 def run_country(args):
     """Run a single country, only based on the code as input"""
-    country_code, last_year, combo_name = args
+    combo_name, last_year, country_code = args
     runner = continent.combos[combo_name].runners[country_code][-1]
     runner.num_timesteps = last_year - runner.country.inventory_start_year
     try:
@@ -50,5 +50,5 @@ COUNTRIES = args.countries
 if COUNTRIES is None:
     COUNTRIES = list(continent.combos[COMBO_NAME].runners.keys())
 
-runner_items = [(k, LAST_YEAR, COMBO_NAME) for k in COUNTRIES]
+runner_items = [(COMBO_NAME, LAST_YEAR, k) for k in COUNTRIES]
 result = p_umap(run_country, runner_items, num_cpus=4)
