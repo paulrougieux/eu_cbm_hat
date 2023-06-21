@@ -1,4 +1,17 @@
-""" Run the PIK FAIR scenario output of the GFPMX economic model"""
+""" Run the PIK FAIR scenario output of the GFPMX economic model
+
+The version of p_umap in eu_cbm_hat/combos/base_combo.py Combination.__call__()
+method is using a function that takes a list of runner objects as one its
+argument. The problem is that 
+
+    p_umap(run_country, runner_items, num_cpus=4)
+
+Leads to `TypeError: cannot pickle 'sqlite3.Connection' object`. This is
+because SQLite connections cannot be pickled and sent to the sub-process. The
+solution is to pass only the country code and have the function create the
+runner object inside the sub-process directly.
+
+"""
 
 from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
