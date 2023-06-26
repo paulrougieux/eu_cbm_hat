@@ -58,8 +58,5 @@ class PostProcessor(object):
 
         """
         df = self.runner.output.pool_flux.groupby(by)[pools].sum()
-        df["combo"] = self.runner.combo.short_name
-        df["iso2_code"] = self.runner.country.iso2_code
-        df["country"] = self.runner.country.country_name
         df.reset_index(inplace=True)
         return df
