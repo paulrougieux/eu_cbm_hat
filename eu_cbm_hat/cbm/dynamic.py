@@ -426,11 +426,28 @@ class DynamicSimulation(Simulation):
             # Keep only IRW coefficients
             harvest = harvest[harvest["product_created"] == "irw_and_fw"]
 
+
             # Keep only the columns that are not empty as join columns
             harvest_join_cols = []
             for col in self.runner.silv.harvest.cols:
                 if not any(harvest[col].isna()):
                     harvest_join_cols.append(col)
+            harvest = harvest[harvest_join_cols + ['skew']]
+
+            # Check if all rows for which a skew factor is defined are really
+            # present in df_irw_silv
+            df_irw_silv_check = df_irw_silv.value_counts(harvest_join_cols).reset_index()
+            if len(df_irw_silv_check) < len(harvest):
+                msg += "Some skew factors are present in harvest but not present in "
+                msg += "df_irw_silv. This might happen in rare cases where there is only "
+                msg += "coniferous forest available and no broadleaf forest available. "
+                msg += "For example because broadleaves are too young and the "
+                msg += "query('age >= sw_start') excluded those broadleaf rows. "
+                self.parent.log.info(msg)
+                # Recompute the skew
+                harvest2 = df_irw_silv_check.merge(harvest, on=harvest_join_cols)
+                harvest2["skew"] = harvest2["skew"] / harvest2["skew"].sum()
+                harvest = harvest2
 
             # If silv_practice is defined in harvest factors then use
             # self.runner.fluxes.df to add the silv_practice column to
@@ -451,11 +468,10 @@ class DynamicSimulation(Simulation):
 
             # Aggregate the normalized value by groups
             df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
-            
 
             # Merge disturbances and harvest factors
             df_irw_silv = pandas.merge(df_irw_silv,
-                                       harvest[harvest_join_cols + ['skew']],
+                                       harvest,
                                        how='inner',
                                        on=harvest_join_cols)
 
