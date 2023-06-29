@@ -117,15 +117,25 @@ class PreProcessor(object):
         copied AIDB. Not on the reference one.
         """
         # If a disturbance matrix is not defined in the yaml file, do nothing
-        if "disturbance_matrix_value" not in self.runner.combo.config.keys():
+        not_defined = "disturbance_matrix_value" not in self.runner.combo.config.keys()
+        # If it's defined as "default_aidb", also do nothing
+        default = self.runner.combo.config["disturbance_matrix_value"] == "default_aidb"
+        if not_defined or default:
             return
         # If a disturbance matrix is defined in the yaml file
+        # Check that that the chosen scenario exists in disturbance_matrix_value.csv
+        # Raise an error if not
+
         # Copy the AIDB
         self.parent.log.info("AIDB %s" % self.runner.country.aidb.paths.aidb)
         self.runner.country.aidb.copy(combo_name = self.runner.combo.short_name)
         self.parent.log.info("Copied to %s" % self.runner.country.aidb.paths.aidb)
         # Change the disturbance matrix
 
+        # Retrieve by query #
+        df = self.df.query("scenario == '%s'" % scenario)
+        # Drop the scenario column #
+        df = df.drop(columns='scenario')
 
 
         msg = "The disturbance matrix has been changed according to "

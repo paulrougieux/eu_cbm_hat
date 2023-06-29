@@ -107,6 +107,10 @@ class Silviculture:
         return IRWFractions(self)
 
     @property_cached
+    def dist_matrix_value(self):
+        return DistMatrixValue(self)
+
+    @property_cached
     def coefs(self):
         return VolToMassCoefs(self)
 
@@ -410,3 +414,26 @@ class HarvestFactors(BaseSilvInfo):
         if not all(df_long_irw["value_sum"] == 1):
             msg = "The following skew factors do not sum to one"
             raise ValueError(msg, df_long_irw.query("value_sum !=1"))
+
+class DistMatrixValue(BaseSilvInfo):
+    """
+    Gives access the disturbance matrix value table if defined
+    """
+
+    @property
+    def choices(self):
+        """Choices made for in the current combo."""
+        return self.combo.config["disturbance_matrix_value"]
+
+    @property
+    def csv_path(self):
+        return self.country.orig_data.paths.disturbance_matrix_value
+
+    @property_cached
+    def df(self):
+        """ Disturbance matrix values"""
+        df = self.raw.copy()
+        df = df.loc[df["scenario"] == self.choices]
+        df.drop(columns="scenario", inplace=True)
+        return df
+

@@ -48,6 +48,7 @@ class OrigData(object):
     /silv/vol_to_mass_coefs.csv            # Has scenario column
     /silv/events_templates.csv             # Has scenario column
     /silv/harvest_factors.csv              # Has scenario column
+    /silv/disturbance_matrix_value.csv     # Has scenario column
     /activities/                           # Dynamic
     """
 
