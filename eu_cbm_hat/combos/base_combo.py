@@ -56,9 +56,8 @@ class Combination(object):
         >>> r.output.load('pools')
     """
 
-    short_name = None
-
-    def __init__(self, continent):
+    def __init__(self, continent, short_name=None):
+        self.short_name = short_name
         # Save parent #
         self.continent = continent
         # The combos dir used for all output #
