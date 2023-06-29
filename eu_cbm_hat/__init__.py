@@ -20,7 +20,9 @@ feedback under [issue
 __version__ = '0.6.4'
 
 # Built-in modules #
-import os, sys
+import os
+import sys
+import pathlib
 
 # First party modules #
 from autopaths import Path
@@ -47,6 +49,9 @@ eu_cbm_data_dir = DirectoryPath("~/eu_cbm/eu_cbm_data/")
 # But you can override that with an environment variable #
 if os.environ.get("EU_CBM_DATA"):
     eu_cbm_data_dir = DirectoryPath(os.environ['EU_CBM_DATA'])
+
+# Prepare the move to pathlib
+eu_cbm_data_pathlib = pathlib.Path(eu_cbm_data_dir)
 
 # Where are the AIDBs, default case
 eu_cbm_aidb_dir = DirectoryPath("~/eu_cbm/eu_cbm_aidb/")
