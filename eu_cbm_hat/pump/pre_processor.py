@@ -45,6 +45,9 @@ class PreProcessor(object):
         self.reshape_events()
         # Check there are no negative timesteps #
         self.raise_bad_timestep()
+        # Copy the AIDB
+        # In case the scenario combination changes the disturbance matrix
+        self.copy_aidb()
 
     #----------------------------- Properties --------------------------------#
     @property
@@ -105,3 +108,26 @@ class PreProcessor(object):
               " year that is anterior to the inventory start year configured."
         # Raise #
         raise Exception(msg % (path, negative_values.sum()))
+
+    def copy_and_change_aidb(self):
+        """Copy the AIDB and modify the disturbance matrix
+
+        We deliberately keep both the copy and change operations in the same
+        method. Because we want to be sure that the change happens only on a
+        copied AIDB. Not on the reference one.
+        """
+        # If a disturbance matrix is not defined in the yaml file, do nothing
+        if "disturbance_matrix_value" not in self.runner.combo.config.keys():
+            return
+        # If a disturbance matrix is defined in the yaml file
+        # Copy the AIDB
+        self.parent.log.info("AIDB %s" % self.runner.country.aidb.paths.aidb)
+        self.runner.country.aidb.copy(combo_name = self.runner.combo.short_name)
+        self.parent.log.info("Copied to %s" % self.runner.country.aidb.paths.aidb)
+        # Change the disturbance matrix
+
+
+
+        msg = "The disturbance matrix has been changed according to "
+        msg += "silv/disturbance_matrix_value.csv"
+        self.parent.log.info(msg)
