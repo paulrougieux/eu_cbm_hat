@@ -47,7 +47,7 @@ class PreProcessor(object):
         self.raise_bad_timestep()
         # Copy the AIDB
         # In case the scenario combination changes the disturbance matrix
-        self.copy_aidb()
+        self.copy_and_change_aidb()
 
     #----------------------------- Properties --------------------------------#
     @property
@@ -130,13 +130,12 @@ class PreProcessor(object):
         self.parent.log.info("AIDB %s" % self.runner.country.aidb.paths.aidb)
         self.runner.country.aidb.copy(combo_name = self.runner.combo.short_name)
         self.parent.log.info("Copied to %s" % self.runner.country.aidb.paths.aidb)
+
         # Change the disturbance matrix
-
-        # Retrieve by query #
-        df = self.df.query("scenario == '%s'" % scenario)
-        # Drop the scenario column #
-        df = df.drop(columns='scenario')
-
+        # # Retrieve by query #
+        # df = self.df.query("scenario == '%s'" % scenario)
+        # # Drop the scenario column #
+        # df = df.drop(columns='scenario')
 
         msg = "The disturbance matrix has been changed according to "
         msg += "silv/disturbance_matrix_value.csv"
