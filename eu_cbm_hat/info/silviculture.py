@@ -19,6 +19,7 @@ Check the silviculture input tables for inconsistencies
 
 # Third party modules #
 import pandas
+import numpy as np
 
 # First party modules #
 from plumbing.cache import property_cached
@@ -407,6 +408,7 @@ class HarvestFactors(BaseSilvInfo):
         index = ["scenario", "product_created", "variable"]
         df_long["value_sum"] = df_long.groupby(index)["value"].transform(sum)
         df_long_irw = df_long.query("product_created=='irw_and_fw'")
-        if not all(df_long_irw["value_sum"] == 1):
+        selector = np.isclose(df_long_irw["value_sum"], 1,  atol=1e-08)
+        if not all(selector):
             msg = "The following skew factors do not sum to one"
-            raise ValueError(msg, df_long_irw.query("value_sum !=1"))
+            raise ValueError(msg, df_long_irw.loc[~selector])
