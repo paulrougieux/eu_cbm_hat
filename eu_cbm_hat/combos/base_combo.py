@@ -24,6 +24,7 @@ from plumbing.timer import Timer
 # Internal modules #
 from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat.core.runner import Runner
+from eu_cbm_hat.cbm.dynamic       import DynamicRunner
 
 # Constant directory for all the data #
 yaml_dir = eu_cbm_data_dir + 'combos/'
@@ -64,6 +65,9 @@ class Combination(object):
         self.output_dir = self.continent.output_dir
         # The base dir for our output #
         self.base_dir = Path(self.output_dir + self.short_name + '/')
+        # The path to our specific YAML file #
+        self.yaml_path = yaml_dir + self.short_name + '.yaml'
+
 
     def __repr__(self):
         return '%s object with %i runners' % (self.__class__, len(self))
@@ -82,10 +86,8 @@ class Combination(object):
         The values chosen by the user in the YAML file which decide on every
         scenario choice for every activity and silvicultural practice.
         """
-        # The path to our specific YAML file #
-        yaml_path = yaml_dir + self.short_name + '.yaml'
         # Read it with a third party library #
-        with open(yaml_path, "r") as handle:
+        with open(self.yaml_path, "r") as handle:
             result = yaml.safe_load(handle)
         # Convert silvicultural choices to dataframes #
         key = 'harvest'
@@ -105,7 +107,30 @@ class Combination(object):
         A dictionary of country codes as keys with a list of runners as
         values.
         """
-        return {c.iso2_code: [Runner(self, c, 0)] for c in self.continent}
+        accepted_runner_types = ["base_runner", "dynamic_runner"]
+
+        # Error message to be reused by diverse errors
+        msg = f"The yaml file at {self.yaml_path} "
+        msg += "should contain a 'runner_type' field with values:"
+        msg += "\nrunner_type: "
+        msg += "\n# or\nrunner_type: ".join(accepted_runner_types)
+
+        # If runner_type is not defined in the yaml file raise an error
+        if "runner_type" not in self.config.keys():
+            raise ValueError(msg)
+
+        if self.config["runner_type"] not in accepted_runner_types:
+            msg_2 = f"runner_type: {self.config['runner_type']} "
+            msg_2 += "is not an accepted value.\n"
+            raise ValueError(msg_2 + msg)
+
+        # If it's defined as "base_runner", return base runners
+        if self.config["runner_type"] == "base_runner":
+            return {c.iso2_code: [Runner(self, c, 0)] for c in self.continent}
+
+        # If it's defined as "dynamic_runner" return dynamic runners
+        if self.config["runner_type"] == "dynamic_runner":
+            return {c.iso2_code: [DynamicRunner(self, c, 0)] for c in self.continent}
 
     #------------------------------- Methods ---------------------------------#
     def __call__(self, parallel=False, timer=True):
