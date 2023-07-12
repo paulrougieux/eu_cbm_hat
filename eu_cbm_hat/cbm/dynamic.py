@@ -679,4 +679,5 @@ class DynamicSimulation(Simulation):
         return df
 
     def out_var(self, key, value):
+        """Store summary information into output extras.csv"""
         self.runner.output.extras.loc[self.year, key] = value
