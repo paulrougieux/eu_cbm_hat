@@ -16,7 +16,7 @@ from eu_cbm_hat.core.continent import continent
 #############################################
 # Declare which scenario combination to run #
 #############################################
-runner  = continent.combos['reference']combo.runners['SI'][-1]
+runner  = continent.combos['reference'].runners['SI'][-1]
 runner.num_timesteps = 50
 
 # Run the model
