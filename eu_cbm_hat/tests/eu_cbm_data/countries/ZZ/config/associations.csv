@@ -21,7 +21,8 @@ MapDisturbanceType,Generic 15%,generic 15% mortality
 MapDisturbanceType,Generic 20%,generic 20% mortality
 MapDisturbanceType,Generic 25%,generic 25% mortality
 MapDisturbanceType,Generic 60% (INSECTS widespread),generic 60% mortality
-MapDisturbanceType,"Windstorm, with some salvage logging in the initial year","Windstorm, with some salvage logging in the initial year"
+MapDisturbanceType,Windstorm (for CP),Windstorm
+MapDisturbanceType,Windstorm (for projection),Windstorm
 MapDisturbanceType,Generic 90 % mortality (clearcut conif on area),generic 90% mortality
 MapDisturbanceType,Salvage year 1 post-windstorm,Salvage year 1 post-windstorm
 MapDisturbanceType,Salvage year 2 post-windstorm,Salvage year 2 post-windstorm

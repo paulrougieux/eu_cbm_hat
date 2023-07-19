@@ -3,4 +3,4 @@ reference,For,DF,LU00,H,E,?,con,1,Cur,FALSE,71,90,71,90,22,For,DF,LU00,H,E,?,con
 reference,For,OB,LU00,H,E,?,broad,1,Cur,FALSE,80,210,80,210,21,For,OB,LU00,H,E,?,broad,1,Cur,0,0,100
 reference,For,OC,LU00,H,E,?,con,1,Cur,FALSE,60,80,60,80,22,For,OC,LU00,H,E,?,con,1,Cur,0,0,100
 reference,For,QR,LU00,C,E,?,broad,1,Cur,FALSE,20,210,20,210,21,For,QR,LU00,C,E,?,broad,1,Cur,0,0,100
-reference,For,FS,LU00,H,U,?,broad,1,Cur,FALSE,20,40,20,40,15,For,FS,LU00,H,U,?,broad,1,Cur,0,1,30
+uneven_aged,For,FS,LU00,H,U,?,broad,1,Cur,FALSE,20,40,20,40,15,For,FS,LU00,H,U,?,broad,1,Cur,0,30,100

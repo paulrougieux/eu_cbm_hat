@@ -1,6 +1,6 @@
 dist_type_name,dist_desc_input,silv_practice
 2,Wild Fire,#NA
-4,"Windstorm, with some salvage logging in the initial year",sr
+4,Windstorm (for CP),sr
 5,Generic 60% (INSECTS widespread),nr
 7,Deforestation,d
 8,Afforestation,ar
@@ -15,3 +15,4 @@ dist_type_name,dist_desc_input,silv_practice
 29,Salvage year 1 post-windstorm,sr
 30,Salvage year 2 post-windstorm,sr
 42,Insects with salvage logging (within year),nr
+49,Windstorm (for projection),sr
