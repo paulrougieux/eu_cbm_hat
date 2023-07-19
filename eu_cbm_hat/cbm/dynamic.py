@@ -618,10 +618,12 @@ class DynamicSimulation(Simulation):
         cols += ['dist_type_name', 'product_created', 'dist_interval_bias',
                  'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
                  'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
-                 'sort_type', 'measurement_type', 'efficiency', 'skew', 'wood_density',
+                 'sort_type', 'measurement_type', 'efficiency', 'wood_density',
                  'bark_frac', 'irw_avail', 'fw_avail',
                  'irw_norm', 'irw_need', 'irw_frac',
                  'fw_colat', 'fw_norm', 'fw_need', 'amount']
+        if 'skew' in df.columns:
+            cols += ['skew']
         # Write the events to an output file for the record
         self.runner.output.events = pandas.concat([self.runner.output.events, df[cols]])
 
