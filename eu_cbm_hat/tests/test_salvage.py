@@ -14,8 +14,6 @@ from eu_cbm_hat.core.continent import continent
 
 runner = continent.combos['reference'].runners['ZZ'][-1]
 
-# runner.num_timesteps = 30
-# runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 def test_dist_4_followed_by_29():
     """Disturbance 4 followed by disturbance 29 salvage logging. Prepare input
@@ -35,7 +33,8 @@ def test_dist_4_followed_by_29():
     # reference	For	PA	LU00	H	E	45	con	1	Cur	irw_and_fw	1	FALSE	0	5	0	5
 
     # Run the model
-
+    runner.num_timesteps = 30
+    runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
     # Check output
     print(runner.input_data["events"])
