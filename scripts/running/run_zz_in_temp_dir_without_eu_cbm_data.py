@@ -40,7 +40,7 @@ shutil.copytree(orig_path, dest_path)
 
 # This has to happen after we copy ZZ data to a temporary directory
 from eu_cbm_hat.core.continent import continent
-runner = continent.combos['hat'].runners['ZZ'][-1]
+runner = continent.combos['reference'].runners['ZZ'][-1]
 # Create the AIDB symlink
 runner.country.aidb.symlink_all_aidb()
 runner.num_timesteps = 30
