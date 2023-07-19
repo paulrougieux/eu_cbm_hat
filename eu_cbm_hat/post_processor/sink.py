@@ -11,7 +11,7 @@ For each year in each country:
 
 Usage example. Get the biomass sink for 2 scenarios:
 
-    >>> from eu_cbm_hat.pump.sink import biomass_sink_all_countries
+    >>> from eu_cbm_hat.post_processor.sink import biomass_sink_all_countries
     >>> import pandas
     >>> living_biomass_pools = [
     >>>     "softwood_merch",
@@ -48,7 +48,7 @@ def biomass_sink_one_country(
 
     In addition to "year", one or more classifiers can be used as join variables
 
-        >>> from eu_cbm_hat.pump.sink import biomass_sink_one_country
+        >>> from eu_cbm_hat.post_processor.sink import biomass_sink_one_country
         >>> living_biomass_pools = [
         >>>     "softwood_merch",
         >>>     "softwood_other",
