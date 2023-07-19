@@ -36,6 +36,7 @@ Usage example. Get the biomass sink for 2 scenarios:
 
 from typing import Union, List
 import pandas
+from tqdm import tqdm
 
 from eu_cbm_hat.core.continent import continent
 
@@ -97,7 +98,8 @@ def biomass_sink_all_countries(combo, groupby, pools):
 
     """
     df_all = pandas.DataFrame()
-    for key in continent.combos[combo].runners.keys():
+    country_codes = continent.combos[combo].runners.keys()
+    for key in tqdm(country_codes):
         try:
             df = biomass_sink_one_country(combo, key, groupby=groupby, pools=pools)
             df_all = pandas.concat([df, df_all])
