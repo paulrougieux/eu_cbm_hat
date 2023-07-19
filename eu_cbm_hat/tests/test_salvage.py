@@ -12,8 +12,7 @@ https://github.com/pandas-dev/pandas/blob/main/pandas/tests/strings/test_find_re
 
 from eu_cbm_hat.core.continent import continent
 
-combo  = continent.combos['hat']
-runner = combo.runners['ZZ'][-1]
+runner = continent.combos['reference'].runners['ZZ'][-1]
 
 # runner.num_timesteps = 30
 # runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)

@@ -12,8 +12,8 @@ import numpy as np
 import pandas
 import pytest
 from eu_cbm_hat.core.continent import continent
-combo  = continent.combos['hat']
-runner = combo.runners['ZZ'][-1]
+
+runner = continent.combos['reference'].runners['ZZ'][-1]
 
 harvest_factors_1 = {'scenario': ['reference', 'reference', 'reference', 'no_skew', 'no_skew'],
                      'product_created': ['irw_and_fw', 'irw_and_fw', 'fw_only', 'irw_and_fw', 'fw_only'],
