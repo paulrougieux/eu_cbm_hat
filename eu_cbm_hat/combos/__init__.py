@@ -9,17 +9,9 @@ Unit D1 Bioeconomy.
 
 A list of all combo classes.
 
-[ Update July 2023] Creating a new scenario combination only requires an
-update to the following yaml file:
-
-    - In `eu_cbm_data/combos` Compile a new yaml file with the combination of
-    scenarios desired. NB. A yaml file is a configuration file that can be
-    edited with a text editor.
-
-[Old instructions before July 2023] Creating a new scenario combination in the
-hard coded way might still be required in case you need a scenario class that
-modifies the behaviour of the scenario combinations beyond what the base runner
-or the dynamic runner can do:
+Creating a new scenario combination only requires an update to the input files
+and to a yaml file that specifies which scenarios will be used in the combo for
+each input file:
 
 - In `eu_cbm_data`
 
@@ -51,6 +43,16 @@ or the dynamic runner can do:
     - In `eu_cbm_data/combos` Compile a new yaml file with the combination of
     scenarios desired. NB. A yaml file is a configuration file that can be
     edited with a text editor.
+
+    - In `eu_cbm_data/combos` Compile a new yaml file with the combination of
+    scenarios desired. NB. A yaml file is a configuration file that can be
+    edited with a text editor.
+
+[Old instructions before July 2023] Creating a new scenario combination in the
+hard coded way is not required anymore. It might still be useful in case you
+need a scenario class that modifies the behaviour of the scenario combinations
+beyond what the base runner or the dynamic runner can do. In that case, and in
+that case only:
 
 - In `eu_cbm_hat`
 
