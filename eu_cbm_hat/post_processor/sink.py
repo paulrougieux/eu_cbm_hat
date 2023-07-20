@@ -91,6 +91,7 @@ def biomass_sink_one_country(
 
 def biomass_sink_all_countries(combo, groupby, pools):
     """Sum flux pools and compute the sink
+    TODO: replace combo by combo_name
 
     Only return data for countries in which the model run was successful in
     storing the output data. Print an error message if the file is missing, but
