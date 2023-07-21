@@ -42,7 +42,7 @@ from eu_cbm_hat.core.continent import continent
 
 
 def biomass_sink_one_country(
-    combo, iso2_code, groupby: Union[List[str], str], pools: List[str]
+    combo_name, iso2_code, groupby: Union[List[str], str], pools: List[str]
 ):
     """Sum the pools for the given country and add information on the combo
     country code
@@ -67,7 +67,7 @@ def biomass_sink_one_country(
         >>> lu_sink_by_y_ft = biomass_sink_one_country("reference", "LU", groupby=index, pools=living_biomass_pools)
 
     """
-    runner = continent.combos[combo].runners[iso2_code][-1]
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
     classifiers = runner.output.classif_df
     classifiers["year"] = runner.country.timestep_to_year(classifiers["timestep"])
     index = ['identifier', 'timestep']
@@ -83,13 +83,13 @@ def biomass_sink_one_country(
     df = s.reset_index()
     df.rename(columns={0:"stock_change"}, inplace=True)
     df["sink"] = df["stock_change"] * -44 / 12
-    df["combo"] = runner.combo.short_name
+    df["combo_name"] = runner.combo.short_name
     df["iso2_code"] = runner.country.iso2_code
     df["country"] = runner.country.country_name
     return df
 
 
-def biomass_sink_all_countries(combo, groupby, pools):
+def biomass_sink_all_countries(combo_name, groupby, pools):
     """Sum flux pools and compute the sink
     TODO: replace combo by combo_name
 
@@ -99,10 +99,10 @@ def biomass_sink_all_countries(combo, groupby, pools):
 
     """
     df_all = pandas.DataFrame()
-    country_codes = continent.combos[combo].runners.keys()
+    country_codes = continent.combos[combo_name].runners.keys()
     for key in tqdm(country_codes):
         try:
-            df = biomass_sink_one_country(combo, key, groupby=groupby, pools=pools)
+            df = biomass_sink_one_country(combo_name, key, groupby=groupby, pools=pools)
             df_all = pandas.concat([df, df_all])
         except FileNotFoundError as e_file:
             print(e_file)
