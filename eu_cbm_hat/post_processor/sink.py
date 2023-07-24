@@ -42,7 +42,7 @@ from eu_cbm_hat.core.continent import continent
 
 
 def biomass_sink_one_country(
-    combo_name, iso2_code, groupby: Union[List[str], str], pools: List[str]
+    combo_name:str, iso2_code:str, groupby: Union[List[str], str], pools: List[str]
 ):
     """Sum the pools for the given country and add information on the combo
     country code
@@ -83,10 +83,13 @@ def biomass_sink_one_country(
     df = s.reset_index()
     df.rename(columns={0:"stock_change"}, inplace=True)
     df["sink"] = df["stock_change"] * -44 / 12
+    # Place combo name, country code and country name as first columns
     df["combo_name"] = runner.combo.short_name
     df["iso2_code"] = runner.country.iso2_code
     df["country"] = runner.country.country_name
-    return df
+    cols = list(df.columns)
+    cols = cols[-3:] + cols[:-3]
+    return df[cols]
 
 
 def biomass_sink_all_countries(combo_name, groupby, pools):
