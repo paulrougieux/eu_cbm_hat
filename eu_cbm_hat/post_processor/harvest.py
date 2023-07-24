@@ -25,10 +25,13 @@ from eu_cbm_hat.core.continent import continent
 
 CARBON_FRACTION_OF_BIOMASS = 0.49
 
+
 def ton_carbon_to_m3_ub(df, input_var):
     """Convert tons of carbon to volume in cubic meter under bark"""
     return (df[input_var] * (1 - df["bark_frac"])) / (
-        CARBON_FRACTION_OF_BIOMASS * df["wood_density"])
+        CARBON_FRACTION_OF_BIOMASS * df["wood_density"]
+    )
+
 
 def harvest_demand(selected_scenario: str) -> pandas.DataFrame:
     """Get demand from the economic model using eu_cbm_hat/info/harvest.py
@@ -51,7 +54,9 @@ def harvest_demand(selected_scenario: str) -> pandas.DataFrame:
     return df.loc[df["scenario"] == selected_scenario]
 
 
-def harvest_expected_one_country(combo_name:str, iso2_code:str, groupby: Union[List[str], str]):
+def harvest_expected_one_country(
+    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
+):
     """Harvest excepted in one country, as allocated by the Harvest Allocation Tool
 
     Get the harvest expected from the hat output of disturbances allocated by
@@ -72,19 +77,21 @@ def harvest_expected_one_country(combo_name:str, iso2_code:str, groupby: Union[L
     events["harvest_exp"] = ton_carbon_to_m3_ub(events, "amount")
     # Check that we get the same value as the sum of irw_need and fw_colat
     events["fw_need"] = events["fw_need"].fillna(0)
-    pandas.testing.assert_series_equal(events["harvest_exp"],
-                                       events["irw_need"] + events["fw_colat"] + events["fw_need"],
-                                       rtol=1e-4,
-                                       check_names=False)
+    pandas.testing.assert_series_equal(
+        events["harvest_exp"],
+        events["irw_need"] + events["fw_colat"] + events["fw_need"],
+        rtol=1e-4,
+        check_names=False,
+    )
     # Aggregate
-    cols = ['irw_need', 'fw_colat', 'fw_need', 'amount', 'harvest_exp']
+    cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp"]
     df = events.groupby(groupby)[cols].agg(sum).reset_index()
     return df
 
 
-
-
-def harvest_provided_one_country(combo_name:str, iso2_code:str, groupby: Union[List[str], str]):
+def harvest_provided_one_country(
+    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
+):
     """Harvest provided in one country
 
     Usage:
@@ -115,11 +122,15 @@ def harvest_provided_one_country(combo_name:str, iso2_code:str, groupby: Union[L
     area = runner.output["pools"][index + ["area"]]
     df = df.merge(area, on=index)
     # Group rows and sum all identifier rows in the same group
-    df_agg = df.groupby(groupby).agg(
-        disturbed_area = ('area',sum),
-        flux_to_product = ('flux_to_product',sum),
-        harvest_prov = ('harvest_prov', sum)
-    ).reset_index()
+    df_agg = (
+        df.groupby(groupby)
+        .agg(
+            disturbed_area=("area", sum),
+            flux_to_product=("flux_to_product", sum),
+            harvest_prov=("harvest_prov", sum),
+        )
+        .reset_index()
+    )
     # Place combo name, country code and country name as first columns
     df_agg["combo_name"] = runner.combo.short_name
     df_agg["iso2_code"] = runner.country.iso2_code
@@ -129,7 +140,7 @@ def harvest_provided_one_country(combo_name:str, iso2_code:str, groupby: Union[L
     return df_agg[cols]
 
 
-def harvest_provided_all_countries(combo_name:str, groupby:Union[List[str], str]):
+def harvest_provided_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Harvest provided in all countries
     Example use:
 
@@ -141,9 +152,9 @@ def harvest_provided_all_countries(combo_name:str, groupby:Union[List[str], str]
     country_codes = continent.combos[combo_name].runners.keys()
     for key in tqdm(country_codes):
         try:
-            df = harvest_provided_one_country(combo_name=combo_name,
-                                              iso2_code=key,
-                                              groupby=groupby)
+            df = harvest_provided_one_country(
+                combo_name=combo_name, iso2_code=key, groupby=groupby
+            )
             df_all = pandas.concat([df, df_all])
         except FileNotFoundError as e_file:
             print(e_file)
@@ -151,9 +162,9 @@ def harvest_provided_all_countries(combo_name:str, groupby:Union[List[str], str]
     return df_all
 
 
-
-
-def harvest_expected_provided_one_country(combo_name:str, iso2_code:str, groupby: Union[List[str], str]):
+def harvest_expected_provided_one_country(
+    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
+):
     """Harvest excepted provided in one country
 
     There is a groupby  argument because we get the harvest expected from the
@@ -168,13 +179,13 @@ def harvest_expected_provided_one_country(combo_name:str, iso2_code:str, groupby
     # Load harvest expected
     runner = continent.combos[combo_name].runners[iso2_code][-1]
 
-
-
     # Join harvest provided
-    df_provided = harvest_provided_one_country(combo_name=combo_name, iso2_code =iso2_code, groupby=groupby)
+    df_provided = harvest_provided_one_country(
+        combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
+    )
 
     # Join demand from the economic model, if grouping on years only
-    if groupby=="year":
+    if groupby == "year":
         print("group by year")
 
     # return df
@@ -187,6 +198,3 @@ def harvest_expected_provided_all_countries(combo_name):
     the output flux table was missing."""
     # Harvest scenario associated with the combo_name
     harvest_scenario = continent.combos[combo_name].config["harvest"]
-
-
-
