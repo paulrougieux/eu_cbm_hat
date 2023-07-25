@@ -63,11 +63,13 @@ def harvest_exp_one_country(
     classifiers might have question marks i.e. where harvest can be allocated
     to any value of that particular classifier).
 
-    Usage:
+    The `groupby` argument makes it possible to group on year, group on year
+    and classifiers or group on the disturbance id:
 
         >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_one_country
         >>> harvest_exp_one_country("reference", "ZZ", "year")
         >>> harvest_exp_one_country("reference", "ZZ", ["year", "forest_type"])
+        >>> harvest_exp_one_country("reference", "ZZ", ["year", "disturbance_type"])
 
     """
     # Load harvest expected
@@ -82,6 +84,8 @@ def harvest_exp_one_country(
         rtol=1e-4,
         check_names=False,
     )
+    # Column name consistent with runner.output["parameters"]
+    events["disturbance_type"] = events["dist_type_name"]
     # Aggregate
     cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp"]
     df = events.groupby(groupby)[cols].agg(sum).reset_index()
@@ -104,6 +108,7 @@ def harvest_prov_one_country(
         >>> from eu_cbm_hat.post_processor.harvest import harvest_prov_one_country
         >>> harvest_prov_one_country("reference", "ZZ", "year")
         >>> harvest_prov_one_country("reference", "ZZ", ["year", "forest_type"])
+        >>> harvest_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
 
     """
     runner = continent.combos[combo_name].runners[iso2_code][-1]
@@ -126,6 +131,9 @@ def harvest_prov_one_country(
     # Area information
     area = runner.output["pools"][index + ["area"]]
     df = df.merge(area, on=index)
+    # Disturbance type information
+    dist = runner.output["parameters"][index + ["disturbance_type"]]
+    df = df.merge(dist, on=index)
     # Group rows and sum all identifier rows in the same group
     df_agg = (
         df.groupby(groupby)
@@ -162,6 +170,8 @@ def harvest_exp_prov_one_country(
 
         >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_one_country
         >>> harvest_exp_prov_one_country("reference", "ZZ", "year")
+        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "forest_type"])
+        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
 
     """
     df_expected = harvest_exp_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
