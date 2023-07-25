@@ -77,7 +77,8 @@ def harvest_exp_one_country(
     events = runner.output["events"]
     events["harvest_exp"] = ton_carbon_to_m3_ub(events, "amount")
     # Check that we get the same value as the sum of irw_need and fw_colat
-    events["fw_need"] = events["fw_need"].fillna(0)
+    for col in ["harvest_exp", "irw_need", "fw_colat", "fw_need"]:
+        events[col] = events[col].fillna(0)
     pandas.testing.assert_series_equal(
         events["harvest_exp"],
         events["irw_need"] + events["fw_colat"] + events["fw_need"],
@@ -152,6 +153,7 @@ def harvest_prov_one_country(
     cols = cols[-3:] + cols[:-3]
     return df_agg[cols]
 
+
 def harvest_exp_prov_one_country(
     combo_name: str, iso2_code: str, groupby: Union[List[str], str]
 ):
@@ -169,16 +171,20 @@ def harvest_exp_prov_one_country(
     Usage:
 
         >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_one_country
+        >>> import pandas
+        >>> pandas.set_option('display.precision', 0) # Display rounded numbers
         >>> harvest_exp_prov_one_country("reference", "ZZ", "year")
         >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "forest_type"])
         >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
 
     """
-    df_expected = harvest_exp_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
+    df_expected = harvest_exp_one_country(
+        combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
+    )
     df_provided = harvest_prov_one_country(
         combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
     )
-    index = ['combo_name', 'iso2_code', 'country', 'year']
+    index = ["combo_name", "iso2_code", "country", "year"]
     df = df_expected.merge(df_provided, on=index)
 
     # Join demand from the economic model, if grouping on years only
@@ -187,11 +193,11 @@ def harvest_exp_prov_one_country(
         harvest_scenario_name = continent.combos[combo_name].config["harvest"]
         df_demand = harvest_demand(harvest_scenario_name)
         df_demand = df_demand.loc[df_demand["iso2_code"] == iso2_code]
-        index = ['iso2_code', 'year']
+        index = ["iso2_code", "year"]
         df = df.merge(df_demand, on=index)
 
     return df
-
+ 
 
 def harvest_exp_prov(combo_name: str, groupby: Union[List[str], str]):
     """Information on both harvest expected and provided for all
@@ -203,7 +209,8 @@ def harvest_exp_prov(combo_name: str, groupby: Union[List[str], str]):
     Example use:
 
         >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov
-        >>> hp = harvest_exp_prov(combo_name="reference", groupby="year")
+        >>> harvest_exp_prov("reference", "year")
+        >>> harvest_exp_prov("reference", ["year", "forest_type", "disturbance_type"])
 
     """
     df_all = pandas.DataFrame()
