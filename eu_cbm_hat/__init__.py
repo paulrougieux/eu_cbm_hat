@@ -32,6 +32,7 @@ from plumbing.git import GitRepo
 # Constants #
 project_name = 'eu_cbm_hat'
 project_url  = 'https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat'
+CARBON_FRACTION_OF_BIOMASS = 0.49
 
 # Get paths to module #
 self       = sys.modules[__name__]

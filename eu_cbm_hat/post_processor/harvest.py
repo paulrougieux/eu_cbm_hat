@@ -22,8 +22,7 @@ from tqdm import tqdm
 
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.core.continent import continent
-
-CARBON_FRACTION_OF_BIOMASS = 0.49
+from eu_cbm_hat import CARBON_FRACTION_OF_BIOMASS
 
 
 def ton_carbon_to_m3_ub(df, input_var):
@@ -54,7 +53,7 @@ def harvest_demand(selected_scenario: str) -> pandas.DataFrame:
     return df.loc[df["scenario"] == selected_scenario]
 
 
-def harvest_expected_one_country(
+def harvest_exp_one_country(
     combo_name: str, iso2_code: str, groupby: Union[List[str], str]
 ):
     """Harvest excepted in one country, as allocated by the Harvest Allocation Tool
@@ -66,9 +65,9 @@ def harvest_expected_one_country(
 
     Usage:
 
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_expected_one_country
-        >>> harvest_expected_one_country("reference", "ZZ", "year")
-        >>> harvest_expected_one_country("reference", "ZZ", ["year", "forest_type"])
+        >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_one_country
+        >>> harvest_exp_one_country("reference", "ZZ", "year")
+        >>> harvest_exp_one_country("reference", "ZZ", ["year", "forest_type"])
 
     """
     # Load harvest expected
@@ -86,19 +85,25 @@ def harvest_expected_one_country(
     # Aggregate
     cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp"]
     df = events.groupby(groupby)[cols].agg(sum).reset_index()
-    return df
+    # Place combo name, country code and country name as first columns
+    df["combo_name"] = combo_name
+    df["iso2_code"] = runner.country.iso2_code
+    df["country"] = runner.country.country_name
+    cols = list(df.columns)
+    cols = cols[-3:] + cols[:-3]
+    return df[cols]
 
 
-def harvest_provided_one_country(
+def harvest_prov_one_country(
     combo_name: str, iso2_code: str, groupby: Union[List[str], str]
 ):
     """Harvest provided in one country
 
     Usage:
 
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_provided_one_country
-        >>> harvest_provided_one_country("reference", "ZZ", "year")
-        >>> harvest_provided_one_country("reference", "ZZ", ["year", "forest_type"])
+        >>> from eu_cbm_hat.post_processor.harvest import harvest_prov_one_country
+        >>> harvest_prov_one_country("reference", "ZZ", "year")
+        >>> harvest_prov_one_country("reference", "ZZ", ["year", "forest_type"])
 
     """
     runner = continent.combos[combo_name].runners[iso2_code][-1]
@@ -132,37 +137,14 @@ def harvest_provided_one_country(
         .reset_index()
     )
     # Place combo name, country code and country name as first columns
-    df_agg["combo_name"] = runner.combo.short_name
+    df_agg["combo_name"] = combo_name
     df_agg["iso2_code"] = runner.country.iso2_code
     df_agg["country"] = runner.country.country_name
     cols = list(df_agg.columns)
     cols = cols[-3:] + cols[:-3]
     return df_agg[cols]
 
-
-def harvest_provided_all_countries(combo_name: str, groupby: Union[List[str], str]):
-    """Harvest provided in all countries
-    Example use:
-
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_provided_all_countries
-        >>> hp = harvest_provided_all_countries(combo_name="reference", groupby="year")
-
-    """
-    df_all = pandas.DataFrame()
-    country_codes = continent.combos[combo_name].runners.keys()
-    for key in tqdm(country_codes):
-        try:
-            df = harvest_provided_one_country(
-                combo_name=combo_name, iso2_code=key, groupby=groupby
-            )
-            df_all = pandas.concat([df, df_all])
-        except FileNotFoundError as e_file:
-            print(e_file)
-    df_all.reset_index(inplace=True, drop=True)
-    return df_all
-
-
-def harvest_expected_provided_one_country(
+def harvest_exp_prov_one_country(
     combo_name: str, iso2_code: str, groupby: Union[List[str], str]
 ):
     """Harvest excepted provided in one country
@@ -175,26 +157,54 @@ def harvest_expected_provided_one_country(
 
     In case the groupby argument is equal to "year", we also add the harvest
     demand from the economic model.
-    """
-    # Load harvest expected
-    runner = continent.combos[combo_name].runners[iso2_code][-1]
 
-    # Join harvest provided
-    df_provided = harvest_provided_one_country(
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_one_country
+        >>> harvest_exp_prov_one_country("reference", "ZZ", "year")
+
+    """
+    df_expected = harvest_exp_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
+    df_provided = harvest_prov_one_country(
         combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
     )
+    index = ['combo_name', 'iso2_code', 'country', 'year']
+    df = df_expected.merge(df_provided, on=index)
 
     # Join demand from the economic model, if grouping on years only
     if groupby == "year":
         print("group by year")
+        harvest_scenario_name = continent.combos[combo_name].config["harvest"]
+        df_demand = harvest_demand(harvest_scenario_name)
+        df_demand = df_demand.loc[df_demand["iso2_code"] == iso2_code]
+        index = ['iso2_code', 'year']
+        df = df.merge(df_demand, on=index)
 
-    # return df
+    return df
 
 
-def harvest_expected_provided_all_countries(combo_name):
+def harvest_exp_prov(combo_name: str, groupby: Union[List[str], str]):
     """Information on both harvest expected and provided for all
     countries in the combo_name. Some countries might have NA values.
     If the model didn't run successfully for those countries i.e.
-    the output flux table was missing."""
+    the output flux table was missing."
     # Harvest scenario associated with the combo_name
-    harvest_scenario = continent.combos[combo_name].config["harvest"]
+    Harvest provided in all countries
+    Example use:
+
+        >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov
+        >>> hp = harvest_exp_prov(combo_name="reference", groupby="year")
+
+    """
+    df_all = pandas.DataFrame()
+    country_codes = continent.combos[combo_name].runners.keys()
+    for key in tqdm(country_codes):
+        try:
+            df = harvest_prov_one_country(
+                combo_name=combo_name, iso2_code=key, groupby=groupby
+            )
+            df_all = pandas.concat([df, df_all])
+        except FileNotFoundError as e_file:
+            print(e_file)
+    df_all.reset_index(inplace=True, drop=True)
+    return df_all
