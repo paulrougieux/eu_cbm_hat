@@ -82,24 +82,25 @@ class Combination(object):
         # The combos dir used for all output #
         self.output_dir = self.continent.output_dir
         # The base dir for our output #
-        self.base_dir = Path(self.output_dir + self.short_name + '/')
+        self.base_dir = Path(self.output_dir + self.short_name + "/")
         # The path to our specific YAML file #
-        self.yaml_path = yaml_dir + self.short_name + '.yaml'
-
+        self.yaml_path = yaml_dir + self.short_name + ".yaml"
 
     def __repr__(self):
-        return '%s object with %i runners' % (self.__class__, len(self))
+        return "%s object with %i runners" % (self.__class__, len(self))
 
-    def __iter__(self): return iter(self.runners.values())
-    def __len__(self):  return len(self.runners.values())
+    def __iter__(self):
+        return iter(self.runners.values())
+
+    def __len__(self):
+        return len(self.runners.values())
 
     def __getitem__(self, key):
         """Return a runner based on a country code."""
         return self.runners[key]
 
-    #----------------------------- Properties --------------------------------#
-    @property_cached
-    def config(self):
+    @cached_property
+    def config(self) -> dict:
         """
         The values chosen by the user in the YAML file which decide on every
         scenario choice for every activity and silvicultural practice.
@@ -108,19 +109,17 @@ class Combination(object):
         with open(self.yaml_path, "r") as handle:
             result = yaml.safe_load(handle)
         # Convert silvicultural choices to dataframes #
-        key = 'harvest'
+        key = "harvest"
         value = result[key]
         if not isinstance(value, str):
-            df = pandas.DataFrame.from_dict(value,
-                                            orient  = 'index',
-                                            columns = ['scenario'])
-            df = df.rename_axis('year').reset_index()
+            df = pandas.DataFrame.from_dict(value, orient="index", columns=["scenario"])
+            df = df.rename_axis("year").reset_index()
             result[key] = df
         # Return result #
         return result
 
-    @property_cached
-    def runners(self):
+    @cached_property
+    def runners(self) -> dict:
         """
         A dictionary of country codes as keys with a list of runners as
         values.
@@ -150,7 +149,6 @@ class Combination(object):
         if self.config["runner_type"] == "dynamic_runner":
             return {c.iso2_code: [DynamicRunner(self, c, 0)] for c in self.continent}
 
-    #------------------------------- Methods ---------------------------------#
     def __call__(self, parallel=False, timer=True):
         """A method to run a combo by simulating all countries."""
         # Message #
@@ -163,6 +161,7 @@ class Combination(object):
             code, steps = args
             for runner in steps:
                 return runner.run()
+
         # Run countries sequentially #
         if not parallel:
             result = t_map(run_country, self.runners.items())
@@ -218,8 +217,8 @@ class Combination(object):
         for rs in self.runners.values():
             r = rs[step]
             summary.handle.write("\n## " + r.country.country_name)
-            summary.handle.write(' (' + r.country.iso2_code + ')' + '\n\n')
-            content = textwrap.indent(r.paths.log.contents, '    ')
+            summary.handle.write(" (" + r.country.iso2_code + ")" + "\n\n")
+            content = textwrap.indent(r.paths.log.contents, "    ")
             summary.handle.write(content)
         # Close #
         summary.close()
