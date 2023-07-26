@@ -199,9 +199,9 @@ class Combination(object):
         Usage:
 
             >>> from eu_cbm_hat.core.continent import continent
-            >>> # run the selected list of countries
+            >>> # Run the selected list of countries
             >>> continent.combos["reference"].run(2050, ['IT','ZZ'])
-            >>> # run all countries with parallel cpus
+            >>> # Run all countries with parallel cpus
             >>> continent.combos["reference"].run(2050)
             >>> # Run sequentially (not in parallel)
             >>> continent.combos["reference"].run(2050, parallel=False)
