@@ -178,16 +178,20 @@ def harvest_exp_prov_one_country(
         >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
 
     """
-    # TODO: current version only contains HAT disturbances. This should also
-    # provide static events that generate fluxes to products especially in the
-    # historical period
+    if isinstance(groupby, str):
+        groupby = [groupby]
+
+    # TODO: current version of harvest_exp_one_country() only contains HAT
+    # disturbances. This should also provide static events that generate fluxes
+    # to products especially in the historical period
     df_expected = harvest_exp_one_country(
         combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
     )
     df_provided = harvest_prov_one_country(
         combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
     )
-    index = ["combo_name", "iso2_code", "country", "year"]
+    index = ["combo_name", "iso2_code", "country"]
+    index += groupby
     df = df_expected.merge(df_provided, on=index, how="outer")
 
     # Join demand from the economic model, if grouping on years only
@@ -198,6 +202,9 @@ def harvest_exp_prov_one_country(
         df_demand = df_demand.loc[df_demand["iso2_code"] == iso2_code]
         index = ["iso2_code", "year"]
         df = df.merge(df_demand, on=index)
+
+    # Sort rows in the order of the grouping variables
+    df.sort_values(groupby, inplace=True)
 
     return df
  
