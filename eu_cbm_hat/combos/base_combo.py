@@ -30,7 +30,7 @@ from eu_cbm_hat.cbm.dynamic import DynamicRunner
 yaml_dir = eu_cbm_data_dir + "combos/"
 
 
-def run_country(args):
+def run_one_country(args):
     """Run a single country, allowing any errors with a broad except statement.
 
     This function should only be used by a Combination.run() method.
@@ -150,7 +150,11 @@ class Combination(object):
             return {c.iso2_code: [DynamicRunner(self, c, 0)] for c in self.continent}
 
     def __call__(self, parallel=False, timer=True):
-        """A method to run a combo by simulating all countries."""
+        """A method to run a combo by simulating all countries.
+        
+        Compared to the run() method, this call also runs many steps, if the
+        runner has many steps inside .
+        """
         # Message #
         print("Running combo '%s'." % self.short_name)
         # Timer start #
@@ -184,6 +188,14 @@ class Combination(object):
         combination of scenarios. If one country fails to run, the error will
         be kept in its log files but the other countries will continue to run.
 
+        Note: this method makes use of the run_one_country() function above
+        which will only run one step inside the country. An update to that
+        function will be needed in case your simulation needs many steps. We
+        typically only run one step normally. Here the meaning of step is not
+        that of yearly time steps, but bigger steps in terms of being able to
+        start and stop the model which were foreseen in a legacy version of the
+        model. 
+
         Usage:
 
             >>> from eu_cbm_hat.core.continent import continent
@@ -198,12 +210,12 @@ class Combination(object):
         if countries is None:
             countries = self.runners.keys()
         # List of tuples, each tuple will be passed as argument to the
-        # run_country() function
+        # function that runs one country.
         runner_items = [(last_year, self.runners[k][-1]) for k in countries]
         if parallel:
-            result = p_umap(run_country, runner_items, num_cpus=10)
+            result = p_umap(run_one_country, runner_items, num_cpus=10)
         else:
-            result = t_map(run_country, runner_items)
+            result = t_map(run_one_country, runner_items)
         return result
 
     def compile_logs(self, step=-1):
