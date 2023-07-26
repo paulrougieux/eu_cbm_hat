@@ -11,25 +11,43 @@ Unit D1 Bioeconomy.
 
 # Built-in modules #
 import textwrap
+from functools import cached_property
 
 # Third party modules #
 import yaml, pandas
 from p_tqdm import p_umap, t_map
 
 # First party modules #
-from autopaths      import Path
-from plumbing.cache import property_cached
+from autopaths import Path
 from plumbing.timer import Timer
 
 # Internal modules #
 from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat.core.runner import Runner
-from eu_cbm_hat.cbm.dynamic       import DynamicRunner
+from eu_cbm_hat.cbm.dynamic import DynamicRunner
 
 # Constant directory for all the data #
-yaml_dir = eu_cbm_data_dir + 'combos/'
+yaml_dir = eu_cbm_data_dir + "combos/"
 
-###############################################################################
+
+def run_country(args):
+    """Run a single country, allowing any errors with a broad except statement.
+
+    This function should only be used by a Combination.run() method.
+    """
+    last_year, runner = args
+    runner.num_timesteps = last_year - runner.country.inventory_start_year
+    print(runner)
+    try:
+        # The argument interrupt_on_error=False deals with errors happening
+        # during the actual libcbm run
+        runner.run(verbose=True, interrupt_on_error=False)
+    # Catching general exception in case there are other errors in the input
+    # data preparation or pre processor
+    except Exception as general_error:
+        print(general_error)
+
+
 class Combination(object):
     """
     This object represents a combination of specific scenarios for different
@@ -159,10 +177,40 @@ class Combination(object):
         # Return #
         return result
 
+    def run(self, last_year: int, countries: list = None, parallel=True):
+        """Run a scenario combination
+
+        If the list of countries is not specified, run all countries. A
+        convenient method that makes it possible to run all countries inside a
+        combination of scenarios. If one country fails to run, the error will
+        be kept in its log files but the other countries will continue to run.
+
+        Usage:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> # run the selected list of countries
+            >>> continent.combos["reference"].run(2050, ['IT','ZZ'])
+            >>> # run all countries with parallel cpus
+            >>> continent.combos["reference"].run(2050)
+            >>> # Run sequentially (not in parallel)
+            >>> continent.combos["reference"].run(2050, parallel=False)
+
+        """
+        if countries is None:
+            countries = self.runners.keys()
+        # List of tuples, each tuple will be passed as argument to the
+        # run_country() function
+        runner_items = [(last_year, self.runners[k][-1]) for k in countries]
+        if parallel:
+            result = p_umap(run_country, runner_items, num_cpus=10)
+        else:
+            result = t_map(run_country, runner_items)
+        return result
+
     def compile_logs(self, step=-1):
         # Open file #
-        summary = self.base_dir + 'all_logs.md'
-        summary.open(mode='w')
+        summary = self.base_dir + "all_logs.md"
+        summary.open(mode="w")
         # Write title #
         title = "# Summary of all log files #\n\n"
         summary.handle.write(title)
