@@ -227,7 +227,7 @@ def harvest_exp_prov(combo_name: str, groupby: Union[List[str], str]):
     country_codes = continent.combos[combo_name].runners.keys()
     for key in tqdm(country_codes):
         try:
-            df = harvest_prov_one_country(
+            df = harvest_exp_prov_one_country(
                 combo_name=combo_name, iso2_code=key, groupby=groupby
             )
             df_all = pandas.concat([df, df_all])
