@@ -43,19 +43,21 @@ POOLS_DICT = {
         "hardwood_coarse_roots",
         "hardwood_fine_roots",
     ],
-    "soil": [
-        "softwood_coarse_roots",
-        "softwood_fine_roots",
-        "hardwood_coarse_roots",
-        "hardwood_fine_roots",
+    "dom" : [
         "above_ground_very_fast_soil",
-        "below_ground_very_fast_soil",
         "above_ground_fast_soil",
+        "above_ground_slow_soil",
         "below_ground_fast_soil",
         "medium_soil",
-        "above_ground_slow_soil",
-        "below_ground_slow_soil",
+        'softwood_stem_snag',
+        'hardwood_branch_snag',
+        'softwood_branch_snag',
+        'hardwood_stem_snag'
     ],
+    "soil" : [
+        "below_ground_very_fast_soil",
+        "below_ground_slow_soil",
+    ]
 }
 
 
@@ -95,16 +97,7 @@ def sink_one_country(
         >>>         "hardwood_fine_roots",
         >>>     ],
         >>>     "soil" : [
-        >>>         "softwood_coarse_roots",
-        >>>         "softwood_fine_roots",
-        >>>         "hardwood_coarse_roots",
-        >>>         "hardwood_fine_roots",
-        >>>         "above_ground_very_fast_soil",
         >>>         "below_ground_very_fast_soil",
-        >>>         "above_ground_fast_soil",
-        >>>         "below_ground_fast_soil",
-        >>>         "medium_soil",
-        >>>         "above_ground_slow_soil",
         >>>         "below_ground_slow_soil",
         >>>     ]
         >>> }
@@ -113,6 +106,11 @@ def sink_one_country(
         >>> lu_sink_by_y_ft = sink_one_country("reference", "LU", groupby=index, pools_dict=pools_dict)
 
     """
+    # TODO: normalise the sink by the area
+    # In case of afforestation the stock change should take into account the change
+    # of area. i.e. the stock change and sink need to be normalized by the area
+    # - Compute the stock change per hectare for
+    # - then remultiply by the area
     if pools_dict == None:
         pools_dict = POOLS_DICT
     if "year" not in groupby:
@@ -134,6 +132,7 @@ def sink_one_country(
         .sum()
         .reset_index()
     )
+    breakpoint()
     # Sort by all variable first, then year last to compute the difference of pools
     groupby.remove("year")
     df_wide.sort_values(groupby + ["year"], inplace=True)
