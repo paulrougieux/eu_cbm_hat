@@ -148,6 +148,12 @@ def harvest_prov_one_country(
         )
         .reset_index()
     )
+    if groupby == "year":
+        print("group by year")
+        # Join demand from the economic model, if grouping on years only
+        # TODO: add irw and fw predetermined from
+        # runner.output["extras"][['irw_predetermined', 'fw_predetermined']]
+
     # Place combo name, country code and country name as first columns
     df_agg["combo_name"] = combo_name
     df_agg["iso2_code"] = runner.country.iso2_code
