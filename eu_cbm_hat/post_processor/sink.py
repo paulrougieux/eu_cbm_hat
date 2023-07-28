@@ -29,6 +29,7 @@ import pandas
 from tqdm import tqdm
 
 from eu_cbm_hat.core.continent import continent
+from eu_cbm_hat.post_processor.area import apply_to_all_countries
 
 POOLS_DICT = {
     "living_biomass": [
@@ -43,21 +44,21 @@ POOLS_DICT = {
         "hardwood_coarse_roots",
         "hardwood_fine_roots",
     ],
-    "dom" : [
+    "dom": [
         "above_ground_very_fast_soil",
         "above_ground_fast_soil",
         "above_ground_slow_soil",
         "below_ground_fast_soil",
         "medium_soil",
-        'softwood_stem_snag',
-        'hardwood_branch_snag',
-        'softwood_branch_snag',
-        'hardwood_stem_snag'
+        "softwood_stem_snag",
+        "hardwood_branch_snag",
+        "softwood_branch_snag",
+        "hardwood_stem_snag",
     ],
-    "soil" : [
+    "soil": [
         "below_ground_very_fast_soil",
         "below_ground_slow_soil",
-    ]
+    ],
 }
 
 
@@ -132,7 +133,6 @@ def sink_one_country(
         .sum()
         .reset_index()
     )
-    breakpoint()
     # Sort by all variable first, then year last to compute the difference of pools
     groupby.remove("year")
     df_wide.sort_values(groupby + ["year"], inplace=True)
@@ -174,13 +174,7 @@ def sink_all_countries(combo_name, groupby, pools_dict=None):
         >>> sink = sink_all_countries("reference", "year")
 
     """
-    df_all = pandas.DataFrame()
-    country_codes = continent.combos[combo_name].runners.keys()
-    for key in tqdm(country_codes):
-        try:
-            df = sink_one_country(combo_name, key, groupby=groupby, pools_dict=pools_dict)
-            df_all = pandas.concat([df, df_all])
-        except FileNotFoundError as e_file:
-            print(e_file)
-    df_all.reset_index(inplace=True, drop=True)
+    df_all = apply_to_all_countries(
+        sink_one_country, combo_name=combo_name, groupby=groupby, pools_dict=pools_dict
+    )
     return df_all

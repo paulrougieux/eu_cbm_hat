@@ -23,6 +23,7 @@ from tqdm import tqdm
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.core.continent import continent
 from eu_cbm_hat import CARBON_FRACTION_OF_BIOMASS
+from eu_cbm_hat.post_processor.area import apply_to_all_countries
 
 
 def ton_carbon_to_m3_ub(df, input_var):
@@ -91,7 +92,7 @@ def harvest_exp_one_country(
     cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp"]
     df = events.groupby(groupby)[cols].agg(sum).reset_index()
     # Rename amound
-    df.rename(columns={"amount":"amount_exp"}, inplace=True)
+    df.rename(columns={"amount": "amount_exp"}, inplace=True)
     # Place combo name, country code and country name as first columns
     df["combo_name"] = combo_name
     df["iso2_code"] = runner.country.iso2_code
@@ -209,7 +210,7 @@ def harvest_exp_prov_one_country(
     df.sort_values(groupby, inplace=True)
 
     return df
- 
+
 
 def harvest_exp_prov(combo_name: str, groupby: Union[List[str], str]):
     """Information on both harvest expected and provided for all
@@ -225,15 +226,7 @@ def harvest_exp_prov(combo_name: str, groupby: Union[List[str], str]):
         >>> harvest_exp_prov("reference", ["year", "forest_type", "disturbance_type"])
 
     """
-    df_all = pandas.DataFrame()
-    country_codes = continent.combos[combo_name].runners.keys()
-    for key in tqdm(country_codes):
-        try:
-            df = harvest_exp_prov_one_country(
-                combo_name=combo_name, iso2_code=key, groupby=groupby
-            )
-            df_all = pandas.concat([df, df_all])
-        except FileNotFoundError as e_file:
-            print(e_file)
-    df_all.reset_index(inplace=True, drop=True)
+    df_all = apply_to_all_countries(
+        harvest_exp_prov_one_country, combo_name=combo_name, groupby=groupby
+    )
     return df_all

@@ -7,6 +7,20 @@ from tqdm import tqdm
 from eu_cbm_hat.core.continent import continent
 
 
+def apply_to_all_countries(data_func, combo_name, groupby, **kwargs):
+    """Apply a function to many countries"""
+    df_all = pandas.DataFrame()
+    country_codes = continent.combos[combo_name].runners.keys()
+    for key in tqdm(country_codes):
+        try:
+            df = data_func(combo_name, key, groupby=groupby, **kwargs)
+            df_all = pandas.concat([df, df_all])
+        except FileNotFoundError as e_file:
+            print(e_file)
+    df_all.reset_index(inplace=True, drop=True)
+    return df_all
+
+
 def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Harvest provided in one country
 
@@ -72,19 +86,11 @@ def area_by_status_one_country(
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Harvest area by status in wide format for all countries in the given scenario combination.
 
-        >>> from eu_cbm_hat.post_processor.area import area_all_countries
-        >>> area_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+    >>> from eu_cbm_hat.post_processor.area import area_all_countries
+    >>> area_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
 
     """
-    df_all = pandas.DataFrame()
-    country_codes = continent.combos[combo_name].runners.keys()
-    for key in tqdm(country_codes):
-        try:
-            df = area_one_country(
-                combo_name=combo_name, iso2_code=key, groupby=groupby
-            )
-            df_all = pandas.concat([df, df_all])
-        except FileNotFoundError as e_file:
-            print(e_file)
-    df_all.reset_index(inplace=True, drop=True)
+    df_all = apply_to_all_countries(
+        area_one_country, combo_name=combo_name, groupby=groupby
+    )
     return df_all
