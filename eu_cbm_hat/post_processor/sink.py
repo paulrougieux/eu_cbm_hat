@@ -174,8 +174,6 @@ def sink_all_countries(combo_name, groupby, pools_dict=None):
         >>> sink = sink_all_countries("reference", "year")
 
     """
-    if pools_dict == None:
-        pools_dict = POOLS_DICT
     df_all = pandas.DataFrame()
     country_codes = continent.combos[combo_name].runners.keys()
     for key in tqdm(country_codes):
