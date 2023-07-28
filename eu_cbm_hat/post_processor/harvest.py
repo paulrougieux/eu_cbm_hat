@@ -90,6 +90,8 @@ def harvest_exp_one_country(
     # Aggregate
     cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp"]
     df = events.groupby(groupby)[cols].agg(sum).reset_index()
+    # Rename amound
+    df.rename(columns={"amount":"amount_exp"}, inplace=True)
     # Place combo name, country code and country name as first columns
     df["combo_name"] = combo_name
     df["iso2_code"] = runner.country.iso2_code
