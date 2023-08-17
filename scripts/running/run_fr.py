@@ -11,22 +11,17 @@ A script to run Austria.
 
 Typically you would run this file from a command line like this:
 
-     ipython3 -i -- ~/deploy/eu_cbm_hat/scripts/running/run_at.py
+     ipython3 -i -- ~/deploy/eu_cbm/eu_cbm_hat/scripts/running/run_fr.py
 
 """
 
 from eu_cbm_hat.core.continent import continent
-runner  = continent.combos['reference'].runners['AT'][-1]
+runner  = continent.combos['reference'].runners['FR'][-1]
 runner.num_timesteps = 25
 
 # Run the model
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
-# Input events sent to libcbm
-events_input = runner.input_data["events"]
-# Events stored in the output
-events_output = runner.output["events"]
-output_extras = runner.output["extras"]
 
 
 

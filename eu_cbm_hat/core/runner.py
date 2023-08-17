@@ -25,7 +25,7 @@ from eu_cbm_hat.info.internal_data  import InternalData
 from eu_cbm_hat.info.output_data    import OutputData
 from eu_cbm_hat.info.silviculture   import Silviculture
 from eu_cbm_hat.launch.create_json  import CreateJSON
-from eu_cbm_hat.pump.post_processor import PostProcessor
+from eu_cbm_hat.post_processor import PostProcessor
 from eu_cbm_hat.pump.pre_processor  import PreProcessor
 from eu_cbm_hat.qaqc                import Qaqc
 import eu_cbm_hat
@@ -43,7 +43,7 @@ class Runner(object):
     You can run a combo like this:
 
         >>> from eu_cbm_hat.core.continent import continent
-        >>> combo  = continent.combos['historical']
+        >>> combo  = continent.combos['reference']
         >>> runner = combo.runners['LU'][0]
         >>> runner.run()
 

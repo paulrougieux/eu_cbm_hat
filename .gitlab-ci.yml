@@ -33,9 +33,11 @@ pages:
 libcbm_run:
   stage: test
   script:
+    # Test individual methods or functions
+    - pytest --junitxml=report.xml eu_cbm_hat
+    # Test a complete model run
     # The following test depends on ZZ data stored in the (private) eu_cbm_data repository
     - python scripts/running/run_zz.py
-    - pytest --junitxml=report.xml eu_cbm_hat
     # The following test doesn't depend on the eu_cbm_data repository.
     # It uses ZZ data stored in the (public) eu_cbm_hat package.
     - python scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py

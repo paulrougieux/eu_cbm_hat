@@ -25,8 +25,7 @@ if not test_data_dir.exists():
 # I copied the output of the bash command
 #     cd ~/rp/eu_cbm_data
 #     find  combos/ common/ countries/ harvest/ -type f
-# To obtain the following lines of files necessary to run ZZ
-files = """combos/hat.yaml
+files = """combos/reference.yaml
 common/reference_years.csv
 common/country_codes.csv
 countries/ZZ/common/disturbance_types.csv

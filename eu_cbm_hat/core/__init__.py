@@ -8,5 +8,4 @@ runner object for the test country `ZZ` as follows:
 
     >>> from eu_cbm_hat.core.continent import continent
     >>> runner = continent.combos['hat'].runners['ZZ'][-1]
-
 """

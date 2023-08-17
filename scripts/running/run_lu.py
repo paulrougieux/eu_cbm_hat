@@ -11,27 +11,21 @@ A script to run Luxembourg.
 
 Typically you would run this file from a command line like this:
 
-     ipython3 -i -- ~/repos/eu_cbm/eu_cbm_hat/scripts/running/run_lu.py
+     ipython3 -i -- ~/deploy/eu_cbm_hat/scripts/running/run_lu.py
 
 """
 
 from eu_cbm_hat.core.continent import continent
 
-
 #############################################
 # Declare which scenario combination to run #
 #############################################
-# Scenario combination defined in the yaml file
+# Scenario combination defined in yaml files
 # `~/repos/eu_cbm_data/combos/harvest_test.yaml`
-# Scenario itself is defined as code in 
-# `~/repos/eu_cbm_hat/eu_cbm_hat/combos/harvest_test.py`
-combo   = continent.combos['reference']
-runner  = combo.runners['LU'][-1]
+runner = continent.combos['pikfair'].runners['LU'][-1]
 runner.num_timesteps = 25
-runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 # Run the model
-print(f"\n\nRunning the '{combo.short_name}' combination of scenarios.")
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 # Input events sent to libcbm

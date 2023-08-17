@@ -17,6 +17,10 @@
 *.ipynb
 .ipynb_checkpoints
 
+# Distribution
+dist/*
+*.egg-info/
+
 # Generated documentation
 docs/*
 public/*

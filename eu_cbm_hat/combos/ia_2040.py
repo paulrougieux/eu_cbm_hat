@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jul  4 16:30:31 2022
 
-@author: blujd
+"""
+Written by Lucas Sinclair and Paul Rougieux.
+
+JRC Biomass Project.
+Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
@@ -15,12 +18,12 @@ from eu_cbm_hat.combos.base_combo import Combination
 from eu_cbm_hat.cbm.dynamic       import DynamicRunner
 
 ###############################################################################
-class Potencia_necp_bms_down90(Combination):
+class IA_2040(Combination):
     """
     A Combination used for the Harvest Allocation Tool (HAT).
     """
 
-    short_name = 'potencia_necp_bms_down90'
+    short_name = 'ia_2040'
 
     @property_cached
     def runners(self):

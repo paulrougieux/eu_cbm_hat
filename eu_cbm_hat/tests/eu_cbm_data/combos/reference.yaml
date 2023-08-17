@@ -1,4 +1,4 @@
---- # Combination 'hat'
+--- # Combination 'reference'
 
 inventory:
   afforestation: reference
@@ -75,6 +75,17 @@ events_templates:
   2058: reference
   2059: reference
   2060: reference
+  2061: reference
+  2062: reference
+  2063: reference
+  2064: reference
+  2065: reference
+  2065: reference
+  2066: reference
+  2067: reference
+  2068: reference
+  2069: reference
+  2070: reference
 
 irw_frac_by_dist:
   2015: reference
@@ -123,53 +134,75 @@ irw_frac_by_dist:
   2058: reference
   2059: reference
   2060: reference
+  2061: reference
+  2062: reference
+  2063: reference
+  2064: reference
+  2065: reference
+  2065: reference
+  2066: reference
+  2067: reference
+  2068: reference
+  2069: reference
+  2070: reference
 
 harvest_factors:
-  2015: reference
-  2016: reference
-  2017: reference
-  2018: reference
-  2019: reference
-  2020: reference
-  2021: reference
-  2022: reference
-  2023: reference
-  2024: reference
-  2025: reference
-  2026: reference
-  2027: reference
-  2028: reference
-  2029: reference
-  2030: reference
-  2031: reference
-  2032: reference
-  2033: reference
-  2034: reference
-  2035: reference
-  2036: reference
-  2037: reference
-  2038: reference
-  2039: reference
-  2040: reference
-  2041: reference
-  2042: reference
-  2043: reference
-  2044: reference
-  2045: reference
-  2046: reference
-  2047: reference
-  2048: reference
-  2049: reference
-  2050: reference
-  2051: reference
-  2052: reference
-  2053: reference
-  2054: reference
-  2055: reference
-  2056: reference
-  2057: reference
-  2058: reference
-  2059: reference
-  2060: reference
+  2015: no_market_forcing
+  2016: no_market_forcing
+  2017: no_market_forcing
+  2018: no_market_forcing
+  2019: no_market_forcing
+  2020: no_market_forcing
+  2021: no_market_forcing
+  2022: no_market_forcing
+  2023: no_market_forcing
+  2024: no_market_forcing
+  2025: no_market_forcing
+  2026: no_market_forcing
+  2027: no_market_forcing
+  2028: no_market_forcing
+  2029: no_market_forcing
+  2030: no_market_forcing
+  2031: no_market_forcing
+  2032: no_market_forcing
+  2033: no_market_forcing
+  2034: no_market_forcing
+  2035: no_market_forcing
+  2036: no_market_forcing
+  2037: no_market_forcing
+  2038: no_market_forcing
+  2039: no_market_forcing
+  2040: no_market_forcing
+  2041: no_market_forcing
+  2042: no_market_forcing
+  2043: no_market_forcing
+  2044: no_market_forcing
+  2045: no_market_forcing
+  2046: no_market_forcing
+  2047: no_market_forcing
+  2048: no_market_forcing
+  2049: no_market_forcing
+  2050: no_market_forcing
+  2051: no_market_forcing
+  2052: no_market_forcing
+  2053: no_market_forcing
+  2054: no_market_forcing
+  2055: no_market_forcing
+  2056: no_market_forcing
+  2057: no_market_forcing
+  2058: no_market_forcing
+  2059: no_market_forcing
+  2060: no_market_forcing
+  2061: no_market_forcing
+  2062: no_market_forcing
+  2063: no_market_forcing
+  2064: no_market_forcing
+  2065: no_market_forcing
+  2065: no_market_forcing
+  2066: no_market_forcing
+  2067: no_market_forcing
+  2068: no_market_forcing
+  2069: no_market_forcing
+  2070: no_market_forcing
 
 harvest: reference

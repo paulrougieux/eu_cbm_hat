@@ -9,6 +9,7 @@ Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
+from typing import Dict
 
 # Third party modules #
 
@@ -19,7 +20,10 @@ from plumbing.cache       import property_cached
 # Internal modules #
 from eu_cbm_hat import eu_cbm_data_dir
 from eu_cbm_hat.core.country import Country
-from eu_cbm_hat.combos       import combo_classes
+from eu_cbm_hat.combos       import combo_classes_dict
+from eu_cbm_hat.combos.base_combo import Combination
+from eu_cbm_hat import eu_cbm_data_pathlib
+
 
 ###############################################################################
 class Continent(object):
@@ -67,10 +71,20 @@ class Continent(object):
                          for d in self.countries_dir.flat_directories]
         return {c.iso2_code: c for c in all_countries}
 
-    @property_cached
-    def combos(self):
+    @property
+    def combos(self)-> Dict[str, 'Combination']:
         """Return a dictionary of combination names to Combination objects."""
-        all_combos = [combo(self) for combo in combo_classes]
+        combo_dir = eu_cbm_data_pathlib / "combos"
+        # List hard coded combo classes
+        hard_coded_combos = [combo(self, short_name) for short_name, combo in combo_classes_dict.items()]
+        # List yaml files
+        yaml_short_names = [x.stem for x in combo_dir.glob('**/*.yaml')]
+        # Remove short_names which correspond to hard coded combos
+        yaml_short_names = list(set(yaml_short_names) - set(combo_classes_dict.keys()))
+        # Create combos from yaml files
+        combos_from_yaml_files = [Combination(self, short_name) for short_name in yaml_short_names]
+        # List all combos
+        all_combos = hard_coded_combos + combos_from_yaml_files
         return {s.short_name: s for s in all_combos}
 
     #------------------------------- Methods ---------------------------------#

@@ -23,6 +23,7 @@ classifier_number,classifier_value_id,name
 4,C,Coppice
 5,_CLASSIFIER,mgmt_strategy
 5,E,Even aged
+5,U,Uneven aged
 6,_CLASSIFIER,climate
 6,24,CLU24
 6,25,CLU25

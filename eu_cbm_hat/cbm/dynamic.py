@@ -165,6 +165,14 @@ class DynamicSimulation(Simulation):
                               on=clfrs_noq + ["disturbance_type"],
                               suffixes=('_fluxes', ''))
         assert sum_flux_before_merge == fluxes[cols_to_product].sum().sum()
+        missing_irw_frac = fluxes[self.sources].isna().any(axis=1)
+        has_flux_to_prod =  fluxes[cols_to_product].sum(axis=1)>1
+        selector = missing_irw_frac & has_flux_to_prod
+        if any(selector):
+            msg = "Industrial roundwood fractions defined in irw_frac_by_dist.csv "
+            msg += "do not have irw fractions for the following classifiers:\n"
+            msg += f"{fluxes[selector]}"
+            raise ValueError(msg)
 
         # Join the wood density and bark fraction parameters also #
         coefs = self.runner.silv.coefs.df
@@ -321,9 +329,8 @@ class DynamicSimulation(Simulation):
                 msg = "There is remaining IRW harvest this year, but there " \
                       "are no events that enable the creation of irw."
                 raise Exception(msg)
-
-        msg = f"IRW harvest {remain_irw_vol:.0f} m3."
-        self.parent.log.info(msg)
+        #msg = f"IRW harvest {remain_irw_vol:.0f} m3."
+        #self.parent.log.info(msg)
 
         ######################
         # Harvest allocation #
@@ -362,7 +369,12 @@ class DynamicSimulation(Simulation):
         # Check `products_created` is correct and not lying #
         check_irw = df_irw_silv.query("fw_vol == 0.0")
         check_fw  = df_fw.query("irw_vol != 0.0")
-        assert check_irw.empty
+        if not check_irw.empty:
+            cols = ["forest_type", "disturbance_type", "product_created"]
+            cols += ["irw_avail", "fw_avail"]
+            msg = "Some rows have zero values for the fuel wood column.\n"
+            msg += f"{check_irw[cols]}"
+            raise ValueError(msg)
         assert check_fw.empty
 
         # Process salvage logging disturbances in priority if they are present
@@ -400,7 +412,7 @@ class DynamicSimulation(Simulation):
         # Continue allocating disturbances
         if irw_salv_avail < remain_irw_vol:
             remain_irw_vol_after_salv = remain_irw_vol - irw_salv_avail
-            msg = f"Remaining IRW harvest after salvage logging {remain_irw_vol_after_salv:.0f} m3.\n"
+            msg = f"Remaining IRW demand after salvage: {remain_irw_vol_after_salv:.0f} m3."
             self.parent.log.info(msg)
             # Distribute evenly according to the potential irw volume produced #
             df_irw_silv["irw_norm"] = (df_irw_silv["irw_avail"] /
@@ -416,11 +428,28 @@ class DynamicSimulation(Simulation):
             # Keep only IRW coefficients
             harvest = harvest[harvest["product_created"] == "irw_and_fw"]
 
+
             # Keep only the columns that are not empty as join columns
             harvest_join_cols = []
             for col in self.runner.silv.harvest.cols:
                 if not any(harvest[col].isna()):
                     harvest_join_cols.append(col)
+            harvest = harvest[harvest_join_cols + ['skew']]
+
+            # Check if all rows for which a skew factor is defined are really
+            # present in df_irw_silv
+            df_irw_silv_check = df_irw_silv.value_counts(harvest_join_cols).reset_index()
+            if len(df_irw_silv_check) < len(harvest):
+                msg += "Some skew factors are present in harvest but not present in "
+                msg += "df_irw_silv. This might happen in rare cases where there is only "
+                msg += "coniferous forest available and no broadleaf forest available. "
+                msg += "For example because broadleaves are too young and the "
+                msg += "query('age >= sw_start') excluded those broadleaf rows. "
+                self.parent.log.info(msg)
+                # Recompute the skew
+                harvest2 = df_irw_silv_check.merge(harvest, on=harvest_join_cols)
+                harvest2["skew"] = harvest2["skew"] / harvest2["skew"].sum()
+                harvest = harvest2
 
             # If silv_practice is defined in harvest factors then use
             # self.runner.fluxes.df to add the silv_practice column to
@@ -441,11 +470,10 @@ class DynamicSimulation(Simulation):
 
             # Aggregate the normalized value by groups
             df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
-            
 
             # Merge disturbances and harvest factors
             df_irw_silv = pandas.merge(df_irw_silv,
-                                       harvest[harvest_join_cols + ['skew']],
+                                       harvest,
                                        how='inner',
                                        on=harvest_join_cols)
 
@@ -454,24 +482,26 @@ class DynamicSimulation(Simulation):
                                             * df_irw_silv["skew"]
                                             / df_irw_silv["irw_norm_agg"])
 
-            # Raise an error if irw_norm_skew sums to one
+            # Raise an error if irw_norm_skew does not sum to one
             if not math.isclose(df_irw_silv["irw_norm_skew"].sum(), 1):
-                msg = "IRW norm skew doesn't sum to one."
+                msg = "IRW norm skew doesn't sum to one:"
+                msg += f"{df_irw_silv.groupby(harvest_join_cols)['irw_norm_skew'].sum()}\n"
                 msg += "The normalized available merchantable roundwood is distributed as follows:\n"
                 msg += f"{df_irw_silv.groupby(harvest_join_cols)['irw_norm_agg'].unique()}\n"
                 msg += "The harvest factors are distributed as follows:\n"
                 msg += f"{ harvest[harvest_join_cols + ['skew']]}\n "
                 msg += "This means that some combinations of silvicultural practices "
-                msg += "are either not present in the events template "
-                msg += "or not eligible in the stock."
+                msg += "are not present in the events template."
                 msg += "Correct the input in havest_factors.csv."
+                msg += "It could also be that the share of industrial roundwood is not specified."
+                msg += "Check the irw_frac_by_dist.csv"
                 raise ValueError(msg)
 
             potential_irw = df_irw_silv["irw_avail"].sum()
-            msg += f"Potential IRW amount available from remaining disturbances: "
-            msg += f"{potential_irw:.0f} m3 IRW."
+            msg += f"Potential IRW available from regular silvicultural practices: "
+            msg += f"{potential_irw:.0f} m3."
             prct = 100 * remain_irw_vol / potential_irw
-            msg += f"\nIRW harvest corresponds to {prct:.0f}% of the annualized available potential."
+            msg += f"IRW demand corresponds to {prct:.0f}% of the IRW available."
             self.parent.log.info(msg)
 
             #df_irw_silv["prop"] = df_irw_silv[
@@ -511,8 +541,9 @@ class DynamicSimulation(Simulation):
         still_remain_fw_vol = remain_fw_vol - df_irw['fw_colat'].sum()
         self.out_var('still_remain_fw_vol', still_remain_fw_vol)
         colat_prct = (df_irw['fw_colat'].sum() / remain_fw_vol) * 100
-        msg = f"FW Demand {remain_fw_vol:.0f} m3. "
-        msg += f"Collateral FW from IRW disturbances represents {colat_prct:.0f}% of the harvest"
+        msg = f"Remaining FW demand after salvage: {remain_fw_vol:.0f} m3."
+        msg += f" Collateral FW generated by IRW harvesting: {df_irw['fw_colat'].sum():.0f} m3 "
+        msg += f"i.e. represents {colat_prct:.0f}% of the remaining FW demand."
         self.parent.log.info(msg)
 
         # If there is no extra firewood needed, set to zero #
@@ -533,9 +564,13 @@ class DynamicSimulation(Simulation):
         assert math.isclose(df_fw['fw_need'].sum(), still_remain_fw_vol)
 
         potential_fw = df_fw['fw_avail'].sum()
-        harvest_pot_percent = still_remain_fw_vol / potential_fw
-        msg = f"Still remaining fuel wood harvest represents {harvest_pot_percent*100:.0f}% "
-        msg += "of the annualized potential FW disturbances."
+        if potential_fw == 0:
+            msg = f"Annualized potential FW disturbances is {potential_fw} "
+            msg += f"and still remaining potential is {still_remain_fw_vol}."
+        else:
+            harvest_pot_percent = still_remain_fw_vol / potential_fw
+            msg = f"Still remaining FW demand represents {harvest_pot_percent*100:.0f}% "
+            msg += "of FW available by regular silvicultural practices."
         self.parent.log.info(msg)
 
         # The user is free to over allocate fw, but will be a warning if the
@@ -585,10 +620,12 @@ class DynamicSimulation(Simulation):
         cols += ['dist_type_name', 'product_created', 'dist_interval_bias',
                  'using_id', 'sw_start', 'sw_end', 'hw_start', 'hw_end',
                  'min_since_last_dist', 'max_since_last_dist', 'last_dist_id',
-                 'sort_type', 'measurement_type', 'efficiency', 'skew', 'wood_density',
+                 'sort_type', 'measurement_type', 'efficiency', 'wood_density',
                  'bark_frac', 'irw_avail', 'fw_avail',
                  'irw_norm', 'irw_need', 'irw_frac',
                  'fw_colat', 'fw_norm', 'fw_need', 'amount']
+        if 'skew' in df.columns:
+            cols += ['skew']
         # Write the events to an output file for the record
         self.runner.output.events = pandas.concat([self.runner.output.events, df[cols]])
 
@@ -646,4 +683,5 @@ class DynamicSimulation(Simulation):
         return df
 
     def out_var(self, key, value):
+        """Store summary information into output extras.csv"""
         self.runner.output.extras.loc[self.year, key] = value
