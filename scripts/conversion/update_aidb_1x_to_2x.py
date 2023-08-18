@@ -12,10 +12,7 @@ See also:
     - An issue encountered when trying to use libcbm 2
     https://github.com/cat-cfs/libcbm_py/issues/58
 
-
-
 """
-
 
 import pathlib
 import shutil
@@ -26,21 +23,24 @@ from eu_cbm_hat import eu_cbm_aidb_dir
 countries_dir = pathlib.Path(eu_cbm_aidb_dir) / "countries"
 aidbs = countries_dir.glob("**/aidb.db")
 
-
 for db_path in aidbs:
     # db_path = countries_dir / "ZZ" / "aidb.db"
+    assert db_path.exists()
+    # If it's already a version 2 table, do nothing
+    df = pandas.read_sql_table("land_class", "sqlite:///" + str(db_path))
+    if "land_type_id_1" in df.columns:
+        msg = f"\n\n{db_path} is already a version 2 table because the land_class table "
+        msg += "contains the land_type_id_1 column."
+        msg += "skip conversion."
+        print(msg)
+        continue
     db_path_v1 = db_path.parent / "aidb_v1.db"
     db_path_v2 = db_path.parent / "aidb_v2.db"
-    assert db_path.exists()
-    # Check if it's a version 1 table
-    df = pandas.read_sql_table('land_class', 'sqlite:///' + str(db_path))
-    if "land_type_id_1" in df.columns:
-        msg = f"{db_path} is not a v1 table because the land_class table "
-        msg += "contains the land_type_id_1 column."
-        msg += "skip conversion"
-        raise ValueError(msg)
     # Rename the old table to v1
     shutil.copy(db_path, db_path_v1)
+    # Remove V2 if present
+    if db_path_v2.exists():
+        db_path_v2.unlink()
     try:
         # Update the AIDB from V1 to V2
         db_updater.update("1x_to_2x", db_path_v1, db_path_v2)
@@ -48,5 +48,5 @@ for db_path in aidbs:
         shutil.copy(db_path_v2, db_path)
         print(f"\n\n{db_path} updated to V2")
     except Exception as e:
-        print(f"\n\n error {db_path}")
+        print(f"\n\nError {db_path}")
         print(e)
