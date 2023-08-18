@@ -24,7 +24,6 @@ from eu_cbm_hat.core.continent import continent
 # `~/repos/eu_cbm_data/combos/harvest_test.yaml`
 runner = continent.combos['pikfair'].runners['LU'][-1]
 runner.num_timesteps = 25
-
 # Run the model
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
