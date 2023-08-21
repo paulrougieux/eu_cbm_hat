@@ -45,7 +45,7 @@ def save_agg_combo_output(combo_name:str):
     hexprov_by_year.to_parquet(combo_dir / "hexprov_by_year.parquet")
     # Harvest expected provided by year, forest type and disturbance type
     hexprov_by_year_ft_dist = harvest_exp_prov_all_countries(
-        "pikbau", ["year", "forest_type", "disturbance_type"]
+        combo_name, ["year", "forest_type", "disturbance_type"]
     )
     hexprov_by_year_ft_dist.to_parquet(combo_dir / "hexprov_by_year_ft_dist.parquet")
     # Sink by year
