@@ -53,20 +53,20 @@ def save_agg_combo_output(combo_name:str):
     sink.to_parquet(combo_dir / "sink_by_year.parquet")
 
 
-def read_agg_combos_output(combo_names:list, file_name:str):
+def read_agg_combo_output(combo_name:list, file_name:str):
     """Read the aggregated combo output for the given list of combo names and
     the given file name. Return a concatenated data frame with data from all
     combos for that file.
 
     Example use:
 
-        >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combos_output
-        >>> read_agg_combos_output(["reference", "pikfair"], "sink_by_year.parquet")
-        >>> read_agg_combos_output(["reference", "pikfair"], "hexprov_by_year.parquet")
+        >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
+        >>> read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
+        >>> read_agg_combo_output(["reference", "pikfair"], "hexprov_by_year.parquet")
 
     """
     df_all = pandas.DataFrame()
-    for this_combo_name in combo_names:
+    for this_combo_name in combo_name:
         df = pandas.read_parquet(output_agg_dir / this_combo_name / file_name)
         df_all = pandas.concat([df_all, df])
     return df_all
