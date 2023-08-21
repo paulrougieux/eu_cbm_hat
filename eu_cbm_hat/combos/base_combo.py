@@ -150,8 +150,10 @@ class Combination(object):
             return {c.iso2_code: [DynamicRunner(self, c, 0)] for c in self.continent}
 
     def __call__(self, parallel=False, timer=True):
-        """A method to run a combo by simulating all countries.
-        
+        """ Legacy code, use the .run() method instead
+
+        A method to run a combo by simulating all countries.
+
         Compared to the run() method, this call also runs many steps, if the
         runner has many steps inside .
         """
@@ -194,7 +196,7 @@ class Combination(object):
         typically only run one step normally. Here the meaning of step is not
         that of yearly time steps, but bigger steps in terms of being able to
         start and stop the model which were foreseen in a legacy version of the
-        model. 
+        model.
 
         Usage:
 
