@@ -61,12 +61,13 @@ def read_agg_combo_output(combo_name:list, file_name:str):
     Example use:
 
         >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
-        >>> read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
-        >>> read_agg_combo_output(["reference", "pikfair"], "hexprov_by_year.parquet")
+        >>> sink = read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
+        >>> hexprov = read_agg_combo_output(["reference", "pikfair"], "hexprov_by_year.parquet")
 
     """
     df_all = pandas.DataFrame()
     for this_combo_name in combo_name:
         df = pandas.read_parquet(output_agg_dir / this_combo_name / file_name)
         df_all = pandas.concat([df_all, df])
+    df_all.reset_index(inplace=True, drop=True)
     return df_all
