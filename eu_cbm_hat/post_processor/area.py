@@ -51,24 +51,29 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     return df_agg[cols]
 
 
-def area_by_status_one_country(
-    combo_name: str, iso2_code: str, groupby: Union[List[str], str] = None
-):
-    """Harvest provided in one country
+def area_by_status_one_country(combo_name: str, iso2_code: str):
+    """Area in wide format with one column for each status.
+
+    This table describes the movement from non forested to forested areas.
+    Afforestation and deforestation influence the changes in area. Total area
+    remains the same.
 
     Usage:
 
         >>> from eu_cbm_hat.post_processor.area import area_by_status_one_country
-        >>> df = area_by_status_one_country("reference", "ZZ")
+        >>> from eu_cbm_hat.post_processor.area import apply_to_all_countries
+        >>> area_by_status_one_country("reference", "ZZ")
+        >>> ast_ie = area_by_status_one_country("reference", "IE")
+        >>> # Load data for all countries
+        >>> ast = apply_to_all_countries(area_by_status_one_country, combo_name="reference")
+        >>> # Place total area column last
+        >>> cols = list(ast.columns)
+        >>> cols.remove("total_area")
+        >>> cols += ["total_area"]
+        >>> ast = ast[cols]
 
     """
-    if isinstance(groupby, str):
-        groupby = [groupby]
-    groupby_default = ["year", "status", "disturbance_type"]
-    if groupby is None:
-        groupby = groupby_default
-    else:
-        groupby = groupby_default + list(set(groupby) - set(groupby_default))
+    groupby = ["year", "status", "disturbance_type"]
     df = area_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
     # Change disturbance deforestation to status D
     selector = df["disturbance_type"] == 7
@@ -77,10 +82,18 @@ def area_by_status_one_country(
     index = ["year", "status"]
     df = df.groupby(index)["area"].agg(sum).reset_index()
     # Pivot to wide format
-    df_wide = df.pivot(index="year", columns="status", values="area").reset_index()
+    df_wide = df.pivot(index="year", columns="status", values="area")
+    # Add the total area
+    df_wide["total_area"] = df_wide.sum(axis=1)
+    df_wide.reset_index(inplace=True)
     # Remove the sometimes confusing axis name
     df_wide.rename_axis(columns=None, inplace=True)
-    return df_wide
+    # Place combo name, country code as first columns
+    df_wide["combo_name"] = combo_name
+    df_wide["iso2_code"] = iso2_code
+    cols = list(df_wide.columns)
+    cols = cols[-2:] + cols[:-2]
+    return df_wide[cols]
 
 
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
