@@ -7,13 +7,13 @@ from tqdm import tqdm
 from eu_cbm_hat.core.continent import continent
 
 
-def apply_to_all_countries(data_func, combo_name, groupby, **kwargs):
+def apply_to_all_countries(data_func, combo_name, **kwargs):
     """Apply a function to many countries"""
     df_all = pandas.DataFrame()
     country_codes = continent.combos[combo_name].runners.keys()
     for key in tqdm(country_codes):
         try:
-            df = data_func(combo_name, key, groupby=groupby, **kwargs)
+            df = data_func(combo_name, key, **kwargs)
             df_all = pandas.concat([df, df_all])
         except FileNotFoundError as e_file:
             print(e_file)
