@@ -19,7 +19,10 @@ post_processor/harvest.py importing "continent" and "combined".
 
 """
 import pandas
+
 from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.post_processor.area import apply_to_all_countries
+from eu_cbm_hat.post_processor.area import area_by_status_one_country
 from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_all_countries
 from eu_cbm_hat.post_processor.sink import sink_all_countries
 
@@ -51,6 +54,9 @@ def save_agg_combo_output(combo_name:str):
     # Sink by year
     sink = sink_all_countries(combo_name, "year")
     sink.to_parquet(combo_dir / "sink_by_year.parquet")
+    # Area by status
+    area_status = apply_to_all_countries(area_by_status_one_country, combo_name=combo_name)
+    area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
 
 
 def read_agg_combo_output(combo_name:list, file_name:str):
