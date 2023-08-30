@@ -109,8 +109,9 @@ POOLS_DICT = {
 }
 
 
-def nf_soil_stock(df):
-    """Get the slow soil pool content per hectare of non forested stand.
+def get_nf_soil_stock(df):
+    """Get the slow soil pool content per hectare of non forested stands.
+
     Keep only stands that have never been disturbed in the simulation
     (time_since_land_class_change == -1), exclude NF stands that are the result
     of deforestation during the simulation period.
@@ -124,7 +125,8 @@ def nf_soil_stock(df):
     nf_soil["std_dev"] = nf_soil.groupby(groupby_soil)["nf_slow_soil_per_ha"].transform(
         np.std
     )
-    # Check that nf_slow_soil_per_ha always have the same value across grouping variables
+    # Check that nf_slow_soil_per_ha always have the same value across grouping
+    # variables
     selector = nf_soil["std_dev"] > 1e-2
     if any(selector):
         msg = "The NF non forested soil pool content per hectare"
@@ -163,6 +165,7 @@ def generate_all_combinations_and_fill_na(df, groupby):
     df = df.merge(all_combinations, how="outer", on=["year"] + groupby_area_diff)
     df.fillna(0, inplace=True)
     df.sort_values(groupby_area_diff + ["year"], inplace=True)
+    # Compute the area diff and check the diff sums to zero
     df["area_diff"] = df.groupby(groupby_area_diff)["area"].transform(
         lambda x: x.diff()
     )
@@ -187,11 +190,16 @@ def compute_sink(
     Normalise the sink by the area. For example in case of afforestation the
     stock change should take into account the change of area from t-1 to t.
     Steps to correct for the area change:
-    - Compute the stock change per hectare
-        S{t}/A{t} - S{t-1}/A{t-1}
-    - Then multiply by the area at time t A{t}
 
-    Example use, see the function sink_one_country.
+        - Normalize stock per hectare
+        - Compute the stock change per hectare
+            S{t}/A{t} - S{t-1}/A{t-1}
+        - Deduce NF soil pool when there is afforestation in the first year
+        - Compute the CO2 eq. sink per hectare
+        - Multiply the sink by the area at time t
+        - Remove non forested land
+
+    See usage example in the function sink_one_country.
 
     """
     df = df.copy()
@@ -217,7 +225,7 @@ def compute_sink(
     df_agg = df.groupby(groupby_sink)[pools_list + ["area"]].sum().reset_index()
 
     # Add the soil stock in NF stands (that have not been deforested in the simulation)
-    nf_soil_agg = nf_soil_stock(df)
+    nf_soil_agg = get_nf_soil_stock(df)
     df_agg = df_agg.merge(nf_soil_agg, on=["region", "climate"], how="left")
     # NF soil is only needed for the AR pools
     selector = df_agg["status"].str.contains("AR")
@@ -254,22 +262,25 @@ def compute_sink(
         if "soil" in key:
             selector = df_agg["status"].str.contains("AR")
             selector &= df_agg["land_class_change_in_current_year"]
-            # Deduce area change * soil stock
             df_agg.loc[selector, key + "_stk_ch"] = (
                 df_agg.loc[selector, key + "_pool_per_ha"]
                 - df_agg.loc[selector, "nf_slow_soil_per_ha"]
             )
 
-        # Compute the sink per hectare
+        # Compute the CO2 eq. sink per hectare
         df_agg[key + "_sink_per_ha"] = df_agg[key + "_stk_ch"] * -44 / 12
 
         # Multiply the sink by the area
         df_agg[key + "_sink"] = df_agg[key + "_sink_per_ha"] * df_agg["area"]
 
+    # Remove non forested land
+    selector = df_agg["status"].str.contains("NF")
+    df_agg = df_agg.loc[~selector]
+
     # Aggregate the given pools columns by the final grouping variables Keep
     # the area information
-    selector = df_agg.columns.str.contains("sink$")
-    cols = df_agg.columns[selector].to_list()
+    cols = df_agg.columns
+    cols = cols[cols.str.contains("sink$")].to_list()
     df_agg_final = df_agg.groupby(groupby)[cols].agg(sum).reset_index()
     return df_agg_final
 
@@ -291,6 +302,7 @@ def sink_one_country(
     don't specify it, the function will used the default pools dict.
 
         >>> from eu_cbm_hat.post_processor.sink import sink_one_country
+        >>> ie_sink_y = sink_one_country("reference", "IE", groupby="year")
         >>> lu_sink_y = sink_one_country("reference", "LU", groupby="year")
         >>> lu_sink_yr = sink_one_country("reference", "LU", groupby=["year", "region"])
         >>> lu_sink_yrc = sink_one_country("reference", "LU", groupby=["year", "region", "climate"])
@@ -337,7 +349,7 @@ def sink_one_country(
     # identifier and timestep that will be sent to the other functions
     df = (
         runner.output["pools"].merge(classifiers, "left", on=index)
-        # Add 'time_since_last_disturbance' and 'time_since_land_class_change'
+        # Add 'time_since_land_class_change' and 'time_since_last_disturbance'
         .merge(runner.output["state"], "left", on=index)
     )
     df_agg = compute_sink(df, groupby, pools_dict)
