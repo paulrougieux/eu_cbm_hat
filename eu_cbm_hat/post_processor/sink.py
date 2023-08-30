@@ -307,6 +307,7 @@ def sink_one_country(
 
         >>> from eu_cbm_hat.post_processor.sink import sink_one_country
         >>> ie_sink_y = sink_one_country("reference", "IE", groupby="year")
+        >>> ie_sink_ys = sink_one_country("reference", "IE", groupby=["year", "status"])
         >>> lu_sink_y = sink_one_country("reference", "LU", groupby="year")
         >>> lu_sink_yr = sink_one_country("reference", "LU", groupby=["year", "region"])
         >>> lu_sink_yrc = sink_one_country("reference", "LU", groupby=["year", "region", "climate"])

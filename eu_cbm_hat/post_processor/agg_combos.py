@@ -39,6 +39,8 @@ def save_agg_combo_output(combo_name:str):
 
         >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
         >>> save_agg_combo_output("reference")
+        >>> for x in ["reference", "pikbau", "pikfair"]:
+        >>>     save_agg_combo_output(x)
 
     """
     combo_dir = output_agg_dir / combo_name
