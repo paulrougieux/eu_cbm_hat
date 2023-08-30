@@ -191,7 +191,10 @@ def compute_sink(
     stock change should take into account the change of area from t-1 to t.
     Steps to correct for the area change:
 
-        - Normalize stock per hectare
+        - Group by ["year", "region", "climate", "status",
+                    "land_class_change_in_current_year"] and sum pools
+        - Aggregate all pool columns to one pool value for each key in the
+          pools_dict dictionary
         - Compute the stock change per hectare
             S{t}/A{t} - S{t-1}/A{t-1}
         - Deduce NF soil pool when there is afforestation in the first year
