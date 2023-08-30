@@ -201,6 +201,7 @@ def compute_sink(
         - Compute the CO2 eq. sink per hectare
         - Multiply the sink by the area at time t
         - Remove non forested land
+        - Group by final grouping variables given in the groupby argument.
 
     See usage example in the function sink_one_country.
 
