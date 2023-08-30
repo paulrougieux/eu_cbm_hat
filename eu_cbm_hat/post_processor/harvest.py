@@ -16,9 +16,10 @@ https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore/-/blob/main/output_explorati
 
 """
 
+
 from typing import Union, List
+import numpy as np
 import pandas
-from tqdm import tqdm
 
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.core.continent import continent
@@ -64,24 +65,27 @@ def harvest_exp_one_country(
     classifiers might have question marks i.e. where harvest can be allocated
     to any value of that particular classifier).
 
+    In case of yearly information only, this will use extra information on pre
+    determined disturbances from HAT cbm/dynamic.py.
+
     The `groupby` argument makes it possible to group on year, group on year
     and classifiers or group on the disturbance id:
 
         >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_one_country
-        >>> harvest_exp_one_country("reference", "ZZ", "year")
-        >>> harvest_exp_one_country("reference", "ZZ", ["year", "forest_type"])
-        >>> harvest_exp_one_country("reference", "ZZ", ["year", "disturbance_type"])
+        >>> harvest_exp_one_country("reference", "LU", "year")
+        >>> harvest_exp_one_country("reference", "LU", ["year", "forest_type"])
+        >>> harvest_exp_one_country("reference", "LU", ["year", "disturbance_type"])
 
     """
     # Load harvest expected
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     events = runner.output["events"]
-    events["harvest_exp"] = ton_carbon_to_m3_ub(events, "amount")
+    events["harvest_exp_hat"] = ton_carbon_to_m3_ub(events, "amount")
     # Check that we get the same value as the sum of irw_need and fw_colat
-    for col in ["harvest_exp", "irw_need", "fw_colat", "fw_need"]:
+    for col in ["harvest_exp_hat", "irw_need", "fw_colat", "fw_need"]:
         events[col] = events[col].fillna(0)
     pandas.testing.assert_series_equal(
-        events["harvest_exp"],
+        events["harvest_exp_hat"],
         events["irw_need"] + events["fw_colat"] + events["fw_need"],
         rtol=1e-4,
         check_names=False,
@@ -89,10 +93,36 @@ def harvest_exp_one_country(
     # Column name consistent with runner.output["parameters"]
     events["disturbance_type"] = events["dist_type_name"]
     # Aggregate
-    cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp"]
+    cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp_hat"]
     df = events.groupby(groupby)[cols].agg(sum).reset_index()
-    # Rename amound
-    df.rename(columns={"amount": "amount_exp"}, inplace=True)
+    # Rename the amount expected by the Harvest Allocation Tool
+    df.rename(columns={"amount": "amount_exp_hat"}, inplace=True)
+
+    # Join demand from the economic model, if grouping on years only
+    # Use extra information from the HAT cbm/dynamic.py
+    if groupby == "year":
+        msg = "Group by year. Get harvest demand and predetermined harvest "
+        msg += "information from the output extra table."
+        print(msg)
+        extras = runner.output["extras"].rename(columns={"index": "year"})
+        df = df.merge(extras, on="year", how="left")
+        # Check that "harvest_exp_hat" computed from HAT disturbances is the
+        # same as the sum of remaining irw and fw harvest computed at the
+        # begining of cbm/dynamic.py
+        np.testing.assert_allclose(
+            df["harvest_exp_hat"],
+            df["remain_irw_harvest"] + df["remain_fw_harvest"],
+            rtol=1e-4,
+        )
+        df.rename(
+            columns={
+                "harvest_irw_vol": "harvest_demand_irw",
+                "harvest_fw_vol": "harvest_demand_fw",
+            },
+            inplace=True,
+        )
+        df["harvest_demand"] = df["harvest_demand_irw"] + df["harvest_demand_fw"]
+
     # Place combo name, country code and country name as first columns
     df["combo_name"] = combo_name
     df["iso2_code"] = runner.country.iso2_code
@@ -148,11 +178,6 @@ def harvest_prov_one_country(
         )
         .reset_index()
     )
-    if groupby == "year":
-        print("group by year")
-        # Join demand from the economic model, if grouping on years only
-        # TODO: add irw and fw predetermined from
-        # runner.output["extras"][['irw_predetermined', 'fw_predetermined']]
 
     # Place combo name, country code and country name as first columns
     df_agg["combo_name"] = combo_name
