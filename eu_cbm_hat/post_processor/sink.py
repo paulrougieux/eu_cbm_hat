@@ -108,27 +108,26 @@ POOLS_DICT = {
     ],
 }
 
-FLUXES_DEFORESTATION = {
-      "transfe_to_products": [
-                'softwood_merch_to_product',
-                'softwood_other_to_product',
-                'softwood_stem_snag_to_product',
-                'softwood_branch_snag_to_product', 
-                'hardwood_merch_to_product',
-                'hardwood_other_to_product',
-                'hardwood_stem_snag_to_product',
-                'hardwood_branch_snag_to_product'
-          ],
-       "emissions_from_dom":[   
-                 'decay_domco2_emission'
-            ],
-       "direct_emissions_to_air":[
-                'disturbance_bio_co2_emission',
-                'disturbance_bio_ch4_emission',
-                'disturbance_bio_co_emission'
-            ]
+FLUXES_DICT = {
+    "transfer_to_products": [
+        "softwood_merch_to_product",
+        "softwood_other_to_product",
+        "softwood_stem_snag_to_product",
+        "softwood_branch_snag_to_product",
+        "hardwood_merch_to_product",
+        "hardwood_other_to_product",
+        "hardwood_stem_snag_to_product",
+        "hardwood_branch_snag_to_product",
+    ],
+    "emissions_from_dom": ["decay_domco2_emission"],
+    "direct_emissions_to_air": [
+        "disturbance_bio_co2_emission",
+        "disturbance_bio_ch4_emission",
+        "disturbance_bio_co_emission",
+    ],
 }
-        
+
+
 def get_nf_soil_stock(df):
     """Get the slow soil pool content per hectare of non forested stands.
 
@@ -378,12 +377,62 @@ def sink_one_country(
     return df_agg[cols]
 
 
-# Deforestation emissions are only reported for the year when event happens. 
-# Indeed, a small amount of legacy emissions occur, as reflected by "decay_domco2_emission"evolution after deforestation for any identifier
-# We considered it as nonrelevant, anyway atributable to post-deforestation land use. 
-# Deforestation emissions can be identified by dist_type = 7, OR, "status = "NF" and "time_since_land_class_change > 0"
-# land transfers from occur ForAWS/NAWS, or even AR, to NF.
-# join this df to sink df_all
+def emissions_from_deforestation(
+    combo_name: str,
+    iso2_code: str,
+    groupby: Union[List[str], str],
+    fluxes_dict: Dict[str, List[str]] = None,
+):
+    """Emissions from deforested areas moving from forested to NF
+
+    Deforestation emissions are only reported for the year when event happens.
+    Indeed, a small amount of legacy emissions occur, as reflected by
+    "decay_domco2_emission"evolution after deforestation for any identifier We
+    considered it as nonrelevant, anyway atributable to post-deforestation land
+    use. Deforestation emissions can be identified by dist_type = 7, OR,
+    "status = "NF" and "time_since_land_class_change > 0" land transfers from
+    occur ForAWS/NAWS, or even AR, to NF. join this df to sink df_all.
+
+    Example use:
+
+        >>> from eu_cbm_hat.post_processor.sink import emissions_from_deforestation
+        >>> from eu_cbm_hat.post_processor.area import apply_to_all_countries
+        >>> lu_def_em_y = emissions_from_deforestation("reference", "LU", groupby="year")
+        >>> lu_def_em_yr = emissions_from_deforestation("reference", "LU", groupby=["year", "region"])
+        >>> def_em_y = apply_to_all_countries(emissions_from_deforestation, combo_name="reference", groupby="year")
+
+    """
+    if fluxes_dict is None:
+        fluxes_dict = FLUXES_DICT
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    classifiers = runner.output.classif_df
+    classifiers["year"] = runner.country.timestep_to_year(classifiers["timestep"])
+    index = ["identifier", "timestep"]
+
+    fluxes_list = list({item for sublist in fluxes_dict.values() for item in sublist})
+
+    # Data frame of pools content at the maximum disaggregated level by
+    # identifier and timestep that will be sent to the other functions
+    df = (
+        runner.output["flux"].merge(classifiers, "left", on=index)
+        # Add 'time_since_land_class_change'
+        .merge(runner.output["state"], "left", on=index)
+    )
+
+    # Keep only deforestation events
+    selector = df["time_since_land_class_change"] > 0
+    df = df.loc[selector]
+
+    for key in fluxes_dict:
+        # Aggregate all pool columns to one pool value for this key
+        df[key] = df[fluxes_dict[key]].sum(axis=1)
+
+    cols = [key for key in fluxes_dict.keys()]
+
+    # Aggreate
+    df_agg = df.groupby(groupby)[cols].agg("sum").reset_index()
+
+    return df_agg
 
 
 def sink_all_countries(combo_name, groupby, pools_dict=None):
