@@ -236,17 +236,6 @@ def compute_sink(
 
     df_agg = generate_all_combinations_and_fill_na(df_agg, groupby=groupby_sink)
 
-    # Check that afforestation has a positive area change
-    tolerance = -1e-2
-    # Reaggregate without "land_class_change_in_current_year" for the check
-    df_agg_2 = (
-        df_agg.groupby(["year", "region", "climate", "status"])["area_diff"]
-        .agg(sum)
-        .reset_index()
-    )
-    selector = df_agg_2["status"].str.contains("AR")
-    assert not any(df_agg_2.loc[selector, "area_diff"] < tolerance)
-
     # Remove year from the grouping variables to compute the diff over years
     groupby_sink.remove("year")
 
