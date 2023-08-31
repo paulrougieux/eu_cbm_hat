@@ -108,7 +108,27 @@ POOLS_DICT = {
     ],
 }
 
-
+FLUXES_DEFORESTATION = {
+      "transfe_to_products": [
+                'softwood_merch_to_product',
+                'softwood_other_to_product',
+                'softwood_stem_snag_to_product',
+                'softwood_branch_snag_to_product', 
+                'hardwood_merch_to_product',
+                'hardwood_other_to_product',
+                'hardwood_stem_snag_to_product',
+                'hardwood_branch_snag_to_product'
+          ],
+       "emissions_from_dom":[   
+                 'decay_domco2_emission'
+            ],
+       "direct_emissions_to_air":[
+                'disturbance_bio_co2_emission',
+                'disturbance_bio_ch4_emission',
+                'disturbance_bio_co_emission'
+            ]
+}
+        
 def get_nf_soil_stock(df):
     """Get the slow soil pool content per hectare of non forested stands.
 
@@ -356,6 +376,14 @@ def sink_one_country(
     # Remove the pools columns
     cols = [col for col in cols if col not in pools_list]
     return df_agg[cols]
+
+
+# Deforestation emissions are only reported for the year when event happens. 
+# Indeed, a small amount of legacy emissions occur, as reflected by "decay_domco2_emission"evolution after deforestation for any identifier
+# We considered it as nonrelevant, anyway atributable to post-deforestation land use. 
+# Deforestation emissions can be identified by dist_type = 7, OR, "status = "NF" and "time_since_land_class_change > 0"
+# land transfers from occur ForAWS/NAWS, or even AR, to NF.
+# join this df to sink df_all
 
 
 def sink_all_countries(combo_name, groupby, pools_dict=None):
