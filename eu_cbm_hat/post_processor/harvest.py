@@ -100,7 +100,7 @@ def harvest_exp_one_country(
 
     # Join demand from the economic model, if grouping on years only
     # Use extra information from the HAT cbm/dynamic.py
-    if groupby == "year":
+    if groupby == "year" or groupby == ["year"]:
         msg = "Group by year. Get harvest demand and predetermined harvest "
         msg += "information from the output extra table."
         print(msg)
