@@ -25,6 +25,7 @@ import argparse
 from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
 
+
 def run_country(args):
     """Run a single country, only based on the code as input"""
     combo_name, last_year, country_code = args
@@ -35,16 +36,21 @@ def run_country(args):
     except Exception as e:
         print(e)
 
-parser = argparse.ArgumentParser(description='Run the EU_CBM_HAT scenario combinations')
-parser.add_argument('--combo_name', type=str, help='Name of the scenario combo to be run')
-parser.add_argument('--last_year', type=int, help='Last year to be simulated')
-parser.add_argument('--countries', nargs='+', default=None, help='List of country ISO2 codes')
 
-args = parser.parse_args()
+parser = argparse.ArgumentParser(description="Run the EU_CBM_HAT scenario combinations")
+parser.add_argument(
+    "--combo_name", type=str, help="Name of the scenario combo to be run"
+)
+parser.add_argument("--last_year", type=int, help="Last year to be simulated")
+parser.add_argument(
+    "--countries", nargs="+", default=None, help="List of country ISO2 codes"
+)
 
-LAST_YEAR = args.last_year
-COMBO_NAME = args.combo_name
-COUNTRIES = args.countries
+shell_args = parser.parse_args()
+
+LAST_YEAR = shell_args.last_year
+COMBO_NAME = shell_args.combo_name
+COUNTRIES = shell_args.countries
 
 # If no countries are specified, run for all countries
 if COUNTRIES is None:
