@@ -275,10 +275,18 @@ class Combination(object):
     def print_log_summary(self, patterns=None):
         """Print the summary of all runners in a scenario combination
 
+        Change the patterns argument to display more information from the log
+        files.
+
         Usage:
 
             >>> from eu_cbm_hat.core.continent import continent
             >>> continent.combos["reference"].print_log_summary()
+
+        For example, to check for a specific log message containing the words
+        'carbon' and 'salvage', call:
+
+            >>> continent.combos["reference"].print_log_summary(['carbon', 'salvage'])
 
         """
         if isinstance(patterns, str):
