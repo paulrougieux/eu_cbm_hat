@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(
     description="Post processing of the EU_CBM_HAT scenario combinations"
 )
 parser.add_argument(
-    "--combo_names", type=str, help="List of names of scenario combos to post process"
+    "--combo_names", nargs="+", default=None, help="List of names of scenario combos"
 )
 
 shell_args = parser.parse_args()
