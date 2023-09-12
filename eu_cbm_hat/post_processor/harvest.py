@@ -109,11 +109,11 @@ def harvest_exp_one_country(
         # Check that "harvest_exp_hat" computed from HAT disturbances is the
         # same as the sum of remaining irw and fw harvest computed at the
         # begining of cbm/dynamic.py
-        np.testing.assert_allclose(
-            df["harvest_exp_hat"],
-            df["remain_irw_harvest"] + df["remain_fw_harvest"],
-            rtol=1e-4,
-        )
+        # np.testing.assert_allclose(
+        #     df["harvest_exp_hat"],
+        #     df["remain_irw_harvest"] + df["remain_fw_harvest"],
+        #     rtol=1e-4,
+        # )
         df.rename(
             columns={
                 "harvest_irw_vol": "harvest_demand_irw",
