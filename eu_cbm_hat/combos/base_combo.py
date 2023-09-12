@@ -305,7 +305,7 @@ class Combination(object):
                 country_logs[country_code] = str(e)
             if patterns is not None and "done" not in patterns:
                 continue
-            # Summary one line per country at the begining
+            # Summary one line per country at the beginning
             msg = ""
             if "done" in country_logs[country_code].lower():
                 for line in country_logs[country_code].split("\n"):
