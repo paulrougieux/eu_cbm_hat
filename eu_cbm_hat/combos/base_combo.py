@@ -278,8 +278,7 @@ class Combination(object):
         Usage:
 
             >>> from eu_cbm_hat.core.continent import continent
-            >>> reference = continent.combos["reference"]
-            >>> reference.print_log_summary()
+            >>> continent.combos["reference"].print_log_summary()
 
         """
         country_logs = {}
