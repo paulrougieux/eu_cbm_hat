@@ -94,7 +94,7 @@ def harvest_exp_one_country(
     events["disturbance_type"] = events["dist_type_name"]
     # Aggregate
     cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp_hat"]
-    df = events.groupby(groupby)[cols].agg(sum).reset_index()
+    df = events.groupby(groupby)[cols].agg("sum").reset_index()
     # Rename the amount expected by the Harvest Allocation Tool
     df.rename(columns={"amount": "amount_exp_hat"}, inplace=True)
 
@@ -172,9 +172,9 @@ def harvest_prov_one_country(
     df_agg = (
         df.groupby(groupby)
         .agg(
-            disturbed_area=("area", sum),
-            flux_to_product=("flux_to_product", sum),
-            harvest_prov=("harvest_prov", sum),
+            disturbed_area=("area", "sum"),
+            flux_to_product=("flux_to_product", "sum"),
+            harvest_prov=("harvest_prov", "sum"),
         )
         .reset_index()
     )
