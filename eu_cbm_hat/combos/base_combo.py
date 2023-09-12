@@ -10,8 +10,9 @@ Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
-import textwrap
 from functools import cached_property
+import re
+import textwrap
 
 # Third party modules #
 import yaml, pandas
@@ -46,6 +47,34 @@ def run_one_country(args):
     # data preparation or pre processor
     except Exception as general_error:
         print(general_error)
+
+
+def runner_log_summary(runner, patterns=None):
+    """Return the summary of a past model run for the given runner
+
+    Usage:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> from eu_cbm_hat.combos.base_combo import runner_log_summary
+        >>> runner_de = continent.combos['reference'].runners['LU'][-1]
+        >>> print(runner_log_summary(runner_de))
+
+    """
+    if patterns is None:
+        patterns = ["error", "done", "elapsed", "disk", "total elapsed"]
+
+    msg = f"\n * {runner.country.iso2_code} {runner.country.country_name}\n"
+
+    if not runner.paths.log.exists:
+        msg += f"No log file at: {runner.paths.log}\n"
+    else:
+        msg += f"{runner.paths.log}\n"
+        with open(runner.paths.log, "r") as file:
+            for line in file:
+                if any(pattern in line.lower() for pattern in patterns):
+                    msg += f"{line}"
+
+    return msg
 
 
 class Combination(object):
@@ -150,7 +179,7 @@ class Combination(object):
             return {c.iso2_code: [DynamicRunner(self, c, 0)] for c in self.continent}
 
     def __call__(self, parallel=False, timer=True):
-        """ Legacy code, use the .run() method instead
+        """Legacy code, use the .run() method instead
 
         A method to run a combo by simulating all countries.
 
@@ -162,6 +191,7 @@ class Combination(object):
         # Timer start #
         timer = Timer()
         timer.print_start()
+
         # Function to run a single country #
         def run_country(args):
             code, steps = args
@@ -241,3 +271,46 @@ class Combination(object):
         print(msg % summary)
         # Return #
         return summary
+
+    def print_log_summary(self, patterns=None):
+        """Print the summary of all runners in a scenario combination
+
+        Usage:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> reference = continent.combos["reference"]
+            >>> reference.print_log_summary()
+
+        """
+        country_logs = {}
+
+        for country_code in self.runners.keys():
+            if country_code == "ZZ":
+                continue
+            runner = self.runners[country_code][-1]
+            try:
+                country_logs[country_code] = runner_log_summary(
+                    runner, patterns=patterns
+                )
+            except OSError as e:  # Sometimes the log file is unreadable
+                country_logs[country_code] = str(e)
+            if patterns is not None and "done" not in patterns:
+                continue
+            # Summary one line per country at the begining
+            msg = ""
+            if "done" in country_logs[country_code].lower():
+                for line in country_logs[country_code].split("\n"):
+                    if "total elapsed time" in line.lower():
+                        msg += str(re.findall("(elapsed time: .*)", line)[-1])
+                    if "done" in line.lower():
+                        msg += " " + line
+                print(re.sub("\n", " ", msg))
+            else:
+                print(self.short_name, country_code, "No 'done' message.")
+
+        print("\n--------------------------------------------------------------")
+        print("-------------------- Details ---------------------------------")
+        print("--------------------------------------------------------------")
+
+        for country_code, log in country_logs.items():
+            print(country_code, log)
