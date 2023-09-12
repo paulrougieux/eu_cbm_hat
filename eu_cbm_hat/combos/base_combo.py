@@ -281,6 +281,8 @@ class Combination(object):
             >>> continent.combos["reference"].print_log_summary()
 
         """
+        if isinstance(patterns, str):
+            patterns = [patterns]
         country_logs = {}
 
         for country_code in self.runners.keys():
