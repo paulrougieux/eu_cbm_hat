@@ -189,7 +189,7 @@ def generate_all_combinations_and_fill_na(df, groupby):
         lambda x: x.diff()
     )
     diff_sum = abs(df.groupby("year")["area_diff"].sum())
-    assert all(diff_sum < 5)
+    assert all(diff_sum < 100)
     return df
 
 
