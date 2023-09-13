@@ -101,9 +101,9 @@ def harvest_exp_one_country(
     # Join demand from the economic model, if grouping on years only
     # Use extra information from the HAT cbm/dynamic.py
     if groupby == "year" or groupby == ["year"]:
-        msg = "Group by year. Get harvest demand and predetermined harvest "
-        msg += "information from the output extra table."
-        print(msg)
+        # msg = "Group by year. Get harvest demand and predetermined harvest "
+        # msg += "information from the output extra table."
+        # print(msg)
         extras = runner.output["extras"].rename(columns={"index": "year"})
         df = df.merge(extras, on="year", how="left")
         # Check that "harvest_exp_hat" computed from HAT disturbances is the
@@ -230,7 +230,7 @@ def harvest_exp_prov_one_country(
 
     # Join demand from the economic model, if grouping on years only
     if groupby == "year":
-        print("group by year")
+        # print("group by year")
         harvest_scenario_name = continent.combos[combo_name].config["harvest"]
         df_demand = harvest_demand(harvest_scenario_name)
         df_demand = df_demand.loc[df_demand["iso2_code"] == iso2_code]

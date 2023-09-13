@@ -46,6 +46,7 @@ def save_agg_combo_output(combo_name:str):
     combo_dir = output_agg_dir / combo_name
     combo_dir.mkdir(exist_ok=True)
     # Harvest expected provided by year
+    print(f"Processing {combo_name} harvest expected provided.")
     hexprov_by_year = harvest_exp_prov_all_countries(combo_name, "year")
     hexprov_by_year.to_parquet(combo_dir / "hexprov_by_year.parquet")
     # Harvest expected provided by year, forest type and disturbance type
@@ -54,6 +55,7 @@ def save_agg_combo_output(combo_name:str):
     )
     hexprov_by_year_ft_dist.to_parquet(combo_dir / "hexprov_by_year_ft_dist.parquet")
     # Sink by year
+    print(f"Processing {combo_name} sink.")
     sink = sink_all_countries(combo_name, "year")
     sink.to_parquet(combo_dir / "sink_by_year.parquet")
     # Sink by year and status
