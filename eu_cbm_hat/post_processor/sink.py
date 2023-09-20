@@ -142,7 +142,7 @@ def get_nf_soil_stock(df):
     # Group by region and climate and calculate the standard deviation
     groupby_soil = ["region", "climate"]
     nf_soil["std_dev"] = nf_soil.groupby(groupby_soil)["nf_slow_soil_per_ha"].transform(
-        np.std
+        "std"
     )
     # Check that nf_slow_soil_per_ha always have the same value across grouping
     # variables
@@ -293,7 +293,7 @@ def compute_sink(
     # the area information
     cols = df_agg.columns
     cols = cols[cols.str.contains("sink$")].to_list()
-    df_agg_final = df_agg.groupby(groupby)[cols].agg(sum).reset_index()
+    df_agg_final = df_agg.groupby(groupby)[cols].agg("sum").reset_index()
     return df_agg_final
 
 
