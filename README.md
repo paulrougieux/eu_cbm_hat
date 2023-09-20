@@ -130,6 +130,13 @@ Run the test country ZZ at a python prompt:
     runner.num_timesteps = 30
     runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
+Run a scenario combination
+
+    cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
+    ipython -i run_scenario_combo.py -- --combo_name reference --last_year 2050
+    ipython -i run_scenario_combo.py -- --combo_name pikbau --last_year 2070
+    ipython -i run_scenario_combo.py -- --combo_name pikfair --last_year 2070
+
 
 ### Inspect the model output
 
