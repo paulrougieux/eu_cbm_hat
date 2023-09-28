@@ -8,7 +8,7 @@ Usage:
     # or on BDAP
     cd $HOME/eu_cbm/eu_cbm_hat/scripts/post_processing
     ipython -i process_scenario_combo.py -- --combo_names reference
-    ipython -i process_scenario_combo.py -- --combo_names reference pikbau pikfair
+    ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
 
 """
 

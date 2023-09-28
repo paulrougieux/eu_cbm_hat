@@ -6,11 +6,11 @@ Usage:
     # or on BDAP
     cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
     ipython -i run_scenario_combo.py -- --combo_name reference --last_year 2050
-    ipython -i run_scenario_combo.py -- --combo_name pikbau --last_year 2070
+    ipython -i run_scenario_combo.py -- --combo_name pikssp2 --last_year 2070
     ipython -i run_scenario_combo.py -- --combo_name pikfair --last_year 2070
     # Only run a few countries
-    ipython -i run_scenario_combo.py -- --combo_name pikbau --last_year 2070 --countries LU CZ
-    ipython -i run_scenario_combo.py -- --combo_name pikbau --last_year 2070 --countries IT
+    ipython -i run_scenario_combo.py -- --combo_name pikssp2 --last_year 2070 --countries LU CZ
+    ipython -i run_scenario_combo.py -- --combo_name pikssp2 --last_year 2070 --countries IT
 
 The version of p_umap in eu_cbm_hat/combos/base_combo.py Combination.__call__()
 method was using a function that takes a list of runner objects as one its

@@ -39,7 +39,7 @@ def save_agg_combo_output(combo_name:str):
 
         >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
         >>> save_agg_combo_output("reference")
-        >>> for x in ["reference", "pikbau", "pikfair"]:
+        >>> for x in ["reference", "pikssp2", "pikfair"]:
         >>>     save_agg_combo_output(x)
 
     """

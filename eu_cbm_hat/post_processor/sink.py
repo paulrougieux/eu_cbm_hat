@@ -17,7 +17,7 @@ Get the biomass sink for 2 scenarios:
     >>> import pandas
     >>> # Replace these by the relevant scenario combinations
     >>> sinkfair = sink_all_countries("pikfair", "year")
-    >>> sinkbau =  sink_all_countries("pikbau", "year")
+    >>> sinkbau =  sink_all_countries("pikssp2", "year")
     >>> df_all = pandas.concat([sinkfair, sinkbau])
     >>> df_all.reset_index(inplace=True, drop=True)
     >>> df_all.sort_values("country", inplace=True)
