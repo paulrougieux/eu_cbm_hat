@@ -133,7 +133,8 @@ Run the test country ZZ at a python prompt:
 
 ### Run a scenario combination
 
-Run a scenario combination for all EU countries at once (see the documentation on combos
+Run a scenario combination for all EU countries at once (see the [documentation on
+combos](https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat/combos.html)
 for how to specify them):
 
     cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
