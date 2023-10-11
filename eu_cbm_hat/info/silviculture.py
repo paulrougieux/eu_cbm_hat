@@ -26,6 +26,7 @@ from plumbing.cache import property_cached
 
 # Internal modules #
 
+
 def keep_clfrs_without_question_marks(df, classifiers):
     """Check if there are questions mark in a classifier column
     and return a list of index columns that:
@@ -61,7 +62,7 @@ def keep_clfrs_without_question_marks(df, classifiers):
     for classif_name in classifiers:
         values = df[classif_name].unique().tolist()
         if len(values) > 1 and "?" in values:
-            msg =  "Mixture of question marks and other values"
+            msg = "Mixture of question marks and other values"
             msg += f"not allowed in, column {classif_name}.\n"
             msg += f"The data frame contains the following columns:\n{df.columns}."
             raise ValueError(msg)
@@ -131,6 +132,7 @@ class Silviculture:
         self.irw_frac.check()
         self.dist_matrix_value.check()
 
+
 ###############################################################################
 class BaseSilvInfo:
     """
@@ -142,35 +144,36 @@ class BaseSilvInfo:
         # Default attributes #
         self.silv = silv
         # Shortcuts #
-        self.runner  = self.silv.runner
+        self.runner = self.silv.runner
         self.country = self.silv.country
-        self.combo   = self.runner.combo
-        self.code    = self.country.iso2_code
+        self.combo = self.runner.combo
+        self.code = self.country.iso2_code
 
-    #----------------------------- Properties --------------------------------#
+    # ----------------------------- Properties --------------------------------#
     @property_cached
     def raw(self):
         """Data frame available in the input data"""
-        return pandas.read_csv(self.csv_path,
-                               dtype = {c:'str' for c in self.cols})
+        return pandas.read_csv(self.csv_path, dtype={c: "str" for c in self.cols})
 
     @property_cached
     def cols(self):
-        return list(self.country.orig_data.classif_names.values()) + \
-               ['disturbance_type']
+        return list(self.country.orig_data.classif_names.values()) + [
+            "disturbance_type"
+        ]
 
     @property_cached
     def dup_cols(self):
-        return ['scenario'] + self.cols
+        return ["scenario"] + self.cols
 
     def check(self):
         """Perform various checks on the silviculture input tables"""
         # Make a check of duplicated entries #
         self.duplication_check()
         # Optional extra checks #
-        if hasattr(self, 'extra_checks'): self.extra_checks()
+        if hasattr(self, "extra_checks"):
+            self.extra_checks()
         # Make a consistency check between dist_name and dist_id #
-        if 'dist_type_name' in self.raw.columns:
+        if "dist_type_name" in self.raw.columns:
             self.consistency_check()
 
     @property_cached
@@ -182,8 +185,8 @@ class BaseSilvInfo:
         # Load #
         df = self.raw.copy()
         # Drop the names which are useless #
-        if 'dist_type_name' in self.raw.columns:
-            df = df.drop(columns='dist_type_name')
+        if "dist_type_name" in self.raw.columns:
+            df = df.drop(columns="dist_type_name")
         # Convert the disturbance IDs to the real internal IDs #
         df = self.conv_dists(df)
         # Convert the classifier IDs to the real internal IDs #
@@ -191,7 +194,7 @@ class BaseSilvInfo:
         # Return #
         return df
 
-    #------------------------------- Methods ---------------------------------#
+    # ------------------------------- Methods ---------------------------------#
     def conv_dists(self, df):
         """
         Convert the disturbance IDs such as `20` and `22` into their
@@ -199,9 +202,9 @@ class BaseSilvInfo:
         """
         # Get the conversion mapping and invert it #
         id_to_id = self.runner.simulation.sit.disturbance_id_map
-        id_to_id = {v:k for k,v in id_to_id.items()}
+        id_to_id = {v: k for k, v in id_to_id.items()}
         # Check that all IDs can be converted to an internal ID
-        cannot_convert = df['disturbance_type'].dropna().map(id_to_id).isna()
+        cannot_convert = df["disturbance_type"].dropna().map(id_to_id).isna()
         if any(cannot_convert):
             msg = f"In the file {self.csv_path}, the disturbance type(s) "
             msg += f"{df['disturbance_type'][cannot_convert].unique()} "
@@ -209,7 +212,7 @@ class BaseSilvInfo:
             msg += "following mapping dictionary."
             raise ValueError(msg, id_to_id)
         # Apply the mapping to the dataframe #
-        df['disturbance_type'] = df['disturbance_type'].map(id_to_id)
+        df["disturbance_type"] = df["disturbance_type"].map(id_to_id)
         # Return #
         return df
 
@@ -231,7 +234,7 @@ class BaseSilvInfo:
             if len(values) == 1 and values[0] == "?":
                 continue
             if len(values) > 1 and "?" in values:
-                msg =  "Mixture of question marks and other values"
+                msg = "Mixture of question marks and other values"
                 msg += f"not allowed in %s, column {classif_name}"
                 raise ValueError(msg % self)
 
@@ -243,13 +246,14 @@ class BaseSilvInfo:
 
     def consistency_check(self):
         # Get mapping dictionary from ID to full description #
-        id_to_name = self.country.orig_data['disturbance_types']
-        id_to_name = dict(zip(id_to_name['dist_type_name'],
-                              id_to_name['dist_desc_input']))
+        id_to_name = self.country.orig_data["disturbance_types"]
+        id_to_name = dict(
+            zip(id_to_name["dist_type_name"], id_to_name["dist_desc_input"])
+        )
         # Compare #
-        names = self.raw['disturbance_type'].map(id_to_name)
-        orig  = self.raw['dist_type_name']
-        comp  = orig == names
+        names = self.raw["disturbance_type"].map(id_to_name)
+        orig = self.raw["dist_type_name"]
+        comp = orig == names
         # Raise exception #
         if not all(comp):
             msg = "Names don't match IDs in '%s'.\n" % self.csv_path
@@ -273,17 +277,20 @@ class BaseSilvInfo:
 
     def get_year(self, year):
         # Case number 1: there is only a single scenario specified #
-        if isinstance(self.choices, str): scenario = self.choices
+        if isinstance(self.choices, str):
+            scenario = self.choices
         # Case number 2: the scenarios picked vary according to the year #
-        else: scenario = self.choices[year]
+        else:
+            scenario = self.choices[year]
         # Retrieve by query #
         df = self.df.query("scenario == '%s'" % scenario)
         # Drop the scenario column #
-        df = df.drop(columns='scenario')
+        df = df.drop(columns="scenario")
         # Check there is data left #
         assert not df.empty
         # Return #
         return df
+
 
 ###############################################################################
 class IRWFractions(BaseSilvInfo):
@@ -295,11 +302,12 @@ class IRWFractions(BaseSilvInfo):
     @property
     def choices(self):
         """Choices made for `irw` fraction in the current combo."""
-        return self.combo.config['irw_frac_by_dist']
+        return self.combo.config["irw_frac_by_dist"]
 
     @property
     def csv_path(self):
         return self.country.orig_data.paths.irw_csv
+
 
 ###############################################################################
 class VolToMassCoefs(BaseSilvInfo):
@@ -314,7 +322,7 @@ class VolToMassCoefs(BaseSilvInfo):
 
     @property
     def cols(self):
-        return ['forest_type']
+        return ["forest_type"]
 
     @property
     def dup_cols(self):
@@ -331,6 +339,7 @@ class VolToMassCoefs(BaseSilvInfo):
         # Return #
         return df
 
+
 ###############################################################################
 class EventsTemplates(BaseSilvInfo):
     """
@@ -341,7 +350,7 @@ class EventsTemplates(BaseSilvInfo):
     @property
     def choices(self):
         """Choices made for the events templates in the current combo."""
-        return self.combo.config['events_templates']
+        return self.combo.config["events_templates"]
 
     @property
     def csv_path(self):
@@ -349,17 +358,20 @@ class EventsTemplates(BaseSilvInfo):
 
     @property
     def dup_cols(self):
-        return list(self.country.orig_data.classif_names.values()) + \
-               ['scenario', 'sw_start', 'sw_end', 'hw_start', 'hw_end'] + \
-               ["last_dist_id"]
+        return (
+            list(self.country.orig_data.classif_names.values())
+            + ["scenario", "sw_start", "sw_end", "hw_start", "hw_end"]
+            + ["last_dist_id"]
+        )
 
     def extra_checks(self):
         # Guarantee no difference between sw_start and hw_start #
-        assert all(self.raw['sw_start'] == self.raw['hw_start'])
+        assert all(self.raw["sw_start"] == self.raw["hw_start"])
         # Guarantee no difference between sw_end and hw_end #
-        assert all(self.raw['sw_end'] == self.raw['hw_end'])
+        assert all(self.raw["sw_end"] == self.raw["hw_end"])
         # Guarantee we don't use max_since_last_dist #
-        assert all(self.raw['max_since_last_dist'] == -1)
+        assert all(self.raw["max_since_last_dist"] == -1)
+
 
 ###############################################################################
 class HarvestFactors(BaseSilvInfo):
@@ -370,7 +382,7 @@ class HarvestFactors(BaseSilvInfo):
     @property
     def choices(self):
         """Choices made for the harvest factors in the current combo."""
-        return self.combo.config['harvest_factors']
+        return self.combo.config["harvest_factors"]
 
     @property
     def csv_path(self):
@@ -378,8 +390,8 @@ class HarvestFactors(BaseSilvInfo):
 
     @property
     def cols(self):
-        cols = ['forest_type', 'mgmt_type', 'disturbance_type', 'con_broad']
-        cols = cols + ['product_created', 'silv_practice']
+        cols = ["forest_type", "mgmt_type", "disturbance_type", "con_broad"]
+        cols = cols + ["product_created", "silv_practice"]
         return cols
 
     @property
@@ -400,8 +412,8 @@ class HarvestFactors(BaseSilvInfo):
         cols = list(set(self.cols) - set(["product_created"]))
         df_check = self.raw.groupby(index)[cols].agg(lambda x: len(x.isna().unique()))
         for col in cols:
-            if any(df_check[col]>1):
-                df_wrong = df_check[df_check[col]>1]
+            if any(df_check[col] > 1):
+                df_wrong = df_check[df_check[col] > 1]
                 msg = "For a given scenario and a given product, "
                 msg += "A join column can either be completely empty or full, "
                 msg += "but it cannot be incomplete i.e. "
@@ -409,14 +421,15 @@ class HarvestFactors(BaseSilvInfo):
                 msg += f"Check column: {col} in scenario {df_wrong.index.to_list()}"
                 raise ValueError(msg)
         # Check that the skew factors sum to one by scenario and product group
-        df_long = self.raw.melt(id_vars = self.cols + ["scenario"])
+        df_long = self.raw.melt(id_vars=self.cols + ["scenario"])
         index = ["scenario", "product_created", "variable"]
         df_long["value_sum"] = df_long.groupby(index)["value"].transform("sum")
         df_long_irw = df_long.query("product_created=='irw_and_fw'")
-        selector = np.isclose(df_long_irw["value_sum"], 1,  atol=1e-08)
+        selector = np.isclose(df_long_irw["value_sum"], 1, atol=1e-08)
         if not all(selector):
             msg = "The following skew factors do not sum to one"
             raise ValueError(msg, df_long_irw.query("value_sum !=1"))
+
 
 class DistMatrixValue(BaseSilvInfo):
     """
@@ -434,7 +447,7 @@ class DistMatrixValue(BaseSilvInfo):
 
     @property_cached
     def df(self):
-        """ Disturbance matrix values"""
+        """Disturbance matrix values"""
         df = self.raw.copy()
         df = df.loc[df["scenario"] == self.choices]
         df.drop(columns="scenario", inplace=True)
@@ -442,7 +455,8 @@ class DistMatrixValue(BaseSilvInfo):
 
     def check(self):
         """Check sink pools sum to one"""
-        prop_sum = self.df.groupby(["disturbance_matrix_id", "source_pool_id"])["proportion"].agg("sum")
+        index = ["disturbance_matrix_id", "source_pool_id"]
+        prop_sum = self.df.groupby(index)["proportion"].agg("sum")
         if not all(np.isclose(prop_sum, 1)):
             check_df = prop_sum.reset_index()
             check_df = check_df.query("proportion<1-1e-6 or proportion>1+1e-6")
@@ -451,5 +465,3 @@ class DistMatrixValue(BaseSilvInfo):
             msg += f"{self.csv_path}\n:"
             msg += f"{check_df}"
             raise ValueError(msg)
-
-
