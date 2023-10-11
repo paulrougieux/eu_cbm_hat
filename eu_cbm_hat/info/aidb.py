@@ -47,6 +47,9 @@ class AIDB(object):
         self.parent = parent
         # Directories #
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
+        # Keep the default paths in this argument
+        self.default_aidb_path = self.paths.aidb
+        # The AIDB path may be changed in some scenario combinations
         # Path to the database in a separate repository #
         self.repo_file = eu_cbm_aidb_dir + 'countries/' + self.parent.iso2_code \
                          + '/aidb.db'
@@ -149,7 +152,7 @@ class AIDB(object):
         unchanged. The copy happens in a scenario combination, therefore the
         copied AIDB gets the combo_name appended to its name.
         """
-        orig_file = self.paths.aidb
+        orig_file = self.default_aidb_path
         # Change the path to the AIDB
         self.all_paths = f"/config/aidb_{combo_name}.db"
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
