@@ -9,6 +9,7 @@ Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
+from typing import Dict
 
 # Third party modules #
 
@@ -70,8 +71,8 @@ class Continent(object):
                          for d in self.countries_dir.flat_directories]
         return {c.iso2_code: c for c in all_countries}
 
-    @property_cached
-    def combos(self):
+    @property
+    def combos(self)-> Dict[str, 'Combination']:
         """Return a dictionary of combination names to Combination objects."""
         combo_dir = eu_cbm_data_pathlib / "combos"
         # List hard coded combo classes

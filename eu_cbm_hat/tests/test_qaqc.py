@@ -12,7 +12,6 @@ import numpy as np
 import pandas
 import pytest
 from eu_cbm_hat.core.continent import continent
-combo  = continent.combos['hat']
-runner = combo.runners['ZZ'][-1]
 
+runner = continent.combos['reference'].runners['ZZ'][-1]
 

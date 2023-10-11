@@ -40,7 +40,7 @@ class PostProcessor(object):
         Example
 
             >>> from eu_cbm_hat.core.continent import continent
-            >>> runner_at = continent.combos["pikbau"].runners["AT"][-1]
+            >>> runner_at = continent.combos["pikssp2"].runners["AT"][-1]
             >>> living_biomass_pools = [
             >>>     "softwood_merch",
             >>>     "softwood_other",

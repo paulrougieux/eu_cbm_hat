@@ -131,6 +131,25 @@ Run the test country ZZ at a python prompt:
     runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 
+### Run a scenario combination
+
+Run a scenario combination for all EU countries at once (see the [documentation on
+combos](https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat/combos.html)
+for how to specify them):
+
+    cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
+    ipython -i run_scenario_combo.py -- --combo_name reference --last_year 2050
+    ipython -i run_scenario_combo.py -- --combo_name pikssp2 --last_year 2070
+    ipython -i run_scenario_combo.py -- --combo_name pikfair --last_year 2070
+
+Process the output data for a list of scenario combinations provided as an argument.
+Compute the harvest expected and provided as well as the sink
+in an aggregated way:
+
+    cd $HOME/eu_cbm/eu_cbm_hat/scripts/post_processing
+    ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
+
+
 ### Inspect the model output
 
 Inspect the output of the model

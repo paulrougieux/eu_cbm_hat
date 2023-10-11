@@ -13,6 +13,7 @@ import pickle
 
 # Third party modules #
 import pandas
+from pyarrow import csv
 
 # First party modules #
 from autopaths.auto_paths import AutoPaths
@@ -27,8 +28,16 @@ class OutputData(InternalData):
     This class will provide access to the output data of a Runner
     as several pandas data frames.
 
-        >>> print(runner.output.load('pools'))
-        >>> print(runner.output.load('flux'))
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos["reference"].runners["PL"][-1]
+        >>> # Read the compressed csv file into a data frame
+        >>> runner.output["pools"]
+        >>> # Wall time: 3.38 s measured with %time
+        >>> # Use the load() method to get classifiers and year columns
+        >>> runner.output.load("pools")
+        >>> # Wall time: 8.92 s
+        >>> runner.output["flux"]
+        >>> runner.output.load("flux"))
     """
 
     # The file "results.parquet" is called "results" because
@@ -85,7 +94,7 @@ class OutputData(InternalData):
         path = self.paths[item]
         # If it is a CSV #
         if '.csv' in path.name:
-            return pandas.read_csv(str(path), compression='gzip')
+            return csv.read_csv(str(path)).to_pandas()
         # If it is a python pickle file #
         with path.open('rb') as handle: return pickle.load(handle)
 
