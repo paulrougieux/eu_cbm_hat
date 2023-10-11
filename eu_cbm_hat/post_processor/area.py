@@ -41,7 +41,7 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     dist = runner.output["parameters"][index + ["disturbance_type"]]
     df = df.merge(dist, on=index)
     # Aggregate
-    df_agg = df.groupby(groupby)["area"].agg(sum).reset_index()
+    df_agg = df.groupby(groupby)["area"].agg("sum").reset_index()
     # Place combo name, country code and country name as first columns
     df_agg["combo_name"] = combo_name
     df_agg["iso2_code"] = runner.country.iso2_code
@@ -80,7 +80,7 @@ def area_by_status_one_country(combo_name: str, iso2_code: str):
     df.loc[selector, "status"] = "D"
     # Aggregate
     index = ["year", "status"]
-    df = df.groupby(index)["area"].agg(sum).reset_index()
+    df = df.groupby(index)["area"].agg("sum").reset_index()
     # Pivot to wide format
     df_wide = df.pivot(index="year", columns="status", values="area")
     # Add the total area

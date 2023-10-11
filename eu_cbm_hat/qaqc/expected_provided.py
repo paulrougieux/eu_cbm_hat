@@ -131,13 +131,13 @@ class ExpectedProvided:
                         'softwood_stem_snag_to_product', 'softwood_branch_snag_to_product',
                         'hardwood_merch_to_product', 'hardwood_other_to_product',
                         'hardwood_stem_snag_to_product', 'hardwood_branch_snag_to_product']
-        flux_agg = pool_flux.groupby(index)[product_cols].agg(sum)
+        flux_agg = pool_flux.groupby(index)[product_cols].agg("sum")
         flux_agg["sum_flux_to_product"] = flux_agg.sum(axis=1)
         # Add age information
         flux_agg["age_min"] = pool_flux.groupby(index)["age"].agg(min)
         flux_agg["age_max"] = pool_flux.groupby(index)["age"].agg(max)
         # Add the area
-        flux_agg["area"] = pool_flux.groupby(index)["area"].agg(sum)
+        flux_agg["area"] = pool_flux.groupby(index)["area"].agg("sum")
         flux_agg = flux_agg.reset_index()
 
         # Assert that there are no repetition in the index columns

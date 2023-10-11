@@ -31,7 +31,7 @@ one set of classifiers to another set of classifiers.
     index = ["identifier", "timestep"]
     pools = runner.output["pools"].merge(classifiers, "left", on=index)
     area_status = (pools.groupby(["timestep", "status"])["area"]
-                   .agg(sum)
+                   .agg("sum")
                    .reset_index()
                    .pivot(columns="status", index="timestep", values="area")
                    )
