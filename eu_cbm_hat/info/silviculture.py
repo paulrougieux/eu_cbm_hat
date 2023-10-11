@@ -10,7 +10,7 @@ Unit D1 Bioeconomy.
 Check the silviculture input tables for inconsistencies
 
     >>> from eu_cbm_hat.core.continent import continent
-    >>> runner  = continent.combos['hat'].runners['AT'][-1]
+    >>> runner  = continent.combos['pikssp2_owc_max'].runners['AT'][-1]
     >>> runner.silv.check()
 
 """
@@ -129,6 +129,7 @@ class Silviculture:
         self.coefs.check()
         self.harvest.check()
         self.irw_frac.check()
+        self.dist_matrix_value.check()
 
 ###############################################################################
 class BaseSilvInfo:
@@ -438,4 +439,17 @@ class DistMatrixValue(BaseSilvInfo):
         df = df.loc[df["scenario"] == self.choices]
         df.drop(columns="scenario", inplace=True)
         return df
+
+    def check(selv):
+        """Check sink pools sum to one"""
+        prop_sum = self.df.groupby(["disturbance_matrix_id", "source_pool_id"])["proportion"].agg("sum")
+        if not all(np.isclose(prop_sum, 1)):
+            check_df = prop_sum.reset_index()
+            check_df = check_df.query("proportion<1-1e-6 or proportion>1+1e-6")
+            msg = "Some of the sink pool id do not sum to one "
+            msg += "in the disturbance matrix update file \n"
+            msg += f"{self.csv_path}\n:"
+            msg += f"{check_df}"
+            raise ValueError(msg)
+
 
