@@ -36,7 +36,7 @@ def check_dist_matrix_prop(df: pandas.DataFrame):
     id_cols = ["disturbance_matrix_id", "source_pool_id"]
     df_check = (
         df.groupby(id_cols)["proportion"]
-        .agg(sum)
+        .agg("sum")
         .reset_index()
         .rename(columns={"proportion": "proportion_sum"})
     )
