@@ -440,7 +440,7 @@ class DistMatrixValue(BaseSilvInfo):
         df.drop(columns="scenario", inplace=True)
         return df
 
-    def check(selv):
+    def check(self):
         """Check sink pools sum to one"""
         prop_sum = self.df.groupby(["disturbance_matrix_id", "source_pool_id"])["proportion"].agg("sum")
         if not all(np.isclose(prop_sum, 1)):
