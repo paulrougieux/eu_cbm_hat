@@ -406,7 +406,7 @@ class HarvestFactors(BaseSilvInfo):
         # Check that the skew factors sum to one by scenario and product group
         df_long = self.raw.melt(id_vars = self.cols + ["scenario"])
         index = ["scenario", "product_created", "variable"]
-        df_long["value_sum"] = df_long.groupby(index)["value"].transform(sum)
+        df_long["value_sum"] = df_long.groupby(index)["value"].transform("sum")
         df_long_irw = df_long.query("product_created=='irw_and_fw'")
         selector = np.isclose(df_long_irw["value_sum"], 1,  atol=1e-08)
         if not all(selector):

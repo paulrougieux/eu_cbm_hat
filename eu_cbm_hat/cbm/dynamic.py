@@ -466,7 +466,7 @@ class DynamicSimulation(Simulation):
                 harvest_factors = harvest2
 
             # Aggregate the normalized value by groups
-            df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
+            df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform("sum")
 
             # Merge disturbances and harvest factors
             df_irw_silv = pandas.merge(df_irw_silv,
