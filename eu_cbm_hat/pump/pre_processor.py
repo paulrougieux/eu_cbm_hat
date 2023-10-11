@@ -18,16 +18,29 @@ import pandas
 # Internal modules #
 from eu_cbm_hat.pump.long_or_wide import events_wide_to_long
 
+
 ###############################################################################
 class PreProcessor(object):
     """
     This class will update the input data of a runner based on a set of rules.
+
+    - Load the modified disturbance matrix from
+      `eu_cbm/eu_cbm_data/countries/AT/silv/` for the scenario defined in
+      pikssp2_owc_max and change the AIDB for the given disturbance matrix
+      rows:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner  = continent.combos['pikssp2_owc_max'].runners['AT'][-1]
+        >>> runner.silv.check()
+        >>> runner.silv.dist_matrix_value.df
+        >>> runner.pre_processor.copy_and_change_aidb()
+
     """
 
     def __init__(self, parent):
         # Default attributes #
-        self.parent  = parent
-        self.runner  = parent
+        self.parent = parent
+        self.runner = parent
         self.country = parent.country
         # Shortcuts #
         self.input = self.runner.input_data
@@ -35,12 +48,13 @@ class PreProcessor(object):
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
 
-    #--------------------------- Special Methods -----------------------------#
+    # --------------------------- Special Methods -----------------------------#
     def __call__(self):
         # Message #
         self.parent.log.info("Pre-processing input data.")
         # Check empty lines in all CSV inputs #
-        for csv_path in self.all_csv: self.raise_empty_lines(csv_path)
+        for csv_path in self.all_csv:
+            self.raise_empty_lines(csv_path)
         # Reshape the events file #
         self.reshape_events()
         # Check there are no negative timesteps #
@@ -49,14 +63,17 @@ class PreProcessor(object):
         # In case the scenario combination changes the disturbance matrix
         self.copy_and_change_aidb()
 
-    #----------------------------- Properties --------------------------------#
+    # ----------------------------- Properties --------------------------------#
     @property
     def all_csv(self):
         """Get all CSV inputs in a list."""
-        return [item.path_obj for item in self.input.paths._paths
-                if item.path_obj.extension == 'csv']
+        return [
+            item.path_obj
+            for item in self.input.paths._paths
+            if item.path_obj.extension == "csv"
+        ]
 
-    #------------------------------- Methods ---------------------------------#
+    # ------------------------------- Methods ---------------------------------#
     @staticmethod
     def raise_empty_lines(csv_path):
         """
@@ -64,13 +81,16 @@ class PreProcessor(object):
         lines.
         """
         # Load from disk #
-        try: df = pandas.read_csv(str(csv_path))
+        try:
+            df = pandas.read_csv(str(csv_path))
         # If the file is empty we can skip it #
-        except pandas.errors.EmptyDataError: return
+        except pandas.errors.EmptyDataError:
+            return
         # Get empty lines #
         empty_lines = df.isnull().all(1)
         # Check if there are any #
-        if not any(empty_lines): return
+        if not any(empty_lines):
+            return
         # Warn #
         msg = "The file '%s' has %i empty lines."
         raise Exception(msg % (csv_path, empty_lines.sum()))
@@ -80,7 +100,8 @@ class PreProcessor(object):
         # The events file #
         path = self.input.paths.events
         # Optionally make a copy #
-        if debug: path.copy(path.prefix_path + '_wide.csv')
+        if debug:
+            path.copy(path.prefix_path + "_wide.csv")
         # Load it as a dataframe #
         wide = pandas.read_csv(str(path))
         # Reshape it #
@@ -95,17 +116,22 @@ class PreProcessor(object):
         # Path to the file we want to check #
         path = str(self.input.paths.events)
         # Load from disk #
-        try: df = pandas.read_csv(path)
+        try:
+            df = pandas.read_csv(path)
         # If the file is empty we can skip it #
-        except pandas.errors.EmptyDataError: return
+        except pandas.errors.EmptyDataError:
+            return
         # Get negative values #
-        negative_values = df['step'] < 0
+        negative_values = df["step"] < 0
         # Check if there are any #
-        if not any(negative_values): return
+        if not any(negative_values):
+            return
         # Message #
-        msg = "The file '%s' has %i negative values for the timestep column." \
-              " This means you are attempting to apply disturbances to a" \
-              " year that is anterior to the inventory start year configured."
+        msg = (
+            "The file '%s' has %i negative values for the timestep column."
+            " This means you are attempting to apply disturbances to a"
+            " year that is anterior to the inventory start year configured."
+        )
         # Raise #
         raise Exception(msg % (path, negative_values.sum()))
 
@@ -116,10 +142,11 @@ class PreProcessor(object):
         method. Because we want to be sure that the change happens only on a
         copied AIDB. Not on the reference one.
         """
-        # If a disturbance matrix is not defined in the yaml file, do nothing
+        # Cases in which the default AIDB will be used
+        # If a disturbance matrix is not defined in the yaml file, use the default AIDB
         if "disturbance_matrix_value" not in self.runner.combo.config.keys():
             return
-        # If it's defined as "default_aidb", also do nothing
+        # If it's defined as "default_aidb", use the default AIDB
         if self.runner.combo.config["disturbance_matrix_value"] == "default_aidb":
             return
 
@@ -128,15 +155,34 @@ class PreProcessor(object):
         # Raise an error if not
 
         # Copy the AIDB
-        self.parent.log.info("AIDB %s" % self.runner.country.aidb.paths.aidb)
-        self.runner.country.aidb.copy(combo_name = self.runner.combo.short_name)
+        self.parent.log.info("AIDB %s" % self.runner.country.aidb.default_aidb_path)
+        self.runner.country.aidb.copy(combo_name=self.runner.combo.short_name)
         self.parent.log.info("Copied to %s" % self.runner.country.aidb.paths.aidb)
 
-        # Change the disturbance matrix
-        # # Retrieve by query #
-        # df = self.df.query("scenario == '%s'" % scenario)
-        # # Drop the scenario column #
-        # df = df.drop(columns='scenario')
+        # Load the reference disturbance matrix values and the new values
+        dist_matrix_table_name = "disturbance_matrix_value"
+        dm = self.runner.country.aidb.db.read_df(dist_matrix_table_name)
+        dm_new = self.runner.silv.dist_matrix_value.df
+
+        # Find matching rows in the default AIDB
+        ids = ["disturbance_matrix_id", "source_pool_id", "sink_pool_id"]
+        df_match = dm.merge(dm_new[ids + ["proportion"]], on=ids, how="right")
+
+        # Remove those combinations of disturbance_matrix_id and source_pool_id
+        # from the table
+        df_match_id = df_match.value_counts(
+            ["disturbance_matrix_id", "source_pool_id"]
+        ).reset_index()
+        df = dm.merge(df_match_id, how="left")
+        selector = df["count"].isna()
+        df = df.loc[selector].copy().drop(columns=["count", "index"])
+
+        # Add the updated disturbance matrix values and reorder
+        df = pandas.concat([df, dm_new[ids + ["proportion"]]])
+        df = df.sort_values(ids)
+
+        # Write back to the AIDB
+        self.runner.country.aidb.db.write_df(df, dist_matrix_table_name)
 
         msg = "The disturbance matrix has been changed according to "
         msg += "silv/disturbance_matrix_value.csv"
