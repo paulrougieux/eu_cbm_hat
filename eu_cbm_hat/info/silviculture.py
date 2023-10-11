@@ -446,6 +446,18 @@ class DistMatrixValue(BaseSilvInfo):
         return self.country.orig_data.paths.disturbance_matrix_value
 
     @property_cached
+    def use_default_aidb(self):
+        """Check whether the default aidb should be used or not"""
+        # Cases in which the default AIDB will be used
+        # If a disturbance matrix is not defined in the yaml file, use the default AIDB
+        if "disturbance_matrix_value" not in self.runner.combo.config.keys():
+            return True
+        # If it's defined as "default_aidb", use the default AIDB
+        if self.runner.combo.config["disturbance_matrix_value"] == "default_aidb":
+            return True
+        return False
+
+    @property_cached
     def df(self):
         """Disturbance matrix values"""
         df = self.raw.copy()
@@ -455,6 +467,9 @@ class DistMatrixValue(BaseSilvInfo):
 
     def check(self):
         """Check sink pools sum to one"""
+        # Don't perform the test if not required by the scenario combo
+        if self.use_default_aidb:
+            return
         index = ["disturbance_matrix_id", "source_pool_id"]
         prop_sum = self.df.groupby(index)["proportion"].agg("sum")
         if not all(np.isclose(prop_sum, 1)):

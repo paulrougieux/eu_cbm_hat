@@ -142,12 +142,8 @@ class PreProcessor(object):
         method. Because we want to be sure that the change happens only on a
         copied AIDB. Not on the reference one.
         """
-        # Cases in which the default AIDB will be used
-        # If a disturbance matrix is not defined in the yaml file, use the default AIDB
-        if "disturbance_matrix_value" not in self.runner.combo.config.keys():
-            return
-        # If it's defined as "default_aidb", use the default AIDB
-        if self.runner.combo.config["disturbance_matrix_value"] == "default_aidb":
+        # Cases for which the default AIDB should be used
+        if self.runner.silv.dist_matrix_value.use_default_aidb:
             return
 
         # If a disturbance matrix is defined in the yaml file
