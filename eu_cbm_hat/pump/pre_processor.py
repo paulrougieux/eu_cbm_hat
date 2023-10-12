@@ -169,13 +169,20 @@ class PreProcessor(object):
         df_match_id = df_match.value_counts(
             ["disturbance_matrix_id", "source_pool_id"]
         ).reset_index()
-        df = dm.merge(df_match_id, how="left")
-        selector = df["count"].isna()
-        df = df.loc[selector].copy().drop(columns=["count", "index"])
+        df = dm.merge(df_match_id, how="left", indicator=True)
+        # Check the indicator name didn't change
+        assert any(df["_merge"].str.contains("left_only"))
+        selector = df["_merge"] == "left_only"
+        df = df.loc[selector].copy()
+        df = df[ids + ["proportion"]]
 
         # Add the updated disturbance matrix values and reorder
         df = pandas.concat([df, dm_new[ids + ["proportion"]]])
         df = df.sort_values(ids)
+        # Drop the first index because it contains ids from both
+        # the old and new data frame
+        df.reset_index(drop=True, inplace=True)
+        df.reset_index(inplace=True)
 
         # Write back to the AIDB
         self.runner.country.aidb.db.write_df(df, dist_matrix_table_name)
