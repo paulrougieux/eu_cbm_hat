@@ -23,6 +23,16 @@ passing a runner as a function argument, the solution is to pass only the
 country code as a function argument and have the function create the runner
 object inside the sub-process directly.
 
+Run, aggregate output and share on BDAP:
+
+    cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
+    ipython -i run_scenario_combo.py -- --combo_name reference --last_year 2050
+    ipython -i run_scenario_combo.py -- --combo_name pikssp2_fel1 --last_year 2070
+    ipython -i run_scenario_combo.py -- --combo_name pikfair_fel1 --last_year 2070
+    cd $HOME/eu_cbm/eu_cbm_hat/scripts/post_processing
+    ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
+    rsync -zav $HOME/eu_cbm/eu_cbm_data/output_agg /eos/jeodpp/data/projects/SUSBIOM-TRADE/transfer/eu_cbm_data
+
 """
 
 import argparse
