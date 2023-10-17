@@ -211,7 +211,7 @@ def compute_sink(
     Steps to correct for the area change:
 
         - Group by ["year", "region", "climate", "status",
-                    "land_class_change_in_current_year"] and sum pools
+                    "afforestation_in_current_year"] and sum pools
         - Aggregate all pool columns to one pool value for each key in the
           pools_dict dictionary
         - Compute the stock change per hectare
@@ -227,13 +227,18 @@ def compute_sink(
     """
     df = df.copy()
     # keep only time_since_land_class_change==1 to treat afforestation soil stock change from NF
-    df["land_class_change_in_current_year"] = df["time_since_land_class_change"] == 1
+    selector = df["status"].str.contains("AR")
+    selector &= df["time_since_land_class_change"] == 1
+    # Exclude land_class==0 we are not interested in the internal CBM
+    # mechanism that returns the land class to zero 20 years after the afforestation event.
+    selector &= df["land_class"] != 0
+    df["afforestation_in_current_year"] = selector
     groupby_sink = [
         "year",
         "region",
         "climate",
         "status",
-        "land_class_change_in_current_year",
+        "afforestation_in_current_year",
     ]
     if not set(groupby).issubset(groupby_sink):
         msg = f"Can only group by {groupby_sink}. "
@@ -273,7 +278,7 @@ def compute_sink(
         # Deduce NF soil pool when there is afforestation in the first year
         if "soil" in key:
             selector = df_agg["status"].str.contains("AR")
-            selector &= df_agg["land_class_change_in_current_year"]
+            selector &= df_agg["afforestation_in_current_year"]
             df_agg.loc[selector, key + "_stk_ch"] = (
                 df_agg.loc[selector, key + "_pool_per_ha"]
                 - df_agg.loc[selector, "nf_slow_soil_per_ha"]
