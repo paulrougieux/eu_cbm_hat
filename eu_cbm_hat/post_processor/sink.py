@@ -267,28 +267,23 @@ def compute_sink(
         # Aggregate all pool columns to one pool value for this key
         df_agg[key + "_pool"] = df_agg[pools_dict[key]].sum(axis=1)
 
-        # Normalize stock per hectare
-        df_agg[key + "_pool_per_ha"] = df_agg[key + "_pool"] / df_agg["area"]
-
         # Compute the stock change per hectare
         df_agg[key + "_stk_ch"] = df_agg.groupby(groupby_sink)[
-            key + "_pool_per_ha"
+            key + "_pool"
         ].transform(lambda x: x.diff())
 
-        # Deduce NF soil pool when there is afforestation in the first year
+        # Deduce NF soil pool for the first year of afforestation
         if "soil" in key:
+            df_agg["nf_slow_soil"] = df_agg["nf_slow_soil_per_ha"] * df_agg["area"]
             selector = df_agg["status"].str.contains("AR")
             selector &= df_agg["afforestation_in_current_year"]
             df_agg.loc[selector, key + "_stk_ch"] = (
-                df_agg.loc[selector, key + "_pool_per_ha"]
-                - df_agg.loc[selector, "nf_slow_soil_per_ha"]
+                df_agg.loc[selector, key + "_pool"]
+                - df_agg.loc[selector, "nf_slow_soil"]
             )
 
-        # Compute the CO2 eq. sink per hectare
-        df_agg[key + "_sink_per_ha"] = df_agg[key + "_stk_ch"] * -44 / 12
-
-        # Multiply the sink by the area
-        df_agg[key + "_sink"] = df_agg[key + "_sink_per_ha"] * df_agg["area"]
+        # Compute the CO2 eq. sink
+        df_agg[key + "_sink"] = df_agg[key + "_stk_ch"] * -44 / 12
 
     # Remove non forested land
     selector = df_agg["status"].str.contains("NF")
