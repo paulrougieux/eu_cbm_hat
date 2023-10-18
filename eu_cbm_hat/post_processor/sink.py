@@ -289,11 +289,11 @@ def compute_sink(
     selector = df_agg["status"].str.contains("NF")
     df_agg = df_agg.loc[~selector]
 
-    # Aggregate the given pools columns by the final grouping variables Keep
-    # the area information
+    # Aggregate the given pools columns by the final grouping variables
+    # Keep the area information
     cols = df_agg.columns
     cols = cols[cols.str.contains("sink$")].to_list()
-    df_agg_final = df_agg.groupby(groupby)[cols].agg("sum").reset_index()
+    df_agg_final = df_agg.groupby(groupby)[cols + ["area"]].agg("sum").reset_index()
     return df_agg_final
 
 
