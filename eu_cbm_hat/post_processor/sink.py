@@ -232,13 +232,14 @@ def compute_sink(
     # Exclude land_class==0 we are not interested in the internal CBM
     # mechanism that returns the land class to zero 20 years after the afforestation event.
     selector &= df["land_class"] != 0
+    # Area afforested in current year
     df["afforestation_in_current_year"] = selector
+    df["area_afforested_current_year"] = df["area"] * df["afforestation_in_current_year"]
     groupby_sink = [
         "year",
         "region",
         "climate",
         "status",
-        "afforestation_in_current_year",
     ]
     if not set(groupby).issubset(groupby_sink):
         msg = f"Can only group by {groupby_sink}. "
@@ -248,9 +249,11 @@ def compute_sink(
 
     pools_list = list({item for sublist in pools_dict.values() for item in sublist})
 
+
     # Aggregate by the classifier for which it is possible to compute a
     # difference in pools.
-    df_agg = df.groupby(groupby_sink)[pools_list + ["area"]].sum().reset_index()
+    selected_columns = pools_list + ["area", "area_afforested_current_year"]
+    df_agg = df.groupby(groupby_sink)[selected_columns].sum().reset_index()
 
     # Add the soil stock in NF stands (that have not been deforested in the simulation)
     nf_soil_agg = get_nf_soil_stock(df)
@@ -272,15 +275,12 @@ def compute_sink(
             key + "_pool"
         ].transform(lambda x: x.diff())
 
-        # Deduce NF soil pool for the first year of afforestation
+        # Remove the NF soil pool content for the area afforested in current year
         if "soil" in key:
-            df_agg["nf_slow_soil"] = df_agg["nf_slow_soil_per_ha"] * df_agg["area"]
-            selector = df_agg["status"].str.contains("AR")
-            selector &= df_agg["afforestation_in_current_year"]
-            df_agg.loc[selector, key + "_stk_ch"] = (
-                df_agg.loc[selector, key + "_pool"]
-                - df_agg.loc[selector, "nf_slow_soil"]
+            nf_slow_soil = (
+                df_agg["nf_slow_soil_per_ha"] * df_agg["area_afforested_current_year"]
             )
+            df_agg[key + "_stk_ch"] = (df_agg[key + "_stk_ch"] - nf_slow_soil)
 
         # Compute the CO2 eq. sink
         df_agg[key + "_sink"] = df_agg[key + "_stk_ch"] * -44 / 12
@@ -292,8 +292,9 @@ def compute_sink(
     # Aggregate the given pools columns by the final grouping variables
     # Keep the area information
     cols = df_agg.columns
-    cols = cols[cols.str.contains("sink$")].to_list()
-    df_agg_final = df_agg.groupby(groupby)[cols + ["area"]].agg("sum").reset_index()
+    selected_cols = cols[cols.str.contains("pool")].to_list()
+    selected_cols += cols[cols.str.contains("sink$")].to_list()
+    df_agg_final = df_agg.groupby(groupby)[selected_cols + ["area"]].agg("sum").reset_index()
     return df_agg_final
 
 
@@ -319,6 +320,7 @@ def sink_one_country(
         >>> lu_sink_y = sink_one_country("reference", "LU", groupby="year")
         >>> lu_sink_yr = sink_one_country("reference", "LU", groupby=["year", "region"])
         >>> lu_sink_yrc = sink_one_country("reference", "LU", groupby=["year", "region", "climate"])
+        >>> hu_sink_y = sink_one_country("reference", "HU", groupby="year")
 
     Specify your own `pools_dict`:
 
