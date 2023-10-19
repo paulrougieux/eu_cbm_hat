@@ -234,7 +234,9 @@ def compute_sink(
     selector &= df["land_class"] != 0
     # Area afforested in current year
     df["afforestation_in_current_year"] = selector
-    df["area_afforested_current_year"] = df["area"] * df["afforestation_in_current_year"]
+    df["area_afforested_current_year"] = (
+        df["area"] * df["afforestation_in_current_year"]
+    )
     groupby_sink = [
         "year",
         "region",
@@ -248,7 +250,6 @@ def compute_sink(
         raise ValueError(msg)
 
     pools_list = list({item for sublist in pools_dict.values() for item in sublist})
-
 
     # Aggregate by the classifier for which it is possible to compute a
     # difference in pools.
@@ -271,16 +272,16 @@ def compute_sink(
         df_agg[key + "_pool"] = df_agg[pools_dict[key]].sum(axis=1)
 
         # Compute the stock change per hectare
-        df_agg[key + "_stk_ch"] = df_agg.groupby(groupby_sink)[
-            key + "_pool"
-        ].transform(lambda x: x.diff())
+        df_agg[key + "_stk_ch"] = df_agg.groupby(groupby_sink)[key + "_pool"].transform(
+            lambda x: x.diff()
+        )
 
         # Remove the NF soil pool content for the area afforested in current year
         if "soil" in key:
             nf_slow_soil = (
                 df_agg["nf_slow_soil_per_ha"] * df_agg["area_afforested_current_year"]
             )
-            df_agg[key + "_stk_ch"] = (df_agg[key + "_stk_ch"] - nf_slow_soil)
+            df_agg[key + "_stk_ch"] = df_agg[key + "_stk_ch"] - nf_slow_soil
 
         # Compute the CO2 eq. sink
         df_agg[key + "_sink"] = df_agg[key + "_stk_ch"] * -44 / 12
@@ -292,9 +293,10 @@ def compute_sink(
     # Aggregate the given pools columns by the final grouping variables
     # Keep the area information
     cols = df_agg.columns
-    selected_cols = cols[cols.str.contains("pool")].to_list()
+    selected_cols = ["area", "area_afforested_current_year"]
+    selected_cols += cols[cols.str.contains("pool")].to_list()
     selected_cols += cols[cols.str.contains("sink$")].to_list()
-    df_agg_final = df_agg.groupby(groupby)[selected_cols + ["area"]].agg("sum").reset_index()
+    df_agg_final = df_agg.groupby(groupby)[selected_cols].agg("sum").reset_index()
     return df_agg_final
 
 
