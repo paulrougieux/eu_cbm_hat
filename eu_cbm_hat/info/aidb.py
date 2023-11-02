@@ -144,18 +144,14 @@ class AIDB(object):
         # Return #
         return 'Symlink success for ' + self.parent.iso2_code + '.'
 
-    def copy(self, combo_name):
-        """Copy the AIDB
+    def change_path(self, combo_name):
+        """Change the path to the AIDB
 
-        The database is copied in order to change some parameters (such as
-        disturbance matrix values) while keeping the reference database
-        unchanged. The copy happens in a scenario combination, therefore the
-        copied AIDB gets the combo_name appended to its name.
+        pump/pre_preocessor can copy a database in order to change some
+        parameters (such as disturbance matrix values) while keeping the
+        reference database unchanged. The copy happens in a scenario
+        combination, therefore the copied AIDB gets the combo_name appended to
+        its name.
         """
-        orig_file = self.default_aidb_path
-        # Change the path to the AIDB
         self.all_paths = f"/config/aidb_{combo_name}.db"
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
-        dest_file = self.paths.aidb
-        # Copy the AIDB
-        shutil.copy(orig_file, dest_file)

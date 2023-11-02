@@ -9,11 +9,14 @@ Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
+import shutil
+import tempfile
 
 # Third party modules #
 import pandas
 
 # First party modules #
+from plumbing.databases.sqlite_database import SQLiteDatabase
 
 # Internal modules #
 from eu_cbm_hat.pump.long_or_wide import events_wide_to_long
@@ -147,13 +150,9 @@ class PreProcessor(object):
             return
 
         # If a disturbance matrix is defined in the yaml file
-        # Check that that the chosen scenario exists in disturbance_matrix_value.csv
+        # Check that the chosen scenario exists in disturbance_matrix_value.csv
         # Raise an error if not
 
-        # Copy the AIDB
-        self.parent.log.info("AIDB %s" % self.runner.country.aidb.default_aidb_path)
-        self.runner.country.aidb.copy(combo_name=self.runner.combo.short_name)
-        self.parent.log.info("Copied to %s" % self.runner.country.aidb.paths.aidb)
 
         # Load the reference disturbance matrix values and the new values
         dist_matrix_table_name = "disturbance_matrix_value"
@@ -184,8 +183,26 @@ class PreProcessor(object):
         df.reset_index(drop=True, inplace=True)
         df.reset_index(inplace=True)
 
-        # Write back to the AIDB
-        self.runner.country.aidb.db.write_df(df, dist_matrix_table_name)
+        # Copy the default AIDB to a temporary location. This has been added
+        # because the /eos large file system Doesn't handle database writes
+        # very well on JRC's BDAP computing cluster.
+        combo_name = self.runner.combo.short_name
+        orig_file = self.runner.country.aidb.default_aidb_path
+        self.parent.log.info("AIDB %s" % orig_file)
+        aidb_file_name = f"aidb_{combo_name}.db"
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            temp_file = tmpdirname + "/" + aidb_file_name
+            self.parent.log.info("Temporarily copied to %s" % temp_file)
+            shutil.copy(orig_file, temp_file)
+            temp_db = SQLiteDatabase(temp_file)
+            # Write to the temporary AIDB
+            temp_db.write_df(df, dist_matrix_table_name)
+            # Change path to the modified AIDB
+            self.runner.country.aidb.change_path(combo_name=combo_name)
+            # Copy the temporary AIDB to the new path
+            dest_file = self.runner.country.aidb.paths.aidb
+            shutil.copy(temp_file, dest_file)
+            self.parent.log.info("Copied to new AIDB %s" % dest_file)
 
         msg = "The disturbance matrix has been changed according to "
         msg += "silv/disturbance_matrix_value.csv"
