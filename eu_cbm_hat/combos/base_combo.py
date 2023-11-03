@@ -272,7 +272,7 @@ class Combination(object):
         # Return #
         return summary
 
-    def print_log_summary(self, patterns=None):
+    def print_log_summary(self, patterns=None, short=False):
         """Print the summary of all runners in a scenario combination
 
         Change the patterns argument to display more information from the log
@@ -316,6 +316,9 @@ class Combination(object):
                 print(re.sub("\n", " ", msg))
             else:
                 print(self.short_name, country_code, "No 'done' message.")
+
+        if short:
+            return
 
         print("\n--------------------------------------------------------------")
         print("-------------------- Details ---------------------------------")
