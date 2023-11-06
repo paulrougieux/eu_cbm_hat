@@ -108,23 +108,40 @@ POOLS_DICT = {
     ],
 }
 
+
 FLUXES_DICT = {
-    "transfer_to_products": [
+    "transfer_to_products_from_living_biomass": [
         "softwood_merch_to_product",
         "softwood_other_to_product",
+         "hardwood_merch_to_product",
+        "hardwood_other_to_product",
+        ],
+    "emissions_from_dom": [
         "softwood_stem_snag_to_product",
         "softwood_branch_snag_to_product",
-        "hardwood_merch_to_product",
-        "hardwood_other_to_product",
         "hardwood_stem_snag_to_product",
         "hardwood_branch_snag_to_product",
+         "decay_v_fast_ag_to_air",
+         "decay_fast_ag_to_air",
+         "decay_fast_bg_to_air",
+         "decay_medium_to_air",
+         "decay_slow_ag_to_air",
+         "decay_sw_stem_snag_to_air",
+         "decay_sw_branch_snag_to_air",
+         "decay_hw_stem_snag_to_air",
+         "decay_hw_branch_snag_to_air",
     ],
-    "emissions_from_dom": ["decay_domco2_emission"],
+    "emissions_from_soil": [
+         "decay_v_fast_bg_to_air",
+         "decay_slow_bg_to_air",
+    ],
+    # This should be included only in the function
+    # 'emissions_from_deforestation'
     "direct_emissions_to_air": [
         "disturbance_bio_co2_emission",
         "disturbance_bio_ch4_emission",
         "disturbance_bio_co_emission",
-    ],
+    ]
 }
 
 
@@ -226,13 +243,14 @@ def compute_sink(
 
     """
     df = df.copy()
-    # keep only time_since_land_class_change==1 to treat afforestation soil stock change from NF
+    # Track area afforested in current year to treat afforestation soil stock
+    # change from NF. This corresponds to time_since_land_class_change==1
     selector = df["status"].str.contains("AR")
     selector &= df["time_since_land_class_change"] == 1
-    # Exclude land_class==0 we are not interested in the internal CBM
-    # mechanism that returns the land class to zero 20 years after the afforestation event.
+    # Exclude land_class==0 we are not interested in the internal CBM mechanism
+    # that returns the land class to zero 20 years after the afforestation
+    # event.
     selector &= df["land_class"] != 0
-    # Area afforested in current year
     df["afforestation_in_current_year"] = selector
     df["area_afforested_current_year"] = (
         df["area"] * df["afforestation_in_current_year"]
@@ -259,20 +277,45 @@ def compute_sink(
     # Add the soil stock in NF stands (that have not been deforested in the simulation)
     nf_soil_agg = get_nf_soil_stock(df)
     df_agg = df_agg.merge(nf_soil_agg, on=["region", "climate"], how="left")
-    # NF soil is only needed for the AR pools
-    selector = df_agg["status"].str.contains("AR")
 
+    # Aggregate on the groupby_sink columns and fill na before computing the diff
     df_agg = generate_all_combinations_and_fill_na(df_agg, groupby=groupby_sink)
+
+    # Prepare a data frame to deduce carbon related to deforestation
+    df7 = df.query("last_disturbance_type == 7").copy()
+    df7_agg = df7.groupby(groupby_sink)[selected_columns].sum().reset_index()
+    def_em = emissions_from_deforestation("reference", "LU", groupby=groupby_sink)
+    deforest = df7_agg.merge(def_em, on=groupby_sink, how="outer")
+    if deforest.status.unique() != "NF":
+        msg = "After deforestation the status should be NF only. "
+        msg += f"but it is {deforest.status.unique()}"
+        raise ValueError(msg)
+    status_foraws = "ForAWS"
+    if status_foraws not in df_agg["status"].unique():
+        msg = f"{status_foraws} not in df_agg['status']: {df_agg['status'].unique()}"
+        raise ValueError(msg)
+    # Replace status NF by ForAWS
+    deforest["status"] = status_foraws
+    # Compute the deforestation deduction
+    for key in pools_dict:
+        deforest[key + "_stock"] = deforest[pools_dict[key]].sum(axis=1)
+        col_name = deforest.columns[deforest.columns.str.contains("_from_" + key)][0]
+        deforest[key + "_deforest_deduct"] = deforest[key + "_stock"] + deforest[col_name]
+
+    # Join deforestation deductions to the main sink data frame
+    selected_cols = deforest.columns[deforest.columns.str.contains("_deduct")].to_list()
+    df_agg = df_agg.merge(deforest[groupby_sink + selected_cols], on=groupby_sink, how="left")
+    df_agg[selected_cols] = df_agg[selected_cols].fillna(0)
 
     # Remove year from the grouping variables to compute the diff over years
     groupby_sink.remove("year")
 
     for key in pools_dict:
         # Aggregate all pool columns to one pool value for this key
-        df_agg[key + "_pool"] = df_agg[pools_dict[key]].sum(axis=1)
+        df_agg[key + "_stock"] = df_agg[pools_dict[key]].sum(axis=1)
 
         # Compute the stock change per hectare
-        df_agg[key + "_stk_ch"] = df_agg.groupby(groupby_sink)[key + "_pool"].transform(
+        df_agg[key + "_stk_ch"] = df_agg.groupby(groupby_sink)[key + "_stock"].transform(
             lambda x: x.diff()
         )
 
@@ -283,6 +326,9 @@ def compute_sink(
             )
             df_agg[key + "_stk_ch"] = df_agg[key + "_stk_ch"] - nf_slow_soil
 
+        # Remove the deforestation stock and emissions
+        df_agg[key + "_stk_ch"] -= df_agg[key + "_deforest_deduct"]
+
         # Compute the CO2 eq. sink
         df_agg[key + "_sink"] = df_agg[key + "_stk_ch"] * -44 / 12
 
@@ -290,12 +336,13 @@ def compute_sink(
     selector = df_agg["status"].str.contains("NF")
     df_agg = df_agg.loc[~selector]
 
-    # Aggregate the given pools columns by the final grouping variables
-    # Keep the area information
+    # Keep the area, pool and sink information
     cols = df_agg.columns
     selected_cols = ["area", "area_afforested_current_year"]
-    selected_cols += cols[cols.str.contains("pool")].to_list()
+    selected_cols += cols[cols.str.contains("stock")].to_list()
     selected_cols += cols[cols.str.contains("sink$")].to_list()
+    selected_cols += cols[cols.str.contains("deforest_deduct")].to_list()
+    # Aggregate selected columns by the final grouping variables
     df_agg_final = df_agg.groupby(groupby)[selected_cols].agg("sum").reset_index()
     return df_agg_final
 
@@ -425,6 +472,7 @@ def emissions_from_deforestation(
 
     # Keep only deforestation events
     selector = df["time_since_land_class_change"] > 0
+    selector &= df["last_disturbance_type"] == 7
     df = df.loc[selector]
 
     for key in fluxes_dict:
@@ -433,7 +481,7 @@ def emissions_from_deforestation(
 
     cols = [key for key in fluxes_dict.keys()]
 
-    # Aggreate
+    # Aggregate
     df_agg = df.groupby(groupby)[cols].agg("sum").reset_index()
 
     return df_agg
