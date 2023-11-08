@@ -258,7 +258,7 @@ def get_deforestation_deduction(
     # Aggregate by the classifier for which it is possible to compute a
     # difference in pools.
     groupby_sink = GROUPBY_SINK.copy()
-    df7 = df.query("last_disturbance_type == 7").copy()
+    df7 = df.query("last_disturbance_type == 7 & time_since_last_disturbance == 1").copy()
     df7_agg = df7.groupby(groupby_sink)[pools_list].sum().reset_index()
     def_em = emissions_from_deforestation(combo_name=combo_name,
                                           iso2_code=iso2_code,
