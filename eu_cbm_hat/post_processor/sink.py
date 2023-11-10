@@ -1,82 +1,10 @@
 """
-The purpose of this script is to compute the sink
-
-The following code summarises the flux_pool output for each country.
-
-For each year in each country:
-- aggregate the living biomass pools
-- compute the stock change
-- multiply by -44/12 to get the sink.
-
-
-Usage example (see also functions documentation bellow).
-
-Get the biomass sink for 2 scenarios:
-
-    >>> from eu_cbm_hat.post_processor.sink import sink_all_countries
-    >>> import pandas
-    >>> # Replace these by the relevant scenario combinations
-    >>> sinkfair = sink_all_countries("pikfair", "year")
-    >>> sinkbau =  sink_all_countries("pikssp2", "year")
-    >>> df_all = pandas.concat([sinkfair, sinkbau])
-    >>> df_all.reset_index(inplace=True, drop=True)
-    >>> df_all.sort_values("country", inplace=True)
-
-Note the area is stable through time, transition rules only make it move from
-one set of classifiers to another set of classifiers.
-
-    from eu_cbm_hat.core.continent import continent
-    runner = continent.combos["pikfair"].runners["IE"][-1]
-    classifiers = runner.output.classif_df
-    index = ["identifier", "timestep"]
-    pools = runner.output["pools"].merge(classifiers, "left", on=index)
-    area_status = (pools.groupby(["timestep", "status"])["area"]
-                   .agg("sum")
-                   .reset_index()
-                   .pivot(columns="status", index="timestep", values="area")
-                   )
-    cols = df.columns
-    area_status["sum"] = area_status.sum(axis=1)
-
-The following code chunk is a justification of why we need to look at the
-carbon content of soils in this convoluted way. Because a few afforested plots
-have AR present in the first time step, then we cannot compute a difference to
-the previous time step, and we need . In Ireland for example the following
-identifiers have "AR" present in their first time step:
-
-    from eu_cbm_hat.core.continent import continent
-    runner = continent.combos['reference'].runners['IE'][-1]
-    # Load pools
-    classifiers = runner.output.classif_df
-    classifiers["year"] = runner.country.timestep_to_year(classifiers["timestep"])
-    index = ["identifier", "timestep"]
-    df = runner.output["pools"].merge(classifiers, "left", on=index)
-    # Show the first time step of each identifier with AR status
-    df["min_timestep"] = df.groupby("identifier")["timestep"].transform(min)
-    selector = df["status"].str.contains("AR")
-    selector &= df["timestep"] == df["min_timestep"]
-    ar_first = df.loc[selector]
-    ar_first[["identifier", "timestep", "status", "area", "below_ground_slow_soil"]]
-
-Aggregate by year, status, region and climate
-
-TODO: complete this example
-Compute the sink along the status
-Provide an example that Aggregate columns that contains "AR", such as
-["AR_ForAWS", "AR_ForNAWS"] to a new column called "AR_historical".
-
-    >>> for new_column, columns_to_sum in aggregation_dict.items():
-    >>>     df[new_column] = df[columns_to_sum].sum(axis=1)
-    >>>     df.drop(columns=columns_to_sum, inplace=True)
-
+The purpose of this script is to compute the sink for one country
 """
 
-from typing import Dict, List, Union
-import numpy as np
+from typing import List, Union
+from functools import cached_property
 import pandas
-
-from eu_cbm_hat.core.continent import continent
-from eu_cbm_hat.post_processor.area import apply_to_all_countries
 
 POOLS_DICT = {
     "living_biomass": [
@@ -144,152 +72,24 @@ FLUXES_DICT = {
     ]
 }
 
-GROUPBY_SINK = [
-    "year",
-    "region",
-    "climate",
-    "status",
-]
-
-def get_nf_soil_stock(df):
-    """Get the slow soil pool content per hectare of non forested stands.
-
-    Used to compute the sink of afforested land in the first year of
-    afforestation. Keep only stands that have never been disturbed in the
-    simulation (time_since_land_class_change == -1), exclude NF stands that are
-    the result of deforestation during the simulation period.
-    """
-    selector = df["status"].str.contains("NF")
-    selector &= df["time_since_land_class_change"] == -1
-    nf_soil = df.loc[selector].copy()
-    nf_soil["nf_slow_soil_per_ha"] = nf_soil["below_ground_slow_soil"] / nf_soil["area"]
-    # Group by region and climate and calculate the standard deviation
-    groupby_soil = ["region", "climate"]
-    nf_soil["std_dev"] = nf_soil.groupby(groupby_soil)["nf_slow_soil_per_ha"].transform(
-        "std"
-    )
-    # Check that nf_slow_soil_per_ha always have the same value across grouping
-    # variables
-    selector = nf_soil["std_dev"] > 1e-2
-    if any(selector):
-        msg = "The NF non forested soil pool content per hectare"
-        msg += " is not homogeneous for some region and climate groups."
-        cols_to_show = ["year", "status", "region", "climate"]
-        cols_to_show += [
-            "time_since_land_class_change",
-            "nf_slow_soil_per_ha",
-            "std_dev",
-        ]
-        msg += f"{nf_soil[cols_to_show]}"
-        raise ValueError(msg)
-    # Aggregate smaller data frame with columns necessary for the join
-    nf_soil_agg = nf_soil.groupby(groupby_soil)["nf_slow_soil_per_ha"].agg("mean")
-    nf_soil_agg = nf_soil_agg.reset_index()
-    return nf_soil_agg
-
-
-def emissions_from_deforestation(
-    combo_name: str,
-    iso2_code: str,
-    groupby: Union[List[str], str],
-    fluxes_dict: Dict[str, List[str]] = None,
-    current_year_only:bool = False
-):
-    """Emissions from deforested areas moving from forested to NF
-
-    Deforestation emissions are only reported for the year when event happens.
-    Indeed, a small amount of legacy emissions occur, as reflected by
-    "decay_domco2_emission"evolution after deforestation for any identifier We
-    considered it as nonrelevant, anyway atributable to post-deforestation land
-    use. Deforestation emissions can be identified by dist_type = 7, OR,
-    "status = "NF" and "time_since_land_class_change > 0" land transfers from
-    occur ForAWS/NAWS, or even AR, to NF. join this df to sink df_all.
-
-    Example use:
-
-        >>> from eu_cbm_hat.post_processor.sink import emissions_from_deforestation
-        >>> from eu_cbm_hat.post_processor.area import apply_to_all_countries
-        >>> lu_def_em_y = emissions_from_deforestation("reference", "LU", groupby="year")
-        >>> lu_def_em_yr = emissions_from_deforestation("reference", "LU", groupby=["year", "region"])
-        >>> def_em_y = apply_to_all_countries(emissions_from_deforestation, combo_name="reference", groupby="year")
-
-    """
-    if fluxes_dict is None:
-        fluxes_dict = FLUXES_DICT
-    runner = continent.combos[combo_name].runners[iso2_code][-1]
-    classifiers = runner.output.classif_df
-    classifiers["year"] = runner.country.timestep_to_year(classifiers["timestep"])
-    index = ["identifier", "timestep"]
-
-    fluxes_list = list({item for sublist in fluxes_dict.values() for item in sublist})
-
-    # Data frame of pools content at the maximum disaggregated level by
-    # identifier and timestep that will be sent to the other functions
-    df = (
-        runner.output["flux"].merge(classifiers, "left", on=index)
-        # Add 'time_since_land_class_change'
-        .merge(runner.output["state"], "left", on=index)
-    )
-
-    # Keep only deforestation events
-    selector = df["time_since_land_class_change"] > 0
-    selector &= df["last_disturbance_type"] == 7
-    # Used to compute the deforestation deduction for the current year only
-    # when computing the sink
-    if current_year_only:
-        selector &= df["time_since_last_disturbance"] == 1
-    df = df.loc[selector]
-
-    for key in fluxes_dict:
-        # Aggregate all pool columns to one pool value for this key
-        df[key] = df[fluxes_dict[key]].sum(axis=1)
-
-    cols = [key for key in fluxes_dict.keys()]
-
-    # Aggregate
-    df_agg = df.groupby(groupby)[cols].agg("sum").reset_index()
-
-    return df_agg
-
-
-def get_deforestation_deduction(
-    combo_name: str,
-    iso2_code: str,
-    df: pandas.DataFrame
-):
-    """Pool content and fluxes from the area subject to deforestation Prepare a
-    data frame to deduce carbon related to deforestation """
-    pools_list = list({item for sublist in POOLS_DICT.values() for item in sublist})
-    # Aggregate by the classifier for which it is possible to compute a
-    # difference in pools.
-    groupby_sink = GROUPBY_SINK.copy()
-    selector = df["last_disturbance_type"] == 7
-    selector &= df["time_since_last_disturbance"] == 1
-    df7 = df.loc[selector].copy()
-    df7["area_deforested_current_year"] = df["area"]
-    selected_columns = pools_list + ["area_deforested_current_year"]
-    df7_agg = df7.groupby(groupby_sink)[selected_columns].sum().reset_index()
-    def_em = emissions_from_deforestation(combo_name=combo_name,
-                                          iso2_code=iso2_code,
-                                          groupby=groupby_sink,
-                                          current_year_only=True)
-    deforest = df7_agg.merge(def_em, on=groupby_sink, how="outer")
-    if deforest.status.unique() != "NF":
-        msg = "After deforestation the status should be NF only. "
-        msg += f"but it is {deforest.status.unique()}"
-        raise ValueError(msg)
-    status_foraws = "ForAWS"
-    if status_foraws not in df["status"].unique():
-        msg = f"{status_foraws} not in df['status']: {df['status'].unique()}"
-        raise ValueError(msg)
-    # Replace status NF by ForAWS
-    deforest["status"] = status_foraws
-    # Compute the deforestation deduction
-    for key, pools in POOLS_DICT.items():
-        deforest[key + "_stock"] = deforest[pools].sum(axis=1)
-        col_name = deforest.columns[deforest.columns.str.contains("_from_" + key)][0]
-        deforest[key + "_deforest_deduct"] = deforest[key + "_stock"] + deforest[col_name]
-    return deforest
+FLUXES_DEFOREST_DEDUCT_DICT = {
+    "transfer_from_living_biomass": [],
+    "emissions_from_dom": [
+         "decay_v_fast_ag_to_air",
+         "decay_fast_ag_to_air",
+         "decay_fast_bg_to_air",
+         "decay_medium_to_air",
+         "decay_slow_ag_to_air",
+         "decay_sw_stem_snag_to_air",
+         "decay_sw_branch_snag_to_air",
+         "decay_hw_stem_snag_to_air",
+         "decay_hw_branch_snag_to_air",
+    ],
+    "emissions_from_soil": [
+         "decay_v_fast_bg_to_air",
+         "decay_slow_bg_to_air"
+    ]
+}
 
 
 def generate_all_combinations_and_fill_na(df, groupby):
@@ -321,220 +121,333 @@ def generate_all_combinations_and_fill_na(df, groupby):
     return df
 
 
-def compute_sink(
-    df: pandas.DataFrame,
-    deforest: pandas.DataFrame,
-    groupby: Union[List[str], str],
-    pools_dict: Dict[str, List[str]] = None,
-):
-    """Compute the stock change and the sink
+class Sink:
+    """Compute the forest carbon sink in living biomass, dead organic matter
+    and soil pools
 
-    Aggregate by the classifier for which it is possible to compute a
-    difference in pools. During land use transition implementing afforestation
-    and deforestation, some classifier sets may change, while other classifiers
-    such as region and climate remain constant. It is only possible to compute
-    the stock change along classifiers that remain constant.
+    Here are the methods to load intermediate data frames used in the
+    computation of the sink
 
-    Normalise the sink by the area. For example in case of afforestation the
-    stock change should take into account the change of area from t-1 to t.
-    Steps to correct for the area change:
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
 
-        - Group by ["year", "region", "climate", "status",
-                    "afforestation_in_current_year"] and sum pools
-        - Aggregate all pool columns to one pool value for each key in the
-          pools_dict dictionary
-        - Compute the stock change per hectare
-            S{t}/A{t} - S{t-1}/A{t-1}
-        - Deduce NF soil pool when there is afforestation in the first year
-        - Compute the CO2 eq. sink per hectare
-        - Multiply the sink by the area at time t
-        - Remove non forested land
-        - Group by final grouping variables given in the groupby argument.
+        >>> runner.post_processor.sink.pools
+        >>> runner.post_processor.sink.fluxes
+        >>> runner.post_processor.sink.nf_soil_stock
+        >>> groupby_sink = ["year", "region", "climate", "status"]
+        >>> runner.post_processor.sink.emissions_from_deforestation(groupby=groupby_sink)
+        >>> runner.post_processor.sink.emissions_from_deforestation(groupby=["year"])
+        >>> runner.post_processor.sink.deforestation_deduction
+        >>> runner.post_processor.sink.df
+        >>> runner.post_processor.sink.df_agg("year")
 
-    See usage example in the function sink_one_country.
+    Display the number of rows going through land class changes and disturbances
+
+        >>> pools = runner.post_processor.sink.pools.copy()
+        >>> selector = pools["time_since_land_class_change"] > 1
+        >>> pools["time_since_land_class_change"] = pools["time_since_land_class_change"].astype(str)
+        >>> pools.loc[selector, "time_since_land_class_change"] = "greater than one"
+        >>> selector = pools["time_since_last_disturbance"] > 1
+        >>> pools["time_since_last_disturbance"] = pools["time_since_last_disturbance"].astype(str)
+        >>> pools.loc[selector, "time_since_last_disturbance"] = "greater than one"
+        >>> selected_cols = ["time_since_land_class_change", "status", "land_class", "time_since_last_disturbance"]
+        >>> print(pools.value_counts(selected_cols, sort=False))
+        >>> print("\nOnly stands affected by deforestation disturbances")
+        >>> print(pools.query("last_disturbance_type==7").value_counts(selected_cols, sort=False))
 
     """
-    df = df.copy()
-    # Track area afforested in current year to treat afforestation soil stock
-    # change from NF. This corresponds to time_since_land_class_change==1
-    selector_afforest = df["status"].str.contains("AR")
-    selector_afforest &= df["time_since_land_class_change"] == 1
-    # Exclude land_class==0 we are not interested in the internal CBM mechanism
-    # that returns the land class to zero 20 years after the afforestation
-    # event.
-    selector_afforest &= df["land_class"] != 0
-    selector_deforest = df["last_disturbance_type"] == 7
-    selector_deforest &= df["time_since_land_class_change"] == 1
-    df["area_afforested_current_year"] = df["area"] * selector_afforest
-    groupby_sink = GROUPBY_SINK.copy()
-    if not set(groupby).issubset(groupby_sink):
-        msg = f"Can only group by {groupby_sink}. "
-        msg += f"{set(groupby) - set(groupby_sink)}"
-        msg += " not allowed as a groupby value."
-        raise ValueError(msg)
+    def __init__(self, parent):
+        self.parent = parent
+        self.runner = parent.runner
+        self.combo_name = self.runner.combo.short_name
+        # Pools and fluxes aggregation parameters
+        self.pools_dict = POOLS_DICT.copy()
+        self.pools_list = list({item for sublist in self.pools_dict.values() for item in sublist})
+        self.fluxes_dict = FLUXES_DICT.copy()
+        self.groupby_sink = ["year", "region", "climate", "status"]
 
-    pools_list = list({item for sublist in pools_dict.values() for item in sublist})
+    def __repr__(self):
+        return '%s object code "%s"' % (self.__class__, self.runner.short_name)
 
-    # Aggregate by the classifier for which it is possible to compute a
-    # difference in pools.
-    selected_columns = pools_list + ["area", "area_afforested_current_year"]
-    df_agg = df.groupby(groupby_sink)[selected_columns].sum().reset_index()
-
-    # Add the soil stock in NF stands (that have not been deforested in the
-    # simulation)
-    nf_soil_agg = get_nf_soil_stock(df)
-    df_agg = df_agg.merge(nf_soil_agg, on=["region", "climate"], how="left")
-
-    # Aggregate on the groupby_sink columns and fill na before computing the diff
-    df_agg = generate_all_combinations_and_fill_na(df_agg, groupby=groupby_sink)
-
-    # Join deforestation deductions to the main sink data frame
-    selected_cols = deforest.columns[deforest.columns.str.contains("_deduct")].to_list()
-    selected_cols += ["area_deforested_current_year"]
-    df_agg = df_agg.merge(deforest[groupby_sink + selected_cols], on=groupby_sink, how="left")
-    df_agg[selected_cols] = df_agg[selected_cols].fillna(0)
-
-    # Remove year from the grouping variables to compute the diff over years
-    groupby_sink.remove("year")
-
-    for key in pools_dict:
-        # Aggregate all pool columns to one pool value for this key
-        df_agg[key + "_stock"] = df_agg[pools_dict[key]].sum(axis=1)
-
-        # Compute the stock change per hectare
-        df_agg[key + "_stk_ch"] = df_agg.groupby(groupby_sink)[key + "_stock"].transform(
-            lambda x: x.diff()
+    @cached_property
+    def pools(self):
+        """Pools used for the sink computation
+        """
+        classifiers = self.runner.output.classif_df
+        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
+        index = ["identifier", "timestep"]
+        # Data frame of pools content at the maximum disaggregated level by
+        # identifier and timestep that will be sent to the other sink functions
+        df = (
+            self.runner.output["pools"].merge(classifiers, "left", on=index)
+            # Add 'time_since_land_class_change' and 'time_since_last_disturbance'
+            .merge(self.runner.output["state"], "left", on=index)
         )
+        ###################################################
+        # Compute the area afforested in the current year #
+        ###################################################
+        # This will be used to treat afforestation soil stock change from NF.
+        # This corresponds to time_since_land_class_change==1
+        selector_afforest = df["status"].str.contains("AR")
+        selector_afforest &= df["time_since_land_class_change"] == 1
+        # Exclude land_class==0 we are not interested in the internal CBM mechanism
+        # that returns the land class to zero 20 years after the afforestation
+        # event.
+        selector_afforest &= df["land_class"] != 0
+        df["area_afforested_current_year"] = df["area"] * selector_afforest
+        ###################################################
+        # Compute the area deforested in the current year #
+        ###################################################
+        selector_deforest = df["last_disturbance_type"] == 7
+        selector_deforest &= df["time_since_land_class_change"] == 1
+        df["area_deforested_curent_year_without_land_class"] = df["area"] * selector_deforest
+        # Keep only land_class==15 we are not interested in the internal CBM
+        # mechanism that changes to land class 5 after 20 years.
+        selector_deforest &= df["land_class"] == 15
+        df["area_deforested_curent_year"] = df["area"] * selector_deforest
+        return df
 
-        # Remove the NF soil pool content for the area afforested in current year
-        if "soil" in key:
-            nf_slow_soil = (
-                df_agg["nf_slow_soil_per_ha"] * df_agg["area_afforested_current_year"]
+    @cached_property
+    def fluxes(self):
+        """Fluxes used for the sink computation"""
+        classifiers = self.runner.output.classif_df
+        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
+        index = ["identifier", "timestep"]
+        # Data frame of fluxes at the maximum disaggregated level by
+        # identifier and timestep that will be sent to the other functions
+        df = (
+            self.runner.output["flux"].merge(classifiers, "left", on=index)
+            # Add 'time_since_land_class_change'
+            .merge(self.runner.output["state"], "left", on=index)
+        )
+        return df
+
+    @cached_property
+    def nf_soil_stock(self):
+        """Get the slow soil pool content per hectare of non forested stands.
+
+        Used to compute the sink of afforested land in the first year of
+        afforestation. Keep only stands that have never been disturbed in the
+        simulation (time_since_land_class_change == -1), exclude NF stands that
+        are the result of deforestation during the simulation period.
+        """
+        df = self.pools
+        selector = df["status"].str.contains("NF")
+        selector &= df["time_since_land_class_change"] == -1
+        nf_soil = df.loc[selector].copy()
+        nf_soil["nf_slow_soil_per_ha"] = nf_soil["below_ground_slow_soil"] / nf_soil["area"]
+        # Group by region and climate and calculate the standard deviation
+        groupby_soil = ["region", "climate"]
+        nf_soil["std_dev"] = nf_soil.groupby(groupby_soil)["nf_slow_soil_per_ha"].transform(
+            "std"
+        )
+        # Check that nf_slow_soil_per_ha always have the same value across grouping
+        # variables
+        selector = nf_soil["std_dev"] > 1e-2
+        if any(selector):
+            msg = "The NF non forested soil pool content per hectare"
+            msg += " is not homogeneous for some region and climate groups."
+            cols_to_show = ["year", "status", "region", "climate"]
+            cols_to_show += [
+                "time_since_land_class_change",
+                "nf_slow_soil_per_ha",
+                "std_dev",
+            ]
+            msg += f"{nf_soil[cols_to_show]}"
+            raise ValueError(msg)
+        # Aggregate smaller data frame with columns necessary for the join
+        nf_soil_agg = nf_soil.groupby(groupby_soil)["nf_slow_soil_per_ha"].agg("mean")
+        nf_soil_agg = nf_soil_agg.reset_index()
+        return nf_soil_agg
+
+    def emissions_from_deforestation(
+        self,
+        groupby: Union[List[str], str],
+        fluxes_dict: dict = None,
+        current_year_only: bool = False,
+    ):
+        """Emissions from deforested areas moving from forested to NF
+
+        Deforestation emissions are only reported for the year when event happens.
+        Indeed, a small amount of legacy emissions occur, as reflected by
+        "decay_domco2_emission"evolution after deforestation for any identifier We
+        considered it as nonrelevant, anyway atributable to post-deforestation land
+        use. Deforestation emissions can be identified by dist_type = 7, OR,
+        "status = "NF" and "time_since_land_class_change > 0" land transfers from
+        occur ForAWS/NAWS, or even AR, to NF. join this df to sink df_all.
+
+        Example use:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> from eu_cbm_hat.post_processor.sink import FLUXES_DEFOREST_DEDUCT_DICT
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> runner.post_processor.sink.emissions_from_deforestation(groupby=["year", "region"])
+            >>> # Group fluxes in another way by using a different fluxes dictionary
+            >>> runner.post_processor.sink.emissions_from_deforestation(
+            >>>     groupby="year", fluxes_dict = FLUXES_DEFOREST_DEDUCT_DICT
+            >>> )
+
+            >>> # TODO update this example
+            >>> def_em_y = apply_to_all_countries(emissions_from_deforestation, combo_name="reference", groupby="year")
+
+        """
+        if fluxes_dict is None:
+            fluxes_dict = self.fluxes_dict.copy()
+        df = self.fluxes.copy()
+        # Keep only deforestation events
+        selector = df["time_since_land_class_change"] > 0
+        selector &= df["last_disturbance_type"] == 7
+        # Used to compute the deforestation deduction for the current year only
+        # when computing the sink
+        if current_year_only:
+            selector &= df["time_since_last_disturbance"] == 1
+            df = df.loc[selector]
+
+        for key in fluxes_dict:
+            # Aggregate all pool columns to one pool value for this key
+            df[key] = df[fluxes_dict[key]].sum(axis=1)
+
+        cols = list(fluxes_dict.keys())
+        # Aggregate
+        df_agg = df.groupby(groupby)[cols].agg("sum").reset_index()
+
+        return df_agg
+
+    @cached_property
+    def deforestation_deduction(self):
+        """Pool content and fluxes from the area subject to deforestation Prepare a
+        data frame to deduce carbon related to deforestation """
+        # Aggregate by the classifier for which it is possible to compute a
+        # difference in pools.
+        df = self.pools
+        selector = df["last_disturbance_type"] == 7
+        selector &= df["time_since_last_disturbance"] == 1
+        df7 = df.loc[selector].copy()
+        df7["area_deforested_current_year"] = df["area"]
+        selected_columns = self.pools_list + ["area_deforested_current_year"]
+        df7_agg = df7.groupby(self.groupby_sink)[selected_columns].sum().reset_index()
+        def_em = self.emissions_from_deforestation(
+            groupby=self.groupby_sink,
+            fluxes_dict=FLUXES_DEFOREST_DEDUCT_DICT,
+            current_year_only=True
+        )
+        deforest = df7_agg.merge(def_em, on=self.groupby_sink, how="outer")
+        if deforest.status.unique() != "NF":
+            msg = "After deforestation the status should be NF only. "
+            msg += f"but it is {deforest.status.unique()}"
+            raise ValueError(msg)
+        status_foraws = "ForAWS"
+        if status_foraws not in df["status"].unique():
+            msg = f"{status_foraws} not in df['status']: {df['status'].unique()}"
+            raise ValueError(msg)
+        # Replace status NF by ForAWS
+        deforest["status"] = status_foraws
+        # Compute the deforestation deduction
+        for key, pools in POOLS_DICT.items():
+            deforest[key + "_stock"] = deforest[pools].sum(axis=1)
+            col_name = deforest.columns[deforest.columns.str.contains("_from_" + key)][0]
+            deforest[key + "_deforest_deduct"] = deforest[key + "_stock"] + deforest[col_name]
+        return deforest
+
+    @cached_property
+    def df(self):
+        """Compute the stock change and the sink
+
+        Aggregate by the classifier for which it is possible to compute a
+        difference in pools. During land use transition implementing afforestation
+        and deforestation, some classifier sets may change, while other classifiers
+        such as region and climate remain constant. It is only possible to compute
+        the stock change along classifiers that remain constant.
+
+        Normalise the sink by the area. For example in case of afforestation the
+        stock change should take into account the change of area from t-1 to t.
+        Steps to correct for the area change:
+
+            - Group by ["year", "region", "climate", "status",
+                        "afforestation_in_current_year"] and sum pools
+            - Aggregate all pool columns to one pool value for each key in the
+              pools_dict dictionary
+            - Compute the stock change per hectare
+                S{t}/A{t} - S{t-1}/A{t-1}
+            - Deduce NF soil pool when there is afforestation in the first year
+            - Compute the CO2 eq. sink per hectare
+            - Multiply the sink by the area at time t
+            - Remove non forested land
+            - Group by final grouping variables given in the groupby argument.
+
+        See usage example in the function sink_one_country.
+
+        """
+        groupby_sink = self.groupby_sink.copy()
+
+        # Aggregate by the classifier for which it is possible to compute a
+        # difference in pools.
+        selected_columns = self.pools_list + ["area", "area_afforested_current_year"]
+        df = self.pools.groupby(groupby_sink)[selected_columns].sum().reset_index()
+
+        # Add the soil stock in NF stands (that have not been deforested in the
+        # simulation)
+        df = df.merge(self.nf_soil_stock, on=["region", "climate"], how="left")
+
+        # Aggregate on the groupby_sink columns and fill na before computing the diff
+        df = generate_all_combinations_and_fill_na(df, groupby=groupby_sink)
+
+        # Join deforestation deductions to the main sink data frame
+        deforest = self.deforestation_deduction
+        selected_cols = deforest.columns[deforest.columns.str.contains("_deduct")].to_list()
+        selected_cols += ["area_deforested_current_year"]
+        df = df.merge(deforest[groupby_sink + selected_cols], on=groupby_sink, how="left")
+        df[selected_cols] = df[selected_cols].fillna(0)
+
+        # Remove year from the grouping variables to compute the diff over years
+        groupby_sink.remove("year")
+
+        for key in self.pools_dict:
+            # Aggregate all pool columns to one pool value for this key
+            df[key + "_stock"] = df[self.pools_dict[key]].sum(axis=1)
+
+            # Compute the stock change per hectare
+            df[key + "_stk_ch"] = df.groupby(groupby_sink)[key + "_stock"].transform(
+                lambda x: x.diff()
             )
-            df_agg[key + "_stk_ch"] = df_agg[key + "_stk_ch"] - nf_slow_soil
 
-        # Remove the deforestation stock and emissions
-        df_agg[key + "_stk_ch"] -= df_agg[key + "_deforest_deduct"]
+            # Remove the NF soil pool content for the area afforested in current year
+            if "soil" in key:
+                nf_slow_soil = (
+                    df["nf_slow_soil_per_ha"] * df["area_afforested_current_year"]
+                )
+                df[key + "_stk_ch"] = df[key + "_stk_ch"] - nf_slow_soil
 
-        # Compute the CO2 eq. sink
-        df_agg[key + "_sink"] = df_agg[key + "_stk_ch"] * -44 / 12
+            # Remove the deforestation stock and emissions
+            df[key + "_stk_ch"] -= df[key + "_deforest_deduct"]
 
-    # Remove non forested land
-    selector = df_agg["status"].str.contains("NF")
-    df_agg = df_agg.loc[~selector]
+            # Compute the CO2 eq. sink
+            df[key + "_sink"] = df[key + "_stk_ch"] * -44 / 12
 
-    # Keep the area, pool and sink information
-    cols = df_agg.columns
-    selected_cols = ["area", "area_afforested_current_year",
-                     "area_deforested_current_year"]
-    selected_cols += cols[cols.str.contains("stock")].to_list()
-    selected_cols += cols[cols.str.contains("sink$")].to_list()
-    selected_cols += cols[cols.str.contains("deforest_deduct")].to_list()
-    # Aggregate selected columns by the final grouping variables
-    df_agg_final = df_agg.groupby(groupby)[selected_cols].agg("sum").reset_index()
-    return df_agg_final
+        # Remove non forested land
+        selector = df["status"].str.contains("NF")
+        df = df.loc[~selector]
+        return df
 
+    def df_agg(self, groupby: Union[List[str], str] = None):
+        """Aggregated sink data frame"""
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        if groupby is None:
+            groupby = self.groupby_sink.copy()
+        if not set(groupby).issubset(self.groupby_sink):
+            msg = f"Can only group by {self.groupby_sink}. "
+            msg += f"{set(groupby) - set(self.groupby_sink)}"
+            msg += " not allowed as a groupby value."
+            raise ValueError(msg)
 
-def sink_one_country(
-    combo_name: str,
-    iso2_code: str,
-    groupby: Union[List[str], str],
-    pools_dict: Dict[str, List[str]] = None,
-):
-    """Sum the pools for the given country and add information on the combo
-    country code
-
-    The `groupby` argument specify the aggregation level. In addition to
-    "year", one or more classifiers can be used for example "forest_type".
-
-    The `pools_dict` argument is a dictionary mapping an aggregated pool name
-    with the corresponding pools that should be aggregated into it. If you
-    don't specify it, the function will used the default pools dict. The
-    groupby argument makes it possible to specify how the sink rows will be
-    grouped: by year, region, status and climate.
-
-        >>> from eu_cbm_hat.post_processor.sink import sink_one_country
-        >>> ie_sink_y = sink_one_country("reference", "IE", groupby="year")
-        >>> ie_sink_ys = sink_one_country("reference", "IE", groupby=["year", "status"])
-        >>> lu_sink_y = sink_one_country("reference", "LU", groupby="year")
-        >>> lu_sink_ys = sink_one_country("reference", "LU", groupby=["year", "status"])
-        >>> lu_sink_yrc = sink_one_country("reference", "LU", groupby=["year", "region", "climate"])
-        >>> hu_sink_y = sink_one_country("reference", "HU", groupby="year")
-
-    Specify your own `pools_dict`:
-
-        >>> pools_dict = {
-        >>>     "living_biomass": [
-        >>>         "softwood_merch",
-        >>>         "softwood_other",
-        >>>         "softwood_foliage",
-        >>>         "softwood_coarse_roots",
-        >>>         "softwood_fine_roots",
-        >>>         "hardwood_merch",
-        >>>         "hardwood_foliage",
-        >>>         "hardwood_other",
-        >>>         "hardwood_coarse_roots",
-        >>>         "hardwood_fine_roots",
-        >>>     ],
-        >>>     "soil" : [
-        >>>         "below_ground_very_fast_soil",
-        >>>         "below_ground_slow_soil",
-        >>>     ]
-        >>> }
-        >>> lu_sink_by_year = sink_one_country("reference", "LU", groupby="year", pools_dict=pools_dict)
-        >>> index = ["year", "forest_type"]
-        >>> lu_sink_by_y_ft = sink_one_country("reference", "LU", groupby=index, pools_dict=pools_dict)
-
-    """
-    if pools_dict is None:
-        pools_dict = POOLS_DICT
-    if "year" not in groupby:
-        raise ValueError("Year has to be in the group by variables")
-    if groupby == "year":
-        groupby = ["year"]
-    runner = continent.combos[combo_name].runners[iso2_code][-1]
-    classifiers = runner.output.classif_df
-    classifiers["year"] = runner.country.timestep_to_year(classifiers["timestep"])
-    index = ["identifier", "timestep"]
-
-    pools_list = list({item for sublist in pools_dict.values() for item in sublist})
-
-    # Data frame of pools content at the maximum disaggregated level by
-    # identifier and timestep that will be sent to the other functions
-    df = (
-        runner.output["pools"].merge(classifiers, "left", on=index)
-        # Add 'time_since_land_class_change' and 'time_since_last_disturbance'
-        .merge(runner.output["state"], "left", on=index)
-    )
-    # Prepare deforestation deduction
-    deforest = get_deforestation_deduction(combo_name=combo_name, iso2_code=iso2_code, df=df)
-
-    # Compute the sink
-    df_agg = compute_sink(df=df, deforest=deforest, groupby=groupby, pools_dict=pools_dict)
-    # Place combo name, country code and country name as first columns
-    df_agg["combo_name"] = runner.combo.short_name
-    df_agg["iso2_code"] = runner.country.iso2_code
-    df_agg["country"] = runner.country.country_name
-    cols = list(df_agg.columns)
-    cols = cols[-3:] + cols[:-3]
-    # Remove the pools columns
-    cols = [col for col in cols if col not in pools_list]
-    return df_agg[cols]
-
-
-
-def sink_all_countries(combo_name, groupby, pools_dict=None):
-    """Sum flux pools and compute the sink
-
-    Only return data for countries in which the model run was successful in
-    storing the output data. Print an error message if the file is missing, but
-    do not raise an error.
-
-        >>> from eu_cbm_hat.post_processor.sink import sink_all_countries
-        >>> sink = sink_all_countries("reference", "year")
-
-    """
-    df_all = apply_to_all_countries(
-        sink_one_country, combo_name=combo_name, groupby=groupby, pools_dict=pools_dict
-    )
-    return df_all
+        # Keep the area, pool and sink information
+        cols = self.df.columns
+        selected_cols = ["area", "area_afforested_current_year",
+                         "area_deforested_current_year"]
+        selected_cols += cols[cols.str.contains("stock")].to_list()
+        selected_cols += cols[cols.str.contains("sink$")].to_list()
+        selected_cols += cols[cols.str.contains("deforest_deduct")].to_list()
+        # Aggregate selected columns by the final grouping variables
+        df_agg = self.df.groupby(groupby)[selected_cols].agg("sum").reset_index()
+        return df_agg

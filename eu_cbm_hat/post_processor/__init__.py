@@ -9,6 +9,8 @@ Unit D1 Bioeconomy.
 """
 
 from typing import Union, List
+from plumbing.cache import property_cached
+from eu_cbm_hat.post_processor.sink import Sink
 
 class PostProcessor(object):
     """
@@ -32,6 +34,13 @@ class PostProcessor(object):
         self.parent.log.info("Post-processing results.")
         # Lorem #
         pass
+
+
+    @property_cached
+    def sink(self):
+        """Compute the forest carbon sink"""
+        return Sink(self)
+
 
     def sum_flux_pool(self, by: Union[List[str], str], pools: List[str]):
         """Aggregate the flux pool table over the "by" variables and for the
@@ -60,3 +69,5 @@ class PostProcessor(object):
         df = self.runner.output.pool_flux.groupby(by)[pools].sum()
         df.reset_index(inplace=True)
         return df
+
+
