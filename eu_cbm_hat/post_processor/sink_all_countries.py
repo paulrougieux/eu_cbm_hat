@@ -141,18 +141,18 @@ def sink_one_country(
     cols = cols[-3:] + cols[:-3]
     return df_agg[cols]
 
-def sink_all_countries(combo_name, groupby, pools_dict=None):
+def sink_all_countries(combo_name, groupby):
     """Sum flux pools and compute the sink
 
     Only return data for countries in which the model run was successful in
     storing the output data. Print an error message if the file is missing, but
     do not raise an error.
 
-        >>> from eu_cbm_hat.post_processor.sink import sink_all_countries
+        >>> from eu_cbm_hat.post_processor.sink_all_countries import sink_all_countries
         >>> sink = sink_all_countries("reference", "year")
 
     """
     df_all = apply_to_all_countries(
-        sink_one_country, combo_name=combo_name, groupby=groupby, pools_dict=pools_dict
+        sink_one_country, combo_name=combo_name, groupby=groupby
     )
     return df_all
