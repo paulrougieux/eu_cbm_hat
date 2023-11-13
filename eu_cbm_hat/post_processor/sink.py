@@ -205,6 +205,7 @@ class Sink:
         # mechanism that changes to land class 5 after 20 years.
         selector_deforest &= df["land_class"] == 15
         df["area_deforested_curent_year"] = df["area"] * selector_deforest
+        # TODO: move this to runner.post_processor.area
         return df
 
     @cached_property
@@ -220,6 +221,9 @@ class Sink:
             # Add 'time_since_land_class_change'
             .merge(self.runner.output["state"], "left", on=index)
         )
+        # TODO: move this to runner.post_processor.area
+        # TODO: Add area subject to harvest based on fluxes to products and
+        # time since last disturbance
         return df
 
     @cached_property
@@ -319,34 +323,25 @@ class Sink:
         data frame to deduce carbon related to deforestation """
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
-        df = self.pools
-        selector = df["last_disturbance_type"] == 7
-        selector &= df["time_since_last_disturbance"] == 1
-        df7 = df.loc[selector].copy()
-        df7["area_deforested_current_year"] = df["area"]
-        selected_columns = self.pools_list + ["area_deforested_current_year"]
-        df7_agg = df7.groupby(self.groupby_sink)[selected_columns].sum().reset_index()
-        def_em = self.emissions_from_deforestation(
+        deforest  = self.emissions_from_deforestation(
             groupby=self.groupby_sink,
             fluxes_dict=FLUXES_DEFOREST_DEDUCT_DICT,
             current_year_only=True
         )
-        deforest = df7_agg.merge(def_em, on=self.groupby_sink, how="outer")
         if deforest.status.unique() != "NF":
             msg = "After deforestation the status should be NF only. "
             msg += f"but it is {deforest.status.unique()}"
             raise ValueError(msg)
         status_foraws = "ForAWS"
-        if status_foraws not in df["status"].unique():
-            msg = f"{status_foraws} not in df['status']: {df['status'].unique()}"
+        if status_foraws not in self.pools["status"].unique():
+            msg = f"{status_foraws} not in self.pools['status']: {self.pools['status'].unique()}"
             raise ValueError(msg)
         # Replace status NF by ForAWS
         deforest["status"] = status_foraws
         # Compute the deforestation deduction
-        for key, pools in POOLS_DICT.items():
-            deforest[key + "_stock"] = deforest[pools].sum(axis=1)
+        for key in POOLS_DICT.keys():
             col_name = deforest.columns[deforest.columns.str.contains("_from_" + key)][0]
-            deforest[key + "_deforest_deduct"] = deforest[key + "_stock"] + deforest[col_name]
+            deforest[key + "_deforest_deduct"] = deforest[col_name]
         return deforest
 
     @cached_property
