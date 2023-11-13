@@ -10,6 +10,7 @@ Usage:
     ipython -i process_scenario_combo.py -- --combo_names reference
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2_fel1 pikfair_fel1
+    ipython -i process_scenario_combo.py -- --combo_names pikfair_owc_max pikfair_owc_min pikssp2_owc_max pikssp2_owc_min
 
 """
 

@@ -24,14 +24,14 @@ from eu_cbm_hat import eu_cbm_data_pathlib
 from eu_cbm_hat.post_processor.area import apply_to_all_countries
 from eu_cbm_hat.post_processor.area import area_by_status_one_country
 from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_all_countries
-from eu_cbm_hat.post_processor.sink import sink_all_countries
+from eu_cbm_hat.post_processor.sink_all_countries import sink_all_countries
 
 # Define where to store the data
 output_agg_dir = eu_cbm_data_pathlib / "output_agg"
 output_agg_dir.mkdir(exist_ok=True)
 
 
-def save_agg_combo_output(combo_name:str):
+def save_agg_combo_output(combo_name: str):
     """Aggregate scenario combination output and store them in parquet files
     inside the `eu_cbm_data/output_agg` directory.
 
