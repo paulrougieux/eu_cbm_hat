@@ -204,7 +204,7 @@ class Sink:
         # Keep only land_class==15 we are not interested in the internal CBM
         # mechanism that changes to land class 5 after 20 years.
         selector_deforest &= df["land_class"] == 15
-        df["area_deforested_curent_year"] = df["area"] * selector_deforest
+        df["area_deforested_current_year"] = df["area"] * selector_deforest
         # TODO: move this to runner.post_processor.area
         return df
 
@@ -390,7 +390,6 @@ class Sink:
         # Join deforestation deductions to the main sink data frame
         deforest = self.deforestation_deduction
         selected_cols = deforest.columns[deforest.columns.str.contains("_deduct")].to_list()
-        selected_cols += ["area_deforested_current_year"]
         df = df.merge(deforest[groupby_sink + selected_cols], on=groupby_sink, how="left")
         df[selected_cols] = df[selected_cols].fillna(0)
 
