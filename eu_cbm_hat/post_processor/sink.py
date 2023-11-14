@@ -82,25 +82,6 @@ FLUXES_DICT = {
     ]
 }
 
-FLUXES_DEFOREST_DEDUCT_DICT = {
-    "transfer_from_living_biomass": [],
-    "emissions_from_dom": [
-         "decay_v_fast_ag_to_air",
-         "decay_fast_ag_to_air",
-         "decay_fast_bg_to_air",
-         "decay_medium_to_air",
-         "decay_slow_ag_to_air",
-         "decay_sw_stem_snag_to_air",
-         "decay_sw_branch_snag_to_air",
-         "decay_hw_stem_snag_to_air",
-         "decay_hw_branch_snag_to_air",
-    ],
-    "emissions_from_soil": [
-         "decay_v_fast_bg_to_air",
-         "decay_slow_bg_to_air"
-    ]
-}
-
 
 def generate_all_combinations_and_fill_na(df, groupby):
     """Generate a DataFrame with all combinations of year, status, region, and
@@ -293,13 +274,8 @@ class Sink:
         Example use:
 
             >>> from eu_cbm_hat.core.continent import continent
-            >>> from eu_cbm_hat.post_processor.sink import FLUXES_DEFOREST_DEDUCT_DICT
             >>> runner = continent.combos['reference'].runners['LU'][-1]
             >>> runner.post_processor.sink.emissions_from_deforestation(groupby=["year", "region"])
-            >>> # Group fluxes in another way by using a different fluxes dictionary
-            >>> runner.post_processor.sink.emissions_from_deforestation(
-            >>>     groupby="year", fluxes_dict = FLUXES_DEFOREST_DEDUCT_DICT
-            >>> )
 
             >>> # TODO update this example
             >>> def_em_y = apply_to_all_countries(emissions_from_deforestation, combo_name="reference", groupby="year")
@@ -333,25 +309,34 @@ class Sink:
         data frame to deduce carbon related to deforestation """
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
-        deforest  = self.emissions_from_deforestation(
+        df = self.pools
+        selector = df["last_disturbance_type"] == 7
+        selector &= df["time_since_last_disturbance"] == 1
+        df7 = df.loc[selector].copy()
+        df7["area_deforested_current_year"] = df["area"]
+        selected_columns = self.pools_list + ["area_deforested_current_year"]
+        df7_agg = df7.groupby(self.groupby_sink)[selected_columns].sum().reset_index()
+        def_em = self.emissions_from_deforestation(
             groupby=self.groupby_sink,
             fluxes_dict=FLUXES_DICT,
             current_year_only=True
         )
+        deforest = df7_agg.merge(def_em, on=self.groupby_sink, how="outer")
         if deforest.status.unique() != "NF":
             msg = "After deforestation the status should be NF only. "
             msg += f"but it is {deforest.status.unique()}"
             raise ValueError(msg)
         status_foraws = "ForAWS"
-        if status_foraws not in self.pools["status"].unique():
-            msg = f"{status_foraws} not in self.pools['status']: {self.pools['status'].unique()}"
+        if status_foraws not in df["status"].unique():
+            msg = f"{status_foraws} not in df['status']: {df['status'].unique()}"
             raise ValueError(msg)
         # Replace status NF by ForAWS
         deforest["status"] = status_foraws
         # Compute the deforestation deduction
-        for key in POOLS_DICT.keys():
+        for key, pools in POOLS_DICT.items():
+            deforest[key + "_stock"] = deforest[pools].sum(axis=1)
             col_name = deforest.columns[deforest.columns.str.contains("_from_" + key)][0]
-            deforest[key + "_deforest_deduct"] = deforest[col_name]
+            deforest[key + "_deforest_deduct"] = deforest[key + "_stock"] + deforest[col_name]
         return deforest
 
     @cached_property
