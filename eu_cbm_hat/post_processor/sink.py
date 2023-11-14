@@ -6,6 +6,7 @@ from typing import List, Union
 from functools import cached_property
 import pandas
 
+
 POOLS_DICT = {
     "living_biomass": [
         "softwood_merch",
@@ -19,16 +20,18 @@ POOLS_DICT = {
         "hardwood_coarse_roots",
         "hardwood_fine_roots",
     ],
-    "dom": [
+    "litter": [
         "above_ground_very_fast_soil",
         "above_ground_fast_soil",
         "above_ground_slow_soil",
+    ],
+    "dead_wood": [
+        "softwood_stem_snag",
+        "softwood_branch_snag",
+        "hardwood_branch_snag",
+        "hardwood_stem_snag",
         "below_ground_fast_soil",
         "medium_soil",
-        "softwood_stem_snag",
-        "hardwood_branch_snag",
-        "softwood_branch_snag",
-        "hardwood_stem_snag",
     ],
     "soil": [
         "below_ground_very_fast_soil",
@@ -36,39 +39,46 @@ POOLS_DICT = {
     ],
 }
 
-
 FLUXES_DICT = {
-    "transfer_to_products_from_living_biomass": [
+    "loss_from_living_biomass": [
+        # transfers to products
         "softwood_merch_to_product",
         "softwood_other_to_product",
-         "hardwood_merch_to_product",
+        "hardwood_merch_to_product",
         "hardwood_other_to_product",
-        ],
-    "emissions_from_dom": [
+        # any direct flux to air
+        "disturbance_merch_to_air",
+        "disturbance_fol_to_air",
+        "disturbance_oth_to_air",
+        "disturbance_coarse_to_air",
+        "disturbance_fine_to_air",
+    ],
+    "loss_from_litter": [
+        "decay_v_fast_ag_to_air",
+        "decay_fast_ag_to_air",
+        "decay_slow_ag_to_air",
+    ],
+    "loss_from_dead_wood": [
         "softwood_stem_snag_to_product",
         "softwood_branch_snag_to_product",
         "hardwood_stem_snag_to_product",
         "hardwood_branch_snag_to_product",
-         "decay_v_fast_ag_to_air",
-         "decay_fast_ag_to_air",
-         "decay_fast_bg_to_air",
-         "decay_medium_to_air",
-         "decay_slow_ag_to_air",
-         "decay_sw_stem_snag_to_air",
-         "decay_sw_branch_snag_to_air",
-         "decay_hw_stem_snag_to_air",
-         "decay_hw_branch_snag_to_air",
+        "decay_sw_stem_snag_to_air",
+        "decay_sw_branch_snag_to_air",
+        "decay_hw_stem_snag_to_air",
+        "decay_hw_branch_snag_to_air",
+        "decay_fast_bg_to_air",
+        "decay_medium_to_air",
     ],
-    "emissions_from_soil": [
-         "decay_v_fast_bg_to_air",
-         "decay_slow_bg_to_air",
+    "loss_from_soil": [
+        "decay_v_fast_bg_to_air",
+        "decay_slow_bg_to_air",
     ],
-    # This should be included only in the function
-    # 'emissions_from_deforestation'
-    "direct_emissions_to_air": [
-        "disturbance_bio_co2_emission",
+    "loss_from_non_co2_emissions": [
         "disturbance_bio_ch4_emission",
         "disturbance_bio_co_emission",
+        "disturbance_domch4_emission",
+        "disturbance_domco_emission"
     ]
 }
 
@@ -325,7 +335,7 @@ class Sink:
         # difference in pools.
         deforest  = self.emissions_from_deforestation(
             groupby=self.groupby_sink,
-            fluxes_dict=FLUXES_DEFOREST_DEDUCT_DICT,
+            fluxes_dict=FLUXES_DICT,
             current_year_only=True
         )
         if deforest.status.unique() != "NF":
