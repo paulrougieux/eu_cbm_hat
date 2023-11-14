@@ -372,7 +372,8 @@ class Sink:
 
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
-        selected_columns = self.pools_list + ["area", "area_afforested_current_year"]
+        selected_columns = self.pools_list
+        selected_columns += ["area", "area_afforested_current_year", "area_deforested_current_year"]
         df = self.pools.groupby(groupby_sink)[selected_columns].sum().reset_index()
 
         # Add the soil stock in NF stands (that have not been deforested in the
