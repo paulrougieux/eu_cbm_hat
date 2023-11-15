@@ -18,7 +18,7 @@ def apply_to_all_countries(data_func, combo_name, **kwargs):
         except FileNotFoundError as e_file:
             print(e_file)
         except ValueError as e_value:
-            print(e_value)
+            print(key, e_value)
     df_all.reset_index(inplace=True, drop=True)
     return df_all
 
