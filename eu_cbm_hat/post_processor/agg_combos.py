@@ -61,6 +61,7 @@ def save_agg_combo_output(combo_name: str):
     # Sink by year and status
     sink = sink_all_countries(combo_name, ["year", "status"])
     sink.to_parquet(combo_dir / "sink_by_year_st.parquet")
+    print(f"Processing {combo_name} area.")
     # Area by year and status
     area_status = apply_to_all_countries(area_by_status_one_country, combo_name=combo_name)
     area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
