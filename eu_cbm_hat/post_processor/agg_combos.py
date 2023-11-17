@@ -5,6 +5,10 @@ from eu_cbm_hat.post_processor.area import area_by_status_one_country
 - Save data to parquet files.
 
 
+    >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
+    >>> sink = sink_all_countries("reference", "year")
+
+
 Note: this script cannot be made a method of the
 combos/base_combo.py/Combination class because of circular references such as
 post_processor/harvest.py importing "continent" and "combined".
@@ -26,7 +30,6 @@ from tqdm import tqdm
 from eu_cbm_hat.core.continent import continent
 
 from eu_cbm_hat import eu_cbm_data_pathlib
-from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_one_country
 
 # Define where to store the data
 output_agg_dir = eu_cbm_data_pathlib / "output_agg"
@@ -343,6 +346,40 @@ def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
     )
     return df_all
 
+def harvest_exp_prov_one_country(
+    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
+):
+    """Harvest excepted provided in one country
+
+    There is a groupby  argument because we get the harvest expected from the
+    hat output of disturbances allocated by hat which are allocated at some
+    level of classifier groupings (other classifiers might have question marks
+    i.e. where harvest can be allocated to any value of that particular
+    classifier).
+
+    In case the groupby argument is equal to "year", we also add the harvest
+    demand from the economic model.
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
+        >>> import pandas
+        >>> pandas.set_option('display.precision', 0) # Display rounded numbers
+        >>> harvest_exp_prov_one_country("reference", "ZZ", "year")
+        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "forest_type"])
+        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
+
+    """
+    if isinstance(groupby, str):
+        groupby = [groupby]
+
+    # TODO: current version of harvest_exp_one_country() only contains HAT
+    # disturbances. This should also provide static events that generate fluxes
+    # to products especially in the historical period
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.harvest.expected_provided(groupby=groupby)
+    return df
+
 def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Information on both harvest expected and provided for all countries in
     the combo_name.
@@ -352,7 +389,7 @@ def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], st
 
     Example use:
 
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_all_countries
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_all_countries
         >>> harvest_exp_prov_all_countries("reference", "year")
         >>> harvest_exp_prov_all_countries("reference", ["year", "forest_type", "disturbance_type"])
 

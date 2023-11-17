@@ -314,6 +314,16 @@ class Sink:
 
         See usage example in the function sink_one_country.
 
+        Investigate issues with area changes
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> df = runner.post_processor.sink.df
+            >>> df["area_diff"] = df["area"] - df["area_tm1"]
+            >>> cols = df.columns[df.columns.str.contains("area")].to_list()
+            >>> cols += ["year", "region", "climate", "status"]
+            >>> df[cols].to_csv("/tmp/lu_area.csv")
+
         """
         groupby_sink = self.groupby_sink.copy()
 
@@ -339,13 +349,21 @@ class Sink:
         # Remove year from the grouping variables to compute the diff over years
         groupby_sink.remove("year")
 
+        # Add area at {t-1} to compare with area at t
+        df["area_tm1"] = df.groupby(groupby_sink)["area"].transform(lambda x: x.shift())
+
         for key in self.pools_dict:
             # Aggregate all pool columns to one pool value for this key
             df[key + "_stock"] = df[self.pools_dict[key]].sum(axis=1)
 
+            # Keep stock at {t-1} for debugging purposes
+            df[key + "_stock_tm1"] = df.groupby(groupby_sink)[key + "_stock"].transform(
+                lambda x: x.shift()
+            )
+
             # Compute the stock change per hectare
             # TODO: change the computation of the stock change so that
-            # It becomes possible to analyse stock_t, stock_{t-1}, area_t and area_{t-1}
+            # It becomes possible to analyse stock_t, stock_{t-1}
             df[key + "_stk_ch"] = df.groupby(groupby_sink)[key + "_stock"].transform(
                 lambda x: x.diff()
             )
