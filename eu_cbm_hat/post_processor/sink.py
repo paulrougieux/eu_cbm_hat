@@ -358,7 +358,7 @@ class Sink:
                 df[key + "_stk_ch"] = df[key + "_stk_ch"] - nf_slow_soil
 
             # Remove the deforestation stock and emissions
-            df[key + "_stk_ch"] -= df[key + "_deforest_deduct"]
+            df[key + "_stk_ch"] += df[key + "_deforest_deduct"]
 
             # Compute the CO2 eq. sink
             df[key + "_sink"] = df[key + "_stk_ch"] * -44 / 12
