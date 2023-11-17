@@ -1,29 +1,12 @@
-"""The purpose of this script is to compare expected and provided harvest
-
-- Get expected harvest from the economic model
-- Get provided harvest from the fluxes to products
-
-Compute expected provided for total roundwood demand, as the sum of IRW and FW.
-
-Usage:
-
-    from eu_cbm_hat.core.continent import continent
-    runner = continent.combos['reference'].runners['ZZ'][-1]
-    runner.output["flux"]
-
-Conversion method refactored from Viorel's Notebook at:
-https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore/-/blob/main/output_exploration/supply_vs_demand_total_volume.ipynb
-
-"""
-
+"""Get harvest expected and provided"""
 
 from typing import Union, List
+from functools import cached_property
 import numpy as np
 import pandas
-
-from eu_cbm_hat.info.harvest import combined
-from eu_cbm_hat.core.continent import continent
 from eu_cbm_hat import CARBON_FRACTION_OF_BIOMASS
+from eu_cbm_hat.info.harvest import combined
+
 
 
 def ton_carbon_to_m3_ub(df, input_var):
@@ -33,212 +16,203 @@ def ton_carbon_to_m3_ub(df, input_var):
     )
 
 
-def harvest_demand(selected_scenario: str) -> pandas.DataFrame:
-    """Get demand from the economic model using eu_cbm_hat/info/harvest.py
+class Harvest:
+    """Compute the harvest expected and provided
 
-    Usage:
+    Here are the methods to load intermediate data frames used in the
+    computation of the sink
 
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_demand
-        >>> harvest_demand("pikfair")
-
-    """
-    irw = combined["irw"]
-    irw["product"] = "irw_demand"
-    fw = combined["fw"]
-    fw["product"] = "fw_demand"
-    df = pandas.concat([irw, fw]).reset_index(drop=True)
-    index = ["scenario", "iso2_code", "year"]
-    df = df.pivot(index=index, columns="product", values="value").reset_index()
-    df["rw_demand"] = df["fw_demand"] + df["irw_demand"]
-    df = df.rename_axis(columns=None)
-    return df.loc[df["scenario"] == selected_scenario]
-
-
-def harvest_exp_one_country(
-    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
-):
-    """Harvest excepted in one country, as allocated by the Harvest Allocation Tool
-
-    Get the harvest expected from the hat output of disturbances allocated by
-    hat which are allocated at some level of classifier groupings (other
-    classifiers might have question marks i.e. where harvest can be allocated
-    to any value of that particular classifier).
-
-    In case of yearly information only, this will use extra information on pre
-    determined disturbances from HAT cbm/dynamic.py.
-
-    The `groupby` argument makes it possible to group on year, group on year
-    and classifiers or group on the disturbance id:
-
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_one_country
-        >>> harvest_exp_one_country("reference", "LU", "year")
-        >>> harvest_exp_one_country("reference", "LU", ["year", "forest_type"])
-        >>> harvest_exp_one_country("reference", "LU", ["year", "disturbance_type"])
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.post_processor.harvest.demand
+        >>> runner.post_processor.harvest.hat_events
+        >>> runner.post_processor.harvest.hat_extra
+        >>> runner.post_processor.harvest.expected_agg("year")
+        >>> runner.post_processor.harvest.provided
+        >>> runner.post_processor.harvest.provided_agg("year")
+        >>> runner.post_processor.harvest.expected_provided("year")
+        >>> runner.post_processor.harvest.expected_provided(["year", "forest_type"])
+        >>> runner.post_processor.harvest.expected_provided(["year", "disturbance_type"])
 
     """
-    # Load harvest expected
-    runner = continent.combos[combo_name].runners[iso2_code][-1]
-    events = runner.output["events"]
-    events["harvest_exp_hat"] = ton_carbon_to_m3_ub(events, "amount")
-    # Check that we get the same value as the sum of irw_need and fw_colat
-    for col in ["harvest_exp_hat", "irw_need", "fw_colat", "fw_need"]:
-        events[col] = events[col].fillna(0)
-    pandas.testing.assert_series_equal(
-        events["harvest_exp_hat"],
-        events["irw_need"] + events["fw_colat"] + events["fw_need"],
-        rtol=1e-4,
-        check_names=False,
-    )
-    # Column name consistent with runner.output["parameters"]
-    events["disturbance_type"] = events["dist_type_name"]
-    # Aggregate
-    cols = ["irw_need", "fw_colat", "fw_need", "amount", "harvest_exp_hat"]
-    df = events.groupby(groupby)[cols].agg("sum").reset_index()
-    # Rename the amount expected by the Harvest Allocation Tool
-    df.rename(columns={"amount": "amount_exp_hat"}, inplace=True)
+    def __init__(self, parent):
+        self.parent = parent
+        self.runner = parent.runner
+        self.combo_name = self.runner.combo.short_name
+        self.pools = self.parent.pools
+        self.fluxes = self.parent.fluxes
 
-    # Join demand from the economic model, if grouping on years only
-    # Use extra information from the HAT cbm/dynamic.py
-    if groupby == "year" or groupby == ["year"]:
-        # msg = "Group by year. Get harvest demand and predetermined harvest "
-        # msg += "information from the output extra table."
-        # print(msg)
-        extras = runner.output["extras"].rename(columns={"index": "year"})
-        df = df.merge(extras, on="year", how="left")
-        # Check that "harvest_exp_hat" computed from HAT disturbances is the
-        # same as the sum of remaining irw and fw harvest computed at the
-        # begining of cbm/dynamic.py
-        # np.testing.assert_allclose(
-        #     df["harvest_exp_hat"],
-        #     df["remain_irw_harvest"] + df["remain_fw_harvest"],
-        #     rtol=1e-4,
-        # )
+    def __repr__(self):
+        return '%s object code "%s"' % (self.__class__, self.runner.short_name)
+
+    @cached_property
+    def demand(self) -> pandas.DataFrame:
+        """Get demand from the economic model using eu_cbm_hat/info/harvest.py
+        """
+        harvest_scenario_name = self.runner.combo.config["harvest"]
+        irw = combined["irw"]
+        irw["product"] = "irw_demand"
+        fw = combined["fw"]
+        fw["product"] = "fw_demand"
+        df = pandas.concat([irw, fw]).reset_index(drop=True)
+        index = ["scenario", "iso2_code", "year"]
+        df = df.pivot(index=index, columns="product", values="value").reset_index()
+        df["rw_demand"] = df["fw_demand"] + df["irw_demand"]
+        df = df.rename_axis(columns=None)
+        selector = df["scenario"] == harvest_scenario_name
+        selector &= df["iso2_code"] == self.runner.country.iso2_code
+        return df[selector]
+
+
+    @cached_property
+    def hat_events(self) -> pandas.DataFrame:
+        """Events from the harvest allocation tool
+
+        Load HAT events which were saved in this line of cbm/dynamic.py:
+
+            >>> self.runner.output.events = pandas.concat([self.runner.output.events, df[cols]])
+
+        """
+        # Load output events from the harvest allocation tool, generated in cbm/dynamic.py
+        df = self.runner.output["events"]
+        # Rename the amount expected by the Harvest Allocation Tool
+        df.rename(columns={"amount": "amount_exp_hat"}, inplace=True)
+        df["harvest_exp_hat"] = ton_carbon_to_m3_ub(df, "amount_exp_hat")
+        # Check that the amount converted from tons of carbon back to cubic
+        # meter gives the same value as the sum of irw_need and fw_colat
+        for col in ["harvest_exp_hat", "irw_need", "fw_colat", "fw_need"]:
+            df[col] = df[col].fillna(0)
+        pandas.testing.assert_series_equal(
+            df["harvest_exp_hat"],
+            df["irw_need"] + df["fw_colat"] + df["fw_need"],
+            rtol=1e-4,
+            check_names=False,
+        )
+        # Column name consistent with runner.output["parameters"]
+        df["disturbance_type"] = df["dist_type_name"]
+        return df
+
+    @cached_property
+    def hat_extra(self) -> pandas.DataFrame:
+        """Extra information from the harvest allocation tool"""
+        df = self.runner.output["extras"]
         df.rename(
             columns={
+                "index": "year",
                 "harvest_irw_vol": "harvest_demand_irw",
                 "harvest_fw_vol": "harvest_demand_fw",
             },
             inplace=True,
         )
         df["harvest_demand"] = df["harvest_demand_irw"] + df["harvest_demand_fw"]
+        return df
 
-    # Place combo name, country code and country name as first columns
-    df["combo_name"] = combo_name
-    df["iso2_code"] = runner.country.iso2_code
-    df["country"] = runner.country.country_name
-    cols = list(df.columns)
-    cols = cols[-3:] + cols[:-3]
-    return df[cols]
+    def expected_agg(self, groupby: Union[List[str], str]):
+        """Harvest expected by the Harvest Allocation Tool (HAT) aggregated
+        along grouping variables
 
+        Get the harvest expected from disturbances allocated by hat which are
+        allocated at some level of classifier groupings (other classifiers
+        might have question marks i.e. where harvest can be allocated to any
+        value of that particular classifier).
 
-def harvest_prov_one_country(
-    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
-):
-    """Harvest provided in one country
+        In case of yearly information only, this will use extra information on pre
+        determined disturbances from HAT cbm/dynamic.py.
+        Use extra information from the HAT cbm/dynamic.py
 
-    Usage:
+        The `groupby` argument makes it possible to group on year, group on year
+        and classifiers or group on the disturbance id.
+        """
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        # Aggregate
+        cols = ["irw_need", "fw_colat", "fw_need", "amount_exp_hat", "harvest_exp_hat"]
+        df = self.hat_events.groupby(groupby)[cols].agg("sum").reset_index()
+        # If grouping on years only, join demand from the economic model.
+        if groupby == ["year"]:
+            # msg = "Group by year. Get harvest demand and predetermined harvest "
+            # msg += "information from the output extra table."
+            # print(msg)
+            df = df.merge(self.hat_extra, on="year", how="left")
+            # Check that "harvest_exp_hat" computed from HAT disturbances is the
+            # same as the sum of remaining irw and fw harvest computed at the
+            # begining of cbm/dynamic.py
+            # np.testing.assert_allclose(
+            #     df["harvest_exp_hat"],
+            #     df["remain_irw_harvest"] + df["remain_fw_harvest"],
+            #     rtol=1e-4,
+            # )
+        return df
 
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_prov_one_country
-        >>> harvest_prov_one_country("reference", "ZZ", "year")
-        >>> harvest_prov_one_country("reference", "ZZ", ["year", "forest_type"])
-        >>> harvest_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
+    @cached_property
+    def provided(self):
+        """Harvest provided in one country
+        """
+        df = self.fluxes
+        # Add wood density information by forest type
+        df = df.merge(self.runner.silv.coefs.raw, on="forest_type")
+        # Sum all columns that have a flux to products
+        cols_to_product = df.columns[df.columns.str.contains("to_product")]
+        df["flux_to_product"] = df[cols_to_product].sum(axis=1)
+        # Keep only rows with a flux to product
+        selector = df.flux_to_product > 0
+        df = df[selector]
+        # Convert tons of carbon to volume under bark
+        df["harvest_prov"] = ton_carbon_to_m3_ub(df, "flux_to_product")
+        # Area information
+        index = ["identifier", "timestep"]
+        area = self.pools[index + ["area"]]
+        df = df.merge(area, on=index)
+        # Disturbance type information
+        dist = self.runner.output["parameters"][index + ["disturbance_type"]]
+        df = df.merge(dist, on=index)
+        return df
 
-    """
-    runner = continent.combos[combo_name].runners[iso2_code][-1]
-    df = runner.output["flux"]
-    df["year"] = runner.country.timestep_to_year(df["timestep"])
-    # Merge index to be used on the output tables
-    index = ["identifier", "timestep"]
-    # Add classifiers
-    df = df.merge(runner.output.classif_df, on=index)
-    # Add wood density information by forest type
-    df = df.merge(runner.silv.coefs.raw, on="forest_type")
-    # Sum all columns that have a flux to products
-    cols_to_product = df.columns[df.columns.str.contains("to_product")]
-    df["flux_to_product"] = df[cols_to_product].sum(axis=1)
-    # Keep only rows with a flux to product
-    selector = df.flux_to_product > 0
-    df = df[selector]
-    # Convert tons of carbon to volume under bark
-    df["harvest_prov"] = ton_carbon_to_m3_ub(df, "flux_to_product")
-    # Area information
-    area = runner.output["pools"][index + ["area"]]
-    df = df.merge(area, on=index)
-    # Disturbance type information
-    dist = runner.output["parameters"][index + ["disturbance_type"]]
-    df = df.merge(dist, on=index)
-    # Group rows and sum all identifier rows in the same group
-    df_agg = (
-        df.groupby(groupby)
-        .agg(
-            disturbed_area=("area", "sum"),
-            flux_to_product=("flux_to_product", "sum"),
-            harvest_prov=("harvest_prov", "sum"),
+    def provided_agg(self, groupby: Union[List[str], str]):
+        """Aggregated version of harvest provided
+        Group rows and sum all identifier rows in the same group"""
+        df_agg = (
+            self.provided
+            .groupby(groupby)
+            .agg(
+                disturbed_area=("area", "sum"),
+                flux_to_product=("flux_to_product", "sum"),
+                harvest_prov=("harvest_prov", "sum"),
+            )
+            .reset_index()
         )
-        .reset_index()
-    )
-
-    # Place combo name, country code and country name as first columns
-    df_agg["combo_name"] = combo_name
-    df_agg["iso2_code"] = runner.country.iso2_code
-    df_agg["country"] = runner.country.country_name
-    cols = list(df_agg.columns)
-    cols = cols[-3:] + cols[:-3]
-    return df_agg[cols]
+        return df_agg
 
 
-def harvest_exp_prov_one_country(
-    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
-):
-    """Harvest excepted provided in one country
+    def expected_provided(self, groupby: Union[List[str], str]):
+        """Harvest excepted provided in one country
 
-    There is a groupby  argument because we get the harvest expected from the
-    hat output of disturbances allocated by hat which are allocated at some
-    level of classifier groupings (other classifiers might have question marks
-    i.e. where harvest can be allocated to any value of that particular
-    classifier).
+        There is a groupby  argument because we get the harvest expected from the
+        hat output of disturbances allocated by hat which are allocated at some
+        level of classifier groupings (other classifiers might have question marks
+        i.e. where harvest can be allocated to any value of that particular
+        classifier).
 
-    In case the groupby argument is equal to "year", we also add the harvest
-    demand from the economic model.
+        In case the groupby argument is equal to "year", we also add the harvest
+        demand from the economic model.
+        """
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        # TODO: current version of harvest_exp_one_country() only contains HAT
+        # disturbances. This should also provide static events that generate fluxes
+        # to products especially in the historical period
+        df_expected = self.expected_agg(groupby=groupby)
+        df_provided = self.provided_agg(groupby=groupby)
+        df = df_expected.merge(df_provided, on=groupby, how="outer")
 
-    Usage:
+        # Join demand from the economic model, if grouping on years only
+        if groupby == ["year"]:
+            print("Group by year, adding demand columns from the economic model.")
+            df = df.merge(self.demand, on=groupby)
 
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_one_country
-        >>> import pandas
-        >>> pandas.set_option('display.precision', 0) # Display rounded numbers
-        >>> harvest_exp_prov_one_country("reference", "ZZ", "year")
-        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "forest_type"])
-        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
+        # Sort rows in the order of the grouping variables
+        df.sort_values(groupby, inplace=True)
 
-    """
-    if isinstance(groupby, str):
-        groupby = [groupby]
-
-    # TODO: current version of harvest_exp_one_country() only contains HAT
-    # disturbances. This should also provide static events that generate fluxes
-    # to products especially in the historical period
-    df_expected = harvest_exp_one_country(
-        combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
-    )
-    df_provided = harvest_prov_one_country(
-        combo_name=combo_name, iso2_code=iso2_code, groupby=groupby
-    )
-    index = ["combo_name", "iso2_code", "country"]
-    index += groupby
-    df = df_expected.merge(df_provided, on=index, how="outer")
-
-    # Join demand from the economic model, if grouping on years only
-    if groupby == "year":
-        # print("group by year")
-        harvest_scenario_name = continent.combos[combo_name].config["harvest"]
-        df_demand = harvest_demand(harvest_scenario_name)
-        df_demand = df_demand.loc[df_demand["iso2_code"] == iso2_code]
-        index = ["iso2_code", "year"]
-        df = df.merge(df_demand, on=index)
-
-    # Sort rows in the order of the grouping variables
-    df.sort_values(groupby, inplace=True)
-
-    return df
+        return df
 
 
