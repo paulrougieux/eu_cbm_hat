@@ -24,7 +24,6 @@ import pandas
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.core.continent import continent
 from eu_cbm_hat import CARBON_FRACTION_OF_BIOMASS
-from eu_cbm_hat.post_processor.area import apply_to_all_countries
 
 
 def ton_carbon_to_m3_ub(df, input_var):
@@ -243,21 +242,3 @@ def harvest_exp_prov_one_country(
     return df
 
 
-def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], str]):
-    """Information on both harvest expected and provided for all countries in
-    the combo_name.
-
-    Some countries might have NA values. If the model didn't run successfully
-    for those countries i.e. the output flux table was missing.
-
-    Example use:
-
-        >>> from eu_cbm_hat.post_processor.harvest import harvest_exp_prov_all_countries
-        >>> harvest_exp_prov_all_countries("reference", "year")
-        >>> harvest_exp_prov_all_countries("reference", ["year", "forest_type", "disturbance_type"])
-
-    """
-    df_all = apply_to_all_countries(
-        harvest_exp_prov_one_country, combo_name=combo_name, groupby=groupby
-    )
-    return df_all

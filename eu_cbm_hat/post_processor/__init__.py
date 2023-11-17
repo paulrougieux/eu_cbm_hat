@@ -88,6 +88,9 @@ class PostProcessor(object):
         )
         # TODO: Add area subject to harvest based on fluxes to products and
         # time since last disturbance
+        product_cols = df.columns[df.columns.str.contains("to_product")]
+        df["to_product"] = df[product_cols].sum(axis=1)
+        
         return df
 
     @cached_property
