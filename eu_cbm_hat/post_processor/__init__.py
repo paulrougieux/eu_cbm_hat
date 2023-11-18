@@ -12,6 +12,7 @@ from typing import Union, List
 from functools import cached_property
 from eu_cbm_hat.post_processor.sink import Sink
 from eu_cbm_hat.post_processor.harvest import Harvest
+from eu_cbm_hat.post_processor.area import Area
 
 class PostProcessor(object):
     """
@@ -22,6 +23,8 @@ class PostProcessor(object):
         # Default attributes #
         self.parent = parent
         self.runner = parent
+        self.classifiers = self.runner.output.classif_df
+        self.classifiers["year"] = self.runner.country.timestep_to_year(self.classifiers["timestep"])
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -40,13 +43,11 @@ class PostProcessor(object):
     def pools(self):
         """Pools used for the sink computation
         """
-        classifiers = self.runner.output.classif_df
-        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
         index = ["identifier", "timestep"]
         # Data frame of pools content at the maximum disaggregated level by
         # identifier and timestep that will be sent to the other sink functions
         df = (
-            self.runner.output["pools"].merge(classifiers, "left", on=index)
+            self.runner.output["pools"].merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change' and 'time_since_last_disturbance'
             .merge(self.runner.output["state"], "left", on=index)
         )
@@ -77,13 +78,11 @@ class PostProcessor(object):
     @cached_property
     def fluxes(self):
         """Fluxes used for the sink computation"""
-        classifiers = self.runner.output.classif_df
-        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
         index = ["identifier", "timestep"]
         # Data frame of fluxes at the maximum disaggregated level by
         # identifier and timestep that will be sent to the other functions
         df = (
-            self.runner.output["flux"].merge(classifiers, "left", on=index)
+            self.runner.output["flux"].merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change'
             .merge(self.runner.output["state"], "left", on=index)
         )
@@ -91,8 +90,12 @@ class PostProcessor(object):
         # time since last disturbance
         product_cols = df.columns[df.columns.str.contains("to_product")]
         df["to_product"] = df[product_cols].sum(axis=1)
-        
         return df
+
+    @cached_property
+    def area(self):
+        """Compute the forest carbon sink"""
+        return Area(self)
 
     @cached_property
     def sink(self):
