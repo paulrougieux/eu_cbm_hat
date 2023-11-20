@@ -37,6 +37,22 @@ class OrigData(object):
     This was done at some point before the data was reorganized and changed
     by Viorel B. It can still be seen in `f42fb77` and it depends on the
     `cbmcfs3_runner` python module to be run.
+
+    Check afforestation and deforestation disturbance numbers in all countries
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> import pandas
+        >>> def dist_desc_contains(pattern):
+        >>>     df = pandas.DataFrame()
+        >>>     for key, runner_list in continent.combos['reference'].runners.items():
+        >>>         dist_types = runner_list[-1].country.orig_data["disturbance_types"]
+        >>>         selector = dist_types["dist_desc_input"].str.contains(pattern, case=False)
+        >>>         dist_types["country_iso"] = key
+        >>>         df = pandas.concat([df, dist_types.loc[selector]])
+        >>>     return df
+        >>> print(dist_desc_contains("afforestation"))
+        >>> print(dist_desc_contains("deforestation"))
+
     """
 
     all_paths = """
