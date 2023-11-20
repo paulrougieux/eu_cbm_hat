@@ -38,6 +38,12 @@ class OrigData(object):
     by Viorel B. It can still be seen in `f42fb77` and it depends on the
     `cbmcfs3_runner` python module to be run.
 
+    Get disturbance ids that contain a particular word in their description
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.country.orig_data.get_dist_description("cut")
+
     Check afforestation and deforestation disturbance numbers in all countries
 
         >>> from eu_cbm_hat.core.continent import continent
@@ -127,3 +133,9 @@ class OrigData(object):
         if to_long: df = events_wide_to_long(self.country, df)
         # Return #
         return df
+
+    def get_dist_description(self, pattern):
+        """Get disturbance types which contain the given pattern in their name"""
+        df = self.country.orig_data["disturbance_types"]
+        selector = df["dist_desc_input"].str.contains(pattern, case=False)
+        return df.loc[selector]
