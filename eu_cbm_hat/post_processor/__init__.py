@@ -14,6 +14,7 @@ from eu_cbm_hat.post_processor.sink import Sink
 from eu_cbm_hat.post_processor.harvest import Harvest
 from eu_cbm_hat.post_processor.area import Area
 
+
 class PostProcessor(object):
     """
     This class will xxxx.
@@ -25,8 +26,6 @@ class PostProcessor(object):
         >>> runner.post_processor.pools
         >>> runner.post_processor.sink
 
-
-
     """
 
     def __init__(self, parent):
@@ -34,11 +33,22 @@ class PostProcessor(object):
         self.parent = parent
         self.runner = parent
         self.classifiers = self.runner.output.classif_df
-        self.classifiers["year"] = self.runner.country.timestep_to_year(self.classifiers["timestep"])
+        self.classifiers["year"] = self.runner.country.timestep_to_year(
+            self.classifiers["timestep"]
+        )
         self.state = self.runner.output["state"]
         # Define disturbance types
         self.afforestation_dist_type = 8
         self.deforestation_dist_type = 7
+        # Check the names correspond to the one given in disturbance_types.csv
+        dist_def = self.runner.country.orig_data.get_dist_description("deforestation")
+        assert all(
+            dist_def["dist_type_name"].head(1) == str(self.deforestation_dist_type)
+        )
+        dist_aff = self.runner.country.orig_data.get_dist_description("afforestation")
+        assert all(
+            dist_aff["dist_type_name"].head(1) == str(self.afforestation_dist_type)
+        )
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -55,8 +65,7 @@ class PostProcessor(object):
 
     @cached_property
     def pools(self):
-        """Pools used for the sink computation
-        """
+        """Pools used for the sink computation"""
         index = ["identifier", "timestep"]
         # Data frame of pools content at the maximum disaggregated level by
         # identifier and timestep that will be sent to the other sink functions
@@ -72,7 +81,8 @@ class PostProcessor(object):
         # This corresponds to time_since_land_class_change==1
         selector_afforest = df["status"].str.contains("AR")
         selector_afforest &= df["time_since_last_disturbance"] == 1
-        selector_afforest &= df["last_disturbance_type"] == 8
+        selector_afforest &= df["last_disturbance_type"] == self.afforestation_dist_type
+        # TODO: Remove this land_class filter, it should not be necessary any more
         # Exclude land_class==0 we are not interested in the internal CBM mechanism
         # that returns the land class to zero 20 years after the afforestation
         # event.
@@ -81,9 +91,12 @@ class PostProcessor(object):
         ###################################################
         # Compute the area deforested in the current year #
         ###################################################
-        selector_deforest = df["last_disturbance_type"] == 7
+        selector_deforest = df["last_disturbance_type"] == self.deforestation_dist_type
         selector_deforest &= df["time_since_last_disturbance"] == 1
-        df["area_deforested_curent_year_without_land_class"] = df["area"] * selector_deforest
+        df["area_deforested_curent_year_without_land_class"] = (
+            df["area"] * selector_deforest
+        )
+        # TODO: Remove this land_class filter, it should not be necessary any more
         # Keep only land_class==15 we are not interested in the internal CBM
         # mechanism that changes to land class 5 after 20 years.
         selector_deforest &= df["land_class"] == 15
@@ -149,5 +162,3 @@ class PostProcessor(object):
         df = self.runner.output.pool_flux.groupby(by)[pools].sum()
         df.reset_index(inplace=True)
         return df
-
-
