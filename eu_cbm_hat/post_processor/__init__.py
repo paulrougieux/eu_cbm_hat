@@ -25,6 +25,7 @@ class PostProcessor(object):
         self.runner = parent
         self.classifiers = self.runner.output.classif_df
         self.classifiers["year"] = self.runner.country.timestep_to_year(self.classifiers["timestep"])
+        self.state = self.runner.output["state"]
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -49,7 +50,7 @@ class PostProcessor(object):
         df = (
             self.runner.output["pools"].merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change' and 'time_since_last_disturbance'
-            .merge(self.runner.output["state"], "left", on=index)
+            .merge(self.state, "left", on=index)
         )
         ###################################################
         # Compute the area afforested in the current year #
@@ -84,7 +85,7 @@ class PostProcessor(object):
         df = (
             self.runner.output["flux"].merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change'
-            .merge(self.runner.output["state"], "left", on=index)
+            .merge(self.state, "left", on=index)
         )
         # TODO: Add area subject to harvest based on fluxes to products and
         # time since last disturbance
