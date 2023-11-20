@@ -93,9 +93,6 @@ class PostProcessor(object):
         ###################################################
         selector_deforest = df["last_disturbance_type"] == self.deforestation_dist_type
         selector_deforest &= df["time_since_last_disturbance"] == 1
-        df["area_deforested_curent_year_without_land_class"] = (
-            df["area"] * selector_deforest
-        )
         # TODO: Remove this land_class filter, it should not be necessary any more
         # Keep only land_class==15 we are not interested in the internal CBM
         # mechanism that changes to land class 5 after 20 years.

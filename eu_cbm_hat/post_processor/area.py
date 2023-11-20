@@ -1,5 +1,7 @@
 from functools import cached_property
 from typing import List, Union
+import numpy as np
+from eu_cbm_hat.post_processor.sink import generate_all_combinations_and_fill_na
 
 class Area:
     """Compute the area changes through time and across classifiers
@@ -42,13 +44,21 @@ class Area:
         >>> area_st = runner.post_processor.area.df_agg(["year", "status"])
         >>> area_st["area_diff"] = area_st["area"] - area_st["area_tm1"]
 
-    Investigate issues with area changes
+    Investigate issues with area changes. Is the diff in ForAWS and ForNAWS
+    area equal to deforestation + afforestation?
+
+        >>> df_st = runner.post_processor.area.df_agg(["year", "status"])
+        >>> df_st.query("year in [2021, 2022, 2023]")
+        >>> df_st["area_diff"] = df_st["area"] - df_st["area_tm1"]
+
+    Group by "time_since..." variables
 
         >>> index = ["year", "status", "last_disturbance_type", 'time_since_last_disturbance']
         >>> index += ["time_since_land_class_change", "land_class"]
         >>> cols = ["area", "area_deforested_current_year", "area_afforested_current_year"]
         >>> df3 = df.query("year in [2021, 2022, 2023]").groupby(index)[cols].agg("sum")
 
+    
     Why do we need to group by classifiers first?
 
         >>> index = runner.post_processor.classifiers.columns.to_list()
@@ -110,15 +120,37 @@ class Area:
         """Area aggregated by the given grouping variables and area t-1  """
         if isinstance(groupby, str):
             groupby = [groupby]
-        time_columns = ["identifier", "year", "timestep"]
         df = self.df_agg_by_classifiers
         # Aggregate by the given groupby variables
         area_columns = df.columns[df.columns.str.contains("area")].to_list()
         df_agg = df.groupby(groupby)[area_columns].agg("sum").reset_index()
         # Index to compute the area at t-1
+        time_columns = ["identifier", "year", "timestep"]
         index = [col for col in groupby if col not in time_columns]
         # Arrange by group variable with year last to prepare for shift()
         df_agg.sort_values(index + ["year"], inplace=True)
         df_agg["area_tm1"] = df_agg.groupby(index)["area"].transform(lambda x: x.shift())
         return df_agg
 
+    def afforestation_deforestation(self, check=True):
+        """Check afforestation and deforestation area changes recorded in
+        post_processor.pools correspond to the diff in area
+
+        If check is False do not enforce the consistency check. Use for
+        debugging purposes.
+
+        """
+        df = self.df_agg(["year", "status"])
+        # To avoid NA values for AR in the middle of the time series
+        df = generate_all_combinations_and_fill_na(df, ["year", "status"])
+        # TODO: first year values of area_tm1 should be NA, rechange them back to NA
+        df["area_diff"] = df["area"] - df["area_tm1"]
+        cols = ["area_afforested_current_year", "area_deforested_current_year"]
+        df1 = df.groupby("year")[cols].agg("sum").reset_index()
+        df["status"] = "diff_" + df["status"]
+        df2 = df.pivot(columns="status", index="year", values="area_diff").reset_index()
+        df_agg = df1.merge(df2, on="year")
+        if check:
+            np.testing.assert_allclose(df_agg["area_afforested_current_year"],
+                                       df_agg["diff_AR"])
+        return df_agg
