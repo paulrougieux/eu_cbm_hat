@@ -17,6 +17,16 @@ from eu_cbm_hat.post_processor.area import Area
 class PostProcessor(object):
     """
     This class will xxxx.
+
+    Get the pools and sink table with additional columns from the post processor
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.post_processor.pools
+        >>> runner.post_processor.sink
+
+
+
     """
 
     def __init__(self, parent):
@@ -26,6 +36,9 @@ class PostProcessor(object):
         self.classifiers = self.runner.output.classif_df
         self.classifiers["year"] = self.runner.country.timestep_to_year(self.classifiers["timestep"])
         self.state = self.runner.output["state"]
+        # Define disturbance types
+        self.afforestation_dist_type = 8
+        self.deforestation_dist_type = 7
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -58,7 +71,8 @@ class PostProcessor(object):
         # This will be used to treat afforestation soil stock change from NF.
         # This corresponds to time_since_land_class_change==1
         selector_afforest = df["status"].str.contains("AR")
-        selector_afforest &= df["time_since_land_class_change"] == 1
+        selector_afforest &= df["time_since_last_disturbance"] == 1
+        selector_afforest &= df["last_disturbance_type"] == 8
         # Exclude land_class==0 we are not interested in the internal CBM mechanism
         # that returns the land class to zero 20 years after the afforestation
         # event.
@@ -68,7 +82,7 @@ class PostProcessor(object):
         # Compute the area deforested in the current year #
         ###################################################
         selector_deforest = df["last_disturbance_type"] == 7
-        selector_deforest &= df["time_since_land_class_change"] == 1
+        selector_deforest &= df["time_since_last_disturbance"] == 1
         df["area_deforested_curent_year_without_land_class"] = df["area"] * selector_deforest
         # Keep only land_class==15 we are not interested in the internal CBM
         # mechanism that changes to land class 5 after 20 years.

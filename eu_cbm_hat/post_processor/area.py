@@ -44,7 +44,8 @@ class Area:
 
     Investigate issues with area changes
 
-        >>> index = ["year", "status", "last_disturbance_type", "time_since_land_class_change", "land_class"]
+        >>> index = ["year", "status", "last_disturbance_type", 'time_since_last_disturbance']
+        >>> index += ["time_since_land_class_change", "land_class"]
         >>> cols = ["area", "area_deforested_current_year", "area_afforested_current_year"]
         >>> df3 = df.query("year in [2021, 2022, 2023]").groupby(index)[cols].agg("sum")
 
