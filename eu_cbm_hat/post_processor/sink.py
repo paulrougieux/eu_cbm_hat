@@ -4,6 +4,7 @@ The purpose of this script is to compute the sink for one country
 
 from typing import List, Union
 from functools import cached_property
+import numpy as np
 import pandas
 
 
@@ -329,7 +330,7 @@ class Sink:
 
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
-        selected_columns = self.pools_list
+        selected_columns = self.pools_list.copy()
         selected_columns += ["area", "area_afforested_current_year", "area_deforested_current_year"]
         df = self.pools.groupby(groupby_sink)[selected_columns].sum().reset_index()
 
@@ -349,8 +350,21 @@ class Sink:
         # Remove year from the grouping variables to compute the diff over years
         groupby_sink.remove("year")
 
+        # Arrange by group variables with year last to prepare for diff() and shift()
+        df.sort_values(groupby_sink + ["year"], inplace=True)
+
         # Add area at {t-1} to compare with area at t
         df["area_tm1"] = df.groupby(groupby_sink)["area"].transform(lambda x: x.shift())
+
+        # Check that the total area didn't change between t-1 and t
+        # Note: the status can change but the total area should remain constant
+        df_check = df.groupby("year")[["area", "area_tm1"]].agg("sum")
+        df_check = df_check[df_check.index > df_check.index.min()]
+        try:
+            np.testing.assert_allclose(df_check["area_tm1"], df_check["area"], atol=1)
+        except AssertionError as error:
+            msg = "The total area changed between t-1 and t"
+            raise AssertionError(msg) from error
 
         for key in self.pools_dict:
             # Aggregate all pool columns to one pool value for this key
@@ -378,7 +392,7 @@ class Sink:
             # Remove the deforestation stock and emissions
             df[key + "_stk_ch"] += df[key + "_deforest_deduct"]
 
-            # Compute the CO2 eq. sink
+            # Compute the CO2 eq. Sink
             df[key + "_sink"] = df[key + "_stk_ch"] * -44 / 12
 
         # Remove non forested land
