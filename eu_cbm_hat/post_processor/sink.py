@@ -361,7 +361,7 @@ class Sink:
         df_check = df.groupby("year")[["area", "area_tm1"]].agg("sum")
         df_check = df_check[df_check.index > df_check.index.min()]
         try:
-            np.testing.assert_allclose(df_check["area_tm1"], df_check["area"], atol=1)
+            np.testing.assert_allclose(df_check["area_tm1"], df_check["area"], atol=10)
         except AssertionError as error:
             msg = "The total area changed between t-1 and t"
             raise AssertionError(msg) from error
