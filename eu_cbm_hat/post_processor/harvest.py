@@ -33,6 +33,19 @@ class Harvest:
         >>> runner.post_processor.harvest.expected_provided("year")
         >>> runner.post_processor.harvest.expected_provided(["year", "forest_type"])
         >>> runner.post_processor.harvest.expected_provided(["year", "disturbance_type"])
+        >>> runner.post_processor.harvest.disturbance_types
+        >>> runner.post_processor.harvest.area
+        >>> runner.post_processor.harvest.area_agg(["year", "disturbance"])
+
+    Plot harvest area by disturbance type through time
+
+        >>> from matplotlib import pyplot as plt
+        >>> area_agg = runner.post_processor.harvest.area_agg(["year", "disturbance"])
+        >>> area_agg_wide = area_agg.pivot(columns="disturbance", index="year", values="area")
+        >>> area_agg_wide.plot()
+        >>> plt.show()
+        
+
 
     """
     def __init__(self, parent):
@@ -157,6 +170,12 @@ class Harvest:
         # Keep only rows with a flux to product
         selector = df.to_product > 0
         df = df[selector]
+        # Check we only have 1 year since last disturbance
+        time_since_last = df["time_since_last_disturbance"].unique()
+        if not time_since_last == 1:
+            msg = "Time since last disturbance should be one"
+            msg += f"it is {time_since_last}"
+            raise ValueError(msg)
         # Convert tons of carbon to volume under bark
         df["harvest_prov"] = ton_carbon_to_m3_ub(df, "to_product")
         # Area information
@@ -214,5 +233,41 @@ class Harvest:
         df.sort_values(groupby, inplace=True)
 
         return df
+
+    @cached_property
+    def disturbance_types(self):
+        """Disturbance types for the purposes of harvest description,
+        not suitable for natural disturbances"""
+        df = self.runner.country.orig_data["disturbance_types"]
+        df.rename(columns={"dist_type_name": "disturbance_type"}, inplace=True)
+        df["disturbance_type"] = df["disturbance_type"].astype(int)
+        df["disturbance"] = "thinning"
+        clearcut = df["dist_desc_input"].str.contains("deforestation|cut", case=False)
+        df.loc[clearcut, "disturbance"] = "clearcut"
+        salvage = df["dist_desc_input"].str.contains("salvage", case=False)
+        df.loc[salvage, "disturbance"] = "salvage"
+        return df
+
+    @cached_property
+    def area(self):
+        """Harvest area"""
+        df = self.provided
+        cols = self.parent.classifiers_list + ["year"]
+        cols += df.columns[df.columns.str.contains("to_product")].to_list()
+        cols += ["harvest_prov", "area", "disturbance_type"]
+        df = df[cols]
+        df = df.merge(self.disturbance_types[["disturbance_type", "disturbance"]],
+                      on="disturbance_type")
+        return df
+
+    def area_agg(self, groupby: Union[List[str], str]):
+        """Aggregated area by classifiers or other grouping columns available"""
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        df = self.area
+        cols = df.columns[df.columns.str.contains("to_product")].to_list()
+        cols += ["harvest_prov", "area"]
+        df_agg = self.area.groupby(groupby)[cols].agg("sum").reset_index()
+        return df_agg
 
 
