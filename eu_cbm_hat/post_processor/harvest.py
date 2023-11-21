@@ -19,8 +19,8 @@ def ton_carbon_to_m3_ub(df, input_var):
 class Harvest:
     """Compute the harvest expected and provided
 
-    Here are the methods to load intermediate data frames used in the
-    computation of the sink
+    Methods to load intermediate data frames used in the computation of the
+    harvest expected and provided:
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> runner = continent.combos['reference'].runners['LU'][-1]
@@ -41,11 +41,15 @@ class Harvest:
 
         >>> from matplotlib import pyplot as plt
         >>> area_agg = runner.post_processor.harvest.area_agg(["year", "disturbance"])
-        >>> area_agg_wide = area_agg.pivot(columns="disturbance", index="year", values="area")
-        >>> area_agg_wide.plot()
+        >>> area_by_dist = area_agg.pivot(columns="disturbance", index="year", values="area")
+        >>> area_by_dist.plot(title="LU harvest area by disturbance type")
         >>> plt.show()
         
+    Plot harvest volume by disturbance type through time
 
+        >>> harvest_prov_by_dist = area_agg.pivot(columns="disturbance", index="year", values="harvest_prov")
+        >>> harvest_prov_by_dist.plot(title="LU harvest volume by disturbance type")
+        >>> plt.show()
 
     """
     def __init__(self, parent):
