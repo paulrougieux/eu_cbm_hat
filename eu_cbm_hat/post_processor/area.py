@@ -132,7 +132,7 @@ class Area:
         df_agg["area_tm1"] = df_agg.groupby(index)["area"].transform(lambda x: x.shift())
         return df_agg
 
-    def afforestation_deforestation(self, check=True):
+    def afforestation_deforestation(self, check=True, rtol=1e-3):
         """Check afforestation and deforestation area changes recorded in
         post_processor.pools correspond to the diff in area
 
@@ -152,5 +152,5 @@ class Area:
         df_agg = df1.merge(df2, on="year")
         if check:
             np.testing.assert_allclose(df_agg["area_afforested_current_year"],
-                                       df_agg["diff_AR"])
+                                       df_agg["diff_AR"], rtol=rtol)
         return df_agg

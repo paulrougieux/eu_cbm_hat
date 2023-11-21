@@ -82,21 +82,12 @@ class PostProcessor(object):
         selector_afforest = df["status"].str.contains("AR")
         selector_afforest &= df["time_since_last_disturbance"] == 1
         selector_afforest &= df["last_disturbance_type"] == self.afforestation_dist_type
-        # TODO: Remove this land_class filter, it should not be necessary any more
-        # Exclude land_class==0 we are not interested in the internal CBM mechanism
-        # that returns the land class to zero 20 years after the afforestation
-        # event.
-        selector_afforest &= df["land_class"] != 0
         df["area_afforested_current_year"] = df["area"] * selector_afforest
         ###################################################
         # Compute the area deforested in the current year #
         ###################################################
         selector_deforest = df["last_disturbance_type"] == self.deforestation_dist_type
         selector_deforest &= df["time_since_last_disturbance"] == 1
-        # TODO: Remove this land_class filter, it should not be necessary any more
-        # Keep only land_class==15 we are not interested in the internal CBM
-        # mechanism that changes to land class 5 after 20 years.
-        selector_deforest &= df["land_class"] == 15
         df["area_deforested_current_year"] = df["area"] * selector_deforest
         return df
 
