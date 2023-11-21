@@ -153,12 +153,12 @@ class Harvest:
         df = df.merge(self.runner.silv.coefs.raw, on="forest_type")
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
-        df["flux_to_product"] = df[cols_to_product].sum(axis=1)
+        df["to_product"] = df[cols_to_product].sum(axis=1)
         # Keep only rows with a flux to product
-        selector = df.flux_to_product > 0
+        selector = df.to_product > 0
         df = df[selector]
         # Convert tons of carbon to volume under bark
-        df["harvest_prov"] = ton_carbon_to_m3_ub(df, "flux_to_product")
+        df["harvest_prov"] = ton_carbon_to_m3_ub(df, "to_product")
         # Area information
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
@@ -176,7 +176,7 @@ class Harvest:
             .groupby(groupby)
             .agg(
                 disturbed_area=("area", "sum"),
-                flux_to_product=("flux_to_product", "sum"),
+                to_product=("to_product", "sum"),
                 harvest_prov=("harvest_prov", "sum"),
             )
             .reset_index()
