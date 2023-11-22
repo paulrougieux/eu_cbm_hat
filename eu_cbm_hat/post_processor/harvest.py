@@ -230,7 +230,7 @@ class Harvest:
 
         # Join demand from the economic model, if grouping on years only
         if groupby == ["year"]:
-            print("Group by year, adding demand columns from the economic model.")
+            # print("Group by year, adding demand columns from the economic model.")
             df = df.merge(self.demand, on=groupby)
 
         # Sort rows in the order of the grouping variables
