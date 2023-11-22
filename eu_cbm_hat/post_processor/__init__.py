@@ -33,6 +33,9 @@ class PostProcessor(object):
         self.parent = parent
         self.runner = parent
         self.classifiers = self.runner.output.classif_df
+        self.classifiers_list = self.classifiers.columns.to_list()
+        self.classifiers_list.remove("identifier")
+        self.classifiers_list.remove("timestep")
         self.classifiers["year"] = self.runner.country.timestep_to_year(
             self.classifiers["timestep"]
         )
@@ -62,6 +65,7 @@ class PostProcessor(object):
         self.parent.log.info("Post-processing results.")
         # Lorem #
         pass
+
 
     @cached_property
     def pools(self):
@@ -102,10 +106,6 @@ class PostProcessor(object):
             # Add 'time_since_land_class_change'
             .merge(self.state, "left", on=index)
         )
-        # TODO: Add area subject to harvest based on fluxes to products and
-        # time since last disturbance
-        product_cols = df.columns[df.columns.str.contains("to_product")]
-        df["to_product"] = df[product_cols].sum(axis=1)
         return df
 
     @cached_property
