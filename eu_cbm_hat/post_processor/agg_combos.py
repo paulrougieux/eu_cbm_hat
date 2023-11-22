@@ -86,6 +86,8 @@ def save_agg_combo_output(combo_name: str):
     # Area by year and status
     area_status = apply_to_all_countries(area_by_status_one_country, combo_name=combo_name)
     area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
+    # TODO Harvest area
+
 
 
 def read_agg_combo_output(combo_name: list, file_name: str):
@@ -165,7 +167,7 @@ def sink_one_country(
     # Compute the sink
     df_agg = runner.post_processor.sink.df_agg(groupby=groupby)
     # Place combo name, country code and country name as first columns
-    # TODO: move this
+    # TODO: move this to apply_to_all_countries
     df_agg["combo_name"] = runner.combo.short_name
     df_agg["iso2_code"] = runner.country.iso2_code
     df_agg["country"] = runner.country.country_name
@@ -378,7 +380,14 @@ def harvest_exp_prov_one_country(
     # to products especially in the historical period
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df = runner.post_processor.harvest.expected_provided(groupby=groupby)
-    return df
+    # Place combo name, country code and country name as first columns
+    # TODO: move this to apply_to_all_countries
+    df["combo_name"] = runner.combo.short_name
+    df["iso2_code"] = runner.country.iso2_code
+    df["country"] = runner.country.country_name
+    cols = list(df.columns)
+    cols = cols[-3:] + cols[:-3]
+    return df[cols]
 
 def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Information on both harvest expected and provided for all countries in
