@@ -1,24 +1,40 @@
-from functools import cached_property
+"""Process the stock output from the model"""
 from typing import List, Union
-import numpy as np
+from functools import cached_property
+
 
 class Stock:
-    #def __init__(self, parent):
-        #self.parent = parent
-        #self.pools = self.parent.pools
-        
-        
-    #@cached_property
-    def dw_stock_ratio(self):
-        """Estimate the ratio of standing stocks, dead_wood to merchantable """
-        # Aggregate by the classifier for which it is possible to compute a
-        # difference in pools.
-        
-        dw_pools = self.pools
-        dw_pools['softwood_dw_ratio'] = dw_pools['softwood_stem_snag'] / dw_pools['softwood_merch']
-        dw_pools['hardwood_dw_ratio'] = dw_pools['hardwood_stem_snag'] / dw_pools['hardwood_merch']
-        
+    """Compute stock indicators
+
+    Usage:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.post_processor.stock.dw_stock_ratio("year")
+        >>> runner.post_processor.stock.dw_stock_ratio(["year", "forest_type"])
+
+    """
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.pools = self.parent.pools
+
+    def dw_stock_ratio(self, groupby: Union[List[str], str] = None):
+        """Estimate the mean ratio of standing stocks, dead_wood to merchantable"""
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        df = self.pools
+        df["softwood_dw_ratio"] = df["softwood_stem_snag"] / df["softwood_merch"]
+        df["hardwood_dw_ratio"] = df["hardwood_stem_snag"] / df["hardwood_merch"]
         # Aggregate separately for softwood and hardwood
-        softwood_stock = dw_pools.groupby('year').agg(softwood_dw_ratio=('softwood_dw_ratio', np.mean))
-        hardwood_stock = dw_pools.groupby('year').agg(hardwood_dw_ratio=('hardwood_dw_ratio', np.mean))
-        return hardwood_stock,softwood_stock
+        df_agg = df.groupby("year").agg(
+            softwood_stem_snag=("softwood_stem_snag", "sum"),
+            softwood_merch=("softwood_merch", "sum"),
+            hardwood_stem_snag=("hardwood_stem_snag", "sum"),
+            hardwood_merch=("hardwood_merch", "sum"),
+            softwood_dw_ratio_mean=("softwood_dw_ratio", "mean"),
+            hardwood_dw_ratio_mean=("hardwood_dw_ratio", "mean"),
+        )
+        df_agg["softwood_dw_ratio"] = df_agg["softwood_stem_snag"] / df_agg["softwood_merch"]
+        df_agg["hardwood_dw_ratio"] = df_agg["hardwood_stem_snag"] / df_agg["hardwood_merch"]
+        return df_agg

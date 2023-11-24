@@ -13,7 +13,7 @@ from functools import cached_property
 from eu_cbm_hat.post_processor.sink import Sink
 from eu_cbm_hat.post_processor.harvest import Harvest
 from eu_cbm_hat.post_processor.area import Area
-#from eu_cbm_hat.post_processor.stock import Stock
+from eu_cbm_hat.post_processor.stock import Stock
 
 
 class PostProcessor(object):
@@ -124,6 +124,7 @@ class PostProcessor(object):
         """Compute harvest expected and provided"""
         return Harvest(self)
     
+    @cached_property
     def stock(self):
         """Compute standing stocks"""
         return Stock(self)
