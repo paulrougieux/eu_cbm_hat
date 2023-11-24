@@ -13,6 +13,7 @@ from functools import cached_property
 from eu_cbm_hat.post_processor.sink import Sink
 from eu_cbm_hat.post_processor.harvest import Harvest
 from eu_cbm_hat.post_processor.area import Area
+#from eu_cbm_hat.post_processor.stock import Stock
 
 
 class PostProcessor(object):
@@ -122,6 +123,10 @@ class PostProcessor(object):
     def harvest(self):
         """Compute harvest expected and provided"""
         return Harvest(self)
+    
+    def stock(self):
+        """Compute standing stocks"""
+        return Stock(self)
 
     def sum_flux_pool(self, by: Union[List[str], str], pools: List[str]):
         """Aggregate the flux pool table over the "by" variables and for the

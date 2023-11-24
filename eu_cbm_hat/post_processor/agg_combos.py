@@ -407,3 +407,26 @@ def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], st
         harvest_exp_prov_one_country, combo_name=combo_name, groupby=groupby
     )
     return df_all
+
+def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Harvest provided in one country
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.area import area_one_country
+        >>> df = area_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
+
+    """
+    df_agg = runner.post_processor.dw_stock_ratio
+    return df_agg[cols]
+
+def dw_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """Harvest area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import area_all_countries
+    >>> area_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        dw_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
