@@ -5,7 +5,7 @@ The purpose of this script is to compute the sink for one country
 from typing import List, Union
 from functools import cached_property
 import numpy as np
-import pandas as pd
+import pandas
 
 
 POOLS_DICT = {
@@ -423,14 +423,3 @@ class Sink:
         # Aggregate selected columns by the final grouping variables
         df_agg = self.df.groupby(groupby)[selected_cols].agg("sum").reset_index()
         return df_agg
-
-    @cached_property
-    def dw_stock_ratio(self):
-        """Estimate the ratio of standing stocks, dead_wood to merchantable """
-        # Aggregate by the classifier for which it is possible to compute a
-        # difference in pools.
-        
-        dw_pools = self.pools
-        dw_pools['dw_ratio'] = (dw_pools['softwood_stem_snag'] + dw_pools['hardwood_stem_snag']) / (dw_pools['softwood_merch'] +                                                       dw_pools['hardwood_merch'])
-        # Aggregate separately for softwood and hardwood
-        return dw_pools  
