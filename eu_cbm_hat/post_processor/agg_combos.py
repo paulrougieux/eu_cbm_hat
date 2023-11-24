@@ -86,8 +86,12 @@ def save_agg_combo_output(combo_name: str):
     # Area by year and status
     area_status = apply_to_all_countries(area_by_status_one_country, combo_name=combo_name)
     area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
-    # TODO Harvest area
-
+    print(f"Processing {combo_name} harvest area.")
+    harvest_area = apply_to_all_countries(
+        harvest_area_by_dist_one_country,
+        combo_name=combo_name
+    )
+    harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
 
 
 def read_agg_combo_output(combo_name: list, file_name: str):
@@ -334,6 +338,27 @@ def area_by_status_one_country(combo_name: str, iso2_code: str):
     cols = list(df_wide.columns)
     cols = cols[-2:] + cols[:-2]
     return df_wide[cols]
+
+
+def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
+    """Area in wide format with one column for each status.
+
+    Usage:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_area_by_dist_one_country
+        >>> harvest_area_by_dist_one_country("reference", "LU")
+
+    """
+    groupby = ["year", "disturbance_type", "disturbance"]
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.harvest.area_agg(groupby=groupby)
+    # Place combo name, country code as first columns
+    df["combo_name"] = combo_name
+    df["iso2_code"] = iso2_code
+    cols = list(df.columns)
+    cols = cols[-2:] + cols[:-2]
+    return df[cols]
 
 
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):

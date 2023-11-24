@@ -36,6 +36,7 @@ class Harvest:
         >>> runner.post_processor.harvest.disturbance_types
         >>> runner.post_processor.harvest.area
         >>> runner.post_processor.harvest.area_agg(["year", "disturbance"])
+        >>> runner.post_processor.harvest.area_agg(["year", "disturbance", "disturbance_type"])
 
     Plot harvest area by disturbance type through time
 
