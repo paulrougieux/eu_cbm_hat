@@ -27,7 +27,7 @@ class Stock:
         df["softwood_dw_ratio"] = df["softwood_stem_snag"] / df["softwood_merch"]
         df["hardwood_dw_ratio"] = df["hardwood_stem_snag"] / df["hardwood_merch"]
         # Aggregate separately for softwood and hardwood
-        df_agg = df.groupby("year").agg(
+        df_agg = df.groupby(groupby).agg(
             softwood_stem_snag=("softwood_stem_snag", "sum"),
             softwood_merch=("softwood_merch", "sum"),
             hardwood_stem_snag=("hardwood_stem_snag", "sum"),
@@ -35,6 +35,7 @@ class Stock:
             softwood_dw_ratio_mean=("softwood_dw_ratio", "mean"),
             hardwood_dw_ratio_mean=("hardwood_dw_ratio", "mean"),
         )
+        df_agg.reset_index(inplace=True)
         df_agg["softwood_dw_ratio"] = df_agg["softwood_stem_snag"] / df_agg["softwood_merch"]
         df_agg["hardwood_dw_ratio"] = df_agg["hardwood_stem_snag"] / df_agg["hardwood_merch"]
         return df_agg
