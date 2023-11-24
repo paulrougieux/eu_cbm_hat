@@ -223,6 +223,7 @@ class Sink:
 
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> runner.post_processor.sink.emissions_from_deforestation(groupby=["year"])
             >>> runner.post_processor.sink.emissions_from_deforestation(groupby=["year", "region"])
 
             >>> # TODO update this example
