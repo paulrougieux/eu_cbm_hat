@@ -356,8 +356,9 @@ def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
     # Place combo name, country code as first columns
     df["combo_name"] = combo_name
     df["iso2_code"] = iso2_code
+    df["country"] = runner.country.country_name
     cols = list(df.columns)
-    cols = cols[-2:] + cols[:-2]
+    cols = cols[-3:] + cols[:-3]
     return df[cols]
 
 
