@@ -84,12 +84,13 @@ def save_agg_combo_output(combo_name: str):
     sink.to_parquet(combo_dir / "sink_by_year_st.parquet")
     print(f"Processing {combo_name} area.")
     # Area by year and status
-    area_status = apply_to_all_countries(area_by_status_one_country, combo_name=combo_name)
+    area_status = apply_to_all_countries(
+        area_by_status_one_country, combo_name=combo_name
+    )
     area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
     print(f"Processing {combo_name} harvest area.")
     harvest_area = apply_to_all_countries(
-        harvest_area_by_dist_one_country,
-        combo_name=combo_name
+        harvest_area_by_dist_one_country, combo_name=combo_name
     )
     harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
 
@@ -112,6 +113,7 @@ def read_agg_combo_output(combo_name: list, file_name: str):
         df_all = pandas.concat([df_all, df])
     df_all.reset_index(inplace=True, drop=True)
     return df_all
+
 
 def sink_one_country(
     combo_name: str,
@@ -178,6 +180,7 @@ def sink_one_country(
     cols = list(df_agg.columns)
     cols = cols[-3:] + cols[:-3]
     return df_agg[cols]
+
 
 def sink_all_countries(combo_name, groupby):
     """Sum flux pools and compute the sink
@@ -264,6 +267,7 @@ def sink_all_countries(combo_name, groupby):
         sink_one_country, combo_name=combo_name, groupby=groupby
     )
     return df_all
+
 
 def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Harvest provided in one country
@@ -374,6 +378,7 @@ def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
     )
     return df_all
 
+
 def harvest_exp_prov_one_country(
     combo_name: str, iso2_code: str, groupby: Union[List[str], str]
 ):
@@ -415,6 +420,7 @@ def harvest_exp_prov_one_country(
     cols = cols[-3:] + cols[:-3]
     return df[cols]
 
+
 def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Information on both harvest expected and provided for all countries in
     the combo_name.
@@ -434,18 +440,26 @@ def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], st
     )
     return df_all
 
+
 def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Harvest provided in one country
     Usage:
 
-        >>> from eu_cbm_hat.post_processor.area import area_one_country
-        >>> df = area_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
+        >>> from eu_cbm_hat.post_processor.agg_combos import dw_one_country
+        >>> dw_zz = dw_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
 
     """
     index = ["identifier", "timestep"]
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     # Load Area
-    cols_to_keep = ['area', 'softwood_merch', 'hardwood_merch', 'medium_soil',  'softwood_stem_snag', 'hardwood_stem_snag' ]
+    cols_to_keep = [
+        "area",
+        "softwood_merch",
+        "hardwood_merch",
+        "medium_soil",
+        "softwood_stem_snag",
+        "hardwood_stem_snag",
+    ]
     df = runner.output["pools"][index + cols_to_keep]
     df["year"] = runner.country.timestep_to_year(df["timestep"])
     # Add classifiers
@@ -454,36 +468,42 @@ def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], st
     dist = runner.output["parameters"][index + ["disturbance_type"]]
     df = df.merge(dist, on=index)
     # Aggregate
-    #df_agg = df.groupby(groupby)["medium_soil"].agg("sum").reset_index()
-    
+    # df_agg = df.groupby(groupby)["medium_soil"].agg("sum").reset_index()
+
     # Aggregate separately for softwood and hardwood
     df_agg = df.groupby(groupby).agg(
         softwood_stem_snag_tc=("softwood_stem_snag", "sum"),
         softwood_merch_tc=("softwood_merch", "sum"),
         hardwood_stem_snag_tc=("hardwood_stem_snag", "sum"),
         hardwood_merch_tc=("hardwood_merch", "sum"),
-        area = ("area", sum),
-        medium_tc =("medium_soil", "sum")
-        )
+        area=("area", "sum"),
+        medium_tc=("medium_soil", "sum"),
+    )
     df_agg.reset_index(inplace=True)
-    df_agg["softwood_standing_dw_ratio"] = df_agg["softwood_stem_snag_tc"] / df_agg["softwood_merch_tc"]
-    df_agg["hardwood_standing_dw_ratio"] = df_agg["hardwood_stem_snag_tc"] / df_agg["hardwood_merch_tc"]
+    df_agg["softwood_standing_dw_ratio"] = (
+        df_agg["softwood_stem_snag_tc"] / df_agg["softwood_merch_tc"]
+    )
+    df_agg["hardwood_standing_dw_ratio"] = (
+        df_agg["hardwood_stem_snag_tc"] / df_agg["hardwood_merch_tc"]
+    )
     # agregate over con and broad
-    df_agg["standing_dw_c_per_ha"] = (df_agg["hardwood_stem_snag_tc"] + df_agg["softwood_stem_snag_tc"])/df_agg["area"]
-    df_agg["laying_dw_c_per_ha"] = df_agg["medium_tc"]/df_agg["area"]
-    
+    df_agg["standing_dw_c_per_ha"] = (
+        df_agg["hardwood_stem_snag_tc"] + df_agg["softwood_stem_snag_tc"]
+    ) / df_agg["area"]
+    df_agg["laying_dw_c_per_ha"] = df_agg["medium_tc"] / df_agg["area"]
+
     # Place combo name, country code and country name as first columns
     df_agg["combo_name"] = combo_name
     df_agg["iso2_code"] = runner.country.iso2_code
     df_agg["country"] = runner.country.country_name
     cols = list(df_agg.columns)
-    #cols = ['softwood_stem_snag_tc', 'softwood_merch_tc',
-       #'hardwood_stem_snag_tc', 'hardwood_merch_tc', 'area', 'medium_tc',
-       #'softwood_standing_dw_ratio', 'hardwood_standing_dw_ratio',
-       #'standing_dw_c_per_ha', 'laying_dw_c_per_ha']
+    # cols = ['softwood_stem_snag_tc', 'softwood_merch_tc',
+    # 'hardwood_stem_snag_tc', 'hardwood_merch_tc', 'area', 'medium_tc',
+    # 'softwood_standing_dw_ratio', 'hardwood_standing_dw_ratio',
+    # 'standing_dw_c_per_ha', 'laying_dw_c_per_ha']
     cols = cols[-3:] + cols[:-3]
     return df_agg[cols]
-   
+
 
 def dw_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Harvest area by status in wide format for all countries in the given scenario combination.
