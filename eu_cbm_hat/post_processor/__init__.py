@@ -14,6 +14,7 @@ from eu_cbm_hat.post_processor.sink import Sink
 from eu_cbm_hat.post_processor.harvest import Harvest
 from eu_cbm_hat.post_processor.area import Area
 from eu_cbm_hat.post_processor.stock import Stock
+from eu_cbm_hat.post_processor.nai import NAI
 
 
 class PostProcessor(object):
@@ -115,14 +116,19 @@ class PostProcessor(object):
         return Area(self)
 
     @cached_property
-    def sink(self):
-        """Compute the forest carbon sink"""
-        return Sink(self)
-
-    @cached_property
     def harvest(self):
         """Compute harvest expected and provided"""
         return Harvest(self)
+
+    @cached_property
+    def nai(self):
+        """Net Annual Increment"""
+        return NAI(self)
+
+    @cached_property
+    def sink(self):
+        """Compute the forest carbon sink"""
+        return Sink(self)
     
     @cached_property
     def stock(self):
