@@ -15,6 +15,7 @@ from eu_cbm_hat.post_processor.harvest import Harvest
 from eu_cbm_hat.post_processor.area import Area
 from eu_cbm_hat.post_processor.stock import Stock
 from eu_cbm_hat.post_processor.nai import NAI
+from eu_cbm_hat.post_processor.diagnostic import Diagnostic
 
 
 class PostProcessor(object):
@@ -98,6 +99,21 @@ class PostProcessor(object):
         return df
 
     @cached_property
+    def pools_romf(self):
+        """Pools columns summed for roots, other, merchantable and foliage"""
+        df = self.pools
+        column_dict = {
+            "roots": ["softwood_fine_roots", "hardwood_fine_roots",
+                      "softwood_coarse_roots", "hardwood_coarse_roots"],
+            "other": ["softwood_other", "hardwood_other"],
+            "merch": ['softwood_merch', 'hardwood_merch'],
+            "foliage": ["softwood_foliage", "hardwood_foliage"],
+        }
+        for key, cols in column_dict.items():
+            df[key] = df[cols].sum(axis=1)
+        return df[self.classifiers_list + list(column_dict.keys())]
+
+    @cached_property
     def fluxes(self):
         """Fluxes used for the sink computation"""
         index = ["identifier", "timestep"]
@@ -114,6 +130,11 @@ class PostProcessor(object):
     def area(self):
         """Compute the forest carbon sink"""
         return Area(self)
+
+    @cached_property
+    def diagnostic(self):
+        """Net Annual Increment"""
+        return Diagnostic(self)
 
     @cached_property
     def harvest(self):
