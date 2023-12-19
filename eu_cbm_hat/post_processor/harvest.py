@@ -4,16 +4,8 @@ from typing import Union, List
 from functools import cached_property
 import numpy as np
 import pandas
-from eu_cbm_hat import CARBON_FRACTION_OF_BIOMASS
 from eu_cbm_hat.info.harvest import combined
-
-
-
-def ton_carbon_to_m3_ub(df, input_var):
-    """Convert tons of carbon to volume in cubic meter under bark"""
-    return (df[input_var] * (1 - df["bark_frac"])) / (
-        CARBON_FRACTION_OF_BIOMASS * df["wood_density"]
-    )
+from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 
 
 class Harvest:
@@ -167,8 +159,6 @@ class Harvest:
         """Harvest provided in one country
         """
         df = self.fluxes
-        # Add wood density information by forest type
-        df = df.merge(self.runner.silv.coefs.raw, on="forest_type")
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
         df["to_product"] = df[cols_to_product].sum(axis=1)
@@ -181,6 +171,8 @@ class Harvest:
             msg = "Time since last disturbance should be one"
             msg += f"it is {time_since_last}"
             raise ValueError(msg)
+        # Add wood density information by forest type
+        df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
         # Convert tons of carbon to volume under bark
         df["harvest_prov"] = ton_carbon_to_m3_ub(df, "to_product")
         # Area information

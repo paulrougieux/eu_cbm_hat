@@ -20,14 +20,15 @@ from eu_cbm_hat.post_processor.diagnostic import Diagnostic
 
 class PostProcessor(object):
     """
-    This class will xxxx.
-
-    Get the pools and sink table with additional columns from the post processor
+    Compute aggregates based on the pools and sink table output from the model
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> runner = continent.combos['reference'].runners['LU'][-1]
         >>> runner.post_processor.pools
         >>> runner.post_processor.sink
+
+        >>> runner.post_processor.pools_romf
+        >>> runner.post_processor.fluxes_merch
 
     """
 
@@ -100,7 +101,8 @@ class PostProcessor(object):
 
     @cached_property
     def pools_romf(self):
-        """Pools columns summed for roots, other, merchantable and foliage"""
+        """Pools columns summed for roots, other, merchantable and foliage,
+        across classifiers"""
         df = self.pools
         column_dict = {
             "roots": ["softwood_fine_roots", "hardwood_fine_roots",
@@ -111,7 +113,10 @@ class PostProcessor(object):
         }
         for key, cols in column_dict.items():
             df[key] = df[cols].sum(axis=1)
-        return df[self.classifiers_list + list(column_dict.keys())]
+        index = ["year"] + self.classifiers_list
+        df_agg = df.groupby(index)[list(column_dict.keys())].agg("sum").reset_index()
+        return df_agg
+
 
     @cached_property
     def fluxes(self):
@@ -125,6 +130,22 @@ class PostProcessor(object):
             .merge(self.state, "left", on=index)
         )
         return df
+
+    @cached_property
+    def fluxes_merch(self):
+        """Fluxes columns summed for merchantable to products, natural turnover
+        and disturbance merch litter input"""
+        df = self.fluxes
+        column_dict = {
+            "merch_prod": ["softwood_merch_to_product", "hardwood_merch_to_product"],
+            "nat_turnover": ["turnover_merch_litter_input"],
+            "dist_input": ["disturbance_merch_litter_input"]
+        }
+        for key, cols in column_dict.items():
+            df[key] = df[cols].sum(axis=1)
+        index = ["year"] + self.classifiers_list
+        df_agg = df.groupby(index)[list(column_dict.keys())].agg("sum").reset_index()
+        return df_agg
 
     @cached_property
     def area(self):
@@ -183,3 +204,12 @@ class PostProcessor(object):
         df = self.runner.output.pool_flux.groupby(by)[pools].sum()
         df.reset_index(inplace=True)
         return df
+
+    @cached_property
+    def wood_density_bark_frac(self):
+        """Wood density and bark fraction, ready to join"""
+        df = self.runner.silv.coefs.raw
+        return df[["forest_type", "wood_density", "bark_frac"]]
+
+
+
