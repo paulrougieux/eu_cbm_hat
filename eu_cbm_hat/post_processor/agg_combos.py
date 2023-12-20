@@ -2,12 +2,22 @@
 from eu_cbm_hat.post_processor.area import area_by_status_one_country
 `eu_cbm_data/output_agg` directory.
 
-- Save data to parquet files.
+For a given scenario for example "reference:
 
+- Save all post processing output for all countries to parquet files
+
+    >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
+    >>> save_agg_combo_output("reference")
+
+- Save a specific data frame for all all countries to a parquet file
 
     >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
     >>> sink = sink_all_countries("reference", "year")
-
+    >>> sink.to_parquet(combo_dir / "sink_by_year_test_to_delete.parquet")
+    >>> nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name="reference")
+    >>> nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft_test_to_delete.parquet")
 
 Note: this script cannot be made a method of the
 combos/base_combo.py/Combination class because of circular references such as
@@ -34,6 +44,17 @@ from eu_cbm_hat import eu_cbm_data_pathlib
 # Define where to store the data
 output_agg_dir = eu_cbm_data_pathlib / "output_agg"
 output_agg_dir.mkdir(exist_ok=True)
+
+
+def place_combo_name_and_country_first(df, runner):
+    """Add combo name and country code to a data frame,
+    place them as first columns"""
+    df["combo_name"] = runner.combo.short_name
+    df["iso2_code"] = runner.country.iso2_code
+    df["country"] = runner.country.country_name
+    cols = list(df.columns)
+    cols = cols[-3:] + cols[:-3]
+    return df[cols]
 
 
 def apply_to_all_countries(data_func, combo_name, **kwargs):
@@ -93,6 +114,11 @@ def save_agg_combo_output(combo_name: str):
         harvest_area_by_dist_one_country, combo_name=combo_name
     )
     harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
+    print(f"Processing {combo_name} Net Annual Increment.")
+    nai_sf = apply_to_all_countries(
+        nai_by_sf_one_country, combo_name=combo_name
+    )
+    nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
 
 
 def read_agg_combo_output(combo_name: list, file_name: str):
@@ -132,7 +158,7 @@ def sink_one_country(
     groupby argument makes it possible to specify how the sink rows will be
     grouped: by year, region, status and climate.
 
-        >>> from eu_cbm_hat.post_processor.sink_all_countries import sink_one_country
+        >>> from eu_cbm_hat.post_processor.agg_combos import sink_one_country
         >>> ie_sink_y = sink_one_country("reference", "IE", groupby="year")
         >>> ie_sink_ys = sink_one_country("reference", "IE", groupby=["year", "status"])
         >>> lu_sink_y = sink_one_country("reference", "LU", groupby="year")
@@ -170,16 +196,9 @@ def sink_one_country(
     if isinstance(groupby, str):
         groupby = [groupby]
     runner = continent.combos[combo_name].runners[iso2_code][-1]
-    # Compute the sink
     df_agg = runner.post_processor.sink.df_agg(groupby=groupby)
-    # Place combo name, country code and country name as first columns
-    # TODO: move this to apply_to_all_countries
-    df_agg["combo_name"] = runner.combo.short_name
-    df_agg["iso2_code"] = runner.country.iso2_code
-    df_agg["country"] = runner.country.country_name
-    cols = list(df_agg.columns)
-    cols = cols[-3:] + cols[:-3]
-    return df_agg[cols]
+    df_agg = place_combo_name_and_country_first(df_agg, runner)
+    return df_agg
 
 
 def sink_all_countries(combo_name, groupby):
@@ -274,8 +293,8 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
 
     Usage:
 
-        >>> from eu_cbm_hat.post_processor.area import area_one_country
-        >>> df = area_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
+        >>> from eu_cbm_hat.post_processor.agg_combos import area_one_country
+        >>> area_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
 
     """
     index = ["identifier", "timestep"]
@@ -290,13 +309,8 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     df = df.merge(dist, on=index)
     # Aggregate
     df_agg = df.groupby(groupby)["area"].agg("sum").reset_index()
-    # Place combo name, country code and country name as first columns
-    df_agg["combo_name"] = combo_name
-    df_agg["iso2_code"] = runner.country.iso2_code
-    df_agg["country"] = runner.country.country_name
-    cols = list(df_agg.columns)
-    cols = cols[-3:] + cols[:-3]
-    return df_agg[cols]
+    df_agg = place_combo_name_and_country_first(df_agg, runner)
+    return df_agg
 
 
 def area_by_status_one_country(combo_name: str, iso2_code: str):
@@ -349,7 +363,6 @@ def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
 
     Usage:
 
-        >>> from eu_cbm_hat.core.continent import continent
         >>> from eu_cbm_hat.post_processor.agg_combos import harvest_area_by_dist_one_country
         >>> harvest_area_by_dist_one_country("reference", "LU")
 
@@ -357,13 +370,21 @@ def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
     groupby = ["year", "disturbance_type", "disturbance"]
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df = runner.post_processor.harvest.area_agg(groupby=groupby)
-    # Place combo name, country code as first columns
-    df["combo_name"] = combo_name
-    df["iso2_code"] = iso2_code
-    df["country"] = runner.country.country_name
-    cols = list(df.columns)
-    cols = cols[-3:] + cols[:-3]
-    return df[cols]
+    df = place_combo_name_and_country_first(df, runner)
+    return df
+
+
+def nai_by_sf_one_country(combo_name: str, iso2_code: str):
+    """Net Annual Increment data by status and forest type
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
+        >>> nai_by_sf_one_country("reference", "LU")
+
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.nai.df_agg_sf
+    df = place_combo_name_and_country_first(df, runner)
+    return df
 
 
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
@@ -411,14 +432,8 @@ def harvest_exp_prov_one_country(
     # to products especially in the historical period
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df = runner.post_processor.harvest.expected_provided(groupby=groupby)
-    # Place combo name, country code and country name as first columns
-    # TODO: move this to apply_to_all_countries
-    df["combo_name"] = runner.combo.short_name
-    df["iso2_code"] = runner.country.iso2_code
-    df["country"] = runner.country.country_name
-    cols = list(df.columns)
-    cols = cols[-3:] + cols[:-3]
-    return df[cols]
+    df = place_combo_name_and_country_first(df, runner)
+    return df
 
 
 def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], str]):
