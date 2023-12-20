@@ -44,6 +44,7 @@ class PostProcessor(object):
             self.classifiers["timestep"]
         )
         self.state = self.runner.output["state"]
+        self.params = self.runner.output["parameters"]
         # Define disturbance types
         self.afforestation_dist_type = 8
         self.deforestation_dist_type = 7
@@ -128,6 +129,7 @@ class PostProcessor(object):
             self.runner.output["flux"].merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change'
             .merge(self.state, "left", on=index)
+            .merge(self.params, "left", on=index)
         )
         return df
 
