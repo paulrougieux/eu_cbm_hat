@@ -27,6 +27,21 @@ class Diagnostic:
         >>> cols = ["time_since_dist", "disturbance_type", "last_disturbance_type"]
         >>> df = fluxes.value_counts(cols).reset_index().sort_values(cols)
 
+    Therefore
+
+    - the condition disturbance_type == 7
+
+    - is equivalent to the condition time_since_last_disturbance == 1
+      & last_disturbance_type == 7
+
+    And the condition
+
+    - disturbance_type==0
+
+    - is almost equivalent to the condition time_since_last_disturbance >= 2
+      except for the special case where disturbance_type==0 and
+      last_disturbance_type ==2
+
     """
 
     def __init__(self, parent):
