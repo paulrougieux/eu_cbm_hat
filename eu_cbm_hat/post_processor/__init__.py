@@ -27,8 +27,9 @@ class PostProcessor(object):
         >>> runner.post_processor.pools
         >>> runner.post_processor.sink
 
-        >>> runner.post_processor.pools_romf
-        >>> runner.post_processor.fluxes_merch
+        >>> runner.post_processor.pools_morf
+        >>> runner.post_processor.fluxes_morf
+        >>> runner.post_processor.pools_fluxes_morf
 
     """
 
@@ -43,6 +44,8 @@ class PostProcessor(object):
         self.classifiers["year"] = self.runner.country.timestep_to_year(
             self.classifiers["timestep"]
         )
+        # Index used for both self.pools_morf and self.fluxes_morf
+        self.index_morf = ["year", "disturbance_type"] + self.classifiers_list
         self.state = self.runner.output["state"]
         self.params = self.runner.output["parameters"]
         # Define disturbance types
@@ -82,6 +85,7 @@ class PostProcessor(object):
             self.runner.output["pools"].merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change' and 'time_since_last_disturbance'
             .merge(self.state, "left", on=index)
+            .merge(self.params, "left", on=index)
         )
         ###################################################
         # Compute the area afforested in the current year #
@@ -101,25 +105,6 @@ class PostProcessor(object):
         return df
 
     @cached_property
-    def pools_romf(self):
-        """Pools columns summed for roots, other, merchantable and foliage,
-        across classifiers"""
-        df = self.pools
-        column_dict = {
-            "roots": ["softwood_fine_roots", "hardwood_fine_roots",
-                      "softwood_coarse_roots", "hardwood_coarse_roots"],
-            "other": ["softwood_other", "hardwood_other"],
-            "merch": ['softwood_merch', 'hardwood_merch'],
-            "foliage": ["softwood_foliage", "hardwood_foliage"],
-        }
-        for key, cols in column_dict.items():
-            df[key] = df[cols].sum(axis=1)
-        index = ["year"] + self.classifiers_list
-        df_agg = df.groupby(index)[list(column_dict.keys())].agg("sum").reset_index()
-        return df_agg
-
-
-    @cached_property
     def fluxes(self):
         """Fluxes used for the sink computation"""
         index = ["identifier", "timestep"]
@@ -134,10 +119,29 @@ class PostProcessor(object):
         return df
 
     @cached_property
-    def fluxes_merch(self):
+    def pools_morf(self):
+        """Pools columns summed for merchantable, other, roots and foliage,
+        across classifiers"""
+        df = self.pools.copy()
+        column_dict = {
+            "merch": ['softwood_merch', 'hardwood_merch'],
+            "other": ["softwood_other", "hardwood_other"],
+            "roots": ["softwood_fine_roots", "hardwood_fine_roots",
+                      "softwood_coarse_roots", "hardwood_coarse_roots"],
+            "foliage": ["softwood_foliage", "hardwood_foliage"],
+        }
+        for key, cols in column_dict.items():
+            df[key] = df[cols].sum(axis=1)
+        selected_columns = ["area"] + list(column_dict.keys())
+        df_agg = df.groupby(self.index_morf)[selected_columns].agg("sum")
+        df_agg = df_agg.reset_index()
+        return df_agg
+
+    @cached_property
+    def fluxes_morf(self):
         """Fluxes columns summed for merchantable to products, natural turnover
         and disturbance merch litter input"""
-        df = self.fluxes
+        df = self.fluxes.copy()
         column_dict = {
             "merch_prod": ["softwood_merch_to_product", "hardwood_merch_to_product"],
             "nat_turnover": ["turnover_merch_litter_input"],
@@ -145,9 +149,20 @@ class PostProcessor(object):
         }
         for key, cols in column_dict.items():
             df[key] = df[cols].sum(axis=1)
-        index = ["year"] + self.classifiers_list
-        df_agg = df.groupby(index)[list(column_dict.keys())].agg("sum").reset_index()
+        selected_columns = list(column_dict.keys())
+        df_agg = df.groupby(self.index_morf)[selected_columns].agg("sum")
+        df_agg = df_agg.reset_index()
         return df_agg
+
+    @cached_property
+    def pools_fluxes_morf(self):
+        """Merchantable pools and fluxes aggregated at the morf level on the
+        columns and at the classifiers level on the rows
+
+        To be used in the Net Annual Increment computation.
+        """
+        df = self.pools_morf.merge(self.fluxes_morf, on=self.index_morf)
+        return df
 
     @cached_property
     def area(self):
