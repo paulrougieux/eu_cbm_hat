@@ -179,9 +179,6 @@ class Harvest:
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
         df = df.merge(area, on=index)
-        # Disturbance type information
-        dist = self.runner.output["parameters"][index + ["disturbance_type"]]
-        df = df.merge(dist, on=index)
         return df
 
     def provided_agg(self, groupby: Union[List[str], str]):
