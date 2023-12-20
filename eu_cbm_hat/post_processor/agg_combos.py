@@ -14,17 +14,19 @@ For a given scenario for example "reference:
     >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
     >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
+    >>> combo_dir = output_agg_dir / "reference"
     >>> sink = sink_all_countries("reference", "year")
     >>> sink.to_parquet(combo_dir / "sink_by_year_test_to_delete.parquet")
     >>> nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name="reference")
     >>> nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft_test_to_delete.parquet")
 
-Note: this script cannot be made a method of the
-combos/base_combo.py/Combination class because of circular references such as
-post_processor/harvest.py importing "continent" and "combined".
+- Note: this script cannot be made a method of the
+  combos/base_combo.py/Combination class because of circular references such as
+  post_processor/harvest.py importing "continent" and "combined".
 
-        from eu_cbm_hat.info.harvest import combined
-        from eu_cbm_hat.core.continent import continent
+    >>> from eu_cbm_hat.info.harvest import combined
+    >>> from eu_cbm_hat.core.continent import continent
 
     - To avoid these imports, functions in post_processor/harvest.py could be refactored.
     - Removing the "continent" could be done by changing functions to pass runner
@@ -115,9 +117,7 @@ def save_agg_combo_output(combo_name: str):
     )
     harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
     print(f"Processing {combo_name} Net Annual Increment.")
-    nai_sf = apply_to_all_countries(
-        nai_by_sf_one_country, combo_name=combo_name
-    )
+    nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name=combo_name)
     nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
 
 
@@ -377,8 +377,8 @@ def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
 def nai_by_sf_one_country(combo_name: str, iso2_code: str):
     """Net Annual Increment data by status and forest type
 
-        >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
-        >>> nai_by_sf_one_country("reference", "LU")
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
+    >>> nai_by_sf_one_country("reference", "LU")
 
     """
     runner = continent.combos[combo_name].runners[iso2_code][-1]
