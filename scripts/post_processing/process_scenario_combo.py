@@ -11,6 +11,16 @@ Usage:
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2_fel1 pikfair_fel1
 
+Separate processing to update a single data frame
+
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
+    >>> combo = "pikssp2_fel1"
+    >>> combo_dir = output_agg_dir / combo
+    >>> nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name=combo)
+    >>> nai_sf.to_parquet(combo_dir / "nai_by_sf.parquet")
+
 """
 
 import argparse
