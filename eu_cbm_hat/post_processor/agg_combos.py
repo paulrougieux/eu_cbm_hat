@@ -135,7 +135,10 @@ def read_agg_combo_output(combo_name: list, file_name: str):
     """
     df_all = pandas.DataFrame()
     for this_combo_name in combo_name:
-        df = pandas.read_parquet(output_agg_dir / this_combo_name / file_name)
+        try:
+            df = pandas.read_parquet(output_agg_dir / this_combo_name / file_name)
+        except FileNotFoundError as error:
+            print(error)
         df_all = pandas.concat([df_all, df])
     df_all.reset_index(inplace=True, drop=True)
     return df_all
