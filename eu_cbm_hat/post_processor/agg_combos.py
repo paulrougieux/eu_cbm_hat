@@ -134,6 +134,7 @@ def read_agg_combo_output(combo_name: list, file_name: str):
 
     """
     df_all = pandas.DataFrame()
+    df = pandas.DataFrame()
     for this_combo_name in combo_name:
         try:
             df = pandas.read_parquet(output_agg_dir / this_combo_name / file_name)
