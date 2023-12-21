@@ -11,6 +11,10 @@ Usage:
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2_fel1 pikfair_fel1
 
+Share the aggregated output to the temporary transfer directory
+
+    rsync -zav $HOME/eu_cbm/eu_cbm_data/output_agg /eos/jeodpp/data/projects/SUSBIOM-TRADE/transfer/eu_cbm_data
+
 Separate processing to update a single data frame
 
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
