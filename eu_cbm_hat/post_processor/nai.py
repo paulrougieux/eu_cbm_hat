@@ -68,8 +68,8 @@ class NAI:
         df["merch_vol"] = ton_carbon_to_m3_ub(df, "merch")
         df["ag_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
         df["prod_vol"] = ton_carbon_to_m3_ub(df, "merch_prod")
-        df["dom_merch_input_vol"] = df["turnover_merch_litter_input"] / df["wood_density"]
-        df["dom_oth_input_vol"] = df["turnover_oth_litter_input"] / df["wood_density"]
+        df["turnover_merch_input_vol"] = df["turnover_merch_litter_input"] / df["wood_density"]
+        df["turnover_oth_input_vol"] = df["turnover_oth_litter_input"] / df["wood_density"]
         # Default to zero for disturbance zero
         df["dist_merch_input_vol"] = np.where(
             df["disturbance_type"] == 0,
@@ -91,9 +91,9 @@ class NAI:
             "merch_vol",
             "ag_vol",
             "prod_vol",
-            "dom_merch_input_vol",
+            "turnover_merch_input_vol",
             "dist_merch_input_vol",
-            "dom_oth_input_vol",
+            "turnover_oth_input_vol",
             "dist_oth_input_vol",
         ]
         index = ["status", "forest_type"]
@@ -106,10 +106,10 @@ class NAI:
         df_agg["nai_merch_ha"] = df_agg[
             ["net_merch_ha_2", "prod_vol_ha", "dist_merch_input_vol_ha"]
         ].sum(axis=1)
-        df_agg["gai_merch_ha"] = df_agg["nai_merch_ha"] + df_agg["dom_merch_input_vol_ha"]
+        df_agg["gai_merch_ha"] = df_agg["nai_merch_ha"] + df_agg["turnover_merch_input_vol_ha"]
         # Add other wood components
         df_agg["nai_agb_ha"] = df_agg["nai_merch_ha"] + df_agg["dist_oth_input_vol_ha"]
         df_agg["gai_agb_ha"] = df_agg[
-            ["nai_agb_ha", "dom_merch_input_vol_ha", "dom_oth_input_vol_ha"]
+            ["nai_agb_ha", "turnover_merch_input_vol_ha", "turnover_oth_input_vol_ha"]
         ].sum(axis=1)
         return df_agg
