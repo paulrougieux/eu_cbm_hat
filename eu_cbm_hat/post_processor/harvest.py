@@ -22,6 +22,9 @@ class Harvest:
         >>> runner.post_processor.harvest.expected_agg("year")
         >>> runner.post_processor.harvest.provided
         >>> runner.post_processor.harvest.provided_agg("year")
+        >>> harvest_group = ["year", "forest_type", "mgmt_type", "mgmt_strategy", "con_broad", "disturbance_type"]
+        >>> runner.post_processor.harvest.provided_agg(harvest_group)
+)
         >>> runner.post_processor.harvest.expected_provided("year")
         >>> runner.post_processor.harvest.expected_provided(["year", "forest_type"])
         >>> runner.post_processor.harvest.expected_provided(["year", "disturbance_type"])

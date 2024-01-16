@@ -11,45 +11,44 @@ class NAI:
     """Compute the net annual increment$
 
 
-    Usage:
+     Usage:
 
-        >>> from eu_cbm_hat.core.continent import continent
-        >>> runner = continent.combos['reference'].runners['LU'][-1]
+         >>> from eu_cbm_hat.core.continent import continent
+         >>> runner = continent.combos['reference'].runners['LU'][-1]
 
-        >>> runner.post_processor.nai.df
-        >>> runner.post_processor.nai.pools_fluxes_morf
-        >>> runner.post_processor.nai.df_agg_sf
+         >>> runner.post_processor.nai.pools_fluxes_morf
+         >>> runner.post_processor.nai.df_agg_sf
 
-   NAI per ha by status at country level:
+    NAI per ha by status at country level:
 
-       >>> df = runner.post_processor.nai.df_agg_sf
-       >>> df["nai"] = df["nai_ha"] * df["area"]
-       >>> df_st = df.groupby(["year", "status"])[["area", "nai"]].agg("sum").reset_index()
-       >>> df_st["nai_ha"] = df_st["nai"] / df_st["area"]
-       >>> df_st = df_st.pivot(columns="status", index="year", values="nai_ha")
-       >>> from matplotlib import pyplot as plt
-       >>> df_st.plot(ylabel="NAI m3 / ha")
-       >>> plt.show()
-       >>> # Plot without NF
-       >>> df_st[['AR', 'ForAWS', 'ForNAWS']].plot(ylabel="NAI m3 / ha")
-       >>> plt.show()
+        >>> df = runner.post_processor.nai_merch.df_agg_sf
+        >>> df["nai_merch"] = df["nai_merch_ha"] * df["area"]
+        >>> df_st = df.groupby(["year", "status"])[["area", "nai_merch"]].agg("sum").reset_index()
+        >>> df_st["nai_merch_ha"] = df_st["nai_merch"] / df_st["area"]
+        >>> df_st = df_st.pivot(columns="status", index="year", values="nai_merch_ha")
+        >>> from matplotlib import pyplot as plt
+        >>> df_st.plot(ylabel="nai_merch m3 / ha")
+        >>> plt.show()
+        >>> # Plot without NF
+        >>> df_st[['AR', 'ForAWS', 'ForNAWS']].plot(ylabel="nai_merch m3 / ha")
+        >>> plt.show()
 
-    Plot NAI per ha by status
+     Plot NAI per ha by status
 
-        >>> df_st
+         >>> df_st
 
-    Roberto's NAI computations
-    in ~/downloads/qa_qc_stock_dynamic_rp_AT.md
+     Roberto's NAI computations
+     in ~/downloads/qa_qc_stock_dynamic_rp_AT.md
 
-        1. FT_MS_Increment
-            NAI = Net_Merch + Prod_vol_ha + Dist_vol_ha
-            GAI = Net_Merch + Prod_vol_ha + DOM_vol_ha
-        2. Country_Increment
-            NAI = Net_Merch + Prod_vol_ha + Dist_vol_ha
-            GAI = Net_Merch + Prod_vol_ha + DOM_vol_ha + Dist_vol_ha
-        3. FAWS_Increment
-            NAI = Net_Merch+Prod_vol_ha + Dist_vol_ha
-            GAI = Net_Merch+Prod_vol_ha + DOM_vol_ha+Dist_vol_ha
+         1. FT_MS_Increment
+             NAI = Net_Merch + Prod_vol_ha + Dist_vol_ha
+             GAI = Net_Merch + Prod_vol_ha + DOM_vol_ha
+         2. Country_Increment
+             NAI = Net_Merch + Prod_vol_ha + Dist_vol_ha
+             GAI = Net_Merch + Prod_vol_ha + DOM_vol_ha + Dist_vol_ha
+         3. FAWS_Increment
+             NAI = Net_Merch+Prod_vol_ha + Dist_vol_ha
+             GAI = Net_Merch+Prod_vol_ha + DOM_vol_ha+Dist_vol_ha
 
     """
 
@@ -69,10 +68,18 @@ class NAI:
         df["merch_vol"] = ton_carbon_to_m3_ub(df, "merch")
         df["ag_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
         df["prod_vol"] = ton_carbon_to_m3_ub(df, "merch_prod")
-        df["dom_input_vol"] = df["nat_turnover"] / df["wood_density"]
+        df["dom_merch_input_vol"] = df["turnover_merch_litter_input"] / df["wood_density"]
+        df["dom_oth_input_vol"] = df["turnover_oth_litter_input"] / df["wood_density"]
         # Default to zero for disturbance zero
-        df["dist_m_input_vol"] = np.where(
-            df["disturbance_type"] == 0, 0, df["dist_input"] / df["wood_density"]
+        df["dist_merch_input_vol"] = np.where(
+            df["disturbance_type"] == 0,
+            0,
+            df["disturbance_merch_litter_input"] / df["wood_density"],
+        )
+        df["dist_oth_input_vol"] = np.where(
+            df["disturbance_type"] == 0,
+            0,
+            df["disturbance_oth_litter_input"] / df["wood_density"],
         )
         return df
 
@@ -84,19 +91,25 @@ class NAI:
             "merch_vol",
             "ag_vol",
             "prod_vol",
-            "dom_input_vol",
-            "dist_m_input_vol",
+            "dom_merch_input_vol",
+            "dist_merch_input_vol",
+            "dom_oth_input_vol",
+            "dist_oth_input_vol",
         ]
         index = ["status", "forest_type"]
-        df_agg = (
-            df.groupby(["year"] + index)[["area"] + cols].agg("sum").reset_index()
-        )
+        df_agg = df.groupby(["year"] + index)[["area"] + cols].agg("sum").reset_index()
         df_agg["net_merch"] = df_agg.groupby(index)["merch_vol"].diff()
         for col in cols + ["net_merch"]:
             df_agg[col + "_ha"] = df_agg[col] / df_agg["area"]
         # Note that net_merch_ha and net_merch_ha_2 are different
         df_agg["net_merch_ha_2"] = df_agg.groupby(index)["merch_vol_ha"].diff()
-        df_agg["nai_ha"] = df_agg[["net_merch_ha_2", "prod_vol_ha", "dist_m_input_vol_ha"]].sum(axis=1)
-        df_agg["gai_ha"] = df_agg["nai_ha"] + df_agg["dom_input_vol_ha"]
+        df_agg["nai_merch_ha"] = df_agg[
+            ["net_merch_ha_2", "prod_vol_ha", "dist_merch_input_vol_ha"]
+        ].sum(axis=1)
+        df_agg["gai_merch_ha"] = df_agg["nai_merch_ha"] + df_agg["dom_merch_input_vol_ha"]
+        # Add other wood components
+        df_agg["nai_agb_ha"] = df_agg["nai_merch_ha"] + df_agg["dist_oth_input_vol_ha"]
+        df_agg["gai_agb_ha"] = df_agg[
+            ["nai_agb_ha", "dom_merch_input_vol_ha", "dom_oth_input_vol_ha"]
+        ].sum(axis=1)
         return df_agg
-

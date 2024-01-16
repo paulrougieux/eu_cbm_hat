@@ -140,16 +140,19 @@ class PostProcessor(object):
     @cached_property
     def fluxes_morf(self):
         """Fluxes columns summed for merchantable to products, natural turnover
-        and disturbance merch litter input"""
+        (from merch and OWC) disturbance litter input (from merch and OWC)"""
         df = self.fluxes.copy()
         column_dict = {
             "merch_prod": ["softwood_merch_to_product", "hardwood_merch_to_product"],
-            "nat_turnover": ["turnover_merch_litter_input"],
-            "dist_input": ["disturbance_merch_litter_input"]
         }
         for key, cols in column_dict.items():
             df[key] = df[cols].sum(axis=1)
         selected_columns = list(column_dict.keys())
+        selected_columns += ["turnover_merch_litter_input",
+                             "disturbance_merch_litter_input",
+                             'turnover_oth_litter_input',
+                             'disturbance_oth_litter_input',
+                             ]
         df_agg = df.groupby(self.index_morf)[selected_columns].agg("sum")
         df_agg = df_agg.reset_index()
         return df_agg
