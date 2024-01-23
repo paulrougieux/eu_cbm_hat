@@ -65,7 +65,7 @@ class NAI:
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
         # Convert tons of carbon to volume under bark
-        df["merch_vol"] = ton_carbon_to_m3_ub(df, "merch")
+        df["merch_vol"] = df["merch"] / df["wood_density"]
         df["ag_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
         df["prod_vol"] = ton_carbon_to_m3_ub(df, "merch_prod")
         df["turnover_merch_input_vol"] = df["turnover_merch_litter_input"] / df["wood_density"]
