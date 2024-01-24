@@ -18,10 +18,12 @@ Share the aggregated output to the temporary transfer directory
 Separate processing to update a single data frame
 
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
-    >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
-    >>> combo = "pikssp2_fel1"
-    >>> combo_dir = output_agg_dir / combo
+    >>> combo_name = "pikssp2_fel1"
+    >>> combo_dir = output_agg_dir / combo_name
+    >>> nai_st = apply_to_all_countries(nai_one_country, combo_name=combo_name, groupby=["status"])
+    >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name=combo)
     >>> nai_sf.to_parquet(combo_dir / "nai_by_sf.parquet")
 
