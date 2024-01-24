@@ -1,21 +1,23 @@
-"""Aggregate scenario combination output and store them in the
-from eu_cbm_hat.post_processor.area import area_by_status_one_country
-`eu_cbm_data/output_agg` directory.
+"""Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
 
-For a given scenario for example "reference:
-
-- Save all post processing output for all countries to parquet files
+- For a given scenario such as "reference", save all post processing output for
+  all countries to parquet files. This function implements all post processing
+  steps.
 
     >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
     >>> save_agg_combo_output("reference")
 
+Other examples below detailed how to run only some of the post processing steps.
+
 - Save a specific data frame for all all countries to a parquet file
 
-    >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
     >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
-    >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
+    >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
+
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
     >>> sink = sink_all_countries(combo_name, "year")
@@ -24,6 +26,20 @@ For a given scenario for example "reference:
     >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
     >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
+
+- Save the specific data frame for all countries and all combos to parquet files
+
+    >>> combos = ["reference", "pikssp2_fel1", "pikssp2_owc_max", "pikssp2_owc_min",
+    >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
+    >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
+    >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st_test_to_delete.parquet", groupby=["status"])
+
+- Open the resulting parquet files to check the content of the data frames
+
+    >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
+    >>> sink = read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
+    >>> nai_st = read_agg_combo_output(combos, "nai_by_year_st_test_to_delete.parquet")
+    >>> pools_length = read_agg_combo_output(combos, "pools_length.parquet")
 
 - Note: this script cannot be made a method of the
   combos/base_combo.py/Combination class because of circular references such as
@@ -43,6 +59,7 @@ For a given scenario for example "reference:
 from typing import Union, List
 import pandas
 from tqdm import tqdm
+from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
 
 from eu_cbm_hat import eu_cbm_data_pathlib
@@ -77,6 +94,33 @@ def apply_to_all_countries(data_func, combo_name, **kwargs):
             print(key, e_value)
     df_all.reset_index(inplace=True, drop=True)
     return df_all
+
+
+def apply_to_all_countries_and_save(args):
+    """Get data for all countries and save it to a parquet file
+
+    This function is to be used with p_umap() in apply_to_all_combos().
+    """
+    data_func, combo_name, file_name, groupby = args
+    combo_dir = output_agg_dir / combo_name
+    if groupby is None:
+        df = apply_to_all_countries(data_func=data_func, combo_name=combo_name)
+    else:
+        df = apply_to_all_countries(data_func=data_func, combo_name=combo_name, groupby=groupby)
+    df.to_parquet(combo_dir / file_name)
+
+
+def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
+    """Apply a function to all scenario combinations and save to parquet files
+
+    This saves data for all countries in all scenario combinations into the
+    given parquet file name. One file for each sub-directory in the
+    eu_cbm_data/output_agg directory. These files can then be read and
+    concatenated later with the read_agg_combo_output() function.
+    """
+    items = [(data_func, k, file_name, groupby) for k in combo_names]
+    result = p_umap(apply_to_all_countries_and_save, items, num_cpus=6)
+    return result
 
 
 def save_agg_combo_output(combo_name: str):
