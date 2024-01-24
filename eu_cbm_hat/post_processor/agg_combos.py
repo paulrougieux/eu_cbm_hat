@@ -561,4 +561,6 @@ def pools_length_one_country(
     pools = runner.post_processor.pools
     df = pools.value_counts(["year"], sort=False).reset_index()
     df = place_combo_name_and_country_first(df, runner)
+    # Fix for older versions of pandas
+    df.rename(columns={0: "count"}, inplace=True)
     return df
