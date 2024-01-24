@@ -121,10 +121,13 @@ def save_agg_combo_output(combo_name: str):
     )
     harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
     print(f"Processing {combo_name} Net Annual Increment.")
-    nai_sf = apply_to_all_countries(nai_one_country, combo_name=combo_name, groupby=["status", "forest_type"])
+    nai_sf = apply_to_all_countries(
+        nai_one_country, combo_name=combo_name, groupby=["status", "forest_type"]
+    )
     nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
-    nai_s = apply_to_all_countries(nai_one_country, combo_name=combo_name,
-                                   groupby=["status"])
+    nai_s = apply_to_all_countries(
+        nai_one_country, combo_name=combo_name, groupby=["status"]
+    )
     nai_s.to_parquet(combo_dir / "nai_by_year_st.parquet")
 
 
@@ -535,8 +538,7 @@ def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], st
 
 
 def dw_all_countries(combo_name: str, groupby: Union[List[str], str]):
-    """Harvest area by status in wide format for all countries in the given scenario combination.
-    """
+    """Harvest area by status in wide format for all countries in the given scenario combination."""
     df_all = apply_to_all_countries(
         dw_one_country, combo_name=combo_name, groupby=groupby
     )

@@ -8,8 +8,10 @@ Usage:
     # or on BDAP
     cd $HOME/eu_cbm/eu_cbm_hat/scripts/post_processing
     ipython -i process_scenario_combo.py -- --combo_names reference
-    ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
-    ipython -i process_scenario_combo.py -- --combo_names reference pikssp2_fel1 pikfair_fel1
+    ipython -i process_scenario_combo.py -- --combo_names pikssp2 pikfair
+    ipython -i process_scenario_combo.py -- --combo_names pikssp2_fel1 pikssp2_owc_max pikssp2_owc_min
+    ipython -i process_scenario_combo.py -- --combo_names pikfair_fel1 pikfair_owc_max pikfair_owc_min
+    ipython -i process_scenario_combo.py -- --combo_names pikssp2_fel1 pikssp2_owc_max pikssp2_owc_min pikfair_fel1 pikfair_owc_max pikfair_owc_min
 
 Share the aggregated output to the temporary transfer directory
 
@@ -29,6 +31,7 @@ Separate processing to update a single data frame
 
 """
 
+from p_tqdm import p_umap
 import argparse
 from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
 
@@ -42,5 +45,4 @@ parser.add_argument(
 shell_args = parser.parse_args()
 COMBO_NAMES = shell_args.combo_names
 
-for x in COMBO_NAMES:
-    save_agg_combo_output(x)
+p_umap(save_agg_combo_output, COMBO_NAMES, num_cpus=6)
