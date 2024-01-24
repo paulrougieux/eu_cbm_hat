@@ -15,11 +15,14 @@ For a given scenario for example "reference:
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
     >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
-    >>> combo_dir = output_agg_dir / "reference"
-    >>> sink = sink_all_countries("reference", "year")
+    >>> combo_name = "reference"
+    >>> combo_dir = output_agg_dir / combo_name
+    >>> sink = sink_all_countries(combo_name, "year")
     >>> sink.to_parquet(combo_dir / "sink_by_year_test_to_delete.parquet")
-    >>> nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name="reference")
+    >>> nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name=combo_name)
     >>> nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft_test_to_delete.parquet")
+    >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
+    >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
 
 - Note: this script cannot be made a method of the
   combos/base_combo.py/Combination class because of circular references such as
@@ -535,3 +538,22 @@ def dw_all_countries(combo_name: str, groupby: Union[List[str], str]):
         dw_one_country, combo_name=combo_name, groupby=groupby
     )
     return df_all
+
+
+def pools_length_one_country(
+    combo_name: str,
+    iso2_code: str,
+):
+    """Number of rows in the pools table
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
+        >>> pools_length_one_country("reference", "LU")
+
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    pools = runner.post_processor.pools
+    df = pools.value_counts(["year"], sort=False).reset_index()
+    df = place_combo_name_and_country_first(df, runner)
+    return df

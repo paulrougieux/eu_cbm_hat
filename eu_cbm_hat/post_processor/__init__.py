@@ -77,7 +77,16 @@ class PostProcessor(object):
 
     @cached_property
     def pools(self):
-        """Pools used for the sink computation"""
+        """Pools used for the sink computation
+
+        Number of rows in the pools table:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> pools = runner.post_processor.pools
+            >>> pools.value_counts(["year"]).reset_index()
+
+        """
         index = ["identifier", "timestep"]
         # Data frame of pools content at the maximum disaggregated level by
         # identifier and timestep that will be sent to the other sink functions
