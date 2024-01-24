@@ -13,14 +13,15 @@ For a given scenario for example "reference:
 
     >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
-    >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
     >>> sink = sink_all_countries(combo_name, "year")
     >>> sink.to_parquet(combo_dir / "sink_by_year_test_to_delete.parquet")
-    >>> nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name=combo_name)
-    >>> nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft_test_to_delete.parquet")
+    >>> nai_st = apply_to_all_countries(nai_one_country, combo_name=combo_name, groupby=["status"])
+    >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
     >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
 
@@ -120,8 +121,11 @@ def save_agg_combo_output(combo_name: str):
     )
     harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
     print(f"Processing {combo_name} Net Annual Increment.")
-    nai_sf = apply_to_all_countries(nai_by_sf_one_country, combo_name=combo_name)
+    nai_sf = apply_to_all_countries(nai_one_country, combo_name=combo_name, groupby=["status", "forest_type"])
     nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
+    nai_s = apply_to_all_countries(nai_one_country, combo_name=combo_name,
+                                   groupby=["status"])
+    nai_s.to_parquet(combo_dir / "nai_by_year_st.parquet")
 
 
 def read_agg_combo_output(combo_name: list, file_name: str):
@@ -381,15 +385,18 @@ def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
     return df
 
 
-def nai_by_sf_one_country(combo_name: str, iso2_code: str):
+def nai_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Net Annual Increment data by status and forest type
 
-    >>> from eu_cbm_hat.post_processor.agg_combos import nai_by_sf_one_country
-    >>> nai_by_sf_one_country("reference", "LU")
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+        >>> nai_one_country("reference", "LU", ["status"])
+        >>> nai_one_country("reference", "LU", ["status", "forest_type"])
 
     """
     runner = continent.combos[combo_name].runners[iso2_code][-1]
-    df = runner.post_processor.nai.df_agg_sf
+    df = runner.post_processor.nai.df_agg(groupby=groupby)
     df = place_combo_name_and_country_first(df, runner)
     return df
 
@@ -529,10 +536,6 @@ def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], st
 
 def dw_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Harvest area by status in wide format for all countries in the given scenario combination.
-
-    >>> from eu_cbm_hat.post_processor.area import area_all_countries
-    >>> area_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
-
     """
     df_all = apply_to_all_countries(
         dw_one_country, combo_name=combo_name, groupby=groupby

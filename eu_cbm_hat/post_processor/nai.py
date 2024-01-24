@@ -2,6 +2,7 @@
 The purpose of this script is to compute the Net Annual Increment for one country
 """
 
+from typing import Union, List
 from functools import cached_property
 import numpy as np
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
@@ -17,7 +18,8 @@ class NAI:
          >>> runner = continent.combos['reference'].runners['LU'][-1]
 
          >>> runner.post_processor.nai.pools_fluxes_morf
-         >>> runner.post_processor.nai.df_agg_sf
+         >>> runner.post_processor.nai.df_agg(["status", "forest_type"])
+         >>> runner.post_processor.nai.df_agg(["status"])
 
     NAI per ha by status at country level:
 
@@ -60,7 +62,6 @@ class NAI:
     @cached_property
     def pools_fluxes_morf(self):
         """Merchantable pools and fluxes aggregated at the classifiers level"""
-        # Keep only FORAWS
         df = self.parent.pools_fluxes_morf
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
@@ -83,9 +84,10 @@ class NAI:
         )
         return df
 
-    @cached_property
-    def df_agg_sf(self):
+    def df_agg(self, groupby: Union[List[str], str]):
         """Net Annual Increment aggregated by status and forest type"""
+        if isinstance(groupby, str):
+            groupby = [groupby]
         df = self.pools_fluxes_morf
         cols = [
             "merch_vol",
@@ -96,13 +98,12 @@ class NAI:
             "turnover_oth_input_vol",
             "dist_oth_input_vol",
         ]
-        index = ["status", "forest_type"]
-        df_agg = df.groupby(["year"] + index)[["area"] + cols].agg("sum").reset_index()
-        df_agg["net_merch"] = df_agg.groupby(index)["merch_vol"].diff()
+        df_agg = df.groupby(["year"] + groupby)[["area"] + cols].agg("sum").reset_index()
+        df_agg["net_merch"] = df_agg.groupby(groupby)["merch_vol"].diff()
         for col in cols + ["net_merch"]:
             df_agg[col + "_ha"] = df_agg[col] / df_agg["area"]
         # Note that net_merch_ha and net_merch_ha_2 are different
-        df_agg["net_merch_ha_2"] = df_agg.groupby(index)["merch_vol_ha"].diff()
+        df_agg["net_merch_ha_2"] = df_agg.groupby(groupby)["merch_vol_ha"].diff()
         df_agg["nai_merch_ha"] = df_agg[
             ["net_merch_ha_2", "prod_vol_ha", "dist_merch_input_vol_ha"]
         ].sum(axis=1)
