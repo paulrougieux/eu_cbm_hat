@@ -69,8 +69,12 @@ class NAI:
         df["merch_vol"] = df["merch"] / df["wood_density"]
         df["ag_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
         df["prod_vol"] = ton_carbon_to_m3_ub(df, "merch_prod")
-        df["turnover_merch_input_vol"] = df["turnover_merch_litter_input"] / df["wood_density"]
-        df["turnover_oth_input_vol"] = df["turnover_oth_litter_input"] / df["wood_density"]
+        df["turnover_merch_input_vol"] = (
+            df["turnover_merch_litter_input"] / df["wood_density"]
+        )
+        df["turnover_oth_input_vol"] = (
+            df["turnover_oth_litter_input"] / df["wood_density"]
+        )
         # Default to zero for disturbance zero
         df["dist_merch_input_vol"] = np.where(
             df["disturbance_type"] == 0,
@@ -85,7 +89,20 @@ class NAI:
         return df
 
     def df_agg(self, groupby: Union[List[str], str]):
-        """Net Annual Increment aggregated by status and forest type"""
+        """Net Annual Increment aggregated by status and forest type
+
+        Usage:
+
+             >>> from eu_cbm_hat.core.continent import continent
+             >>> runner = continent.combos['reference'].runners['LU'][-1]
+             >>> nai_st = runner.post_processor.nai.df_agg(["status"])
+
+        Check net merch
+
+            >>> import numpy as np
+            >>> np.testing.assert_allclose(nai_st["net_merch_ha_2"],  nai_st["net_merch_ha_2"], rtol=0.01)
+
+        """
         if isinstance(groupby, str):
             groupby = [groupby]
         df = self.pools_fluxes_morf
@@ -98,18 +115,34 @@ class NAI:
             "turnover_oth_input_vol",
             "dist_oth_input_vol",
         ]
-        df_agg = df.groupby(["year"] + groupby)[["area"] + cols].agg("sum").reset_index()
+        df_agg = (
+            df.groupby(["year"] + groupby)[["area"] + cols].agg("sum").reset_index()
+        )
         df_agg["net_merch"] = df_agg.groupby(groupby)["merch_vol"].diff()
+        df_agg["net_agb"] = df_agg.groupby(groupby)["agb_vol"].diff()
         for col in cols + ["net_merch"]:
             df_agg[col + "_ha"] = df_agg[col] / df_agg["area"]
-        # Note that net_merch_ha and net_merch_ha_2 are different
+        # Test, compute merch per ha in a different way
+        # Note that net_merch_ha and net_merch_ha_2 are different, but not by much
+        # TODO move this outside the function, to the example.
         df_agg["net_merch_ha_2"] = df_agg.groupby(groupby)["merch_vol_ha"].diff()
+        # Compute NAI for the merchantable pool only
         df_agg["nai_merch_ha"] = df_agg[
-            ["net_merch_ha_2", "prod_vol_ha", "dist_merch_input_vol_ha"]
+            ["net_merch_ha", "prod_vol_ha", "dist_merch_input_vol_ha"]
         ].sum(axis=1)
-        df_agg["gai_merch_ha"] = df_agg["nai_merch_ha"] + df_agg["turnover_merch_input_vol_ha"]
-        # Add other wood components
-        df_agg["nai_agb_ha"] = df_agg["nai_merch_ha"] + df_agg["dist_oth_input_vol_ha"]
+        df_agg["gai_merch_ha"] = (
+            df_agg["nai_merch_ha"] + df_agg["turnover_merch_input_vol_ha"]
+        )
+        # Compute NAI for merchantable and OWC
+        df_agg["nai_agb_ha"] = df_agg[
+            [
+                "net_agb_ha",
+                "prod_vol_ha",
+                "dist_merch_input_vol_ha",
+                "dist_agb_input_vol_ha",
+                "dist_oth_input_vol_ha",
+            ]
+        ].sum(axis=1)
         df_agg["gai_agb_ha"] = df_agg[
             ["nai_agb_ha", "turnover_merch_input_vol_ha", "turnover_oth_input_vol_ha"]
         ].sum(axis=1)
