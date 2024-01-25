@@ -101,13 +101,12 @@ def apply_to_all_countries_and_save(args):
 
     This function is to be used with p_umap() in apply_to_all_combos().
     """
-    data_func, combo_name, file_name, groupby = args
-    combo_dir = output_agg_dir / combo_name
+    data_func, combo_name, file_path , groupby = args
     if groupby is None:
         df = apply_to_all_countries(data_func=data_func, combo_name=combo_name)
     else:
         df = apply_to_all_countries(data_func=data_func, combo_name=combo_name, groupby=groupby)
-    df.to_parquet(combo_dir / file_name)
+    df.to_parquet(file_path)
 
 
 def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
@@ -118,7 +117,10 @@ def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
     eu_cbm_data/output_agg directory. These files can then be read and
     concatenated later with the read_agg_combo_output() function.
     """
-    items = [(data_func, k, file_name, groupby) for k in combo_names]
+    items = [(data_func,
+              k,
+              output_agg_dir / k / file_name,  # file path
+              groupby) for k in combo_names]
     result = p_umap(apply_to_all_countries_and_save, items, num_cpus=6)
     return result
 

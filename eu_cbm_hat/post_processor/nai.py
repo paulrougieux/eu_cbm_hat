@@ -120,7 +120,7 @@ class NAI:
         )
         df_agg["net_merch"] = df_agg.groupby(groupby)["merch_vol"].diff()
         df_agg["net_agb"] = df_agg.groupby(groupby)["agb_vol"].diff()
-        for col in cols + ["net_merch"]:
+        for col in cols + ["net_merch", "net_agb"]:
             df_agg[col + "_ha"] = df_agg[col] / df_agg["area"]
         # Test, compute merch per ha in a different way
         # Note that net_merch_ha and net_merch_ha_2 are different, but not by much
@@ -139,7 +139,6 @@ class NAI:
                 "net_agb_ha",
                 "prod_vol_ha",
                 "dist_merch_input_vol_ha",
-                "dist_agb_input_vol_ha",
                 "dist_oth_input_vol_ha",
             ]
         ].sum(axis=1)
