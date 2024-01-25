@@ -121,7 +121,7 @@ def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
               k,
               output_agg_dir / k / file_name,  # file path
               groupby) for k in combo_names]
-    result = p_umap(apply_to_all_countries_and_save, items, num_cpus=6)
+    result = p_umap(apply_to_all_countries_and_save, items, num_cpus=4)
     return result
 
 
