@@ -67,7 +67,7 @@ class NAI:
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
         # Convert tons of carbon to volume under bark
         df["merch_vol"] = df["merch"] / df["wood_density"]
-        df["ag_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
+        df["agb_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
         df["prod_vol"] = ton_carbon_to_m3_ub(df, "merch_prod")
         df["turnover_merch_input_vol"] = (
             df["turnover_merch_litter_input"] / df["wood_density"]
@@ -108,7 +108,7 @@ class NAI:
         df = self.pools_fluxes_morf
         cols = [
             "merch_vol",
-            "ag_vol",
+            "agb_vol",
             "prod_vol",
             "turnover_merch_input_vol",
             "dist_merch_input_vol",
