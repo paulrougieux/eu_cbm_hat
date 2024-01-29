@@ -151,16 +151,22 @@ class PostProcessor(object):
         """Fluxes columns summed for merchantable to products, natural turnover
         (from merch and OWC) disturbance litter input (from merch and OWC)"""
         df = self.fluxes.copy()
+        #check this df
         column_dict = {
             "merch_prod": ["softwood_merch_to_product", "hardwood_merch_to_product"],
+            # I add this flux to prod
+            "oth_prod": ["softwood_other_to_product", "hardwood_other_to_product"],
         }
         for key, cols in column_dict.items():
             df[key] = df[cols].sum(axis=1)
         selected_columns = list(column_dict.keys())
         selected_columns += ["turnover_merch_litter_input",
-                             "disturbance_merch_litter_input",
                              'turnover_oth_litter_input',
+                             "disturbance_merch_litter_input",
                              'disturbance_oth_litter_input',
+# I added two more flxues
+                             "disturbance_merch_to_air",
+                             "disturbance_oth_to_air"
                              ]
         df_agg = df.groupby(self.index_morf)[selected_columns].agg("sum")
         df_agg = df_agg.reset_index()
