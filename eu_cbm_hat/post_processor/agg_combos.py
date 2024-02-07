@@ -519,12 +519,12 @@ def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], st
     return df_all
 
 
-def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+def soc_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Harvest provided in one country
     Usage:
 
         >>> from eu_cbm_hat.post_processor.agg_combos import dw_one_country
-        >>> dw_zz = dw_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
+        >>> dw_zz = soc_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
 
     """
     index = ["identifier", "timestep"]
@@ -537,8 +537,18 @@ def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], st
         "medium_soil",
         "softwood_stem_snag",
         "hardwood_stem_snag",
+        # new ones
+        "above_ground_very_fast_soil",
+        "below_ground_very_fast_soil",
+        "above_ground_fast_soil",
+        "below_ground_fast_soil",
+        "above_ground_slow_soil",
+        "below_ground_slow_soil",
+        "softwood_branch_snag",
+        "hardwood_branch_snag"       
+        
     ]
-    df = runner.output["pools"][index + cols_to_keep]
+    df = runner.output["pools"][index + cols_to_keep]   
     df["year"] = runner.country.timestep_to_year(df["timestep"])
     # Add classifiers
     df = df.merge(runner.output.classif_df, on=index)
@@ -554,9 +564,16 @@ def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], st
         softwood_merch_tc=("softwood_merch", "sum"),
         hardwood_stem_snag_tc=("hardwood_stem_snag", "sum"),
         hardwood_merch_tc=("hardwood_merch", "sum"),
-        area=("area", "sum"),
         medium_tc=("medium_soil", "sum"),
-    )
+        #new ones
+        above_ground_very_fast_soil_tc= ('above_ground_very_fast_soil' ,sum),
+        below_ground_very_fast_soil_tc= ( 'below_ground_very_fast_soil',sum),
+        above_ground_fast_soil_tc= ('above_ground_fast_soil' ,sum),
+        below_ground_fast_soil_tc= ('below_ground_fast_soil' ,sum),
+        above_ground_slow_soil_tc= ('above_ground_slow_soil' ,sum),
+        below_ground_slow_soil_tc= ('below_ground_slow_soil' ,sum),
+        area=("area", "sum"),
+       )    
     df_agg.reset_index(inplace=True)
     df_agg["softwood_standing_dw_ratio"] = (
         df_agg["softwood_stem_snag_tc"] / df_agg["softwood_merch_tc"]
@@ -583,10 +600,10 @@ def dw_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], st
     return df_agg[cols]
 
 
-def dw_all_countries(combo_name: str, groupby: Union[List[str], str]):
+def soc_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Harvest area by status in wide format for all countries in the given scenario combination."""
     df_all = apply_to_all_countries(
-        dw_one_country, combo_name=combo_name, groupby=groupby
+        soc_one_country, combo_name=combo_name, groupby=groupby
     )
     return df_all
 
