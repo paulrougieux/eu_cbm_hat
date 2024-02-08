@@ -32,7 +32,7 @@ Other examples below detailed how to run only some of the post processing steps.
     >>> combos = ["pikssp2_fel1", "pikssp2_owc_max", "pikssp2_owc_min",
     >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
     >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
-    >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st_test_to_delete.parquet", groupby=["status"])
+    >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st.parquet", groupby=["status"])
 
 - Open the resulting parquet files to check the content of the data frames
 
