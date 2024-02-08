@@ -152,8 +152,6 @@ def save_agg_combo_output(combo_name: str):
     """
     combo_dir = output_agg_dir / combo_name
     combo_dir.mkdir(exist_ok=True)
-    # Harvest expected provided by year
-    # Harvest expected provided by year, forest type and disturbance type
     parameters = [
         {
             "data_func": harvest_exp_prov_one_country,
