@@ -181,8 +181,8 @@ class NAI:
                 "oth_air_vol",
             ]
         ].sum(axis=1)
-        df_agg["nai_agb_ha"] = df_agg["nai_merch"] / df_agg["area"]
-        df_agg["gai_agb_ha"] = df_agg["gai_merch"] / df_agg["area"]
+        df_agg["nai_agb_ha"] = df_agg["nai_agb"] / df_agg["area"]
+        df_agg["gai_agb_ha"] = df_agg["gai_agb"] / df_agg["area"]
 
         #        df_agg["nai_agb_ha"] = df_agg[
         #            [
