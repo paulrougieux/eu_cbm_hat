@@ -1,7 +1,8 @@
 
 # Introduction
 
-This setup is for the Joint Research Centre JRC compute cluster called BDAP.
+This setup is for the Joint Research Centre JRC compute cluster called
+[BDAP](https://jeodpp.jrc.ec.europa.eu/bdap/).
 
 - See also the bdap guide inside obs3df_documents/tools/bdap/bdap_guide.md
 
