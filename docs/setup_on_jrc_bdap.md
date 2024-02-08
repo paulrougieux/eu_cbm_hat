@@ -43,9 +43,10 @@ ln -s /eos/jeodpp/home/users/$USER/eu_cbm eu_cbm
 
 # Setup conda and environment variables
 
-- Follow first setup instructions above to steup the conda environment for jeo desk
-  /home/<your username>/.profile. A file editor will open. Add this line of code at the
-  end of the file and then save it (more details above).
+-  Edit your `.profile` inside your user directory by entering the following in the file
+   browser's address bar:  `/home/<your username>/.profile`. A file editor will open.
+   Add this line of code at the end of the file and then save it (more details above).
+   This will load the conda environment for jeo desk.
 
     source /storage/SUSBIOM-TRADE/env_var/.env
 
@@ -62,8 +63,24 @@ conda config --append envs_dirs /storage/SUSBIOM-TRADE/conda/
 /storage/SUSBIOM-TRADE/conda/susbiom_trade_env/bin/python -m ipykernel install --user --name=susbiom_trade_kernel
 ```
 
-- Create AIDB symlinks. Press the big blue plus button to start a new launcher, then
-  start a console with the `susbiom_trade_kernel`. In that console enter:
+- **Optional developer setup** `eu_cbm_hat` was installed by pip install inside the
+  conda environment. But in case we choose to overwrite that version, we can clone the
+  `eu_cbm_hat` repository as well and set the `PYTHONPATH` environment variable to load
+  the development version of `eu_cbm_hat` first.
+
+```
+cd $HOME/eu_cbm
+git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
+# Edit .profile with a text editor and enter your actual user name
+vim .profile
+export PYTHONPATH='/eos/jeodpp/home/users/USER_NAME/eu_cbm/eu_cbm_hat/':$PYTHONPATH
+```
+
+# Create AIDB symlinks
+
+
+- To create AIDB symlinks. Press the big blue plus button in Jupyter lab to start a new
+  launcher, then start a console with the `susbiom_trade_kernel`. In that console enter:
 
 ```
 from eu_cbm_hat.core.continent import continent
@@ -75,19 +92,6 @@ for country in continent:
   is therefore not necessary to define the environment variables `EU_CBM_DATA` and
   `EU_CBM_AIDB`.
 
-
-- **Optional developer setup** `eu_cbm_hat` was installed by pip install inside the
-  conda environment. But in case we choose to overwrite that version, we can clone it as
-  well and set the PYTHONPATH environment variable to load the development version of
-  `eu_cbm_hat` first.
-
-```
-cd $HOME/eu_cbm
-git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
-# Edit .profile with a text editor and enter your actual user name
-vim .profile
-export PYTHONPATH='/eos/jeodpp/home/users/USER_NAME/eu_cbm/eu_cbm_hat/':$PYTHONPATH
-```
 
 # Run the model
 
