@@ -142,10 +142,14 @@ def save_agg_combo_output(combo_name: str):
     """Aggregate scenario combination output and store them in parquet files
     inside the `eu_cbm_data/output_agg` directory.
 
-    Example use:
+    Example save all post-processing data frames to `eu_cbm_data/output_agg`
+    for one combo:
 
         >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
         >>> save_agg_combo_output("reference")
+
+    Save for many scenario combinations in a loop:
+
         >>> for x in ["reference", "pikssp2", "pikfair"]:
         >>>     save_agg_combo_output(x)
 
