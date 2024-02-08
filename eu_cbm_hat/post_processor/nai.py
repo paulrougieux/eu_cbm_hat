@@ -13,14 +13,21 @@ class NAI:
     """Compute the net annual increment$
 
 
-     Usage:
+   Usage:
 
-            NAI per ha by status at country level:
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.post_processor.nai.pools_fluxes_morf
+        >>> # NAI per ha by status and forest type at country level
+        >>> runner.post_processor.nai.df_agg(["status", "forest_type"])
+        >>> # NAI per ha by status at country level
+        >>> runner.post_processor.nai.df_agg(["status"])
 
-        >>> df = runner.post_processor.nai_merch.df_agg_sf
+        >>> df = runner.post_processor.nai.df_agg(["status"])
         >>> df["nai_merch"] = df["nai_merch_ha"] * df["area"]
         >>> df_st = df.groupby(["year", "status"])[["area", "nai_merch"]].agg("sum").reset_index()
         >>> df_st["nai_merch_ha"] = df_st["nai_merch"] / df_st["area"]
+        >>> # Plot NAI per ha by status
         >>> df_st = df_st.pivot(columns="status", index="year", values="nai_merch_ha")
         >>> from matplotlib import pyplot as plt
         >>> df_st.plot(ylabel="nai_merch m3 / ha")
@@ -28,10 +35,6 @@ class NAI:
         >>> # Plot without NF
         >>> df_st[['AR', 'ForAWS', 'ForNAWS']].plot(ylabel="nai_merch m3 / ha")
         >>> plt.show()
-
-     Plot NAI per ha by status
-
-         >>> df_st
 
      Roberto's NAI computations
      in ~/downloads/qa_qc_stock_dynamic_rp_AT.md
