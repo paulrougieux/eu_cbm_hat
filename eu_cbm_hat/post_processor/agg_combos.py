@@ -7,7 +7,7 @@
     >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
     >>> save_agg_combo_output("reference")
 
-Other examples below detailed how to run only some of the post processing steps.
+Other examples below explain how to run only some of the post processing steps.
 
 - Save a specific data frame for all all countries to a parquet file
 
@@ -41,7 +41,7 @@ Other examples below detailed how to run only some of the post processing steps.
     >>> nai_st = read_agg_combo_output(combos, "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = read_agg_combo_output(combos, "pools_length.parquet")
 
-- Note: this script cannot be made a method of the
+- *Implementation note*: this script cannot be made a method of the
   combos/base_combo.py/Combination class because of circular references such as
   post_processor/harvest.py importing "continent" and "combined".
 
@@ -58,6 +58,7 @@ Other examples below detailed how to run only some of the post processing steps.
 
 from typing import Union, List
 import pandas
+import warnings
 from tqdm import tqdm
 from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
@@ -99,13 +100,20 @@ def apply_to_all_countries(data_func, combo_name, **kwargs):
 def apply_to_all_countries_and_save(args):
     """Get data for all countries and save it to a parquet file
 
-    This function is to be used with p_umap() in apply_to_all_combos().
+    This function is to be used with
+        - p_umap() in apply_to_all_combos().
+        - and in save_agg_combo_output
     """
-    data_func, combo_name, file_path , groupby = args
+    data_func, combo_name, file_path, groupby = args
+    # Have to check if defined or not because combo_name is passed in **kwargs
     if groupby is None:
+        print(f"Processing {combo_name} {data_func}.")
         df = apply_to_all_countries(data_func=data_func, combo_name=combo_name)
     else:
-        df = apply_to_all_countries(data_func=data_func, combo_name=combo_name, groupby=groupby)
+        print(f"Processing {combo_name} {data_func} grouped by {groupby}.")
+        df = apply_to_all_countries(
+            data_func=data_func, combo_name=combo_name, groupby=groupby
+        )
     df.to_parquet(file_path)
 
 
@@ -117,10 +125,15 @@ def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
     eu_cbm_data/output_agg directory. These files can then be read and
     concatenated later with the read_agg_combo_output() function.
     """
-    items = [(data_func,
-              k,
-              output_agg_dir / k / file_name,  # file path
-              groupby) for k in combo_names]
+    items = [
+        (
+            data_func,
+            combo_name,
+            output_agg_dir / combo_name / file_name,  # file path
+            groupby,
+        )
+        for combo_name in combo_names
+    ]
     result = p_umap(apply_to_all_countries_and_save, items, num_cpus=4)
     return result
 
@@ -140,6 +153,71 @@ def save_agg_combo_output(combo_name: str):
     combo_dir = output_agg_dir / combo_name
     combo_dir.mkdir(exist_ok=True)
     # Harvest expected provided by year
+    # Harvest expected provided by year, forest type and disturbance type
+    parameters = [
+        {
+            "data_func": harvest_exp_prov_one_country,
+            "groupby": ["year"],
+            "file_name": "hexprov_by_year.parquet",
+        },
+        {
+            "data_func": harvest_exp_prov_one_country,
+            "groupby": ["year", "forest_type", "disturbance_type"],
+            "file_name": "hexprov_by_year_ft_dist.parquet",
+        },
+        {
+            "data_func": sink_one_country,
+            "groupby": "year",
+            "file_name": "sink_by_year.parquet",
+        },
+        {
+            "data_func": sink_one_country,
+            "groupby": ["year", "status"],
+            "file_name": "sink_by_year_st.parquet",
+        },
+        {
+            "data_func": area_by_status_one_country,
+            "groupby": None,
+            "file_name": "area_by_year_status.parquet",
+        },
+        {
+            "data_func": harvest_area_by_dist_one_country,
+            "groupby": None,
+            "file_name": "harvest_area_by_year_dist.parquet",
+        },
+        {
+            "data_func": nai_one_country,
+            "groupby": ["status"],
+            "file_name": "nai_by_year_st.parquet",
+        },
+        {
+            "data_func": nai_one_country,
+            "groupby": ["status", "forest_type"],
+            "file_name": "nai_by_year_st_ft.parquet",
+        },
+    ]
+    # List of parameters to be fed p_umap
+    items = [
+        (
+            param["data_func"],
+            combo_name,
+            output_agg_dir / combo_name / param["file_name"],  # file path
+            param["groupby"],
+        )
+        for param in parameters
+    ]
+    result = p_umap(apply_to_all_countries_and_save, items, num_cpus=4)
+    return result
+
+
+def save_agg_combo_output_legacy(combo_name: str):
+    """Aggregate scenario combination output and store them in parquet files
+    inside the `eu_cbm_data/output_agg` directory.
+    """
+    warnings.warn("This is the legacy version, use save_agg_combo_output instead")
+    combo_dir = output_agg_dir / combo_name
+    combo_dir.mkdir(exist_ok=True)
+    # Harvest expected provided by year
     print(f"Processing {combo_name} harvest expected provided.")
     hexprov_by_year = harvest_exp_prov_all_countries(combo_name, "year")
     hexprov_by_year.to_parquet(combo_dir / "hexprov_by_year.parquet")
@@ -150,11 +228,15 @@ def save_agg_combo_output(combo_name: str):
     hexprov_by_year_ft_dist.to_parquet(combo_dir / "hexprov_by_year_ft_dist.parquet")
     # Sink by year
     print(f"Processing {combo_name} sink.")
-    sink = sink_all_countries(combo_name, "year")
+    sink = apply_to_all_countries(
+        sink_one_country, combo_name=combo_name, groupby="year"
+    )
     sink.to_parquet(combo_dir / "sink_by_year.parquet")
     # Sink by year and status
-    sink = sink_all_countries(combo_name, ["year", "status"])
-    sink.to_parquet(combo_dir / "sink_by_year_st.parquet")
+    sink_ys = apply_to_all_countries(
+        sink_one_country, combo_name=combo_name, groupby=["year", "status"]
+    )
+    sink_ys.to_parquet(combo_dir / "sink_by_year_st.parquet")
     print(f"Processing {combo_name} area.")
     # Area by year and status
     area_status = apply_to_all_countries(
@@ -250,25 +332,20 @@ def sink_one_country(
         >>> index = ["year", "forest_type"]
         >>> lu_sink_by_y_ft = sink_one_country("reference", "LU", groupby=index, pools_dict=pools_dict)
 
-    """
-    if "year" not in groupby:
-        raise ValueError("Year has to be in the group by variables")
-    if isinstance(groupby, str):
-        groupby = [groupby]
-    runner = continent.combos[combo_name].runners[iso2_code][-1]
-    df_agg = runner.post_processor.sink.df_agg(groupby=groupby)
-    df_agg = place_combo_name_and_country_first(df_agg, runner)
-    return df_agg
-
-
-def sink_all_countries(combo_name, groupby):
-    """Sum flux pools and compute the sink
+    Sum flux pools and compute the sink
 
     Only return data for countries in which the model run was successful in
     storing the output data. Print an error message if the file is missing, but
     do not raise an error.
 
-        >>> from eu_cbm_hat.post_processor.sink_all_countries import sink_all_countries
+    Define a sink_all_countries function for the following examples
+
+        >>> from eu_cbm_hat.post_processor.sink_all_countries import sink_one_country
+        >>> def sink_all_countries(combo_name, groupby):
+        >>>     df_all = apply_to_all_countries(
+        >>>         sink_one_country, combo_name=combo_name, groupby=groupby
+        >>>     )
+        >>>     return df_all
         >>> sink = sink_all_countries("reference", "year")
 
     The purpose of this script is to compute the sink for all countries
@@ -285,7 +362,6 @@ def sink_all_countries(combo_name, groupby):
 
     Get the biomass sink for 2 scenarios:
 
-        >>> from eu_cbm_hat.post_processor.sink import sink_all_countries
         >>> import pandas
         >>> # Replace these by the relevant scenario combinations
         >>> sinkfair = sink_all_countries("pikfair", "year")
@@ -342,10 +418,14 @@ def sink_all_countries(combo_name, groupby):
         >>>     df.drop(columns=columns_to_sum, inplace=True)
 
     """
-    df_all = apply_to_all_countries(
-        sink_one_country, combo_name=combo_name, groupby=groupby
-    )
-    return df_all
+    if "year" not in groupby:
+        raise ValueError("Year has to be in the group by variables")
+    if isinstance(groupby, str):
+        groupby = [groupby]
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df_agg = runner.post_processor.sink.df_agg(groupby=groupby)
+    df_agg = place_combo_name_and_country_first(df_agg, runner)
+    return df_agg
 
 
 def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
@@ -545,10 +625,9 @@ def soc_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], s
         "above_ground_slow_soil",
         "below_ground_slow_soil",
         "softwood_branch_snag",
-        "hardwood_branch_snag"       
-        
+        "hardwood_branch_snag",
     ]
-    df = runner.output["pools"][index + cols_to_keep]   
+    df = runner.output["pools"][index + cols_to_keep]
     df["year"] = runner.country.timestep_to_year(df["timestep"])
     # Add classifiers
     df = df.merge(runner.output.classif_df, on=index)
@@ -565,15 +644,15 @@ def soc_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], s
         hardwood_stem_snag_tc=("hardwood_stem_snag", "sum"),
         hardwood_merch_tc=("hardwood_merch", "sum"),
         medium_tc=("medium_soil", "sum"),
-        #new ones
-        above_ground_very_fast_soil_tc= ('above_ground_very_fast_soil' ,sum),
-        below_ground_very_fast_soil_tc= ( 'below_ground_very_fast_soil',sum),
-        above_ground_fast_soil_tc= ('above_ground_fast_soil' ,sum),
-        below_ground_fast_soil_tc= ('below_ground_fast_soil' ,sum),
-        above_ground_slow_soil_tc= ('above_ground_slow_soil' ,sum),
-        below_ground_slow_soil_tc= ('below_ground_slow_soil' ,sum),
+        # new ones
+        above_ground_very_fast_soil_tc=("above_ground_very_fast_soil", sum),
+        below_ground_very_fast_soil_tc=("below_ground_very_fast_soil", sum),
+        above_ground_fast_soil_tc=("above_ground_fast_soil", sum),
+        below_ground_fast_soil_tc=("below_ground_fast_soil", sum),
+        above_ground_slow_soil_tc=("above_ground_slow_soil", sum),
+        below_ground_slow_soil_tc=("below_ground_slow_soil", sum),
         area=("area", "sum"),
-       )    
+    )
     df_agg.reset_index(inplace=True)
     df_agg["softwood_standing_dw_ratio"] = (
         df_agg["softwood_stem_snag_tc"] / df_agg["softwood_merch_tc"]
