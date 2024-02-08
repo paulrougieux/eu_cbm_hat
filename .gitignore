@@ -23,4 +23,5 @@ dist/*
 
 # Generated documentation
 docs/*
+!docs/*.md
 public/*
