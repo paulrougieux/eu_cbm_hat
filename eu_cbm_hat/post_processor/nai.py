@@ -164,9 +164,11 @@ class NAI:
         if groupby != ["status"]:
             warnings.warn("This method was written for a group by status.")
         df = self.pools_fluxes_morf
-        cols = [
+        pools_cols = [
             "merch_stock_vol",
-            "agb_stock_vol",
+            "agb_stock_vol"
+        ]
+        fluxes_cols = [
             "merch_prod_vol",
             "other_prod_vol",
             "turnover_merch_input_vol",
@@ -178,28 +180,21 @@ class NAI:
         ]
 
         # Aggregate the sum of selected columns
+        cols = pools_cols + fluxes_cols
         df_agg = (
             df.groupby(["year"] + groupby)[["area"] + cols].agg("sum").reset_index()
         )
 
         # Add NF movements to products back to ForAWS
         selector = df_agg["status"] == "NF"
-        cols_nf_1 = [
-            "merch_prod_vol",
-            "other_prod_vol",
-            "dist_merch_input_vol",
-            "dist_oth_input_vol",
-            "merch_air_vol",
-            "oth_air_vol",
-        ]
-        df_agg_nf = df_agg.loc[selector, ["year", "status"] + cols_nf_1].copy()
+        df_agg_nf = df_agg.loc[selector, ["year", "status"] + fluxes_cols].copy()
         df_agg_nf["status"] = "ForAWS"
         df_agg_nf.columns = df_agg_nf.columns.str.replace("_vol", "_vol_nf")
         df_agg = df_agg.merge(df_agg_nf, on=["year"] + groupby, how="left")
-        cols_nf_2 = [x + "_nf" for x in cols_nf_1]
-        df_agg[cols_nf_2] = df_agg[cols_nf_2].fillna(0)
-        # Add the nf columns to the original columns values in ForAWS
-        for col1, col2 in zip(cols_nf_1, cols_nf_2):
+        fluxes_cols_nf = [x + "_nf" for x in fluxes_cols]
+        df_agg[fluxes_cols_nf] = df_agg[fluxes_cols_nf].fillna(0)
+        # Add the nf fluxes to the fluxes in ForAWS
+        for col1, col2 in zip(fluxes_cols, fluxes_cols_nf):
             df_agg[col1] += df_agg[col2]
 
         # Compute NAI and GAI
