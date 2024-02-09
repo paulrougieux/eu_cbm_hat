@@ -2,10 +2,60 @@
 The purpose of this script is to compute the Net Annual Increment for one country
 """
 
-from typing import Union, List
 from functools import cached_property
+from typing import Union, List
+import warnings
+import pandas
+
 import numpy as np
+
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
+
+
+def compute_nai_gai(df:pandas.DataFrame, groupby: Union[List[str], str]):
+    """Compute the Net Annual Increment and Gross Annual Increment
+
+    Based on stock change and movements to the product pools as well as
+    turnover and mouvements to air.
+
+    """
+    # Compute the difference in stock
+    df["net_merch"] = df.groupby(groupby)["merch_stock_vol"].diff()
+    df["net_agb"] = df.groupby(groupby)["agb_stock_vol"].diff()
+
+    # Compute NAI for the merchantable pool
+    df["nai_merch"] = df[
+        ["net_merch", "merch_prod_vol", "dist_merch_input_vol", "merch_air_vol"]
+    ].sum(axis=1)
+    df["gai_merch"] = df["nai_merch"] + df[
+        ["turnover_merch_input_vol", "oth_air_vol"]
+    ].sum(axis=1)
+
+    # Compute NAI for the merchantable pool and OWC pool together
+    df["nai_agb"] = df[
+        [
+            "net_agb",
+            "merch_prod_vol",
+            "other_prod_vol",
+            "dist_merch_input_vol",
+            "dist_oth_input_vol",
+        ]
+    ].sum(axis=1)
+    df["gai_agb"] = df["nai_agb"] + df[
+        [
+            "turnover_merch_input_vol",
+            "turnover_oth_input_vol",
+            "merch_air_vol",
+            "oth_air_vol",
+        ]
+    ].sum(axis=1)
+
+    # Compute per hectare values
+    df["nai_merch_ha"] = df["nai_merch"] / df["area"]
+    df["gai_merch_ha"] = df["gai_merch"] / df["area"]
+    df["nai_agb_ha"] = df["nai_agb"] / df["area"]
+    df["gai_agb_ha"] = df["gai_agb"] / df["area"]
+    return df
 
 
 class NAI:
@@ -111,92 +161,39 @@ class NAI:
         """
         if isinstance(groupby, str):
             groupby = [groupby]
+        if groupby != ["status"]:
+            warnings.warn("This method was written for a group by status.")
         df = self.pools_fluxes_morf
         cols = [
             "merch_stock_vol",
             "agb_stock_vol",
-            # I renamed fluxes to allow adding the two oth flux
-            # "prod_vol" is converted to:
             "merch_prod_vol",
-            # the new pool addedd
             "other_prod_vol",
-            # I reorderd
             "turnover_merch_input_vol",
             "turnover_oth_input_vol",
             "dist_merch_input_vol",
             "dist_oth_input_vol",
-            # I addedd these two new transfers addedd
             "merch_air_vol",
             "oth_air_vol",
         ]
+
+        # Aggregate the sum of selected columns
         df_agg = (
             df.groupby(["year"] + groupby)[["area"] + cols].agg("sum").reset_index()
         )
-        df_agg["net_merch"] = df_agg.groupby(groupby)["merch_stock_vol"].diff()
-        df_agg["net_agb"] = df_agg.groupby(groupby)["agb_stock_vol"].diff()
 
-        #        for col in cols + ["net_merch", "net_agb"]:
-        # here we should not average but simply sum the stock chnages
-        #            df_agg[col + "_ha"] = df_agg[col] / df_agg["area"]
-        # Test, compute merch per ha in a different way
-        # Note that net_merch_ha and net_merch_ha_2 are different, but not by much
-        # TODO move this outside the function, to the example.
-        #        df_agg["net_merch_ha_2"] = df_agg.groupby(groupby)["merch_vol_ha"].diff()
+        # Add NF movements to products back to ForAWS
+        selector = df_agg["status"] == "NF"
+        df_agg_nf = df_agg.loc[selector, ["year", "status", "merch_prod_vol", "other_prod_vol"]].copy()
+        df_agg_nf["status"] = "ForAWS"
+        df_agg_nf.columns = df_agg_nf.columns.str.replace("prod_vol", "prod_vol_nf")
+        df_agg = df_agg.merge(df_agg_nf, on=["year"] + groupby, how="left")
+        prod_cols_nf = ["merch_prod_vol_nf", "other_prod_vol_nf"]
+        df_agg[prod_cols_nf] = df_agg[prod_cols_nf].fillna(0)
+        df_agg["merch_prod_vol"] += df_agg["merch_prod_vol_nf"]
+        df_agg["other_prod_vol"] += df_agg["other_prod_vol_nf"]
 
-        # Compute NAI for the merchantable pool only
-        #        df_agg["nai_merch_ha"] = df_agg[
-        #            ["net_merch_ha", "prod_vol_ha", "dist_merch_input_vol_ha"]
-        #        ].sum(axis=1)
-        #        df_agg["gai_merch_ha"] = (
-        #            df_agg["nai_merch_ha"] + df_agg["turnover_merch_input_vol_ha"]
-        #        )
+        # Compute NAI and GAI
+        df_out = compute_nai_gai(df_agg, groupby=groupby)
 
-        # NEW, based on stock change only
-
-        # Compute NAI for the merchantable pool only
-        
-        # here I addedd "merch_air_vol"
-        df_agg["nai_merch"] = df_agg[
-            ["net_merch", "merch_prod_vol", "dist_merch_input_vol", "merch_air_vol"]
-        ].sum(axis=1)
-        
-        #  here I add "oth_air_vol"
-        df_agg["gai_merch"] = df_agg["nai_merch"] + df_agg[
-            ["turnover_merch_input_vol", "oth_air_vol"]
-        ].sum(axis=1)
-        df_agg["nai_merch_ha"] = df_agg["nai_merch"] / df_agg["area"]
-        df_agg["gai_merch_ha"] = df_agg["gai_merch"] / df_agg["area"]
-
-        # Compute NAI for merchantable and OWC together
-        df_agg["nai_agb"] = df_agg[
-            [
-                "net_agb",
-                "merch_prod_vol",
-                "other_prod_vol",
-                "dist_merch_input_vol",
-                "dist_oth_input_vol",
-            ]
-        ].sum(axis=1)
-        df_agg["gai_agb"] = df_agg["nai_merch"] + df_agg[
-            [
-                "turnover_merch_input_vol",
-                "turnover_oth_input_vol",
-                "merch_air_vol",
-                "oth_air_vol",
-            ]
-        ].sum(axis=1)
-        df_agg["nai_agb_ha"] = df_agg["nai_agb"] / df_agg["area"]
-        df_agg["gai_agb_ha"] = df_agg["gai_agb"] / df_agg["area"]
-
-        #        df_agg["nai_agb_ha"] = df_agg[
-        #            [
-        #                "net_agb_ha",
-        #                "prod_vol_ha",
-        #                "dist_merch_input_vol_ha",
-        #                "dist_oth_input_vol_ha",
-        #            ]
-        #        ].sum(axis=1)
-        #        df_agg["gai_agb_ha"] = df_agg[
-        #            ["nai_agb_ha", "turnover_merch_input_vol_ha", "turnover_oth_input_vol_ha"]
-        #        ].sum(axis=1)
-        return df_agg
+        return df_out
