@@ -8,7 +8,6 @@ import numpy as np
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 
 
-# +
 class NAI:
     """Compute the net annual increment$
 
@@ -62,6 +61,7 @@ class NAI:
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
         # Convert tons of carbon to volume under bark
+        
         df["merch_stock_vol"] = df["merch"] / df["wood_density"]
         df["agb_stock_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
 
@@ -154,11 +154,15 @@ class NAI:
         # NEW, based on stock change only
 
         # Compute NAI for the merchantable pool only
+        
+        # here I addedd "merch_air_vol"
         df_agg["nai_merch"] = df_agg[
-            ["net_merch", "merch_prod_vol", "dist_merch_input_vol"]
+            ["net_merch", "merch_prod_vol", "dist_merch_input_vol", "merch_air_vol"]
         ].sum(axis=1)
+        
+        #  here I add "oth_air_vol"
         df_agg["gai_merch"] = df_agg["nai_merch"] + df_agg[
-            ["turnover_merch_input_vol", "merch_air_vol"]
+            ["turnover_merch_input_vol", "oth_air_vol"]
         ].sum(axis=1)
         df_agg["nai_merch_ha"] = df_agg["nai_merch"] / df_agg["area"]
         df_agg["gai_merch_ha"] = df_agg["gai_merch"] / df_agg["area"]
