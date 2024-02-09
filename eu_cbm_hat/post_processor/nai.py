@@ -12,7 +12,7 @@ import numpy as np
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 
 
-def compute_nai_gai(df:pandas.DataFrame, groupby: Union[List[str], str]):
+def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
     """Compute the Net Annual Increment and Gross Annual Increment
 
     Based on stock change and movements to the product pools as well as
@@ -20,17 +20,18 @@ def compute_nai_gai(df:pandas.DataFrame, groupby: Union[List[str], str]):
 
     """
     # Compute the difference in stock for the standing biomass
-    df["net_merch"] = df.groupby(groupby)["merch_stock_vol"].diff()
-    df["net_agb"] = df.groupby(groupby)["agb_stock_vol"].diff()
+    # Use Observed = True to avoid the warning when using categorical variables
+    df["net_merch"] = df.groupby(groupby, observed=True)["merch_stock_vol"].diff()
+    df["net_agb"] = df.groupby(groupby, observed=True)["agb_stock_vol"].diff()
 
     # Compute NAI for the merchantable pool
-    df["nai_merch"] = df[
-        ["net_merch", "merch_prod_vol", "dist_merch_input_vol"]
-    ].sum(axis=1)
+    df["nai_merch"] = df[["net_merch", "merch_prod_vol", "dist_merch_input_vol"]].sum(
+        axis=1
+    )
     df["gai_merch"] = df["nai_merch"] + df[
         ["turnover_merch_input_vol", "merch_air_vol"]
     ].sum(axis=1)
-    
+
     # Compute NAI for the merchantable pool and OWC pool together
     df["nai_agb"] = df[
         [
@@ -49,9 +50,6 @@ def compute_nai_gai(df:pandas.DataFrame, groupby: Union[List[str], str]):
             "oth_air_vol",
         ]
     ].sum(axis=1)
-    
-    df.to_csv("C:\CBM/nai_stu.csv")
-    
     # Compute per hectare values
     df["nai_merch_ha"] = df["nai_merch"] / df["area"]
     df["gai_merch_ha"] = df["gai_merch"] / df["area"]
@@ -113,7 +111,7 @@ class NAI:
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
         # Convert tons of carbon to volume under bark
-        
+
         df["merch_stock_vol"] = df["merch"] / df["wood_density"]
         df["agb_stock_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
 
@@ -186,24 +184,24 @@ class NAI:
 
         # Add NF movements to products back to ForAWS
         selector = df_agg["status"] == "NF"
-        df_agg_nf = df_agg.loc[selector, ["year", "status", "merch_prod_vol", "other_prod_vol", 
-                                          "dist_merch_input_vol","dist_oth_input_vol", "merch_air_vol", 
-                                          "oth_air_vol"]].copy()
+        cols_nf_1 = [
+            "merch_prod_vol",
+            "other_prod_vol",
+            "dist_merch_input_vol",
+            "dist_oth_input_vol",
+            "merch_air_vol",
+            "oth_air_vol",
+        ]
+        df_agg_nf = df_agg.loc[selector, ["year", "status"] + cols_nf_1].copy()
         df_agg_nf["status"] = "ForAWS"
-        df_agg_nf.columns = df_agg_nf.columns.str.replace("prod_vol", "prod_vol_nf")
-        df_agg_nf.columns = df_agg_nf.columns.str.replace("input_vol", "input_vol_nf")
-        df_agg_nf.columns = df_agg_nf.columns.str.replace("air_vol", "air_vol_nf")
+        df_agg_nf.columns = df_agg_nf.columns.str.replace("_vol", "_vol_nf")
         df_agg = df_agg.merge(df_agg_nf, on=["year"] + groupby, how="left")
-        prod_cols_nf = ["merch_prod_vol_nf", "other_prod_vol_nf", "dist_merch_input_vol_nf","dist_oth_input_vol_nf",
-                        "merch_air_vol_nf", "oth_air_vol_nf"]
-        df_agg[prod_cols_nf] = df_agg[prod_cols_nf].fillna(0)
-        df_agg["merch_prod_vol"] += df_agg["merch_prod_vol_nf"]
-        df_agg["other_prod_vol"] += df_agg["other_prod_vol_nf"]
-        df_agg["dist_merch_input_vol"] += df_agg["dist_merch_input_vol_nf"]
-        df_agg["dist_oth_input_vol"] += df_agg["dist_oth_input_vol_nf"]
-        df_agg["merch_air_vol"] += df_agg["merch_air_vol_nf"]
-        df_agg["oth_air_vol"] += df_agg["oth_air_vol_nf"]       
-        
+        cols_nf_2 = [x + "_nf" for x in cols_nf_1]
+        df_agg[cols_nf_2] = df_agg[cols_nf_2].fillna(0)
+        # Add the nf columns to the original columns values in ForAWS
+        for col1, col2 in zip(cols_nf_1, cols_nf_2):
+            df_agg[col1] += df_agg[col2]
+
         # Compute NAI and GAI
         df_out = compute_nai_gai(df_agg, groupby=groupby)
         return df_out
