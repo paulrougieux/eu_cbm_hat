@@ -125,22 +125,23 @@ class NAI:
         df["merch_air_vol"] = ton_carbon_to_m3_ob(df, "disturbance_merch_to_air")
         df["oth_air_vol"] = ton_carbon_to_m3_ob(df, "disturbance_oth_to_air")
 
-        df["turnover_merch_input_vol"] = (df["turnover_merch_litter_input"]) / df[
-            "wood_density"
-        ]
-        df["turnover_oth_input_vol"] = (df["turnover_oth_litter_input"]) / df[
-            "wood_density"
-        ]
+        df["turnover_merch_input_vol"] = ton_carbon_to_m3_ob(
+            df, "turnover_merch_litter_input"
+        )
+        df["turnover_oth_input_vol"] = ton_carbon_to_m3_ob(
+            df, "turnover_oth_litter_input"
+        )
+
         # these filters for "== 0" are not needed as such transfers are zero anyway
         df["dist_merch_input_vol"] = np.where(
             df["disturbance_type"] == 0,
             0,
-            df["disturbance_merch_litter_input"] / df["wood_density"],
+            ton_carbon_to_m3_ob(df, "disturbance_merch_litter_input"),
         )
         df["dist_oth_input_vol"] = np.where(
             df["disturbance_type"] == 0,
             0,
-            df["disturbance_oth_litter_input"] / df["wood_density"],
+            ton_carbon_to_m3_ob(df, "disturbance_oth_litter_input"),
         )
         return df
 
