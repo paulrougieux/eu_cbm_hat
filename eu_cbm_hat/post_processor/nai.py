@@ -66,7 +66,7 @@ class NAI:
 
          >>> from eu_cbm_hat.core.continent import continent
          >>> runner = continent.combos['reference'].runners['LU'][-1]
-         >>> runner.post_processor.nai.pools_fluxes_morf
+         >>> runner.post_processor.nai.pools_fluxes_vol
          >>> # NAI per ha by status and forest type at country level
          >>> runner.post_processor.nai.df_agg(["status", "forest_type"])
          >>> # NAI per ha by status at country level
@@ -106,7 +106,7 @@ class NAI:
         self.combo_name = self.runner.combo.short_name
 
     @cached_property
-    def pools_fluxes_morf(self):
+    def pools_fluxes_vol(self):
         """Merchantable pools and fluxes aggregated at the classifiers level"""
         df = self.parent.pools_fluxes_morf
         # Add wood density information by forest type
@@ -164,7 +164,7 @@ class NAI:
             groupby = [groupby]
         if groupby != ["status"]:
             warnings.warn("This method was written for a group by status.")
-        df = self.pools_fluxes_morf
+        df = self.pools_fluxes_vol
         pools_cols = ["merch_stock_vol", "agb_stock_vol"]
         fluxes_cols = [
             "merch_prod_vol",
