@@ -9,7 +9,8 @@ import pandas
 
 import numpy as np
 
-from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
+from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
+from eu_cbm_hat import CARBON_FRACTION_OF_BIOMASS
 
 
 def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
@@ -110,20 +111,19 @@ class NAI:
         df = self.parent.pools_fluxes_morf
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
-        # Convert tons of carbon to volume under bark
 
-        df["merch_stock_vol"] = df["merch"] / df["wood_density"]
-        df["agb_stock_vol"] = (df["merch"] + df["other"]) / df["wood_density"]
+        # Convert tons of carbon to volume over bark
+        df["merch_stock_vol"] = ton_carbon_to_m3_ob(df, "merch")
+        df["agb"] = df["merch"] + df["other"]
+        df["agb_stock_vol"] = ton_carbon_to_m3_ob(df, "agb")
 
-        # I raname this pool from "prod_vol" to "merch_prod_vol", so we can get the two fluxes
-        df["merch_prod_vol"] = ton_carbon_to_m3_ub(df, "merch_prod")
+        # Fluxes to products
+        df["merch_prod_vol"] = ton_carbon_to_m3_ob(df, "merch_prod")
+        df["other_prod_vol"] = ton_carbon_to_m3_ob(df, "oth_prod")
 
-        # I add new flux
-        df["other_prod_vol"] = ton_carbon_to_m3_ub(df, "oth_prod")
-
-        # I add these two fluxes which represent the shares of the biomass lost to the air
-        df["merch_air_vol"] = ton_carbon_to_m3_ub(df, "disturbance_merch_to_air")
-        df["oth_air_vol"] = ton_carbon_to_m3_ub(df, "disturbance_oth_to_air")
+        # Fluxes which represent the biomass lost to the air
+        df["merch_air_vol"] = ton_carbon_to_m3_ob(df, "disturbance_merch_to_air")
+        df["oth_air_vol"] = ton_carbon_to_m3_ob(df, "disturbance_oth_to_air")
 
         df["turnover_merch_input_vol"] = (df["turnover_merch_litter_input"]) / df[
             "wood_density"
@@ -164,10 +164,7 @@ class NAI:
         if groupby != ["status"]:
             warnings.warn("This method was written for a group by status.")
         df = self.pools_fluxes_morf
-        pools_cols = [
-            "merch_stock_vol",
-            "agb_stock_vol"
-        ]
+        pools_cols = ["merch_stock_vol", "agb_stock_vol"]
         fluxes_cols = [
             "merch_prod_vol",
             "other_prod_vol",
