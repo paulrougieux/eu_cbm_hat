@@ -20,6 +20,23 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
     turnover and mouvements to air.
 
     """
+    if "year" in groupby:
+        msg = " This functions computes the difference in stock across groups "
+        msg += "through time so 'year' should not be in the group by variables:\n"
+        msg += f"{groupby}"
+        raise ValueError(msg)
+
+    # Order by groupby variables, then years
+    df.sort_values(groupby + ["year"], inplace=True)
+    # Check that there are no duplications over the groupby variables plus year
+    selector = df[["year"] + groupby].duplicated(keep=False)
+    if any(selector):
+        msg = "The following rows have duplications along the groupby variables.\n"
+        msg += f"{df.loc[selector, ['year'] + groupby ]}"
+        msg += "\nPlease aggregate first along the groupby variables and year:\n"
+        msg += f"{['year'] + groupby }\n Then run this function.\n"
+        raise ValueError(msg)
+
     # Compute the difference in stock for the standing biomass
     # Use Observed = True to avoid the warning when using categorical variables
     df["net_merch"] = df.groupby(groupby, observed=True)["merch_stock_vol"].diff()
