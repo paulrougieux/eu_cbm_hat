@@ -10,7 +10,19 @@ import pandas
 import numpy as np
 
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
-from eu_cbm_hat import CARBON_FRACTION_OF_BIOMASS
+
+POOLS_COLS = ["merch_stock_vol", "agb_stock_vol"]
+FLUXES_COLS = [
+    "merch_prod_vol",
+    "other_prod_vol",
+    "turnover_merch_input_vol",
+    "turnover_oth_input_vol",
+    "dist_merch_input_vol",
+    "dist_oth_input_vol",
+    "merch_air_vol",
+    "oth_air_vol",
+]
+NAI_AGG_COLS = ["area"] + POOLS_COLS + FLUXES_COLS
 
 
 def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
@@ -18,6 +30,15 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
 
     Based on stock change and movements to the product pools as well as
     turnover and mouvements to air.
+
+    Before using this function, make sure you aggregate along the groupby
+    variables and year first. Then the year should not be present on the
+    groupby variable. For example:
+
+        >>> from eu_cbm_hat.post_processor.nai import NAI_AGG_COLS
+        >>> index = ["pathway", "status"]
+        >>> nai_st_eu = nai_st.groupby(["year"] + index, observed=True)[NAI_AGG_COLS].agg("sum").reset_index()
+        >>> nai_st_eu = compute_nai_gai(nai_st_eu, groupby=index)
 
     """
     if "year" in groupby:
@@ -28,6 +49,7 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
 
     # Order by groupby variables, then years
     df.sort_values(groupby + ["year"], inplace=True)
+
     # Check that there are no duplications over the groupby variables plus year
     selector = df[["year"] + groupby].duplicated(keep=False)
     if any(selector):
@@ -182,34 +204,22 @@ class NAI:
         if groupby != ["status"]:
             warnings.warn("This method was written for a group by status.")
         df = self.pools_fluxes_vol
-        pools_cols = ["merch_stock_vol", "agb_stock_vol"]
-        fluxes_cols = [
-            "merch_prod_vol",
-            "other_prod_vol",
-            "turnover_merch_input_vol",
-            "turnover_oth_input_vol",
-            "dist_merch_input_vol",
-            "dist_oth_input_vol",
-            "merch_air_vol",
-            "oth_air_vol",
-        ]
 
         # Aggregate the sum of selected columns
-        cols = pools_cols + fluxes_cols
         df_agg = (
-            df.groupby(["year"] + groupby)[["area"] + cols].agg("sum").reset_index()
+            df.groupby(["year"] + groupby)[NAI_AGG_COLS].agg("sum").reset_index()
         )
 
         # Add NF movements to products back to ForAWS
         selector = df_agg["status"] == "NF"
-        df_agg_nf = df_agg.loc[selector, ["year", "status"] + fluxes_cols].copy()
+        df_agg_nf = df_agg.loc[selector, ["year", "status"] + FLUXES_COLS].copy()
         df_agg_nf["status"] = "ForAWS"
         df_agg_nf.columns = df_agg_nf.columns.str.replace("_vol", "_vol_nf")
         df_agg = df_agg.merge(df_agg_nf, on=["year"] + groupby, how="left")
-        fluxes_cols_nf = [x + "_nf" for x in fluxes_cols]
+        fluxes_cols_nf = [x + "_nf" for x in FLUXES_COLS]
         df_agg[fluxes_cols_nf] = df_agg[fluxes_cols_nf].fillna(0)
         # Add the nf fluxes to the fluxes in ForAWS
-        for col1, col2 in zip(fluxes_cols, fluxes_cols_nf):
+        for col1, col2 in zip(FLUXES_COLS, fluxes_cols_nf):
             df_agg[col1] += df_agg[col2]
 
         # Compute NAI and GAI
