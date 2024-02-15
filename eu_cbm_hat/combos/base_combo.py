@@ -56,8 +56,8 @@ def runner_log_summary(runner, patterns=None):
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> from eu_cbm_hat.combos.base_combo import runner_log_summary
-        >>> runner_de = continent.combos['reference'].runners['LU'][-1]
-        >>> print(runner_log_summary(runner_de))
+        >>> runner_lu = continent.combos['reference'].runners['LU'][-1]
+        >>> print(runner_log_summary(runner_lu))
 
     """
     if patterns is None:
