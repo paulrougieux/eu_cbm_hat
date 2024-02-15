@@ -23,6 +23,41 @@ The purpose of this document is to describe the EU-CBM-HAT workflow.
                       events                 |   events
 
 
+## FLowchart
+
+Made with https://asciiflow.com/#/local/eu_cbm_hat
+
+
+
+
+                                             ┌──────────────┐
+                                             │              ├────────────────────┐
+                                             │     libcbm   │                    │
+                                             │              │                    │
+                                             └──────────────┘                    │
+                                                     ▲                           │
+                                                     │                           │
+                                                     │                           │
+                   ┌───────────────────┐    ┌────────┴─────────────┐        ┌────▼────────────────┐
+                   │                   │    │                      │        │                     │
+      eu_cbm_hat   │ country.orig_data ├────►  runner.input_data   │        │   runner.output     │
+                   │                   │    │                      │        │                     │
+                   └───────────────────┘    └──────────────────────┘        └─────────────┬───────┘
+                         ▲                       inventory.csv                            │
+                         │                       growth_curves.csv                        │
+                         │                       transitions.csv                          │
+                         │                             │                                  │
+                         │                             │                                  │
+                         │                             ▼                                  ▼
+     eu_cbm_data     countries
+
+                             output/reference/ZZ/0    /input/csv                  /output/csv
+
+
+
+
+
+
 
 # EU CBM DATA
 
