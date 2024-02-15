@@ -1,10 +1,10 @@
 
-
 # Introduction
 
 The purpose of this document is to describe the EU-CBM-HAT workflow.
 
 
+[[_TOC_]]
 
 
 ## Timeline
