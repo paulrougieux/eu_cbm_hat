@@ -41,6 +41,9 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
         >>> nai_st_eu = compute_nai_gai(nai_st_eu, groupby=index)
 
     """
+    if isinstance(groupby, str):
+        groupby = [groupby]
+
     if "year" in groupby:
         msg = " This functions computes the difference in stock across groups "
         msg += "through time so 'year' should not be in the group by variables:\n"
