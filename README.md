@@ -99,7 +99,7 @@ Copy test data to your local `eu_cbm_data` folder (location defined above in pyt
     >>> from eu_cbm_hat.tests.copy_data import copy_test_data
     >>> copy_test_data()
 
-Clone the repository containing the AIDB (with a deploy token) inside your home folder
+Clone the repository containing the AIDB inside your home folder
 in the parent directory of the path given by `eu_cbm_hat.eu_cbm_aidb_dir`. Back to the
 shell (or conda console):
 
