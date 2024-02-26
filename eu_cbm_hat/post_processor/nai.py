@@ -109,10 +109,14 @@ class NAI:
          >>> from eu_cbm_hat.core.continent import continent
          >>> runner = continent.combos['reference'].runners['LU'][-1]
          >>> runner.post_processor.nai.pools_fluxes_vol
-         >>> # NAI per ha by status and forest type at country level
-         >>> runner.post_processor.nai.df_agg(["status", "forest_type"])
          >>> # NAI per ha by status at country level
          >>> runner.post_processor.nai.df_agg(["status"])
+
+         >>> # TODO fix this example
+         >>> # NAI per ha by status and forest type at country level
+         >>> # See message below on KeyError: 'forest_type'
+         >>> # when merging back the movements of the NF pools to products.
+         >>> runner.post_processor.nai.df_agg(["status", "forest_type"])
 
          >>> df = runner.post_processor.nai.df_agg(["status"])
          >>> df["nai_merch"] = df["nai_merch_ha"] * df["area"]
@@ -127,18 +131,8 @@ class NAI:
          >>> df_st[['AR', 'ForAWS', 'ForNAWS']].plot(ylabel="nai_merch m3 / ha")
          >>> plt.show()
 
-      Roberto's NAI computations
-      in ~/downloads/qa_qc_stock_dynamic_rp_AT.md
-
-          1. FT_MS_Increment
-              NAI = Net_Merch + Prod_vol_ha + Dist_vol_ha
-              GAI = Net_Merch + Prod_vol_ha + DOM_vol_ha
-          2. Country_Increment
-              NAI = Net_Merch + Prod_vol_ha + Dist_vol_ha
-              GAI = Net_Merch + Prod_vol_ha + DOM_vol_ha + Dist_vol_ha
-          3. FAWS_Increment
-              NAI = Net_Merch+Prod_vol_ha + Dist_vol_ha
-              GAI = Net_Merch+Prod_vol_ha + DOM_vol_ha+Dist_vol_ha
+    Note in terms of ecosystem indicators, foliage should be there in the NAI
+    increment computation.
 
     """
 
@@ -214,6 +208,9 @@ class NAI:
         )
 
         # Add NF movements to products back to ForAWS
+        # Note this is a problem when we use grouping variables other than
+        # "status" alone For example if groupby = ["status", "forest_type"]
+        # the merge below generates the KeyError: 'forest_type'
         selector = df_agg["status"] == "NF"
         df_agg_nf = df_agg.loc[selector, ["year", "status"] + FLUXES_COLS].copy()
         df_agg_nf["status"] = "ForAWS"
