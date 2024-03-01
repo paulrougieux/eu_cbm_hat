@@ -6,6 +6,7 @@ import numpy as np
 import pandas
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
+from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
 
 
 class Harvest:
@@ -24,7 +25,7 @@ class Harvest:
         >>> runner.post_processor.harvest.provided_agg("year")
         >>> harvest_group = ["year", "forest_type", "mgmt_type", "mgmt_strategy", "con_broad", "disturbance_type"]
         >>> runner.post_processor.harvest.provided_agg(harvest_group)
-)
+
         >>> runner.post_processor.harvest.expected_provided("year")
         >>> runner.post_processor.harvest.expected_provided(["year", "forest_type"])
         >>> runner.post_processor.harvest.expected_provided(["year", "disturbance_type"])
@@ -43,7 +44,7 @@ class Harvest:
         
     Plot harvest volume by disturbance type through time
 
-        >>> harvest_prov_by_dist = area_agg.pivot(columns="disturbance", index="year", values="harvest_prov")
+        >>> harvest_prov_by_dist = area_agg.pivot(columns="disturbance", index="year", values="harvest_prov_ub")
         >>> harvest_prov_by_dist.plot(title="LU harvest volume by disturbance type")
         >>> plt.show()
 
@@ -177,7 +178,8 @@ class Harvest:
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
         # Convert tons of carbon to volume under bark
-        df["harvest_prov"] = ton_carbon_to_m3_ub(df, "to_product")
+        df["harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
+        df["harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
         # Area information
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
@@ -187,14 +189,11 @@ class Harvest:
     def provided_agg(self, groupby: Union[List[str], str]):
         """Aggregated version of harvest provided
         Group rows and sum all identifier rows in the same group"""
+        cols = ["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"]
         df_agg = (
             self.provided
-            .groupby(groupby)
-            .agg(
-                disturbed_area=("area", "sum"),
-                to_product=("to_product", "sum"),
-                harvest_prov=("harvest_prov", "sum"),
-            )
+            .groupby(groupby)[cols]
+            .agg("sum")
             .reset_index()
         )
         return df_agg
@@ -251,7 +250,7 @@ class Harvest:
         df = self.provided
         cols = self.parent.classifiers_list + ["year"]
         cols += df.columns[df.columns.str.contains("to_product")].to_list()
-        cols += ["harvest_prov", "area", "disturbance_type"]
+        cols += ["harvest_prov_ub", "harvest_prov_ob", "area", "disturbance_type"]
         df = df[cols]
         df = df.merge(self.disturbance_types[["disturbance_type", "disturbance"]],
                       on="disturbance_type")
@@ -263,7 +262,7 @@ class Harvest:
             groupby = [groupby]
         df = self.area
         cols = df.columns[df.columns.str.contains("to_product")].to_list()
-        cols += ["harvest_prov", "area"]
+        cols += ["harvest_prov_ub", "harvest_prov_ob", "area"]
         df_agg = self.area.groupby(groupby)[cols].agg("sum").reset_index()
         return df_agg
 
