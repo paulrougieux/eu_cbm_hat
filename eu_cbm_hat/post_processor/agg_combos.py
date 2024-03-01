@@ -17,6 +17,7 @@ Other examples below explain how to run only some of the post processing steps.
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
     >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
 
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
