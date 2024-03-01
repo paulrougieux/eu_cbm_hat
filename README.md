@@ -151,7 +151,7 @@ in an aggregated way:
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
 
 
-### Inspect the model output
+### Read the model output
 
 Inspect the output of the model
 
@@ -181,6 +181,48 @@ Inspect the output of the model
                  .merge(state, 'left', on = index) # Join the age information
                  .merge(classifiers, 'left', on = index) # Join the classifiers
                  )
+
+
+### Further process the output
+
+Instantiate a runner object. Note: this can be done after a model run, once the model
+has been run, no need to re-run the model at this point, since the output has been
+saved to the `eu_cbm_data/output` directory. The `runner.post_processor` method will
+read data from that directory.
+
+    from eu_cbm_hat.core.continent import continent
+    runner = continent.combos['reference'].runners['LU'][-1]
+
+Compute the Net Annual Increment (NAI)
+
+    nai_lu = runner.post_processor.nai.df_agg(["status"])
+
+Compute harvest expected and provided,
+
+    runner.post_processor.harvest.expected_provided("year")
+
+Compute the sink.
+
+    runner.post_processor.sink.df_agg("year")
+
+The above post processing methods can be computed for one country individually. They can
+also be computed for all countries together and saved in a parquet file for further
+analysis and comparison between different scenario combinations. For a given scenario
+such as "reference", save all post processing output for all countries to parquet files.
+This function implements all post processing steps.
+
+    >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
+    >>> save_agg_combo_output("reference")
+
+Further checks for information:
+
+- Check wood density and bark fraction in all countries:
+
+        from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
+        wood_density_bark_all = get_df_all_countries(
+            combo_name="reference",
+            runner_method_name="post_processor.wood_density_bark_frac"
+        )
 
 
 ### Testing

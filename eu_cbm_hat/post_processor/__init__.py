@@ -242,9 +242,17 @@ class PostProcessor(object):
 
     @cached_property
     def wood_density_bark_frac(self):
-        """Wood density and bark fraction, ready to join"""
+        """Wood density and bark fraction, ready to join
+
+        Check wood density and bark fraction in all countries:
+
+            >>> from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
+            >>> wood_density_bark_all = get_df_all_countries(
+            >>>     combo_name="reference",
+            >>>     runner_method_name="post_processor.wood_density_bark_frac"
+            >>> )
+
+        """
         df = self.runner.silv.coefs.raw
-        return df[["forest_type", "wood_density", "bark_frac"]]
-
-
+        return df[["forest_type", "wood_density", "bark_frac"]].copy()
 

@@ -81,6 +81,20 @@ def place_combo_name_and_country_first(df, runner):
     return df[cols]
 
 
+def function_one_country(combo_name, iso2_code, runner_method_name):
+    """A generic function that returns the data frame output of the given
+    runner method. Works only if the method is a @cached_property without
+    arguments. See example use in the `get_df_all_countries()` function.
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    method = runner
+    for method_name in runner_method_name.split("."):
+        method = getattr(method, method_name)
+    df = method
+    df = place_combo_name_and_country_first(df, runner)
+    return df
+
+
 def apply_to_all_countries(data_func, combo_name, **kwargs):
     """Apply a function to many countries"""
     df_all = pandas.DataFrame()
@@ -94,6 +108,26 @@ def apply_to_all_countries(data_func, combo_name, **kwargs):
         except ValueError as e_value:
             print(key, e_value)
     df_all.reset_index(inplace=True, drop=True)
+    return df_all
+
+
+def get_df_all_countries(combo_name, runner_method_name):
+    """Get a data frame for all countries.
+    Only works for runner methods which are decorated with @cached_property.
+
+    Check wood density and bark fraction in all countries:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
+        >>> wood_density_bark_all = get_df_all_countries(
+        >>>     combo_name="reference",
+        >>>     runner_method_name="post_processor.wood_density_bark_frac"
+        >>> )
+
+    """
+    df_all = apply_to_all_countries(
+        function_one_country,
+        combo_name=combo_name,
+        runner_method_name=runner_method_name)
     return df_all
 
 
