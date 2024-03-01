@@ -15,6 +15,7 @@ from eu_cbm_hat.post_processor.harvest import Harvest
 from eu_cbm_hat.post_processor.area import Area
 from eu_cbm_hat.post_processor.stock import Stock
 from eu_cbm_hat.post_processor.nai import NAI
+from eu_cbm_hat.post_processor.growth_curve import GrowthCurve
 from eu_cbm_hat.post_processor.diagnostic import Diagnostic
 
 
@@ -191,6 +192,11 @@ class PostProcessor(object):
     def diagnostic(self):
         """Net Annual Increment"""
         return Diagnostic(self)
+
+    @cached_property
+    def growth_curve(self):
+        """Growth curve"""
+        return GrowthCurve(self)
 
     @cached_property
     def harvest(self):
