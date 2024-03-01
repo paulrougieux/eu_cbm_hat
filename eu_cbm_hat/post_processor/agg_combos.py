@@ -16,7 +16,6 @@ Other examples below explain how to run only some of the post processing steps.
     >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
     >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
-    >>> from eu_cbm_hat.post_processor.agg_combos import sink_all_countries
     >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
 
     >>> combo_name = "reference"
@@ -34,7 +33,7 @@ Other examples below explain how to run only some of the post processing steps.
     >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
     >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
     >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st.parquet", groupby=["status"])
-    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year_ft_dist.parquet", groupby=["year"])
+    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year.parquet", groupby=["year"])
 
 - Open the resulting parquet files to check the content of the data frames
 
@@ -641,7 +640,7 @@ def soc_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], s
     """Harvest provided in one country
     Usage:
 
-        >>> from eu_cbm_hat.post_processor.agg_combos import dw_one_country
+        >>> from eu_cbm_hat.post_processor.agg_combos import soc_one_country
         >>> dw_zz = soc_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
 
     """
