@@ -33,6 +33,7 @@ Other examples below explain how to run only some of the post processing steps.
     >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
     >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
     >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st.parquet", groupby=["status"])
+    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year_ft_dist.parquet", groupby=["year"])
 
 - Open the resulting parquet files to check the content of the data frames
 
