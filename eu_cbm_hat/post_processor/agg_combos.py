@@ -124,6 +124,8 @@ def get_df_all_countries(combo_name, runner_method_name):
         >>>     runner_method_name="post_processor.wood_density_bark_frac"
         >>> )
 
+    Note: data types should be harmonized to avoid this error when writing to a parquet file
+    ArrowTypeError: ("Expected bytes, got a 'int' object", 'Conversion failed for column climate with type object')
     """
     df_all = apply_to_all_countries(
         function_one_country,
