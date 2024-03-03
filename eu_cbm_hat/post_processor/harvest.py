@@ -41,7 +41,7 @@ class Harvest:
         >>> area_by_dist = area_agg.pivot(columns="disturbance", index="year", values="area")
         >>> area_by_dist.plot(title="LU harvest area by disturbance type")
         >>> plt.show()
-        
+
     Plot harvest volume by disturbance type through time
 
         >>> harvest_prov_by_dist = area_agg.pivot(columns="disturbance", index="year", values="harvest_prov_ub")
@@ -49,6 +49,7 @@ class Harvest:
         >>> plt.show()
 
     """
+
     def __init__(self, parent):
         self.parent = parent
         self.runner = parent.runner
@@ -61,8 +62,7 @@ class Harvest:
 
     @cached_property
     def demand(self) -> pandas.DataFrame:
-        """Get demand from the economic model using eu_cbm_hat/info/harvest.py
-        """
+        """Get demand from the economic model using eu_cbm_hat/info/harvest.py"""
         harvest_scenario_name = self.runner.combo.config["harvest"]
         irw = combined["irw"]
         irw["product"] = "irw_demand"
@@ -76,7 +76,6 @@ class Harvest:
         selector = df["scenario"] == harvest_scenario_name
         selector &= df["iso2_code"] == self.runner.country.iso2_code
         return df[selector]
-
 
     @cached_property
     def hat_events(self) -> pandas.DataFrame:
@@ -160,8 +159,7 @@ class Harvest:
 
     @cached_property
     def provided(self):
-        """Harvest provided in one country
-        """
+        """Harvest provided in one country"""
         df = self.fluxes
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
@@ -190,14 +188,8 @@ class Harvest:
         """Aggregated version of harvest provided
         Group rows and sum all identifier rows in the same group"""
         cols = ["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"]
-        df_agg = (
-            self.provided
-            .groupby(groupby)[cols]
-            .agg("sum")
-            .reset_index()
-        )
+        df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()
         return df_agg
-
 
     def expected_provided(self, groupby: Union[List[str], str]):
         """Harvest excepted provided in one country
@@ -252,8 +244,10 @@ class Harvest:
         cols += df.columns[df.columns.str.contains("to_product")].to_list()
         cols += ["harvest_prov_ub", "harvest_prov_ob", "area", "disturbance_type"]
         df = df[cols]
-        df = df.merge(self.disturbance_types[["disturbance_type", "disturbance"]],
-                      on="disturbance_type")
+        df = df.merge(
+            self.disturbance_types[["disturbance_type", "disturbance"]],
+            on="disturbance_type",
+        )
         return df
 
     def area_agg(self, groupby: Union[List[str], str]):
@@ -265,5 +259,3 @@ class Harvest:
         cols += ["harvest_prov_ub", "harvest_prov_ob", "area"]
         df_agg = self.area.groupby(groupby)[cols].agg("sum").reset_index()
         return df_agg
-
-
