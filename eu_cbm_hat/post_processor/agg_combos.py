@@ -42,6 +42,23 @@ Other examples below explain how to run only some of the post processing steps.
     >>> nai_st = read_agg_combo_output(combos, "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = read_agg_combo_output(combos, "pools_length.parquet")
 
+- Get data frames in all countries:
+
+    >>> from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
+    >>> # Events templates raw in all countries. This includes all scenarios,
+    >>> # use with caution, it requires further filtering on the scenario column
+    >>> # which is different than the combo_name column. The scenario column is given
+    >>> # by runner.combo  runner.combo.config["events_templates"] variable.
+    >>> events_templates_all = get_df_all_countries(
+    >>>     combo_name="reference",
+    >>>     runner_method_name="silv.events.raw"
+    >>> )
+    >>> # Load wood density and bark fraction in all countries.
+    >>> wood_density_bark_all = get_df_all_countries(
+    >>>     combo_name="reference",
+    >>>     runner_method_name="post_processor.wood_density_bark_frac"
+    >>> )
+
 - *Implementation note*: this script cannot be made a method of the
   combos/base_combo.py/Combination class because of circular references such as
   post_processor/harvest.py importing "continent" and "combined".
