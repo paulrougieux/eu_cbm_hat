@@ -96,6 +96,17 @@ class Silviculture:
     launched, because we need the internal SIT classifier and disturbance
     mapping. Before the simulation starts, it is only possible to load the raw
     versions of the input data as such: `silv.harvest.raw`.
+
+    Example usage:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner  = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.silv.harvest.raw
+        >>> runner.silv.events.raw
+
+    See also an example of how to get all events templates in all countries in
+    post_processor/agg_combos.py 
+
     """
 
     def __init__(self, runner):
