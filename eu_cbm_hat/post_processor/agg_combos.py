@@ -228,8 +228,8 @@ def save_agg_combo_output(combo_name: str):
         },
         {
             "data_func": sink_one_country,
-            "groupby": ["year", "status"],
-            "file_name": "sink_by_year_st.parquet",
+            "groupby": ["year", "status", "region"],
+            "file_name": "sink_by_year_st_rg.parquet",
         },
         {
             "data_func": area_by_status_one_country,
