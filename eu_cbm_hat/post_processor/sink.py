@@ -79,8 +79,8 @@ FLUXES_DICT = {
         "disturbance_bio_ch4_emission",
         "disturbance_bio_co_emission",
         "disturbance_domch4_emission",
-        "disturbance_domco_emission"
-    ]
+        "disturbance_domco_emission",
+    ],
 }
 
 
@@ -148,6 +148,7 @@ class Sink:
         >>> print(pools.query("last_disturbance_type==7").value_counts(selected_cols, sort=False))
 
     """
+
     def __init__(self, parent):
         self.parent = parent
         self.runner = parent.runner
@@ -156,14 +157,14 @@ class Sink:
         self.fluxes = self.parent.fluxes
         # Pools and fluxes aggregation parameters
         self.pools_dict = POOLS_DICT.copy()
-        self.pools_list = list({item for sublist in self.pools_dict.values() for item in sublist})
+        self.pools_list = list(
+            {item for sublist in self.pools_dict.values() for item in sublist}
+        )
         self.fluxes_dict = FLUXES_DICT.copy()
         self.groupby_sink = ["year", "region", "climate", "status"]
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
-
-
 
     @cached_property
     def nf_soil_stock(self):
@@ -178,12 +179,14 @@ class Sink:
         selector = df["status"].str.contains("NF")
         selector &= df["time_since_land_class_change"] == -1
         nf_soil = df.loc[selector].copy()
-        nf_soil["nf_slow_soil_per_ha"] = nf_soil["below_ground_slow_soil"] / nf_soil["area"]
+        nf_soil["nf_slow_soil_per_ha"] = (
+            nf_soil["below_ground_slow_soil"] / nf_soil["area"]
+        )
         # Group by region and climate and calculate the standard deviation
         groupby_soil = ["region", "climate"]
-        nf_soil["std_dev"] = nf_soil.groupby(groupby_soil)["nf_slow_soil_per_ha"].transform(
-            "std"
-        )
+        nf_soil["std_dev"] = nf_soil.groupby(groupby_soil)[
+            "nf_slow_soil_per_ha"
+        ].transform("std")
         # Check that nf_slow_soil_per_ha always have the same value across grouping
         # variables
         selector = nf_soil["std_dev"] > 1e-2
@@ -255,7 +258,7 @@ class Sink:
     @cached_property
     def deforestation_deduction(self):
         """Pool content and fluxes from the area subject to deforestation Prepare a
-        data frame to deduce carbon related to deforestation """
+        data frame to deduce carbon related to deforestation"""
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
         df = self.pools
@@ -266,9 +269,7 @@ class Sink:
         selected_columns = self.pools_list + ["area_deforested_current_year"]
         df7_agg = df7.groupby(self.groupby_sink)[selected_columns].sum().reset_index()
         def_em = self.emissions_from_deforestation(
-            groupby=self.groupby_sink,
-            fluxes_dict=FLUXES_DICT,
-            current_year_only=True
+            groupby=self.groupby_sink, fluxes_dict=FLUXES_DICT, current_year_only=True
         )
         deforest = df7_agg.merge(def_em, on=self.groupby_sink, how="outer")
         if deforest.status.unique() != "NF":
@@ -284,8 +285,12 @@ class Sink:
         # Compute the deforestation deduction
         for key, pools in POOLS_DICT.items():
             deforest[key + "_stock"] = deforest[pools].sum(axis=1)
-            col_name = deforest.columns[deforest.columns.str.contains("_from_" + key)][0]
-            deforest[key + "_deforest_deduct"] = deforest[key + "_stock"] + deforest[col_name]
+            col_name = deforest.columns[deforest.columns.str.contains("_from_" + key)][
+                0
+            ]
+            deforest[key + "_deforest_deduct"] = (
+                deforest[key + "_stock"] + deforest[col_name]
+            )
         return deforest
 
     @cached_property
@@ -332,7 +337,11 @@ class Sink:
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
         selected_columns = self.pools_list.copy()
-        selected_columns += ["area", "area_afforested_current_year", "area_deforested_current_year"]
+        selected_columns += [
+            "area",
+            "area_afforested_current_year",
+            "area_deforested_current_year",
+        ]
         df = self.pools.groupby(groupby_sink)[selected_columns].sum().reset_index()
 
         # Add the soil stock in NF stands (that have not been deforested in the
@@ -344,8 +353,12 @@ class Sink:
 
         # Join deforestation deductions to the main sink data frame
         deforest = self.deforestation_deduction
-        selected_cols = deforest.columns[deforest.columns.str.contains("_deduct")].to_list()
-        df = df.merge(deforest[groupby_sink + selected_cols], on=groupby_sink, how="left")
+        selected_cols = deforest.columns[
+            deforest.columns.str.contains("_deduct")
+        ].to_list()
+        df = df.merge(
+            deforest[groupby_sink + selected_cols], on=groupby_sink, how="left"
+        )
         df[selected_cols] = df[selected_cols].fillna(0)
 
         # Remove year from the grouping variables to compute the diff over years
@@ -415,8 +428,11 @@ class Sink:
 
         # Keep the area, pool and sink information
         cols = self.df.columns
-        selected_cols = ["area", "area_afforested_current_year",
-                         "area_deforested_current_year"]
+        selected_cols = [
+            "area",
+            "area_afforested_current_year",
+            "area_deforested_current_year",
+        ]
         selected_cols += cols[cols.str.contains("stock")].to_list()
         selected_cols += cols[cols.str.contains("sink$")].to_list()
         selected_cols += cols[cols.str.contains("deforest_deduct")].to_list()
