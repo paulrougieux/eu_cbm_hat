@@ -144,7 +144,7 @@ class Sink:
         >>> pools.loc[selector, "time_since_last_disturbance"] = "greater than one"
         >>> selected_cols = ["time_since_land_class_change", "status", "land_class", "time_since_last_disturbance"]
         >>> print(pools.value_counts(selected_cols, sort=False))
-        >>> print("\nOnly stands affected by deforestation disturbances")
+        >>> print("\\nOnly stands affected by deforestation disturbances")
         >>> print(pools.query("last_disturbance_type==7").value_counts(selected_cols, sort=False))
 
     """

@@ -41,6 +41,8 @@ libcbm_run:
     # The following test doesn't depend on the eu_cbm_data repository.
     # It uses ZZ data stored in the (public) eu_cbm_hat package.
     - python scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py
+    # The post_processing documentation test need the output of the zz run
+    - pytest --doctest-modules eu_cbm_hat/post_processor/nai.py
   artifacts:
     when: always
     reports:

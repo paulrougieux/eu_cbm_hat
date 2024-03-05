@@ -35,10 +35,22 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
     variables and year first. Then the year should not be present on the
     groupby variable. For example:
 
+        >>> from eu_cbm_hat.core.continent import continent
         >>> from eu_cbm_hat.post_processor.nai import NAI_AGG_COLS
-        >>> index = ["pathway", "status"]
-        >>> nai_st_eu = nai_st.groupby(["year"] + index, observed=True)[NAI_AGG_COLS].agg("sum").reset_index()
-        >>> nai_st_eu = compute_nai_gai(nai_st_eu, groupby=index)
+        >>> from eu_cbm_hat.post_processor.nai import compute_nai_gai
+        >>> runner = continent.combos['reference'].runners['ZZ'][-1]
+        >>> index = ["status"]
+        >>> nai_st = runner.post_processor.nai.df_agg(["status"])
+        >>> nai_st_2  = nai_st.groupby(["year"] + index, observed=True)[NAI_AGG_COLS].agg("sum").reset_index()
+        >>> nai_st_2 = compute_nai_gai(nai_st_2, groupby=index)
+        >>> cols = ["year", "status", "nai_merch", "nai_agb"]
+        >>> nai_st_2.query("status == 'ForAWS'")[cols].tail()
+            year  status      nai_merch        nai_agb
+        35  2025  ForAWS  435109.778377  562391.306700
+        38  2026  ForAWS  428421.933000  552259.748208
+        41  2027  ForAWS  421881.916721  538261.418055
+        44  2028  ForAWS  422829.931377  521564.933221
+        47  2029  ForAWS  414101.528162  505771.661576
 
     """
     if isinstance(groupby, str):
@@ -106,35 +118,66 @@ class NAI:
 
     Usage:
 
-         >>> from eu_cbm_hat.core.continent import continent
-         >>> runner = continent.combos['reference'].runners['LU'][-1]
-         >>> runner.post_processor.nai.pools_fluxes_vol
-         >>> # NAI per ha by status at country level
-         >>> runner.post_processor.nai.df_agg(["status"])
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['ZZ'][-1]
+        >>> pfv = runner.post_processor.nai.pools_fluxes_vol
+        >>> pfv[["year", "disturbance_type", "merch_stock_vol", "agb_stock_vol"]].round()
+             year  disturbance_type  merch_stock_vol  agb_stock_vol
+        0    1999                 0         210788.0       288140.0
+        1    1999                 0         260786.0       356455.0
+        2    2000                 0         220762.0       300918.0
+        3    2000                 0         273105.0       372236.0
+        4    2001                 0         219576.0       299263.0
+        ..    ...               ...              ...            ...
+        855  2028                 0         648940.0       881020.0
+        856  2029                 0         958579.0      1613398.0
+        857  2029                 0         174177.0       292668.0
+        858  2029                 0        3615729.0      4908137.0
+        859  2029                 0         653509.0       887099.0
+        <BLANKLINE>
+        [860 rows x 4 columns]
 
-         >>> # TODO fix this example
-         >>> # NAI per ha by status and forest type at country level
-         >>> # See message below on KeyError: 'forest_type'
-         >>> # when merging back the movements of the NF pools to products.
-         >>> runner.post_processor.nai.df_agg(["status", "forest_type"])
+        >>> # Net Annual Increment of the merchantable pool (nai_merch) and of
+        >>> # all the above ground biomass (nai_agb) by status
+        >>> nai_st = runner.post_processor.nai.df_agg(["status"])
+        >>> selector = nai_st["status"] == 'ForAWS'
+        >>> nai_st.loc[selector, ["year", "status", "area", "nai_merch", "nai_agb"]].head()
+           year  status         area      nai_merch        nai_agb
+        0  1999  ForAWS  91880.00000       0.000000       0.000000
+        1  2000  ForAWS  91880.00000  362883.178649  469452.158547
+        2  2001  ForAWS  91879.99912  362494.285355 -488554.806845
+        3  2002  ForAWS  91879.99877  378072.436366  212918.717178
+        4  2003  ForAWS  91879.99841  397329.021290  496215.446031
 
-         >>> df = runner.post_processor.nai.df_agg(["status"])
-         >>> df["nai_merch"] = df["nai_merch_ha"] * df["area"]
-         >>> df_st = df.groupby(["year", "status"])[["area", "nai_merch"]].agg("sum").reset_index()
-         >>> df_st["nai_merch_ha"] = df_st["nai_merch"] / df_st["area"]
-         >>> # Plot NAI per ha by status
-         >>> df_st = df_st.pivot(columns="status", index="year", values="nai_merch_ha")
-         >>> from matplotlib import pyplot as plt
-         >>> df_st.plot(ylabel="nai_merch m3 / ha")
-         >>> plt.show()
-         >>> # Plot without NF
-         >>> df_st[['AR', 'ForAWS', 'ForNAWS']].plot(ylabel="nai_merch m3 / ha")
-         >>> plt.show()
+        >>> # TODO fix this example
+        >>> # NAI per ha by status and forest type at country level
+        >>> # See message below on KeyError: 'forest_type'
+        >>> # when merging back the movements of the NF pools to products.
+        >>> runner.post_processor.nai.df_agg(["status", "forest_type"]) # doctest: +SKIP
 
-    Note in terms of ecosystem indicators, foliage should be there in the NAI
-    increment computation.
+        >>> df = runner.post_processor.nai.df_agg(["status"])
+        >>> df["nai_merch"] = df["nai_merch_ha"] * df["area"]
+        >>> df_st = df.groupby(["year", "status"])[["area", "nai_merch"]].agg("sum").reset_index()
+        >>> df_st["nai_merch_ha"] = df_st["nai_merch"] / df_st["area"]
+        >>> df_st.tail()
+            year  status          area      nai_merch  nai_merch_ha
+        44  2028  ForAWS  86236.998804  422829.931377      4.903115
+        45  2028      NF   5643.000250   28488.860714      5.048531
+        46  2029      AR     90.000000      16.971735      0.188575
+        47  2029  ForAWS  85727.998714  414101.528162      4.830412
+        48  2029      NF   6152.000250    3272.171429      0.531887
 
-    """
+        >>> # Plot NAI per ha by status (remove NF)
+        >>> df_st = runner.post_processor.nai.df_agg(["status"])
+        >>> selector = df_st["status"] != 'NF'
+        >>> df_st = df_st.loc[selector].pivot(columns="status", index="year", values="nai_merch_ha")
+        >>> from matplotlib import pyplot as plt
+        >>> df_st.plot(ylabel="nai_merch m3 / ha") # doctest: +SKIP
+        >>> plt.show()  # doctest: +SKIP
+
+        Note in terms of ecosystem indicators, foliage should be there in the NAI
+        increment computation.
+        """
 
     def __init__(self, parent):
         self.parent = parent
@@ -186,14 +229,19 @@ class NAI:
 
         Usage:
 
-             >>> from eu_cbm_hat.core.continent import continent
-             >>> runner = continent.combos['reference'].runners['LU'][-1]
-             >>> nai_st = runner.post_processor.nai.df_agg(["status"])
-
-        Check net merch
-
-            >>> import numpy as np
-            >>> np.testing.assert_allclose(nai_st["net_merch_ha_2"],  nai_st["net_merch_ha_2"], rtol=0.01)
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['ZZ'][-1]
+            >>> # Net Annual Increment of the merchantable pool (nai_merch) and of
+            >>> # all the above ground biomass (nai_agb) by status
+            >>> nai_st = runner.post_processor.nai.df_agg(["status"])
+            >>> selector = nai_st["status"] == 'ForAWS'
+            >>> nai_st.loc[selector, ["year", "status", "area", "nai_merch", "nai_agb"]].head()
+               year  status         area      nai_merch        nai_agb
+            0  1999  ForAWS  91880.00000       0.000000       0.000000
+            1  2000  ForAWS  91880.00000  362883.178649  469452.158547
+            2  2001  ForAWS  91879.99912  362494.285355 -488554.806845
+            3  2002  ForAWS  91879.99877  378072.436366  212918.717178
+            4  2003  ForAWS  91879.99841  397329.021290  496215.446031
 
         """
         if isinstance(groupby, str):
