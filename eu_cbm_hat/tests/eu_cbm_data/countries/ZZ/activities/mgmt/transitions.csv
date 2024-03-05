@@ -1,6 +1,5 @@
 scenario,from_status,from_forest_type,from_region,from_mgmt_type,from_mgmt_strategy,from_climate,from_con_broad,from_site_index,from_growth_period,using_id,sw_start,sw_end,hw_start,hw_end,dist_type_name,to_status,to_forest_type,to_region,to_mgmt_type,to_mgmt_strategy,to_climate,to_con_broad,to_site_index,to_growth_period,regen_delay,reset_age,percent
-reference,For,DF,LU00,H,E,?,con,1,Cur,FALSE,71,90,71,90,22,For,DF,LU00,H,E,?,con,1,Cur,0,0,100
-reference,For,OB,LU00,H,E,?,broad,1,Cur,FALSE,80,210,80,210,21,For,OB,LU00,H,E,?,broad,1,Cur,0,0,100
-reference,For,OC,LU00,H,E,?,con,1,Cur,FALSE,60,80,60,80,22,For,OC,LU00,H,E,?,con,1,Cur,0,0,100
-reference,For,QR,LU00,C,E,?,broad,1,Cur,FALSE,20,210,20,210,21,For,QR,LU00,C,E,?,broad,1,Cur,0,0,100
-uneven_aged,For,FS,LU00,H,U,?,broad,1,Cur,FALSE,20,40,20,40,15,For,FS,LU00,H,U,?,broad,1,Cur,0,30,100
+reference,ForAWS,DF,LU00,H,E,?,con,1,Cur,FALSE,71,90,71,90,22,ForAWS,DF,LU00,H,E,?,con,1,Cur,0,0,100
+reference,ForAWS,OB,LU00,H,E,?,broad,1,Cur,FALSE,80,210,80,210,21,ForAWS,OB,LU00,H,E,?,broad,1,Cur,0,0,100
+reference,ForAWS,OC,LU00,H,E,?,con,1,Cur,FALSE,60,80,60,80,22,ForAWS,OC,LU00,H,E,?,con,1,Cur,0,0,100
+reference,ForAWS,QR,LU00,C,E,?,broad,1,Cur,FALSE,20,210,20,210,21,ForAWS,QR,LU00,C,E,?,broad,1,Cur,0,0,100

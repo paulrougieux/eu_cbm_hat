@@ -6,7 +6,6 @@ dist_type_name,dist_desc_input,silv_practice
 8,Afforestation,ar
 11,Generic 15%,th
 12,15% commercial thinning,th
-14,20% commercial thinning,th
 15,Generic 20%,th
 16,30% commercial thinning,th
 18,35% commercial thinning,th
@@ -16,3 +15,7 @@ dist_type_name,dist_desc_input,silv_practice
 30,Salvage year 2 post-windstorm,sr
 42,Insects with salvage logging (within year),nr
 49,Windstorm (for projection),sr
+14,20% commercial thinning,th
+151,Step_1_conversion_25%_commercial thinning,th
+152,Step_2_conversion_20%_commercial thinning,th
+153,Post_conversion_15%_commercial thinnings,th
