@@ -246,11 +246,6 @@ def save_agg_combo_output(combo_name: str):
             "groupby": ["status"],
             "file_name": "nai_by_year_st.parquet",
         },
-        {
-            "data_func": nai_one_country,
-            "groupby": ["status", "forest_type"],
-            "file_name": "nai_by_year_st_ft.parquet",
-        },
     ]
     # List of parameters to be fed p_umap
     items = [
