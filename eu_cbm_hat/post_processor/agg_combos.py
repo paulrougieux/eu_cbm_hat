@@ -9,6 +9,17 @@
 
 Other examples below explain how to run only some of the post processing steps.
 
+- Save a specific data frame for all countries and all combos to parquet files
+
+    >>> combos = ["pikssp2_fel1", "pikssp2_owc_max", "pikssp2_owc_min",
+    >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
+    >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
+    >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st.parquet", groupby=["status"])
+    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos,
+    ...                     "hexprov_by_year.parquet", groupby=["year"])
+    >>> apply_to_all_combos(area_one_country, combos, "area_st_ft_agecl.parquet",
+    ...                     groupby=["year", "status", "forest_type", "age_class"])
+
 - Save a specific data frame for all all countries to a parquet file
 
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
@@ -26,17 +37,6 @@ Other examples below explain how to run only some of the post processing steps.
     >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
     >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
-
-- Save the specific data frame for all countries and all combos to parquet files
-
-    >>> combos = ["pikssp2_fel1", "pikssp2_owc_max", "pikssp2_owc_min",
-    >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
-    >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
-    >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st.parquet", groupby=["status"])
-    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year.parquet", groupby=["year"])
-    >>> # Area by status, forest_type and age
-    >>> apply_to_all_combos(area_one_country, combos, "area_st_ft_age.parquet",
-    ...                     groupby=["year", "status", "forest_type", "age"])
 
 - Open the resulting parquet files to check the content of the data frames
 
