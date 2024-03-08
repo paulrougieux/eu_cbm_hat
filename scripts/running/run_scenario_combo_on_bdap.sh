@@ -16,6 +16,10 @@
 #
 #       ./run.sh pikssp2
 #
+# - Transfer to the shared directory
+#
+#     rsync -zav $HOME/eu_cbm/eu_cbm_data/output_agg /eos/jeodpp/data/projects/SUSBIOM-TRADE/transfer/eu_cbm_data
+#
 
 conda activate susbiom_trade_env
 
