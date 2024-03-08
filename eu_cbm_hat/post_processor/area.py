@@ -49,6 +49,11 @@ class Area:
         <BLANKLINE>
         [10332 rows x 5 columns]
 
+    Area grouped by status, species and age class (one every 10 years)
+
+        >>> index = ["year", "status", "forest_type", "age_class"]
+        >>> area_st_sp_agecl  = runner.post_processor.area.df_agg(index)
+
     Area grouped by all classifiers and age
 
         >>> df_agg_cl_age = runner.post_processor.area.df_agg_by_classifiers_age
@@ -138,6 +143,8 @@ class Area:
         ]
         # Area columns
         selected_cols += df.columns[df.columns.str.contains("area")].to_list()
+        # 10 year age class
+        df["age_class"] = (df["age"] / 10).round().astype(int)
         return df
 
     @cached_property
