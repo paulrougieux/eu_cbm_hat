@@ -40,17 +40,17 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
         >>> from eu_cbm_hat.post_processor.nai import compute_nai_gai
         >>> runner = continent.combos['reference'].runners['ZZ'][-1]
         >>> index = ["status"]
-        >>> nai_st = runner.post_processor.nai.df_agg(["status"])
+        >>> nai_st = runner.post_processor.nai.df_agg(index)
         >>> nai_st_2  = nai_st.groupby(["year"] + index, observed=True)[NAI_AGG_COLS].agg("sum").reset_index()
         >>> nai_st_2 = compute_nai_gai(nai_st_2, groupby=index)
         >>> cols = ["year", "status", "nai_merch", "nai_agb"]
-        >>> nai_st_2.query("status == 'ForAWS'")[cols].tail()
-            year  status      nai_merch        nai_agb
-        35  2025  ForAWS  435109.778377  562391.306700
-        38  2026  ForAWS  428421.933000  552259.748208
-        41  2027  ForAWS  421881.916721  538261.418055
-        44  2028  ForAWS  422829.931377  521564.933221
-        47  2029  ForAWS  414101.528162  505771.661576
+        >>> nai_st_2.query("status == 'ForAWS'")[cols].tail().round()
+            year  status  nai_merch   nai_agb
+        35  2025  ForAWS   435110.0  562391.0
+        38  2026  ForAWS   428422.0  552260.0
+        41  2027  ForAWS   421882.0  538261.0
+        44  2028  ForAWS   422830.0  521565.0
+        47  2029  ForAWS   414102.0  505772.0
 
     """
     if isinstance(groupby, str):
