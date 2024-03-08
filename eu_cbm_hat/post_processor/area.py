@@ -7,8 +7,6 @@ from eu_cbm_hat.post_processor.sink import generate_all_combinations_and_fill_na
 class Area:
     """Compute the area changes through time and across classifiers
 
-    Usage examples:
-
     Area grouped by status
 
         >>> from eu_cbm_hat.core.continent import continent
