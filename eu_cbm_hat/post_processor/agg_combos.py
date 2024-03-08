@@ -34,6 +34,9 @@ Other examples below explain how to run only some of the post processing steps.
     >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
     >>> apply_to_all_combos(nai_one_country, combos, "nai_by_year_st.parquet", groupby=["status"])
     >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year.parquet", groupby=["year"])
+    >>> # Area by status, forest_type and age
+    >>> apply_to_all_combos(area_one_country, combos, "area_st_ft_age.parquet",
+    ...                     groupby=["year", "status", "forest_type", "age"])
 
 - Open the resulting parquet files to check the content of the data frames
 
@@ -485,21 +488,11 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     Usage:
 
         >>> from eu_cbm_hat.post_processor.agg_combos import area_one_country
-        >>> area_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
+        >>> area_one_country("reference", "ZZ", ["year", 'status', "forest_type", "age","disturbance_type"])
 
     """
-    index = ["identifier", "timestep"]
     runner = continent.combos[combo_name].runners[iso2_code][-1]
-    # Load Area
-    df = runner.output["pools"][index + ["area"]]
-    df["year"] = runner.country.timestep_to_year(df["timestep"])
-    # Add classifiers
-    df = df.merge(runner.output.classif_df, on=index)
-    # Disturbance type information
-    dist = runner.output["parameters"][index + ["disturbance_type"]]
-    df = df.merge(dist, on=index)
-    # Aggregate
-    df_agg = df.groupby(groupby)["area"].agg("sum").reset_index()
+    df_agg = runner.post_processor.area.df_agg(groupby)
     df_agg = place_combo_name_and_country_first(df_agg, runner)
     return df_agg
 
