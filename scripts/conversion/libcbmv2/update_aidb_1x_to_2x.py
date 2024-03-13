@@ -9,8 +9,8 @@ Usage convert the AIDB from V1 to V2 in all countries:
     # Checkout branch "2.x" of cbm_defaults
     cd ~/eu_cbm/cbm_defaults/
     git checkout 2.x
-    # Convert the AIDBs from version 2 to version 2
-    ipython -i ~/eu_cbm/eu_cbm_hat/scripts/conversion/update_aidb_1x_to_2x.py
+    # Convert the AIDBs from version 1 to version 2
+    ipython -i ~/eu_cbm/eu_cbm_hat/scripts/conversion/libcbmv2/update_aidb_1x_to_2x.py
 
 Usage on one country only for debugging purposes to reproduce errors in a
 specific country:
