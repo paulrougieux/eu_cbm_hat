@@ -13,6 +13,7 @@ Switch to v1 or v2:
 import argparse
 import git
 import sys
+from eu_cbm_hat import eu_cbm_aidb_dir
 
 
 parser = argparse.ArgumentParser(description='Switch git repositories for libcbm dependencies')
@@ -49,17 +50,20 @@ def checkout_branch(git_repo: git.repo.base.Repo, branch_name:str):
 
 
 repo_eu_cbm_hat = git.Repo(find_sys_path("eu_cbm_hat"))
+repo_eu_cbm_aidb = git.Repo(eu_cbm_aidb_dir)
 repo_libcbm_py = git.Repo(find_sys_path("libcbm_py"))
 
 if LIBCBM_VERSION == "1":
     checkout_branch(repo_libcbm_py, "1.x")
     checkout_branch(repo_eu_cbm_hat, "main")
+    checkout_branch(repo_eu_cbm_aidb, "main")
     assert repo_libcbm_py.active_branch.name == '1.x'
     assert repo_eu_cbm_hat.active_branch.name == 'main'
 
 elif LIBCBM_VERSION == "2":
     checkout_branch(repo_libcbm_py, "2.x")
     checkout_branch(repo_eu_cbm_hat, "libcbm2")
+    checkout_branch(repo_eu_cbm_aidb, "libcbm2")
     assert repo_libcbm_py.active_branch.name == '2.x'
     assert repo_eu_cbm_hat.active_branch.name == 'libcbm2'
 
