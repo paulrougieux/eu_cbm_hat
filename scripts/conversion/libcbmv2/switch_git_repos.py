@@ -4,9 +4,9 @@ version 2 of libcbm
 
 Switch to v1 or v2:
 
-    ipython ~/eu_cbm/eu_cbm_hat/scripts/conversion/libcbmv2/switch_git_repos.py v1
+    ipython ~/eu_cbm/eu_cbm_hat/scripts/conversion/libcbmv2/switch_git_repos.py -- --version 1
 
-    ipython ~/eu_cbm/eu_cbm_hat/scripts/conversion/libcbmv2/switch_git_repos.py v2
+    ipython ~/eu_cbm/eu_cbm_hat/scripts/conversion/libcbmv2/switch_git_repos.py -- --version 2
 
 """
 
@@ -17,7 +17,8 @@ import sys
 
 parser = argparse.ArgumentParser(description='Switch git repositories for libcbm dependencies')
 parser.add_argument('--version', type=str, help='Name of the version')
-LIBCBM_VERSION = args.version
+args = parser.parse_args()
+LIBCBM_VERSION = str(args.version)
 
 
 def find_sys_path(path_contains:str):
@@ -26,6 +27,8 @@ def find_sys_path(path_contains:str):
     libcbm_py and eu_cbm_hat
     """
     matching_paths = [path for path in sys.path if path_contains in path]
+    # Exclude the path of the current script
+    matching_paths = [p for p in matching_paths if "scripts" not in p]
     if len(matching_paths) != 1:
         msg = f"Expected one path containing {path_contains}, "
         msg += f"found {len(matching_paths)}\n"
@@ -48,13 +51,13 @@ def checkout_branch(git_repo: git.repo.base.Repo, branch_name:str):
 repo_eu_cbm_hat = git.Repo(find_sys_path("eu_cbm_hat"))
 repo_libcbm_py = git.Repo(find_sys_path("libcbm_py"))
 
-if LIBCBM_VERSION == "v1":
+if LIBCBM_VERSION == "1":
     checkout_branch(repo_libcbm_py, "1.x")
     checkout_branch(repo_eu_cbm_hat, "main")
     assert repo_libcbm_py.active_branch.name == '1.x'
     assert repo_eu_cbm_hat.active_branch.name == 'main'
 
-elif LIBCBM_VERSION == "v2":
+elif LIBCBM_VERSION == "2":
     checkout_branch(repo_libcbm_py, "2.x")
     checkout_branch(repo_eu_cbm_hat, "libcbm2")
     assert repo_libcbm_py.active_branch.name == '2.x'
