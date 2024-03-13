@@ -9,7 +9,7 @@ Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
-import os
+import shutil
 
 # First party modules #
 from autopaths.dir_path   import DirectoryPath
@@ -47,6 +47,9 @@ class AIDB(object):
         self.parent = parent
         # Directories #
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
+        # Keep the default paths in this argument
+        self.default_aidb_path = self.paths.aidb
+        # The AIDB path may be changed in some scenario combinations
         # Path to the database in a separate repository #
         self.repo_file = eu_cbm_aidb_dir + 'countries/' + self.parent.iso2_code \
                          + '/aidb.db'
@@ -141,3 +144,14 @@ class AIDB(object):
         # Return #
         return 'Symlink success for ' + self.parent.iso2_code + '.'
 
+    def change_path(self, combo_name):
+        """Change the path to the AIDB
+
+        pump/pre_preocessor can copy a database in order to change some
+        parameters (such as disturbance matrix values) while keeping the
+        reference database unchanged. The copy happens in a scenario
+        combination, therefore the copied AIDB gets the combo_name appended to
+        its name.
+        """
+        self.all_paths = f"/config/aidb_{combo_name}.db"
+        self.paths = AutoPaths(self.parent.data_dir, self.all_paths)

@@ -1,6 +1,6 @@
 classifier_number,classifier_value_id,name
 1,_CLASSIFIER,status
-1,For,Forest area
+1,ForAWS,ForAWSest area
 1,NF,Not forested area available to be reforested
 1,AR,Afforested area
 2,_CLASSIFIER,forest_type

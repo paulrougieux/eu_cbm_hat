@@ -420,36 +420,21 @@ class DynamicSimulation(Simulation):
 
             # Skew the normalized value based on the harvest skew factors
             # We will retrieve the harvest skew factors for the current year #
-            harvest = self.runner.silv.harvest.get_year(self.year)
+            harvest_factors = self.runner.silv.harvest.get_year(self.year)
 
             # Only one of the columns matches the current year #
-            harvest = harvest.rename(columns = {'value_%i' % self.year: 'skew'})
+            harvest_factors = harvest_factors.rename(columns = {'value_%i' % self.year: 'skew'})
 
             # Keep only IRW coefficients
-            harvest = harvest[harvest["product_created"] == "irw_and_fw"]
+            harvest_factors = harvest_factors[harvest_factors["product_created"] == "irw_and_fw"]
 
 
             # Keep only the columns that are not empty as join columns
             harvest_join_cols = []
             for col in self.runner.silv.harvest.cols:
-                if not any(harvest[col].isna()):
+                if not any(harvest_factors[col].isna()):
                     harvest_join_cols.append(col)
-            harvest = harvest[harvest_join_cols + ['skew']]
-
-            # Check if all rows for which a skew factor is defined are really
-            # present in df_irw_silv
-            df_irw_silv_check = df_irw_silv.value_counts(harvest_join_cols).reset_index()
-            if len(df_irw_silv_check) < len(harvest):
-                msg += "Some skew factors are present in harvest but not present in "
-                msg += "df_irw_silv. This might happen in rare cases where there is only "
-                msg += "coniferous forest available and no broadleaf forest available. "
-                msg += "For example because broadleaves are too young and the "
-                msg += "query('age >= sw_start') excluded those broadleaf rows. "
-                self.parent.log.info(msg)
-                # Recompute the skew
-                harvest2 = df_irw_silv_check.merge(harvest, on=harvest_join_cols)
-                harvest2["skew"] = harvest2["skew"] / harvest2["skew"].sum()
-                harvest = harvest2
+            harvest_factors = harvest_factors[harvest_join_cols + ['skew']]
 
             # If silv_practice is defined in harvest factors then use
             # self.runner.fluxes.df to add the silv_practice column to
@@ -459,7 +444,7 @@ class DynamicSimulation(Simulation):
                 df_irw_silv = df_irw_silv.merge(df_silv_practice, on="disturbance_type")
 
                 # Check silv practices are actually present in disturbance_types.csv
-                hfsp = harvest.silv_practice.unique()
+                hfsp = harvest_factors.silv_practice.unique()
                 distsp = self.runner.fluxes.df["silv_practice"].unique()
                 if not set(hfsp).issubset(distsp):
                     msg = "silv_practice defined in harvest_factors.csv: "
@@ -468,12 +453,27 @@ class DynamicSimulation(Simulation):
                     msg += f"{distsp}"
                     raise ValueError(msg)
 
+            # Check if all rows for which a skew factor is defined are really
+            # present in df_irw_silv
+            df_irw_silv_check = df_irw_silv.value_counts(harvest_join_cols).reset_index()
+            if len(df_irw_silv_check) < len(harvest_factors):
+                msg += "Some skew factors are present in harvest but not present in "
+                msg += "df_irw_silv. This might happen in rare cases where there is only "
+                msg += "coniferous forest available and no broadleaf forest available. "
+                msg += "For example because broadleaves are too young and the "
+                msg += "query('age >= sw_start') excluded those broadleaf rows. "
+                self.parent.log.info(msg)
+                # Recompute the skew
+                harvest2 = df_irw_silv_check.merge(harvest_factors, on=harvest_join_cols)
+                harvest2["skew"] = harvest2["skew"] / harvest2["skew"].sum()
+                harvest_factors = harvest2
+
             # Aggregate the normalized value by groups
-            df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform(sum)
+            df_irw_silv["irw_norm_agg"] = df_irw_silv.groupby(harvest_join_cols)["irw_norm"].transform("sum")
 
             # Merge disturbances and harvest factors
             df_irw_silv = pandas.merge(df_irw_silv,
-                                       harvest,
+                                       harvest_factors,
                                        how='inner',
                                        on=harvest_join_cols)
 
@@ -489,7 +489,7 @@ class DynamicSimulation(Simulation):
                 msg += "The normalized available merchantable roundwood is distributed as follows:\n"
                 msg += f"{df_irw_silv.groupby(harvest_join_cols)['irw_norm_agg'].unique()}\n"
                 msg += "The harvest factors are distributed as follows:\n"
-                msg += f"{ harvest[harvest_join_cols + ['skew']]}\n "
+                msg += f"{ harvest_factors[harvest_join_cols + ['skew']]}\n "
                 msg += "This means that some combinations of silvicultural practices "
                 msg += "are not present in the events template."
                 msg += "Correct the input in havest_factors.csv."

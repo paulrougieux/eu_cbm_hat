@@ -18,6 +18,9 @@ MapDisturbanceType,Wild Fire,Wild Fire
 MapDisturbanceType,Deforestation,Deforestation
 MapDisturbanceType,Afforestation,Afforestation
 MapDisturbanceType,Generic 15%,generic 15% mortality
+MapDisturbanceType,Step_1_conversion_25%_commercial thinning,25% Commercial thinning
+MapDisturbanceType,Step_2_conversion_20%_commercial thinning,20% Commercial thinning
+MapDisturbanceType,Post_conversion_15%_commercial thinnings,15% Commercial thinning
 MapDisturbanceType,Generic 20%,generic 20% mortality
 MapDisturbanceType,Generic 25%,generic 25% mortality
 MapDisturbanceType,Generic 60% (INSECTS widespread),generic 60% mortality

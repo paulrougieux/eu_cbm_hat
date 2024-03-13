@@ -1,96 +1,199 @@
-"""Ouput information on changes in area"""
-
-from typing import Union, List
-import pandas
-from tqdm import tqdm
-
-from eu_cbm_hat.core.continent import continent
+from functools import cached_property
+from typing import List, Union
+import numpy as np
+from eu_cbm_hat.post_processor.sink import generate_all_combinations_and_fill_na
 
 
-def apply_to_all_countries(data_func, combo_name, groupby, **kwargs):
-    """Apply a function to many countries"""
-    df_all = pandas.DataFrame()
-    country_codes = continent.combos[combo_name].runners.keys()
-    for key in tqdm(country_codes):
-        try:
-            df = data_func(combo_name, key, groupby=groupby, **kwargs)
-            df_all = pandas.concat([df, df_all])
-        except FileNotFoundError as e_file:
-            print(e_file)
-    df_all.reset_index(inplace=True, drop=True)
-    return df_all
+class Area:
+    """Compute the area changes through time and across classifiers
 
+    Area grouped by status
 
-def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
-    """Harvest provided in one country
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos["reference"].runners["ZZ"][-1]
+        >>> area_st  = runner.post_processor.area.df_agg(["year", "status"])
+        >>> area_st[["year", "status", "area", "area_tm1"]].round()
+            year status     area  area_tm1
+        44  2021     AR     10.0       NaN
+        47  2022     AR     20.0      10.0
+        50  2023     AR     30.0      20.0
+        53  2024     AR     40.0      30.0
+        56  2025     AR     50.0      40.0
+        ..   ...    ...      ...       ...
+        58  2025     NF  23804.0   23130.0
+        61  2026     NF  24434.0   23804.0
+        64  2027     NF  25020.0   24434.0
+        67  2028     NF  25563.0   25020.0
+        70  2029     NF  26062.0   25563.0
+        <BLANKLINE>
+        [71 rows x 4 columns]
 
-    Usage:
+    Area grouped by status, species and age
 
-        >>> from eu_cbm_hat.post_processor.area import area_one_country
-        >>> df = area_one_country("reference", "ZZ", ["year", 'status', "disturbance_type"])
+        >>> index = ["year", "status", "forest_type", "age"]
+        >>> area_st_sp_age  = runner.post_processor.area.df_agg(index)
+        >>> selector = area_st_sp_age["status"] == "ForAWS"
+        >>> area_st_sp_age.loc[selector, ["year", "status", "forest_type","age", "area"]]
+               year  status forest_type  age       area
+        702    2001  ForAWS          DF    1   14.64570
+        1031   2002  ForAWS          DF    1   14.76704
+        1347   2003  ForAWS          DF    1   14.97740
+        1666   2004  ForAWS          DF    1    5.48501
+        4280   2012  ForAWS          DF    1    5.32162
+        ...     ...     ...         ...  ...        ...
+        10081  2028  ForAWS          QR  188  214.30000
+        10412  2029  ForAWS          QR  188  214.30000
+        10082  2028  ForAWS          QR  189  214.30000
+        10413  2029  ForAWS          QR  189  214.30000
+        10414  2029  ForAWS          QR  190  214.30000
+        <BLANKLINE>
+        [10332 rows x 5 columns]
+
+    Area grouped by status, species and age class (one every 10 years)
+
+        >>> index = ["year", "status", "forest_type", "age_class"]
+        >>> area_st_sp_agecl  = runner.post_processor.area.df_agg(index)
+
+    Area grouped by all classifiers and age
+
+        >>> df_agg_cl_age = runner.post_processor.area.df_agg_by_classifiers_age
+
+    At the end of the simulation a given set of classifiers can be repeated a
+    thousand times with different values of time since last disturbance, last
+    disturbance type, age class etc. Area at the most level of details from the
+    CBM pools output table:
+
+        >>> df = runner.post_processor.area.df
+
+    Total area stays constant through time
+
+        >>> df = runner.post_processor.area.df
+        >>> total_area = df.groupby("year")["area"].sum()
+        >>> total_area.round().unique()
+        array([111880.])
+
+    The status changes through time
+
+        >>> import matplotlib.pyplot as plt
+        >>> area_st_wide = area_st.pivot(columns="status", index="year", values="area")
+        >>> area_st_wide.plot()  # doctest: +SKIP
+        >>> plt.show()  # doctest: +SKIP
+
+    Is the area stable or changing across each of the classifiers?
+
+        >>> cols = runner.post_processor.classifiers.columns.to_list()
+        >>> cols = [x for x in cols if x not in ["identifier", "year"]]
+        >>> for cl in cols:
+        ...     print(cl)  # doctest: +SKIP
+        ...     df_cl = df.groupby([cl, "year"])["area"].sum().reset_index()
+        ...     print(df_cl["area"].round().unique())  # doctest: +SKIP
+
+    Area changes every year through transitions due to afforestation and
+    deforestation. Is the yearly area difference in ForAWS and ForNAWS equal to
+    deforestation + afforestation? Group area by status and check if the
+    difference in area is explained by afforestation and deforestation.
+
+        >>> area_check = runner.post_processor.area.afforestation_deforestation(
+        ...    check=True, rtol=1e-3)
+
+    Group by "time_since..." variables
+
+        >>> index = ["year", "status", "last_disturbance_type", 'time_since_last_disturbance']
+        >>> index += ["time_since_land_class_change", "land_class"]
+        >>> cols = ["area", "area_deforested_current_year", "area_afforested_current_year"]
+        >>> df3 = df.query("year in [2021, 2022, 2023]").groupby(index)[cols].agg("sum")
+
+    Group by region, climate and status
+
+        >>> index = runner.post_processor.sink.groupby_sink
+        >>> area_re_cl_st = runner.post_processor.area.df_agg(index)
 
     """
-    index = ["identifier", "timestep"]
-    runner = continent.combos[combo_name].runners[iso2_code][-1]
-    # Load Area
-    df = runner.output["pools"][index + ["area"]]
-    df["year"] = runner.country.timestep_to_year(df["timestep"])
-    # Add classifiers
-    df = df.merge(runner.output.classif_df, on=index)
-    # Disturbance type information
-    dist = runner.output["parameters"][index + ["disturbance_type"]]
-    df = df.merge(dist, on=index)
-    # Aggregate
-    df_agg = df.groupby(groupby)["area"].agg(sum).reset_index()
-    # Place combo name, country code and country name as first columns
-    df_agg["combo_name"] = combo_name
-    df_agg["iso2_code"] = runner.country.iso2_code
-    df_agg["country"] = runner.country.country_name
-    cols = list(df_agg.columns)
-    cols = cols[-3:] + cols[:-3]
-    return df_agg[cols]
 
+    def __init__(self, parent):
+        self.parent = parent
+        self.runner = parent.runner
 
-def area_by_status_one_country(
-    combo_name: str, iso2_code: str, groupby: Union[List[str], str] = None
-):
-    """Harvest provided in one country
+    @cached_property
+    def df(self):
+        """Area at the most level of details available from the CBM pools
+        table.
 
-    Usage:
+        Note: there might be many stands that have the same classifiers
+        and the same age class, but a different time since last disturbance and
+        a different last disturbance type.
+        """
+        df = self.parent.pools
+        selected_cols = [
+            "identifier",
+            "timestep",
+            "year",
+            "age",
+        ]
+        selected_cols += self.parent.classifiers_list
+        selected_cols += [
+            "last_disturbance_type",
+            "time_since_last_disturbance",
+            "time_since_land_class_change",
+            "growth_enabled",
+            "enabled",
+            "land_class",
+            "growth_multiplier",
+            "regeneration_delay",
+        ]
+        # Area columns
+        selected_cols += df.columns[df.columns.str.contains("area")].to_list()
+        # 10 year age class
+        df["age_class"] = (df["age"] / 10).round().astype(int)
+        return df
 
-        >>> from eu_cbm_hat.post_processor.area import area_by_status_one_country
-        >>> df = area_by_status_one_country("reference", "ZZ")
+    @cached_property
+    def df_agg_by_classifiers_age(self):
+        """Area t at the classifier level and by age classes"""
+        index = self.parent.classifiers_list + ["year", "age"]
+        area_columns = self.df.columns[self.df.columns.str.contains("area")].to_list()
+        df_agg = self.df.groupby(index)[area_columns].agg("sum").reset_index()
+        return df_agg
 
-    """
-    if isinstance(groupby, str):
-        groupby = [groupby]
-    groupby_default = ["year", "status", "disturbance_type"]
-    if groupby is None:
-        groupby = groupby_default
-    else:
-        groupby = groupby_default + list(set(groupby) - set(groupby_default))
-    df = area_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
-    # Change disturbance deforestation to status D
-    selector = df["disturbance_type"] == 7
-    df.loc[selector, "status"] = "D"
-    # Aggregate
-    index = ["year", "status"]
-    df = df.groupby(index)["area"].agg(sum).reset_index()
-    # Pivot to wide format
-    df_wide = df.pivot(index="year", columns="status", values="area").reset_index()
-    # Remove the sometimes confusing axis name
-    df_wide.rename_axis(columns=None, inplace=True)
-    return df_wide
+    def df_agg(self, groupby: Union[List[str], str] = None):
+        """Area aggregated by the given grouping variables and area t-1"""
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        if "year" not in groupby:
+            raise ValueError("Year has to be in the grouping variables")
+        # Aggregate by the given groupby variables
+        area_columns = self.df.columns[self.df.columns.str.contains("area")].to_list()
+        df_agg = self.df.groupby(groupby)[area_columns].agg("sum").reset_index()
+        # Index to compute the area at t-1
+        time_columns = ["identifier", "year", "timestep"]
+        index = [col for col in groupby if col not in time_columns]
+        # Arrange by group variable with year last to prepare for shift()
+        df_agg.sort_values(index + ["year"], inplace=True)
+        df_agg["area_tm1"] = df_agg.groupby(index)["area"].transform(
+            lambda x: x.shift()
+        )
+        return df_agg
 
+    def afforestation_deforestation(self, check=True, rtol=1e-3):
+        """Check afforestation and deforestation area changes recorded in
+        post_processor.pools correspond to the diff in area
 
-def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
-    """Harvest area by status in wide format for all countries in the given scenario combination.
+        If check is False do not enforce the consistency check. Set
+        `check=False` for debugging purposes.
 
-    >>> from eu_cbm_hat.post_processor.area import area_all_countries
-    >>> area_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
-
-    """
-    df_all = apply_to_all_countries(
-        area_one_country, combo_name=combo_name, groupby=groupby
-    )
-    return df_all
+        """
+        df = self.df_agg(["year", "status"])
+        # To avoid NA values for AR in the middle of the time series
+        df = generate_all_combinations_and_fill_na(df, ["year", "status"])
+        # TODO: first year values of area_tm1 should be NA, rechange them back to NA
+        df["area_diff"] = df["area"] - df["area_tm1"]
+        cols = ["area_afforested_current_year", "area_deforested_current_year"]
+        df1 = df.groupby("year")[cols].agg("sum").reset_index()
+        df["status"] = "diff_" + df["status"]
+        df2 = df.pivot(columns="status", index="year", values="area_diff").reset_index()
+        df_agg = df1.merge(df2, on="year")
+        if check:
+            np.testing.assert_allclose(
+                df_agg["area_afforested_current_year"], df_agg["diff_AR"], rtol=rtol
+            )
+        return df_agg

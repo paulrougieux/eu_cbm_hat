@@ -71,10 +71,11 @@ Over time it's important to regularly upgrade the 2 packages with:
     python -m pip install --upgrade eu_cbm_hat
     python -m pip install --upgrade https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
 
-In case you need to install the latest development version, use the --upgrade parameter
-and install from the main branch of the gitlab repository:
+In case you need to install the latest development version, use the `--upgrade`
+parameter and install from the main branch of the gitlab repository. That the
+`--no-dependencies` argument avoids reinstalling all dependencies as well:
 
-    python -m pip install --upgrade --force-reinstall https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/archive/main/eu_cbm_hat-main.tar.gz
+    python -m pip install --upgrade --force-reinstall --no-dependencies https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/archive/main/eu_cbm_hat-main.tar.gz
 
 By default, the data is located in your home folder. You can display the default
 location where the data should be with these commands in python:
@@ -98,7 +99,7 @@ Copy test data to your local `eu_cbm_data` folder (location defined above in pyt
     >>> from eu_cbm_hat.tests.copy_data import copy_test_data
     >>> copy_test_data()
 
-Clone the repository containing the AIDB (with a deploy token) inside your home folder
+Clone the repository containing the AIDB inside your home folder
 in the parent directory of the path given by `eu_cbm_hat.eu_cbm_aidb_dir`. Back to the
 shell (or conda console):
 
@@ -131,7 +132,26 @@ Run the test country ZZ at a python prompt:
     runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 
-### Inspect the model output
+### Run a scenario combination
+
+Run a scenario combination for all EU countries at once (see the [documentation on
+combos](https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat/combos.html)
+for how to specify them):
+
+    cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
+    ipython -i run_scenario_combo.py -- --combo_name reference --last_year 2050
+    ipython -i run_scenario_combo.py -- --combo_name pikssp2 --last_year 2070
+    ipython -i run_scenario_combo.py -- --combo_name pikfair --last_year 2070
+
+Process the output data for a list of scenario combinations provided as an argument.
+Compute the harvest expected and provided as well as the sink
+in an aggregated way:
+
+    cd $HOME/eu_cbm/eu_cbm_hat/scripts/post_processing
+    ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
+
+
+### Read the model output
 
 Inspect the output of the model
 
@@ -161,6 +181,48 @@ Inspect the output of the model
                  .merge(state, 'left', on = index) # Join the age information
                  .merge(classifiers, 'left', on = index) # Join the classifiers
                  )
+
+
+### Further process the output
+
+Instantiate a runner object. Note: this can be done after a model run, once the model
+has been run, no need to re-run the model at this point, since the output has been
+saved to the `eu_cbm_data/output` directory. The `runner.post_processor` method will
+read data from that directory.
+
+    from eu_cbm_hat.core.continent import continent
+    runner = continent.combos['reference'].runners['LU'][-1]
+
+Compute the Net Annual Increment (NAI)
+
+    nai_lu = runner.post_processor.nai.df_agg(["status"])
+
+Compute harvest expected and provided,
+
+    runner.post_processor.harvest.expected_provided("year")
+
+Compute the sink.
+
+    runner.post_processor.sink.df_agg("year")
+
+The above post processing methods can be computed for one country individually. They can
+also be computed for all countries together and saved in a parquet file for further
+analysis and comparison between different scenario combinations. For a given scenario
+such as "reference", save all post processing output for all countries to parquet files.
+This function implements all post processing steps.
+
+    >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
+    >>> save_agg_combo_output("reference")
+
+Further checks for information:
+
+- Check wood density and bark fraction in all countries:
+
+        from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
+        wood_density_bark_all = get_df_all_countries(
+            combo_name="reference",
+            runner_method_name="post_processor.wood_density_bark_frac"
+        )
 
 
 ### Testing

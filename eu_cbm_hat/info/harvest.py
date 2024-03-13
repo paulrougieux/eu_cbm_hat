@@ -146,7 +146,7 @@ class Demand:
 
 ###############################################################################
 # Figure out all possible harvest scenarios that we have #
-scenarios = [d.name for d in harvest_dir.flat_directories]
+scenarios = [d.name for d in harvest_dir.flat_directories if d]
 
 # Load all the GFTM outputs for every scenario and every wood type #
 gftm_outputs = {scen: {'irw': OutputGFTM(scen, roundwood),
