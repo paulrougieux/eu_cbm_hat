@@ -17,7 +17,7 @@ Run only one country
     ipython ~/eu_cbm/eu_cbm_hat/scripts/running/run_lu.py
     # Try another scenario
     cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
-    ipython run_scenario_combo.py -- --combo_name pikssp2_fel1 --last_year 2070 --countries IT
+    ipython run_scenario_combo.py -- --combo_name pikssp2_fel1 --last_year 2070 --countries LU
 
 Run the reference2 scenario with libcbm version 2 for a list of countries
 
