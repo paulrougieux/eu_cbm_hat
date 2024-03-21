@@ -48,10 +48,8 @@ def plot_hexprov(df, y, col_wrap=None, palette=None):
     """Facet plot of harvest demand per country for a given product"""
     if col_wrap is None:
         col_wrap = round(len(df["country"].unique()) / 9) + 1
-    # Remove harvest_exp_hat from the plot
-    selector = df["element"] != "harvest_exp_hat"
     g = seaborn.relplot(
-        data=df.loc[selector],
+        data=df,
         x="year",
         y=y,
         col="country",
@@ -73,9 +71,8 @@ def plot_hexprov(df, y, col_wrap=None, palette=None):
 def plot_harvest_demand(df, palette=None):
     """Facet plot of harvest demand per country for a given product"""
     col_wrap = round(len(df["country"].unique()) / 9) + 1
-    selector = df["combo_name"] != "reference"
     g = seaborn.relplot(
-        data=df.loc[selector],
+        data=df,
         x="year",
         y="demand",
         col="country",
