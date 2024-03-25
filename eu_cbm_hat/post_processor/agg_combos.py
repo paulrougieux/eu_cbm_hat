@@ -102,7 +102,7 @@ def place_combo_name_and_country_first(df, runner):
     return df[cols]
 
 
-def function_one_country(combo_name, iso2_code, runner_method_name):
+def get_df_one_country(combo_name, iso2_code, runner_method_name):
     """A generic function that returns the data frame output of the given
     runner method. Works only if the method is a @cached_property without
     arguments. See example use in the `get_df_all_countries()` function.
@@ -148,7 +148,7 @@ def get_df_all_countries(combo_name, runner_method_name):
     ArrowTypeError: ("Expected bytes, got a 'int' object", 'Conversion failed for column climate with type object')
     """
     df_all = apply_to_all_countries(
-        function_one_country,
+        get_df_one_country,
         combo_name=combo_name,
         runner_method_name=runner_method_name)
     return df_all
