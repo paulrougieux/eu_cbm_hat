@@ -10,13 +10,12 @@ country orig data on a laptop where the model has not been run in all countries
 yet i.e. a laptop where the output directory is not available for most
 countries.
 
-Check classifiers in all countries:
+Print unique classifier values in all countries:
 
     >>> from eu_cbm_hat.post_processor.orig_data_stats import classifiers_all_countries
     >>> classifiers_all = classifiers_all_countries(combo_name="reference")
     >>> for this_cl in classifiers_all["classifier"].unique():
     >>>     selector = classifiers_all["classifier"] == this_cl
-    >>>     selector &= classifiers_all["classifier_value_id"] != '_CLASSIFIER'
     >>>     if this_cl == "forest_type":
     >>>         # Remove NF forest types
     >>>         selector &= ~classifiers_all["classifier_value_id"].str.contains("NF")
@@ -25,6 +24,11 @@ Check classifiers in all countries:
     >>>     unique_values = df["classifier_value_id"].unique()
     >>>     print(len(unique_values), unique_values)
 
+Prepare a table of unique classifier values and description in all EU countries:
+
+    >>> selector = classifiers_all["country"] != "ZZ"
+    >>> classif_unique = classifiers_all.loc[selector].value_counts(["classifier", "classifier_value_id", "name"], sort=False)
+    >>> classif_unique.to_csv("/tmp/classifiers.csv")
 
 """
 from eu_cbm_hat.core.continent import continent
@@ -41,7 +45,8 @@ def classifiers_one_country(combo_name: str, iso2_code: str):
     df.loc[selector, "classifier"] = df.loc[selector, "name"]
     df["classifier"].ffill(inplace=True)
     df = place_combo_name_and_country_first(df, runner)
-    return df
+    selector = df["classifier_value_id"] != '_CLASSIFIER'
+    return df.loc[selector].copy()
 
 
 def classifiers_all_countries(combo_name):
