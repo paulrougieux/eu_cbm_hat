@@ -1,13 +1,15 @@
 """Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
 
-- For a given scenario such as "reference", save all post processing output for
-  all countries to parquet files. This function implements all post processing
-  steps.
+For example, aggregate the output of the "reference" scenario combination and
+save all post processing output tables for all countries to parquet files.
 
     >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
     >>> save_agg_combo_output("reference")
 
 Other examples below explain how to run only some of the post processing steps.
+This was useful as we were developing these output aggregation methods, we
+often wanted to update only one type of output table for all scenarios at once,
+and not have to wait to update all output tables for all scenarios.
 
 - Save a specific data frame for all countries and all combos to parquet files
 
@@ -24,10 +26,10 @@ Other examples below explain how to run only some of the post processing steps.
 
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
     >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
-    >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
 
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
@@ -37,6 +39,8 @@ Other examples below explain how to run only some of the post processing steps.
     >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
     >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
+    >>> hexprov_ft_dist = apply_to_all_countries(harvest_exp_prov_one_country,
+    ...                                          groupby=["year", "forest_type", "con_broad", "disturbance_type"])
 
 - Open the resulting parquet files to check the content of the data frames
 
@@ -221,7 +225,7 @@ def save_agg_combo_output(combo_name: str):
         },
         {
             "data_func": harvest_exp_prov_one_country,
-            "groupby": ["year", "forest_type", "disturbance_type"],
+            "groupby": ["year", "forest_type", "con_broad", "disturbance_type"],
             "file_name": "hexprov_by_year_ft_dist.parquet",
         },
         {
