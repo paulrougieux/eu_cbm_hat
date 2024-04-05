@@ -39,7 +39,7 @@ and not have to wait to update all output tables for all scenarios.
     >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
     >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
-    >>> hexprov_ft_dist = apply_to_all_countries(harvest_exp_prov_one_country,
+    >>> hexprov_ft_dist = apply_to_all_countries(harvest_exp_prov_one_country, combo_name,
     ...                                          groupby=["year", "forest_type", "con_broad", "disturbance_type"])
 
 - Open the resulting parquet files to check the content of the data frames
