@@ -11,7 +11,8 @@ This was useful as we were developing these output aggregation methods, we
 often wanted to update only one type of output table for all scenarios at once,
 and not have to wait to update all output tables for all scenarios.
 
-- Save a specific data frame for all countries and all combos to parquet files
+- Save a specific data frame for all countries and all scenario combinations to
+  parquet files
 
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
@@ -31,8 +32,15 @@ and not have to wait to update all output tables for all scenarios.
     >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, ".parquet",
     ...                     groupby=["year", "forest_type", "con_broad", "disturbance_type"])
 
-- Save a specific data frame for all all countries to a parquet file
+- Open the resulting parquet files to check the content of the data frames
 
+    >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
+    >>> sink = read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
+    >>> nai_st = read_agg_combo_output(combos, "nai_by_year_st_test_to_delete.parquet")
+    >>> pools_length = read_agg_combo_output(combos, "pools_length.parquet")
+
+- Save a specific data frame for all countries and only one scenario
+  combination to parquet files
 
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
@@ -42,15 +50,6 @@ and not have to wait to update all output tables for all scenarios.
     >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
     >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
-    >>> hexprov_ft_dist = apply_to_all_countries(harvest_exp_prov_one_country, combo_name,
-    ...                                          groupby=["year", "forest_type", "con_broad", "disturbance_type"])
-
-- Open the resulting parquet files to check the content of the data frames
-
-    >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
-    >>> sink = read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
-    >>> nai_st = read_agg_combo_output(combos, "nai_by_year_st_test_to_delete.parquet")
-    >>> pools_length = read_agg_combo_output(combos, "pools_length.parquet")
 
 - Get data frames in all countries:
 
@@ -80,7 +79,7 @@ and not have to wait to update all output tables for all scenarios.
     - Removing the "continent" could be done by changing functions to pass runner
       objects as arguments instead of creating the runner from the continent object.
     - The call to combined could be removed by loading the harvest demand table
-      directly from csv files.
+      directly from CSV files.
 
 """
 
