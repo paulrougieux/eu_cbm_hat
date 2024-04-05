@@ -29,7 +29,7 @@ and not have to wait to update all output tables for all scenarios.
     ...                     "hexprov_by_year.parquet", groupby=["year"])
     >>> apply_to_all_combos(area_one_country, combos, "area_st_ft_agecl.parquet",
     ...                     groupby=["year", "status", "forest_type", "age_class"])
-    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, ".parquet",
+    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year_ft_dist.parquet",
     ...                     groupby=["year", "forest_type", "con_broad", "disturbance_type"])
 
 - Open the resulting parquet files to check the content of the data frames
