@@ -13,6 +13,13 @@ and not have to wait to update all output tables for all scenarios.
 
 - Save a specific data frame for all countries and all combos to parquet files
 
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
+    >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
+
     >>> combos = ["pikssp2_fel1", "pikssp2_owc_max", "pikssp2_owc_min",
     >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
     >>> apply_to_all_combos(pools_length_one_country, combos, "pools_length.parquet")
@@ -21,15 +28,11 @@ and not have to wait to update all output tables for all scenarios.
     ...                     "hexprov_by_year.parquet", groupby=["year"])
     >>> apply_to_all_combos(area_one_country, combos, "area_st_ft_agecl.parquet",
     ...                     groupby=["year", "status", "forest_type", "age_class"])
+    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, ".parquet",
+    ...                     groupby=["year", "forest_type", "con_broad", "disturbance_type"])
 
 - Save a specific data frame for all all countries to a parquet file
 
-    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
-    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
-    >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
-    >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
-    >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
-    >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
 
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
