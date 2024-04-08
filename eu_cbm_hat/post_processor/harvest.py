@@ -62,13 +62,18 @@ class Harvest:
 
     @cached_property
     def demand(self) -> pandas.DataFrame:
-        """Get demand from the economic model using eu_cbm_hat/info/harvest.py"""
+        """Get demand from the economic model using eu_cbm_hat/info/harvest.py
+
+        Convert demand volumes from 1000m3 ub to m3 ub.
+        """
         harvest_scenario_name = self.runner.combo.config["harvest"]
         irw = combined["irw"]
         irw["product"] = "irw_demand"
         fw = combined["fw"]
         fw["product"] = "fw_demand"
         df = pandas.concat([irw, fw]).reset_index(drop=True)
+        # Convert volumes from 1000m3 ub to m3 ub
+        df["value"] *= 1e3
         index = ["scenario", "iso2_code", "year"]
         df = df.pivot(index=index, columns="product", values="value").reset_index()
         df["rw_demand"] = df["fw_demand"] + df["irw_demand"]
