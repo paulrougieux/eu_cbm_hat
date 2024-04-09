@@ -234,6 +234,19 @@ well as running a mock country called "ZZ". You can see the output of these runs
 (successful or not) in the CI-CD jobs page on gitlab.
 
 
+### Model runs used in publications
+
+- The model run used in the technical report
+
+    - European Commission, Joint Research Centre, Rougieux, P., Pilli, R., Blujdea, V.,
+    Mansuy, N. and Mubareka, S.B., Simulating future wood consumption and the impacts on
+    Europe's forest sink to 2070, Publications Office of the European Union, Luxembourg,
+    2024, https://data.europa.eu/doi/10.2760/17191, JRC136526.
+
+    - Corresponds to the data at commit d7ddf2963666bc57360c6576e050e022d3b75e3f in
+      branch run-ssp2-fair-v2023
+
+
 ## Definitions and specification
 
 - A specification for an Harvest Allocation Tool (HAT) is available at
