@@ -36,20 +36,7 @@ Run, aggregate output and share on BDAP:
 """
 
 import argparse
-from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
-
-
-def run_country(args):
-    """Run a single country, only based on the code as input"""
-    combo_name, last_year, country_code = args
-    runner = continent.combos[combo_name].runners[country_code][-1]
-    runner.num_timesteps = last_year - runner.country.inventory_start_year
-    try:
-        runner.run()
-    except Exception as e:
-        print(e)
-
 
 parser = argparse.ArgumentParser(description="Run the EU_CBM_HAT scenario combinations")
 parser.add_argument(
@@ -66,9 +53,5 @@ LAST_YEAR = shell_args.last_year
 COMBO_NAME = shell_args.combo_name
 COUNTRIES = shell_args.countries
 
-# If no countries are specified, run for all countries
-if COUNTRIES is None:
-    COUNTRIES = list(continent.combos[COMBO_NAME].runners.keys())
-
-runner_items = [(COMBO_NAME, LAST_YEAR, k) for k in COUNTRIES]
-result = p_umap(run_country, runner_items, num_cpus=4)
+# Run the scenario combination for the given list of countries
+continent.combos[COMBO_NAME].run(LAST_YEAR, COUNTRIES)
