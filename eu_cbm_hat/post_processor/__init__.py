@@ -139,6 +139,19 @@ class PostProcessor(object):
             "roots": ["softwood_fine_roots", "hardwood_fine_roots",
                       "softwood_coarse_roots", "hardwood_coarse_roots"],
             "foliage": ["softwood_foliage", "hardwood_foliage"],
+            "litter": [
+                "above_ground_very_fast_soil",
+                "above_ground_fast_soil",
+                "above_ground_slow_soil",
+            ],
+            "dead_wood": [
+                "softwood_stem_snag",
+                "softwood_branch_snag",
+                "hardwood_branch_snag",
+                "hardwood_stem_snag",
+                "below_ground_fast_soil",
+                "medium_soil",
+            ],
         }
         for key, cols in column_dict.items():
             df[key] = df[cols].sum(axis=1)
