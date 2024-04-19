@@ -234,11 +234,16 @@ class Harvest:
         df = self.runner.country.orig_data["disturbance_types"]
         df.rename(columns={"dist_type_name": "disturbance_type"}, inplace=True)
         df["disturbance_type"] = df["disturbance_type"].astype(int)
-        df["disturbance"] = "thinning"
-        clearcut = df["dist_desc_input"].str.contains("deforestation|cut", case=False)
-        df.loc[clearcut, "disturbance"] = "clearcut"
-        salvage = df["dist_desc_input"].str.contains("salvage", case=False)
-        df.loc[salvage, "disturbance"] = "salvage"
+        df["disturbance"] = "thinning"  # Default to thinning
+        dist_dict = {
+            "afforestation": "afforestation",
+            "deforestation|cut": "clearcut",
+            "salvage": "salvage",
+            "fire": "natural",
+        }
+        for key, value in dist_dict.items():
+            selector = df["dist_desc_input"].str.contains(key, case=False)
+            df.loc[selector, "disturbance"] = value
         return df
 
     @cached_property
