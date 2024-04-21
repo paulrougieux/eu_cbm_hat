@@ -108,16 +108,20 @@ def place_combo_name_and_country_first(df, runner):
     return df[cols]
 
 
-def get_df_one_country(combo_name, iso2_code, runner_method_name):
+def get_df_one_country(combo_name, iso2_code, runner_method_name, **kwargs):
     """A generic function that returns the data frame output of the given
-    runner method. Works only if the method is a @cached_property without
-    arguments. See example use in the `get_df_all_countries()` function.
+    runner method. See example use in the `get_df_all_countries()` function.
     """
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     method = runner
     for method_name in runner_method_name.split("."):
         method = getattr(method, method_name)
-    df = method
+    # If it's a @cached_property that returns a data frame directly
+    if method.__class__.__name__ ==  "DataFrame":
+        df = method
+    # Otherwise call the method with additional arguments
+    else:
+        df = method(**kwargs)
     df = place_combo_name_and_country_first(df, runner)
     return df
 
@@ -138,17 +142,32 @@ def apply_to_all_countries(data_func, combo_name, **kwargs):
     return df_all
 
 
-def get_df_all_countries(combo_name, runner_method_name):
+def get_df_all_countries(combo_name, runner_method_name, **kwargs):
     """Get a data frame for all countries.
-    Only works for runner methods which are decorated with @cached_property.
 
     Check wood density and bark fraction in all countries:
 
         >>> from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
         >>> wood_density_bark_all = get_df_all_countries(
-        >>>     combo_name="reference",
-        >>>     runner_method_name="post_processor.wood_density_bark_frac"
-        >>> )
+        ...     combo_name="reference",
+        ...     runner_method_name="post_processor.wood_density_bark_frac"
+        ... )
+
+    Check aggregated stock in all countries:
+
+        >>> stock_agg_all = get_df_all_countries(
+        ...     combo_name="reference",
+        ...     runner_method_name="post_processor.stock.df_agg",
+        ...     groupby = ["year", "last_disturbance"],
+        ... )
+
+    Area in all countries grouped by status, forest type, age and disturbances:
+
+        >>> area_sfad_all = get_df_all_countries(
+        ...     combo_name="reference",
+        ...     runner_method_name="post_processor.area.df_agg",
+        ...     groupby = ["year", 'status', "forest_type", "age","disturbance_type"],
+        ... )
 
     Note: data types should be harmonized to avoid this error when writing to a parquet file
     ArrowTypeError: ("Expected bytes, got a 'int' object", 'Conversion failed for column climate with type object')
@@ -156,7 +175,9 @@ def get_df_all_countries(combo_name, runner_method_name):
     df_all = apply_to_all_countries(
         get_df_one_country,
         combo_name=combo_name,
-        runner_method_name=runner_method_name)
+        runner_method_name=runner_method_name,
+        **kwargs,
+    )
     return df_all
 
 
@@ -501,6 +522,8 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     df_agg = runner.post_processor.area.df_agg(groupby)
     df_agg = place_combo_name_and_country_first(df_agg, runner)
     return df_agg
+
+
 
 
 def area_by_status_one_country(combo_name: str, iso2_code: str):
