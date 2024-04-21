@@ -71,3 +71,77 @@ class Stock:
             df_agg["hardwood_snag_prod"] + df_agg["hardwood_merch_prod"]
         )
         return df_agg
+
+    def df_agg(self, groupby: Union[List[str], str] = None):
+        """Aggregated stock data
+
+        Particularly interesting to get information the Dead Organic Matter stock.
+
+        DOM stock distinguished by areas that have been harvested and areas not
+        harvested:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> runner.post_processor.stock.df_agg(["year", "last_disturbance"])
+
+        Check last disturbance type is 1 for rows where the condition is True
+
+            >>> selected_cols = ["timestep", "disturbance_type", "last_disturbance_type", "time_since_last_disturbance"]
+            >>> runner.post_processor.pools.query("last_disturbance_type == disturbance_type")[selected_cols]
+            >>> #
+
+        """
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        column_dict = {
+            "merch": ["softwood_merch", "hardwood_merch"],
+            "other": ["softwood_other", "hardwood_other"],
+            "roots": [
+                "softwood_fine_roots",
+                "hardwood_fine_roots",
+                "softwood_coarse_roots",
+                "hardwood_coarse_roots",
+            ],
+            "foliage": ["softwood_foliage", "hardwood_foliage"],
+            "litter": [
+                "above_ground_very_fast_soil",
+                "above_ground_fast_soil",
+                "above_ground_slow_soil",
+            ],
+            "dead_wood": [
+                "softwood_stem_snag",
+                "softwood_branch_snag",
+                "hardwood_branch_snag",
+                "hardwood_stem_snag",
+                "below_ground_fast_soil",
+                "medium_soil",
+            ],
+        }
+        df = self.parent.pools.copy()
+        for key, cols in column_dict.items():
+            df[key] = df[cols].sum(axis=1)
+        df["dom"] = df["litter"] + df["dead_wood"]
+        dist_types = self.parent.harvest.disturbance_types.copy()
+        dist_types.rename(
+            columns={
+                "disturbance_type": "last_disturbance_type",
+                "disturbance": "last_disturbance",
+            },
+            inplace=True,
+        )
+        df = df.merge(dist_types, on="last_disturbance_type")
+        allowed_index = self.parent.classifiers_list
+        allowed_index += [
+            "year",
+            "disturbance_type",
+            "last_disturbance_type",
+            "last_disturbance",
+        ]
+        missing_columns = set(groupby) - set(allowed_index)
+        if bool(missing_columns):
+            raise ValueError(
+                f"Columns {missing_columns} are not allowed as groupby variables."
+            )
+        cols = ["area"] + list(column_dict.keys()) + ["dom"]
+        df_agg = df.groupby(groupby)[cols].agg("sum").reset_index()
+        return df_agg
