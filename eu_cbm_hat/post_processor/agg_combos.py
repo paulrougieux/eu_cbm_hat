@@ -173,7 +173,7 @@ def get_df_all_countries(combo_name, runner_method_name, **kwargs):
     ArrowTypeError: ("Expected bytes, got a 'int' object", 'Conversion failed for column climate with type object')
     """
     df_all = apply_to_all_countries(
-        get_df_one_country,
+        data_func=get_df_one_country,
         combo_name=combo_name,
         runner_method_name=runner_method_name,
         **kwargs,
@@ -188,26 +188,52 @@ def apply_to_all_countries_and_save(args):
         - p_umap() in apply_to_all_combos().
         - and in save_agg_combo_output
     """
-    data_func, combo_name, file_path, groupby = args
+    data_func, combo_name, file_path, groupby, runner_method_name = args
     # Have to check if defined or not because combo_name is passed in **kwargs
-    if groupby is None:
+    # TODO: check if it's possible to pass groupby, runner_method_name and
+    # combo_name in kwargs
+    if groupby is None and runner_method_name is None:
         print(f"Processing {combo_name} {data_func}.")
         df = apply_to_all_countries(data_func=data_func, combo_name=combo_name)
-    else:
+    elif runner_method_name is None:
         print(f"Processing {combo_name} {data_func} grouped by {groupby}.")
         df = apply_to_all_countries(
             data_func=data_func, combo_name=combo_name, groupby=groupby
         )
+    else:
+        msg = f"Processing {combo_name} {data_func} with {runner_method_name} "
+        msg += f"grouped by {groupby}."
+        print(msg)
+        df = apply_to_all_countries(
+            data_func=data_func, combo_name=combo_name, groupby=groupby, runner_method_name=runner_method_name
+        )
     df.to_parquet(file_path)
 
 
-def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
+def apply_to_all_combos(data_func, combo_names, file_name, groupby=None, runner_method_name=None):
     """Apply a function to all scenario combinations and save to parquet files
 
     This saves data for all countries in all scenario combinations into the
     given parquet file name. One file for each sub-directory in the
     eu_cbm_data/output_agg directory. These files can then be read and
     concatenated later with the read_agg_combo_output() function.
+
+    Usage with the get_df_one_country function:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
+        >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
+        >>> from eu_cbm_hat.post_processor.agg_combos import get_df_one_country
+        >>> apply_to_all_combos(get_df_one_country, ["reference", "pikfair_fel1"], "stock_agg_example_to_delete.parquet", ["year", "last_disturbance"], "post_processor.stock.df_agg")
+        >>> # Read the parquet file
+        >>> stock_agg = read_agg_combo_output(["reference", "pikfair_fel1"], "stock_agg_example_to_delete.parquet")
+
+   It can also be used with a custom function:
+    
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
+        >>> apply_to_all_combos(harvest_exp_prov_one_country, ["reference", "pikfair_fel1"], "hexprov_example_to_delete.parquet",
+        ...                     groupby=["year", "forest_type", "con_broad", "disturbance_type"])
+        >>> hexprov = read_agg_combo_output(["reference", "pikfair_fel1"], "hexprov_example_to_delete.parquet")
+
     """
     items = [
         (
@@ -215,6 +241,7 @@ def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
             combo_name,
             output_agg_dir / combo_name / file_name,  # file path
             groupby,
+            runner_method_name,
         )
         for combo_name in combo_names
     ]
