@@ -16,6 +16,7 @@ and not have to wait to update all output tables for all scenarios.
 
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
     >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import get_df_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
     >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
@@ -31,6 +32,8 @@ and not have to wait to update all output tables for all scenarios.
     ...                     groupby=["year", "status", "forest_type", "age_class"])
     >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year_ft_dist.parquet",
     ...                     groupby=["year", "forest_type", "con_broad", "disturbance_type"])
+    >>> apply_to_all_combos(get_df_one_country, combos, "stock_agg_by_year_ldist.parquet",
+    ...                     groupby=["year", "last_disturbance"], runner_method_name="post_processor.stock.df_agg")
 
 - Open the resulting parquet files to check the content of the data frames
 
