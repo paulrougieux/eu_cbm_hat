@@ -6,11 +6,9 @@
 # %%
 from typing import Union, List
 from functools import cached_property
+from eu_cbm_hat import eu_cbm_data_pathlib
 import numpy as np
 import pandas as pd
-
-# %%
-from eu_cbm_hat import eu_cbm_data_pathlib
 
 
 # %%
@@ -198,7 +196,6 @@ class HWP(object):
 #initiate the class
 hwp = HWP()
 
-
 # you dont need this pleas call directly hwp.faostat_bulk_data 
 faostat_bulk_data = hwp.faostat_bulk_data
 hwp_types = hwp.hwp_types
@@ -278,7 +275,7 @@ def gap_filling_eu_totals():
                                        (x['pp_prod_ms'] == 0).any()))
     
     # Group by Area, Item, and Element and sum the amount
-    df_eu = complete_groups.groupby(['year'])['sw_prod_ms','wp_prod_ms','pp_prod_ms'].sum().reset_index()
+    df_eu = complete_groups.groupby(['year'])[['sw_prod_ms','wp_prod_ms','pp_prod_ms']].sum().reset_index()
     df_eu = df_eu.rename(columns={
         'sw_prod_ms': 'sw_prod_eu',
         'wp_prod_ms': 'wp_prod_eu',
@@ -450,7 +447,7 @@ def fao_wp_to_irw ():
     new_columns = {col: col[1:] if col.startswith('Y') else col for col in df.columns}
     df = df.rename(columns=new_columns)
     
-    df_ms = df.query(' Item == "wood_panels" ')
+    df_ms = df.query(' Item == "wood_panels" ').copy()
     
     shorts_mapping = {
                 'Production': 'prod',
@@ -503,7 +500,7 @@ def fao_pulp_to_irw ():
     new_columns = {col: col[1:] if col.startswith('Y') else col for col in df.columns}
     df = df.rename(columns=new_columns)
     
-    df_ms = df.query('Item == "wood_pulp" ')
+    df_ms = df.query('Item == "wood_pulp" ').copy()
     
     shorts_mapping = {
                 'Production': 'prod',
@@ -563,7 +560,7 @@ def gap_filling_irw_faostat():
     new_columns = {col: col[1:] if col.startswith('Y') else col for col in df.columns}
     df = df.rename(columns=new_columns)
    
-    df_ms = df.query('Item == "irw_broad" | Item == "irw_con" ')
+    df_ms = df.query('Item == "irw_broad" | Item == "irw_con" ').copy()
     
     shorts_mapping = {
                 'Production': 'prod',
@@ -735,14 +732,14 @@ def eu_wrb():
     fWP_pv = sankey_rw_prod_in_hwp['fWP_pv'].mean()
     
     #reorganize 
-    sankey_rw_prod = sankey_rw_prod_in_hwp[['scenario','country','year','fSW','fPP','fWP','fWP_fibboa','fWP_partboa','fWP_pv','rec_wood_swe_m3','rec_paper_swe_m3']]
+    sankey_rw_prod = sankey_rw_prod_in_hwp[['scenario','country','year','fSW','fPP','fWP','fWP_fibboa','fWP_partboa','fWP_pv','rec_wood_swe_m3','rec_paper_swe_m3']].copy()
    
     #add absolute amounts of export of roundwood
     rw_export_thou_swe_m3= sankey_rw_prod_in_exp.rw_export.mean()
-    sankey_rw_prod.loc[:,'rw_export_thou_swe_m3'] = rw_export_thou_swe_m3
+    sankey_rw_prod.loc[:, 'rw_export_thou_swe_m3'] = rw_export_thou_swe_m3
     
     # convert Sankey volume data to carbon, by taking into account the share of con to broad, and wd
-    sankey_rw_prod .loc[:,'rw_export_tc']= 1000*sankey_rw_prod.loc[:,'rw_export_thou_swe_m3']*wd_con_broad*c_fraction
+    sankey_rw_prod['rw_export_tc']= 1000*wd_con_broad*c_fraction*sankey_rw_prod['rw_export_thou_swe_m3']
 
     # estimate the correction
     #retain only rows relevant with annual data on irw_amount allocated to products
