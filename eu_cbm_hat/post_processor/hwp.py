@@ -7,67 +7,28 @@
 from typing import Union, List
 from functools import cached_property
 from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.post_processor.hwp_input import HWPInput
 import numpy as np
 import pandas as pd
 
 
 # %%
 class HWP(object):
-    """Harvest Wood Products input and processing"""
-    @cached_property
-    def hwp_types(self):
-        # this is the types of wood use data to be retrieved from FAOSTAT
-        HWP_types = pd.read_csv(eu_cbm_data_pathlib / 'common/hwp_types.csv')
-        return HWP_types
-    
-    @cached_property
-    def eu_member_states (self):
-        #list of EU MS
-        EU_member_states = pd.read_csv(eu_cbm_data_pathlib / 'common/eu_member_states.csv')
-        return EU_member_states
-    
-    @cached_property
-    def faostat_bulk_data (self):
-        #faostat as downloaded as bulk from FAOSTAT, namely :"Forestry_E_Europe" is a bulk download from  FAOSTAT. 
-        Faostat_bulk_data = pd.read_csv(eu_cbm_data_pathlib / 'common/Forestry_E_Europe.csv', low_memory=False)
-        return Faostat_bulk_data
+    """Harvest Wood Products input and processing
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.hwp import HWP
+        >>> hwp = HWP
+        >>> hwp.rw_export_correction_factor
+
+    """
 
     @cached_property
-    def euwrb_stat (self):
-        # input Sankey data
-        EUwrb_stat = pd.read_csv(eu_cbm_data_pathlib / 'common/forestry_sankey_data.csv')
-        return EUwrb_stat
+    def input(self):
+        """Input data for HWP computations"""
+        return HWPInput(self)
 
-    @cached_property
-    def fao_rw_prod_gapfilled (self):
-        ## import FAOSTAT on IRW production on con and broad, data in volume (m3), this is gapfilled for historical periods
-        FAO_rw_prod_gapfilled = pd.read_csv(eu_cbm_data_pathlib / 'common/irw_con_broad_faostat.csv')
-        return FAO_rw_prod_gapfilled
-
-    @cached_property
-    def crf_stat (self):
-        # crf sumbissions
-        CRF_stat = pd.read_csv(eu_cbm_data_pathlib / 'common/hwp_crf_submission_2023.csv')
-        CRF_stat = CRF_stat.rename(columns = {'country':'area'})
-        return CRF_stat
-
-    @cached_property
-    def subst_params (self):
-        # substitution file
-        Subst_params = pd.read_csv(eu_cbm_data_pathlib / 'common/substitution_factors.csv')
-        return Subst_params
-
-    @cached_property
-    def subst_ref (self):
-        # substitution reference scenario
-        Subst_ref = pd.read_csv( eu_cbm_data_pathlib / 'common/substitution_reference_scenario.csv')
-        return Subst_ref  
-    
-    @cached_property
-    def silv_to_hwp (self):
-        # substitution reference scenario
-        Silv_to_hwp = pd.read_csv( eu_cbm_data_pathlib / 'common/silv_practices_to_hwp.csv')
-        return Silv_to_hwp
     
     @cached_property
     def rw_export_correction_factor(self):
@@ -79,14 +40,14 @@ class HWP(object):
 
         # you should make this a method of HWP so that 
         # df_fao = self.faostat_bulk_data
-        df_fao = self.faostat_bulk_data
+        df_fao = self.input.faostat_bulk_data
 
         # remove rows which do not reffer to "quantity" from original data
         filter = df_fao['Element'].str.contains('Value')
         df_fao = df_fao[~filter].rename(columns = {'Item':'Item_orig', 'Element':'Element_orig'})
 
         # add lables used in the hwp scripts
-        df = df_fao.merge(self.hwp_types, on = ['Item Code','Item_orig']).merge(self.eu_member_states, on = ['Area'])
+        df = df_fao.merge(self.input.hwp_types, on = ['Item Code','Item_orig']).merge(self.input.eu_member_states, on = ['Area'])
 
         # Filter the columns that start with 'Y' and do not end with a letter
         keep_columns = ['Area Code', 'Area', 'Item Code','Item_orig', 'Item', 'Element Code', 'Element_orig', 'Unit']
@@ -196,16 +157,17 @@ class HWP(object):
 #initiate the class
 hwp = HWP()
 
-# you dont need this pleas call directly hwp.faostat_bulk_data 
-faostat_bulk_data = hwp.faostat_bulk_data
-hwp_types = hwp.hwp_types
-eu_member_states = hwp.eu_member_states
-euwrb_stat= hwp.euwrb_stat
-fao_rw_prod_gapfilled= hwp.fao_rw_prod_gapfilled
-crf_stat= hwp.crf_stat
-subst_params= hwp.subst_params
-subst_ref= hwp.subst_ref
-silv_to_hwp= hwp.silv_to_hwp
+# These intermediate data frames are not needed,
+# hwp.input.faostat_bulk_data can be called directly instead
+faostat_bulk_data = hwp.input.faostat_bulk_data
+hwp_types = hwp.input.hwp_types
+eu_member_states = hwp.input.eu_member_states
+euwrb_stat = hwp.input.euwrb_stat
+fao_rw_prod_gapfilled = hwp.input.fao_rw_prod_gapfilled
+crf_stat = hwp.input.crf_stat
+subst_params = hwp.input.subst_params
+subst_ref = hwp.input.subst_ref
+silv_to_hwp = hwp.input.silv_to_hwp
 
 
 # %%
