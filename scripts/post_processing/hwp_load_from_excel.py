@@ -4,6 +4,9 @@ Usage:
 
     ipython -i ~/eu_cbm/eu_cbm_hat/scripts/post_processing/hwp_load_from_excel.py
 
+The following script moves HWP data from many Excel files to one csv file in
+~/eu_cbm/eu_cbm_data/output_agg/hwp
+
 """
 
 import pandas
