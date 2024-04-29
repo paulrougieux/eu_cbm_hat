@@ -49,7 +49,18 @@ hwp["year"] = hwp["year"].astype(int)
 # Sort values
 hwp.sort_values(["scenario", "country", "year"], inplace=True)
 
-# Write to a CSV file to be archived in eu_cbm_data, in git
+#############################################################
+# Write to a CSV file to be archived in eu_cbm_data, in git #
+#############################################################
+# Note this file was first put in eu_cbm_data/domestic_harvest/hwp But this
+# resulted in an error due to the make_combined function in
+# ~/repos/eu_cbm/eu_cbm_hat/eu_cbm_hat/info/harvest.py
+#
+#     FileNotFoundError: [Errno 2] No such file or directory: <FilePath object
+#     "/home/paul/repos/eu_cbm/eu_cbm_data/domestic_harvest/hwp/irw_harvest.csv">
+#
+# That is why it was moved to output_agg/hwp
+
 file_path = eu_cbm_data_pathlib / "output_agg/hwp/hwp_2023.csv"
 hwp.to_csv(file_path, index=False)
 
