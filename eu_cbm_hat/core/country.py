@@ -26,11 +26,6 @@ from eu_cbm_hat.info.aidb           import AIDB
 # Country codes #
 all_country_codes = eu_cbm_data_dir + 'common/country_codes.csv'
 all_country_codes = pandas.read_csv(str(all_country_codes))
-country_group_order = ['North', 'Central-West', 'Central-East', 'South-West', 'South-East']
-all_country_codes["country_group"] = pandas.Categorical(
-    all_country_codes["country_group"], categories=country_group_order, ordered=True
-)
-
 
 # Country reference years #
 ref_years = eu_cbm_data_dir + 'common/reference_years.csv'
