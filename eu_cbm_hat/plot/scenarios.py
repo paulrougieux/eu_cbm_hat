@@ -16,7 +16,9 @@ eu_cbm_explore/scenarios/ssp2_fair_degrowth/ssp2_fair_owc.ipynb
 
 """
 
+import pandas
 import seaborn
+import seaborn.objects as so
 
 
 def plot_sink_by_country(df, y, col_wrap=None, palette=None):
@@ -137,3 +139,41 @@ def plot_nai_eu(df, y, palette=None):
     g.fig.subplots_adjust(hspace=0.3)
     g.fig.subplots_adjust(top=0.90, right=0.88)
     return g
+
+
+def plot_sink_composition(df, selected_years, index):
+    """Bar plot of the sink composition for all years
+    Facet on pathway, with years on the x axis.
+        >>> plot_sink_composition(sink_by_country_groups,
+        ...                       [2030, 2050, 2070],
+        ...                       index = ["pathway", "year", "country_group"])
+        >>> plot_sink_composition(sink_eu,
+        ...                       [2030, 2050, 2070],
+        ...                       index=["pathway", "year"])
+    """
+    # Compute dom sink and select years
+    df["dom_sink"] = df[["litter_sink", "dead_wood_sink"]].sum(axis=1)
+    selected_columns = ["living_biomass_sink", "dom_sink", "soil_sink", "hwp_sink_bau"]
+    selector = df["year"].isin(selected_years)
+    df = df.loc[selector, index + selected_columns].copy()
+    df[selected_columns] = df[selected_columns] / 1e6
+    # Reshape to long format
+    df_long = df.melt(id_vars=index, var_name="sink", value_name="value")
+    # Plot
+    p = so.Plot(df_long, x="year", y="value", color="sink")
+    p = p.add(so.Bar(), so.Stack())
+    if "country_group" in index:
+        p = p.facet("pathway", "country_group").share(x=False)
+        p = p.layout(size=(14, 9), engine="tight")
+    else:
+        p = p.facet("pathway").share(x=False)
+        p = p.layout(size=(10, 8), engine="tight")
+    palette = {
+        "living_biomass_sink": "forestgreen",
+        "dom_sink": "gold",
+        "soil_sink": "black",
+        "hwp_sink_bau": "chocolate",
+    }
+    p = p.scale(x=so.Continuous().tick(at=selected_years), color=palette)
+    p = p.label(x="", y="Million t CO2 eq", color="")
+    return p
