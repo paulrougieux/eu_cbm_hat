@@ -247,6 +247,25 @@ well as running a mock country called "ZZ". You can see the output of these runs
       branch run-ssp2-fair-v2023
 
 
+## Input data
+
+### Growth period
+
+For the purpose of initializing the soil carbon pool, we use a different growth curve
+called the "Init" growth curve. That growth curve takes into account previous harvest
+and natural disturbances within the growth curve.
+
+- Looking at the input inventory you will see a classifier called "growth period" which
+  has the value "init" everywhere.
+
+- See figure 3 of Pilli 2013 "Application of the CBM-CFS3 model to estimate Italy’s
+  forest carbon budget, 1995–2020" for an explanation of the need to switch from an init
+  growth period to a current growth period. The `Simulation.switch_period()` method
+  changes the growth period from "Init" to "Cur". As a result all stands will have the
+  value "Cur" for the groth_period classifier from inventory start year onwards. Note
+  the inventory start year is specified in `runner.country.inventory_start_year`.
+
+
 ## Definitions and specification
 
 - A specification for an Harvest Allocation Tool (HAT) is available at
