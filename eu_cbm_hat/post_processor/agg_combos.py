@@ -70,6 +70,15 @@ and not have to wait to update all output tables for all scenarios.
     >>>     combo_name="reference",
     >>>     runner_method_name="post_processor.wood_density_bark_frac"
     >>> )
+    >>> # Load inventory in all countries and sum the area by management type
+    >>> inventory_all = get_df_all_countries(
+    >>>     combo_name="reference",
+    >>>     runner_method_name="country.orig_data.__getitem__",
+    >>>     item=("mgmt", "inventory")
+    >>> )
+    >>> inventory_all["area"] = inventory_all["area"].astype(float)
+    >>> inv_agg = inventory_all.groupby(["mgmt_strategy"]).agg(area = ("area","sum"))
+    >>> inv_agg = inv_agg.assign(share = lambda x: x.area / x.area.sum())
 
 - *Implementation note*: this script cannot be made a method of the
   combos/base_combo.py/Combination class because of circular references such as

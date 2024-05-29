@@ -131,6 +131,8 @@ Run the test country ZZ at a python prompt:
     runner.num_timesteps = 30
     runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
+See example of how to run the model for different countries in the `scripts/running`
+directory.
 
 ### Run a scenario combination
 
