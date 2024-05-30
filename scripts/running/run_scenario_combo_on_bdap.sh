@@ -16,9 +16,14 @@
 #
 #       ./run.sh pikssp2
 #
-# - Transfer to the shared directory
+# - Transfer all aggregated output from a user directory to the shared directory
 #
 #     rsync -zav $HOME/eu_cbm/eu_cbm_data/output_agg /eos/jeodpp/data/projects/SUSBIOM-TRADE/transfer/eu_cbm_data
+# 
+# - Transfer a scenario combination's output to the shared directory (replace
+#   scenario_combo_name with the scenario combination's name)
+#
+#     rsync -zav $HOME/eu_cbm/eu_cbm_data/output/scenario_combo_name /eos/jeodpp/data/projects/SUSBIOM-TRADE/transfer/eu_cbm_data/output
 #
 
 conda activate susbiom_trade_env
