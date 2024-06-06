@@ -323,6 +323,7 @@ def save_agg_combo_output(combo_name: str):
             combo_name,
             output_agg_dir / combo_name / param["file_name"],  # file path
             param["groupby"],
+            param.get("runner_method_name", None)
         )
         for param in parameters
     ]
