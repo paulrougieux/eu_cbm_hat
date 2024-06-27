@@ -6,7 +6,8 @@ import pandas as pd
 # %%
 # #Explore solutions for harvest volume
 # 
-# Step1. Run "harvest_exp_prov_all_countries" script, save the output file "harv_reference.csv", then extract the timeseries values of IRW only, "tot_irw_vol_avail". 
+# Step1. Run "harvest_exp_prov_all_countries" script, save the output file "harv_reference.csv", 
+# then extract the timeseries values of IRW only, "tot_irw_vol_avail". 
 # 
 # Step2. Replace these values in 'eu_cbm_data/domestic_harvest/irw_demand.csv, and run again.
 # 
@@ -21,115 +22,91 @@ from eu_cbm_hat.core.continent import continent
 from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_all_countries
 import pandas
 pandas.set_option('display.precision', 0) # Display rounded numbers
-harv_data = harvest_exp_prov_all_countries("reference", "year")
+harv_data = harvest_exp_prov_all_countries("mws_iter", "year")
 
 
 # %%
-
-
-continent.output_dir
-
+# add an index to data
+harv_data.columns 
 
 # %%
+#add iter_data to initial data
+harv_data.to_csv(continent.base_dir +'mws_iter_1.csv', mode='w', index=False, header=True)
 
-
-# print the output file
-#harv_data.to_csv(continent.output_dir + "harv_mws.csv", mode='w',index=False, header = True)
-
+# %% [markdown]
+# **Create the IRW demand input files for initial run**
 
 # %%
-
-
-#reload csv file
-irw_data = pd.read_csv(continent.output_dir + "harv_mws.csv")
-
 #keep only relevant columns with "tot_irw_vol_avail", and divide by 1000 
-irw_data = irw_data[['country', 'year', 'tot_irw_vol_avail']]
+irw_data = harv_data[['country', 'year', 'tot_irw_vol_avail']]
 irw_data['tot_irw_vol_avail']=irw_data['tot_irw_vol_avail']/1000
 
+# %%
 # keep only data after 2021
-irw_data=irw_data[irw_data['year']> 2021]
-
-
-# %%
-
-
-irw_data_wide = pd.pivot(irw_data, index='country', columns='year', values=['tot_irw_vol_avail']).fillna(0)
-irw_data_wide=irw_data_wide.astype(int)#.reset_index()
-# remove the first level of header
-#irw_data_wide = irw_data_wide.droplevel(0, axis=1)
-
+irw_data=irw_data[irw_data['year']>= 2021]
 
 # %%
-
-
-irw_data_wide
-
+irw_data_wide = pd.pivot(irw_data, index='country', columns='year', values='tot_irw_vol_avail').fillna(0)
+irw_data_wide=irw_data_wide.astype(int).reset_index()
 
 # %%
-
-
-#irw_data_wide=irw_data_wide.reset_index()
-#irw_data_wide=irw_data_wide.str.replace('tot_irw_vol_avail';'value_')
-
-irw_data_wide1 = irw_data_wide.apply(lambda x: x.replace({'tot_irw_vol_avail':'value_'}, regex=True))
-irw_data_wide1
-
-
-# %%
-
+# rename columns as required for inout files
+irw_data_wide.columns = ['country']+[f'value_{year}' for year in irw_data_wide.columns[1:]]
 
 # add missing elements
 irw_data_wide['faostat_name'] = 'Industrial roundwood'
 irw_data_wide['element'] = 'Production'
 irw_data_wide['unit'] = '1000m3'
 
-# include country as column
+#create the inopout file foir irw
+irw_data_wide.to_csv(continent.base_dir + '/domestic_harvest/mws_iter_1/' + 'irw_harvest.csv', mode='w', index=False, header=True)
 
-irw_data_wide=irw_data_wide[['faostat_name',      'element',         'unit',  'year',       2022,           2023,           2024,           2025,
-                 2026,           2027,           2028,           2029,
-                 2030,           2031,           2032,           2033,
-                 2034,           2035,           2036,           2037,
-                 2038,           2039,           2040,           2041,
-                 2042,           2043,           2044,           2045,
-                 2046,           2047,           2048,           2049,
-                 2050,           2051,           2052,           2053,
-                 2054,           2055,           2056,           2057,
-                 2058,           2059,           2060,           2061,
-                 2062,           2063,           2064,           2065,
-                 2066,           2067,           2068,           2069,
-                 2070, ]]
+# %%
+#irw_data_wide
 
+# %% [markdown]
+# **Create FW harvest input files for initial run**
+
+# %%
+#keep only relevant columns with "tot_irw_vol_avail", and divide by 1000 
+fw_data = harv_data[['country', 'year', 'tot_fw_vol_avail']]
+fw_data['tot_fw_vol_avail']=fw_data['tot_fw_vol_avail']/1000
+
+# %%
+# keep only data after 2021
+fw_data=fw_data[fw_data['year']>= 2021]
+
+# %%
+fw_data_wide = pd.pivot(fw_data, index='country', columns='year', values='tot_fw_vol_avail').fillna(0)
+fw_data_wide=fw_data_wide.astype(int).reset_index()
+
+# %%
+# rename columns as required for inout files
+fw_data_wide.columns = ['country']+[f'value_{year}' for year in fw_data_wide.columns[1:]]
+
+# add missing elements
+fw_data_wide['faostat_name'] = 'Fuelwood'
+fw_data_wide['element'] = 'Production'
+fw_data_wide['unit'] = '1000m3'
+
+#create the inopout file foir irw
+fw_data_wide.to_csv(continent.base_dir + '/domestic_harvest/mws_iter/' + 'fw_harvest_iter.csv', mode='w', index=False, header=True)
 
 # %%
 
-
-irw_data_wide
-
+# %%
 
 # %%
 
-
-#paste it in the input file, while keeping a copy of the orignal values
-C:\CBM\eu_cbm_data\domestic_harvest\continous_cover
-
-
-# # Check of the sink
-
-# sink should be close to zero
+# %%
 
 # %%
 
-
-from eu_cbm_hat.post_processor.sink import sink_one_country
-sink_y = sink_one_country(""reference", "LU", groupby="year")
-
+# %%
 
 # %%
 
-
-#sink_y.plot('year', 'living_biomass_sink')
-
+# %%
 
 # %%
 
