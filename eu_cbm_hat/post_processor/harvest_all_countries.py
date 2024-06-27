@@ -157,6 +157,9 @@ def harvest_prov_one_country(
     df = df.merge(runner.output.classif_df, on=index)
     # Add wood density information by forest type
     df = df.merge(runner.silv.coefs.raw, on="forest_type")
+    
+    
+    print(df)
     # Sum all columns that have a flux to products
     cols_to_product = df.columns[df.columns.str.contains("to_product")]
     df["flux_to_product"] = df[cols_to_product].sum(axis=1)

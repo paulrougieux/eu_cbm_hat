@@ -180,9 +180,49 @@ class Harvest:
             raise ValueError(msg)
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
+        
+        # #################
+        # add irw fractions from input file to convert to IRW and FW 
+        
+        scenario_name = self.combo_name
+        df_irw = self.parent.irw_frac[self.parent.irw_frac['scenario'] == scenario_name]
+        
+        # exclude climate which is often "?"
+        df = df.merge(df_irw, on = ["status","forest_type","region",
+                                    "mgmt_type","mgmt_strategy",
+                                    "disturbance_type", "con_broad", 
+                                    "site_index", "growth_period"])
+        #convert roundwood output to IRW and FW
+        df["irw_to_product"] = (
+            df["softwood_merch_to_product"]* df["softwood_merch_irw_frac"]+
+            df["softwood_other_to_product"]*df["softwood_other_irw_frac"]+
+            df["softwood_stem_snag_to_product"]*df["softwood_stem_snag_irw_frac"]+
+            df["softwood_branch_snag_to_product"]*df["softwood_branch_snag_irw_frac"]+
+            df["hardwood_merch_to_product"]*df["hardwood_merch_irw_frac"]+
+            df["hardwood_other_to_product"]*df["hardwood_other_irw_frac"]+
+            df["hardwood_stem_snag_to_product"]*df["hardwood_stem_snag_irw_frac"]+
+            df["hardwood_branch_snag_to_product"]*df["hardwood_branch_snag_irw_frac"]
+                               )
+
+        df["fw_to_product"] = (
+            df["softwood_merch_to_product"]*(1-df["softwood_merch_irw_frac"])+
+            df["softwood_other_to_product"]*(1-df["softwood_other_irw_frac"])+
+            df["softwood_stem_snag_to_product"]*(1-df["softwood_stem_snag_irw_frac"])+
+            df["softwood_branch_snag_to_product"]*(1-df["softwood_branch_snag_irw_frac"])+
+            df["hardwood_merch_to_product"]*(1-df["hardwood_merch_irw_frac"])+
+            df["hardwood_other_to_product"]*(1-df["hardwood_other_irw_frac"])+
+            df["hardwood_stem_snag_to_product"]*(1-df["hardwood_stem_snag_irw_frac"])+
+            df["hardwood_branch_snag_to_product"]*(1-df["hardwood_branch_snag_irw_frac"])
+                                )       
+
         # Convert tons of carbon to volume under bark
         df["harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
         df["harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
+        df["irw_harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "irw_to_product")
+        df["irw_harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "irw_to_product")
+        df["fw_harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "fw_to_product")
+        df["fw_harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "fw_to_product")
+        
         # Area information
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
@@ -192,7 +232,12 @@ class Harvest:
     def provided_agg(self, groupby: Union[List[str], str]):
         """Aggregated version of harvest provided
         Group rows and sum all identifier rows in the same group"""
-        cols = ["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"]
+        
+         # add the new columns with IRW and FW
+        
+        cols = (["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"] +
+                ["irw_to_product","fw_to_product","irw_harvest_prov_ub",
+                 "irw_harvest_prov_ob", "fw_harvest_prov_ub", "fw_harvest_prov_ob"])
         df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()
         return df_agg
 
