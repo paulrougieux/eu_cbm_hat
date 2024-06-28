@@ -9,9 +9,6 @@ runner = continent.combos['no_management'].runners['FI'][-1]
 runner.post_processor.harvest.expected_provided("year")
 
 # %%
-debug
-
-# %%
 # #Explore solutions for harvest volume
 # 
 # Step1. Run "harvest_exp_prov_all_countries" script, save the output file "harv_reference.csv", 
@@ -48,6 +45,9 @@ harv_data.columns
 #add iter_data to initial data
 harv_data.to_csv(continent.base_dir +'harvest_data_reference.csv', mode='w', index=False, header=True)
 
+# %%
+harv_data
+
 # %% [markdown]
 # **Create the IRW demand input files for initial run**
 
@@ -77,7 +77,7 @@ irw_data_wide['unit'] = '1000m3'
 irw_data_wide.to_csv(continent.base_dir + '/domestic_harvest/mws_iter_1/' + 'irw_harvest.csv', mode='w', index=False, header=True)
 
 # %%
-#irw_data_wide
+irw_data_wide
 
 # %% [markdown]
 # **Create FW harvest input files for initial run**
@@ -105,7 +105,7 @@ fw_data_wide['element'] = 'Production'
 fw_data_wide['unit'] = '1000m3'
 
 #create the inopout file foir irw
-fw_data_wide.to_csv(continent.base_dir + '/domestic_harvest/mws_iter/' + 'fw_harvest_iter.csv', mode='w', index=False, header=True)
+fw_data_wide.to_csv(continent.base_dir + '/domestic_harvest/mws_iter_1/' + 'fw_harvest.csv', mode='w', index=False, header=True)
 
 # %%
 
