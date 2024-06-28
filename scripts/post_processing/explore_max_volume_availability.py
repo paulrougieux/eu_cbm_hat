@@ -4,6 +4,14 @@
 import pandas as pd
 
 # %%
+from eu_cbm_hat.core.continent import continent
+runner = continent.combos['no_management'].runners['FI'][-1]
+runner.post_processor.harvest.expected_provided("year")
+
+# %%
+debug
+
+# %%
 # #Explore solutions for harvest volume
 # 
 # Step1. Run "harvest_exp_prov_all_countries" script, save the output file "harv_reference.csv", 
@@ -22,8 +30,15 @@ from eu_cbm_hat.core.continent import continent
 from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_all_countries
 import pandas
 pandas.set_option('display.precision', 0) # Display rounded numbers
-harv_data = harvest_exp_prov_all_countries("mws_iter", "year")
+harv_data = harvest_exp_prov_all_countries("no_management", "year")
 
+
+# %%
+import os
+
+# %%
+from eu_cbm_hat import eu_cbm_data_pathlib
+eu_cbm_data_pathlib
 
 # %%
 # add an index to data
@@ -31,7 +46,7 @@ harv_data.columns
 
 # %%
 #add iter_data to initial data
-harv_data.to_csv(continent.base_dir +'mws_iter_1.csv', mode='w', index=False, header=True)
+harv_data.to_csv(continent.base_dir +'harvest_data_reference.csv', mode='w', index=False, header=True)
 
 # %% [markdown]
 # **Create the IRW demand input files for initial run**

@@ -282,6 +282,5 @@ class PostProcessor(object):
 
         # Remove duplicate rows based on the remaining columns
         df.drop_duplicates(inplace=True)
-
         return df
 

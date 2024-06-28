@@ -186,13 +186,16 @@ class Harvest:
         
         scenario_name = self.combo_name
         df_irw = self.parent.irw_frac[self.parent.irw_frac['scenario'] == scenario_name]
-        
+        df_irw["iso2_code"] = self.runner.country.iso2_code
+        print(df_irw.iso2_code.unique())
         # exclude climate which is often "?"
         df = df.merge(df_irw, on = ["status","forest_type","region",
                                     "mgmt_type","mgmt_strategy",
                                     "disturbance_type", "con_broad", 
                                     "site_index", "growth_period"])
+        df.to_csv('eu_cbm_data/harv_check.csv')
         #convert roundwood output to IRW and FW
+        
         df["irw_to_product"] = (
             df["softwood_merch_to_product"]* df["softwood_merch_irw_frac"]+
             df["softwood_other_to_product"]*df["softwood_other_irw_frac"]+
