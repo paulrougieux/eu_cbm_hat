@@ -193,7 +193,7 @@ class Harvest:
                                     "mgmt_type","mgmt_strategy",
                                     "disturbance_type", "con_broad", 
                                     "site_index", "growth_period"])
-        df.to_csv('eu_cbm_data/harv_check.csv')
+        df.to_csv('harv_check.csv')
         #convert roundwood output to IRW and FW
         
         df["irw_to_product"] = (

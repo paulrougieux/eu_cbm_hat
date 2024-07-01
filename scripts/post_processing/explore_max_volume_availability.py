@@ -4,20 +4,17 @@
 import pandas as pd
 
 # %%
-from eu_cbm_hat.core.continent import continent
-runner = continent.combos['no_management'].runners['FI'][-1]
-runner.post_processor.harvest.expected_provided("year")
-
-# %%
-debug
-
-# %%
 # #Explore solutions for harvest volume
 # 
 # Step1. Run "harvest_exp_prov_all_countries" script, save the output file "harv_reference.csv", 
-# then extract the timeseries values of IRW only, "tot_irw_vol_avail". 
-# 
-# Step2. Replace these values in 'eu_cbm_data/domestic_harvest/irw_demand.csv, and run again.
+# then extract the timeseries values: "tot_irw_vol_avail" and "tot_fw_vol_avail". Save the time series which will serve as input to 1st iteration in 
+# eu_cbm_data/domestic_harvest/mws_iter_1/irw_demand.csv and /fw_demand.csv.
+
+
+
+
+
+# Step2. Set the first iteration, mws_iter. Replace these values in 'eu_cbm_data/domestic_harvest/ / irw_demand.csv, and run again.
 # 
 # Step3. Do Step1 again, save "harv_first_interation. csv", then Step2 again. In the reference file, to compare the values for "tot_irw_vol_avail"
 # 
@@ -34,19 +31,12 @@ harv_data = harvest_exp_prov_all_countries("no_management", "year")
 
 
 # %%
-import os
-
-# %%
-from eu_cbm_hat import eu_cbm_data_pathlib
-eu_cbm_data_pathlib
-
-# %%
 # add an index to data
 harv_data.columns 
 
 # %%
 #add iter_data to initial data
-harv_data.to_csv(continent.base_dir +'harvest_data_reference.csv', mode='w', index=False, header=True)
+#harv_data.to_csv(continent.base_dir +'harvest_data_reference.csv', mode='w', index=False, header=True)
 
 # %% [markdown]
 # **Create the IRW demand input files for initial run**
@@ -105,7 +95,7 @@ fw_data_wide['element'] = 'Production'
 fw_data_wide['unit'] = '1000m3'
 
 #create the inopout file foir irw
-fw_data_wide.to_csv(continent.base_dir + '/domestic_harvest/mws_iter/' + 'fw_harvest_iter.csv', mode='w', index=False, header=True)
+fw_data_wide.to_csv(continent.base_dir + '/domestic_harvest/mws_iter_1/' + 'fw_harvest.csv', mode='w', index=False, header=True)
 
 # %%
 
