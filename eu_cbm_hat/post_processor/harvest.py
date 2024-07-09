@@ -166,6 +166,7 @@ class Harvest:
     def provided(self):
         """Harvest provided in one country"""
         df = self.fluxes
+        
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
         df["to_product"] = df[cols_to_product].sum(axis=1)
@@ -180,20 +181,21 @@ class Harvest:
             raise ValueError(msg)
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
-        
         # #################
         # add irw fractions from input file to convert to IRW and FW 
         
-        scenario_name = self.combo_name
-        df_irw = self.parent.irw_frac[self.parent.irw_frac['scenario'] == scenario_name]
-        df_irw["iso2_code"] = self.runner.country.iso2_code
-        print(df_irw.iso2_code.unique())
+        df_irw = self.parent.irw_frac
+        print(self.runner.country.iso2_code)
+        
+        df.to_csv('harv_check_before.csv')
+        
         # exclude climate which is often "?"
-        df = df.merge(df_irw, on = ["status","forest_type","region",
+        df= df.merge(df_irw, on = ["status","forest_type", "region",
                                     "mgmt_type","mgmt_strategy",
                                     "disturbance_type", "con_broad", 
                                     "site_index", "growth_period"])
-        df.to_csv('harv_check.csv')
+        
+        df.to_csv('harv_check_after.csv')
         #convert roundwood output to IRW and FW
         
         df["irw_to_product"] = (
