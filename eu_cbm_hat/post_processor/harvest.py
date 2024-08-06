@@ -4,6 +4,7 @@ from typing import Union, List
 from functools import cached_property
 import numpy as np
 import pandas
+import yaml
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
@@ -181,21 +182,27 @@ class Harvest:
             raise ValueError(msg)
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
+        
         # #################
         # add irw fractions from input file to convert to IRW and FW 
-        
         df_irw = self.parent.irw_frac
-        print(self.runner.country.iso2_code)
-        
-        df.to_csv('harv_check_before.csv')
+        # define the scenario applicable for IRW from .yaml combo
+        yaml_path = self.runner.combo.yaml_path
+        with open(yaml_path, 'r') as file:
+            yaml_data = file.read()
+        data = yaml.safe_load(yaml_data)
+        min_year = min(data['irw_frac_by_dist'].keys())
+        mngm_scenario = data['irw_frac_by_dist'][min_year]
+        df_irw = df_irw[df_irw['scenario'] == mngm_scenario]
+        print(self.runner.country.iso2_code)      
         
         # exclude climate which is often "?"
+        # dropna to get rid of events which may not apply (e.g., deforestation)
         df= df.merge(df_irw, on = ["status","forest_type", "region",
                                     "mgmt_type","mgmt_strategy",
                                     "disturbance_type", "con_broad", 
-                                    "site_index", "growth_period"])
+                                    "site_index", "growth_period"], how='outer')
         
-        df.to_csv('harv_check_after.csv')
         #convert roundwood output to IRW and FW
         
         df["irw_to_product"] = (
