@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 """
 Written by Lucas Sinclair and Paul Rougieux.
 
@@ -56,7 +57,7 @@ fuelwood  = "fw_harvest.csv"
 # A mapping between country names and codes #
 country_to_iso2 = all_country_codes[['country', 'iso2_code']]
 
-###############################################################################
+""
 def wide_to_long(df):
     """Convert a harvest dataset to the long format."""
     # List columns for pivot #
@@ -72,7 +73,7 @@ def wide_to_long(df):
     # Return #
     return df
 
-###############################################################################
+""
 class OutputGFTM:
     """
     Access to the raw harvest coming from the GFTM model, for a particular
@@ -105,7 +106,7 @@ class OutputGFTM:
         # Return #
         return df
 
-###############################################################################
+""
 class Demand:
     """
     Access the specific harvest values for the current simulation run.

@@ -144,13 +144,19 @@ class Area:
         # Area columns
         selected_cols += df.columns[df.columns.str.contains("area")].to_list()
         # 10 year age class
-        df["age_class"] = (df["age"] / 10).round().astype(int)
+        #df["age_class"] = (df["age"] / 10).round().astype(int)
+        df['age_class'] = df.age // 10 + 1
+        df['age_class'] = 'AGEID' + df.age_class.astype(str)
+
+        
         return df
 
     @cached_property
     def df_agg_by_classifiers_age(self):
         """Area t at the classifier level and by age classes"""
-        index = self.parent.classifiers_list + ["year", "age"]
+
+        #####
+        index = self.parent.classifiers_list + ["year", "age", "age_class"]
         area_columns = self.df.columns[self.df.columns.str.contains("area")].to_list()
         df_agg = self.df.groupby(index)[area_columns].agg("sum").reset_index()
         return df_agg

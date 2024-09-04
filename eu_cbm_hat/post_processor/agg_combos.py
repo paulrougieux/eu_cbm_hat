@@ -315,7 +315,17 @@ def save_agg_combo_output(combo_name: str):
             "groupby": ["status"],
             "file_name": "nai_by_year_st.parquet",
         },
-    ]
+        {
+            "data_func": area_by_age_class_one_country,
+            "groupby": ["year", "status", "age_class"],
+            "file_name": "area_by_age_class.parquet",
+        },
+        {
+            "data_func": share_thinn_final_cut,
+            "groupby": None,
+            "file_name": "share_thinn_final_cut.parquet",
+        },
+        ]
     # List of parameters to be fed p_umap
     items = [
         (
@@ -610,6 +620,32 @@ def area_by_status_one_country(combo_name: str, iso2_code: str):
     cols = cols[-2:] + cols[:-2]
     return df_wide[cols]
 
+################################
+def area_by_age_class_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Area in wide format with one column for ageclass.
+    """
+    groupby = ["year", "status", "age_class"]
+    df = area_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
+    return df
+
+######################################
+def share_thinn_final_cut(combo_name: str, iso2_code: str):
+    """Area in wide format with one column for each status.
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import share_thinn_final_cut
+        >>> harvest_area_by_dist_one_country("reference", "LU")
+
+    """
+    #groupby = ['year', 'con_broad', 'silv_practice']
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df_shares = runner.post_processor.harvest.provided_shares
+    df_shares ["scenario"] = runner.combo.short_name
+    df_shares ["region"] = runner.country.country_name
+    return df_shares
+
+######################################
 
 def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
     """Area in wide format with one column for each status.
@@ -641,6 +677,19 @@ def nai_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], s
     df = runner.post_processor.nai.df_agg(groupby=groupby)
     df = place_combo_name_and_country_first(df, runner)
     return df
+
+
+def nai_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import nai_all_countries
+    >>> nai_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        nai_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
 
 
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
