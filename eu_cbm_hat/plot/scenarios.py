@@ -32,36 +32,6 @@ def rename_combo_to_pathway(combo_name):
     #out = re.sub("max", "h", out)
     return out
 
-palette_combo = { 
-    # SCENARIOS FOR ALTERNATIVE SILVICULTURE
-    #'reference': 'blue',
-    #"max_rotation": "chocolate",
-    #"min_rotation": "orange",
-    #"max_stock": "darkblue",
-    #"continous_cover": "darkgreen",
-    
-
-    # SCENARIOS FOR mws
-    "no_management": "orange",
-    "mws_nai_iter_1" : "blue",
-    "mws_nai_iter_1_con_broad": "darkgreen",
-    }
-
-palette_pathway = {"historical": "black"}
-
-palette_pathway.update(
-    {rename_combo_to_pathway(key): value for key, value in palette_combo.items()}
-)
-
-# To be merged with aggregated output data frames used for plotting
-pathway_names = pandas.DataFrame(
-    {
-        "combo_name": palette_combo.keys(),
-        "pathway": [rename_combo_to_pathway(key) for key in palette_combo.keys()],
-    }
-)
-
-
 def plot_sink_by_country(df, y, col_wrap=None, palette=None):
     """Facet plot of CO2 forest sink by country"""
     if col_wrap is None:
@@ -76,7 +46,7 @@ def plot_sink_by_country(df, y, col_wrap=None, palette=None):
         hue="pathway",
         kind="line",
         col_wrap=col_wrap,
-        palette=palette_pathway,
+        palette=palette,
         facet_kws={"sharey": False, "sharex": False},
     )
     g.set_titles(row_template="{row_name}", col_template="{col_name}")  # , size=30)
@@ -100,7 +70,7 @@ def plot_hexprov(df, y, col_wrap=None, palette=None):
         style="element",
         kind="line",
         col_wrap=col_wrap,
-        palette=palette_pathway,
+        palette=palette,
         facet_kws={"sharey": False, "sharex": False},
     )
     g.set(xticks=[2010, 2030, 2050, 2070])
@@ -238,7 +208,7 @@ def plot_sink_by_region(df, y, col_wrap=None):
         hue="pathway",
         kind="line",
         col_wrap=col_wrap,
-        palette=palette_pathway,
+        palette=palette,
         facet_kws={"sharey": False, "sharex": False},
     )
     g.set_titles(row_template="{row_name}", col_template="{col_name}")  # , size=30)
