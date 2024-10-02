@@ -14,6 +14,9 @@ The arguments to these plotting functions are likely to change over time. These
 plotting functions where originally created in a notebook at
 eu_cbm_explore/scenarios/ssp2_fair_degrowth/ssp2_fair_owc.ipynb
 
+Define a palette to use these plots
+
+
 """
 import re
 import pandas
@@ -194,7 +197,7 @@ import seaborn as sns
 # Define a color palette
 # palette = sns.color_palette("husl", 5)
 
-def plot_sink_by_region(df, y, col_wrap=None):
+def plot_sink_by_region(df, y, col_wrap=None, palette=None):
     """Facet plot of CO2 forest sink by region"""
     if col_wrap is None:
         col_wrap = round(len(df["region_name"].unique()) / 9) + 1
