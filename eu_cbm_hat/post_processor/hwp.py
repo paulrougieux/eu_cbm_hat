@@ -75,8 +75,8 @@ class HWP(object):
         #aggregate on labels
         df_exp = (fao_stat
                     .groupby(['area', 'Element', 'year', 'Item'])
-                    .agg(value = ('Value', sum))
-                   .reset_index()
+                    .agg(value = ('Value', 'sum'))
+                    .reset_index()
                          )
         # create the input type
         df_exp ['type'] = df_exp ['Item'] .astype(str)+"_"+df_exp ['Element'].astype(str)
@@ -142,10 +142,11 @@ class HWP(object):
         df_exp['fIRW_SW_WP_broad_dom'] =df_exp['fIRW_SW_WP_broad_dom'].fillna(0)
         df_exp['fPULP_dom'] =df_exp['fPULP_dom'].fillna(0)
 
+        
         # fractions of recycled paper feedstock, exports and exports
-        df_exp['fREC_PAPER'] = (df_exp['rec_paper_prod']-df_exp['rec_paper_exp'] )/(df_exp['rec_paper_prod']+
-                                                                                    df_exp['rec_paper_imp'] -
-                                                                                    df_exp['rec_paper_exp'] )
+        df_exp['fREC_PAPER'] = (df_exp['recycled_paper_prod']-df_exp['recycled_paper_exp'] )/(df_exp['recycled_paper_prod']+
+                                                                                    df_exp['recycled_paper_imp'] -
+                                                                                    df_exp['recycled_paper_exp'] )
 
         #replacing NA to 0, so possible to make operations
         df_exp['fREC_PAPER'] =df_exp['fREC_PAPER'].fillna(0)
@@ -368,7 +369,7 @@ def fao_sw_to_irw ():
     df_ms = pd.melt(df_ms, id_vars=['Area', 'Item', 'Element_ms'], var_name='Year', value_name='Value')
     
     df_ms = df_ms.groupby(['Area', 'Item', 'Element_ms', 'Year']).agg(
-                            irw_ms=('Value', sum),
+                            irw_ms=('Value', 'sum'),
     ).reset_index()
     
     # keep only 2021 and 2022
@@ -424,7 +425,7 @@ def fao_wp_to_irw ():
     df_ms = pd.melt(df_ms, id_vars=['Area', 'Item', 'Element_ms'], var_name='Year', value_name='Value')
     
     df_ms = df_ms.groupby(['Area', 'Item', 'Element_ms', 'Year']).agg(
-                            irw_ms=('Value', sum),
+                            irw_ms=('Value', 'sum'),
     ).reset_index()
     
     # keep only 2021 and 2022
@@ -477,7 +478,7 @@ def fao_pulp_to_irw ():
     df_ms = pd.melt(df_ms, id_vars=['Area', 'Item', 'Element_ms'], var_name='Year', value_name='Value')
     
     df_ms = df_ms.groupby(['Area', 'Item', 'Element_ms', 'Year']).agg(
-                            irw_ms=('Value', sum),
+                            irw_ms=('Value', 'sum'),
     ).reset_index()
     
     # keep only 2021 and 2022
@@ -542,7 +543,7 @@ def gap_filling_irw_faostat():
     df_ms = pd.melt(df_ms, id_vars=['Area', 'Item', 'Element_ms'], var_name='Year', value_name='Value')
     
     df_ms = df_ms.groupby(['Area', 'Item', 'Element_ms', 'Year']).agg(
-                            irw_ms=('Value', sum),
+                            irw_ms=('Value', 'sum'),
     ).reset_index()
     
     #df_ms.to_csv('C:/CBM/df_ms.csv')
@@ -672,10 +673,13 @@ def eu_wrb():
     
     # load the export of roundwood
     #retain only rows relevant for production of hwp
-    sankey_rw_prod_in_exp=sankey_rw_prod_in[(sankey_rw_prod_in['label'] == 'rw_nexp') | (sankey_rw_prod_in['label'] == 'pu4pa_nexp')]
+    
+    
+    
+    sankey_rw_prod_in_exp=sankey_rw_prod_in[(sankey_rw_prod_in['label'] == 'rw_tot2rw4mat') | (sankey_rw_prod_in['label'] == 'pu4pa2pap_ind')]
     sankey_rw_prod_in_exp=sankey_rw_prod_in_exp[['scenario','country','year', 'data', 'unit', 'label']]
     sankey_rw_prod_in_exp=sankey_rw_prod_in_exp.pivot(index= ['scenario','country','year'] , columns='label' , values='data')
-    sankey_rw_prod_in_exp ['rw_export'] =  sankey_rw_prod_in_exp['rw_nexp']+sankey_rw_prod_in_exp['pu4pa_nexp']
+    sankey_rw_prod_in_exp ['rw_export'] =  sankey_rw_prod_in_exp['rw_tot2rw4mat']+sankey_rw_prod_in_exp['pu4pa2pap_ind']
 
     #sankey_rw_prod_in_exp
     #assess_shares = sankey_rw_prod_in_hwp[['fSW', 'fWP','fPP']]
