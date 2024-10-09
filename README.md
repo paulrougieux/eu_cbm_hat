@@ -54,7 +54,7 @@ git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) in order to 
 python packages from git repositories.
 
 Install `eu_cbm_hat` using [pip](https://pip.pypa.io/en/stable/), the package installer
-for python in the shell (or conda console).
+for python in the shell on Linux or Mac or in the **Anaconda prompt** on windows.
 
     pip install eu_cbm_hat
     # or
@@ -66,49 +66,60 @@ Install libcbm using pip. Note: currently only version 1 is supported. Update to
 
     python -m pip install https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
 
-Over time it's important to regularly upgrade the 2 packages with:
-
-    python -m pip install --upgrade eu_cbm_hat
-    python -m pip install --upgrade https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
-
-In case you need to install the latest development version, use the `--upgrade`
-parameter and install from the main branch of the gitlab repository. That the
-`--no-dependencies` argument avoids reinstalling all dependencies as well:
-
-    python -m pip install --upgrade --force-reinstall --no-dependencies https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/archive/main/eu_cbm_hat-main.tar.gz
-
 By default, the data is located in your home folder. You can display the default
 location where the data should be with these commands in python:
 
     >>> import eu_cbm_hat
-    >>> eu_cbm_hat.eu_cbm_data_dir
-    >>> eu_cbm_hat.eu_cbm_aidb_dir
+    >>> print(eu_cbm_hat.eu_cbm_data_dir)
+    >>> print(eu_cbm_hat.eu_cbm_aidb_dir)
 
 |                        | On Unix                 | On windows                              |
 | ---------------------- | ----------------------- | --------------------------------------- |
 | Data                   | `~/eu_cbm/eu_cbm_data/` | `C:\Users\user_name\eu_cbm\eu_cbm_data` |
 | Archive Index Database | `~/eu_cbm/eu_cbm_aidb/` | `C:\Users\user_name\eu_cbm\eu_cbm_aidb` |
 
-The model will work once these folders exist on your system. Optionally, you can define
-the environment variables `EU_CBM_DATA` and `EU_CBM_AIDB` to tell the model where the
-data and AIDB are located.
+Please create the `eu_cbm` directory at the desired location on your system. The model
+will work once these folders exist on your system. If you don't want to use the default
+location, you can also define the environment variables `EU_CBM_DATA` and `EU_CBM_AIDB`
+to tell the model where the data and AIDB are located.
 
-Copy test data to your local `eu_cbm_data` folder (location defined above in python in
-`eu_cbm_hat.eu_cbm_data_dir`):
+At a python prompt, copy test data to your local `eu_cbm_data` folder (location defined
+above in python in `eu_cbm_hat.eu_cbm_data_dir`):
 
     >>> from eu_cbm_hat.tests.copy_data import copy_test_data
     >>> copy_test_data()
 
-Clone the repository containing the AIDB inside your home folder
-in the parent directory of the path given by `eu_cbm_hat.eu_cbm_aidb_dir`. Back to the
-shell (or conda console):
+**Load AIDBs and link them to eu_cbm_data**
 
+The Archive Index Databases (AIDBs) are stored in a separate git repository that needs
+to be linked with the eu_cbm_data repository. Clone the repository containing the AIDBs
+inside your home folder in the parent directory of the path given by
+`eu_cbm_hat.eu_cbm_aidb_dir`. Back to the shell (or conda console):
+
+    cd eu_cbm
     git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
 
 Before running the model, you need to create AIDB symlinks at a python prompt:
 
     >>> from eu_cbm_hat.core.continent import continent
     >>> for country in continent: country.aidb.symlink_all_aidb()
+
+
+### Upgrade
+
+Over time it's important to regularly upgrade the 2 packages with:
+
+    python -m pip install --upgrade eu_cbm_hat
+    python -m pip install --upgrade https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
+
+You should also update the DATA and AIDB git repositories by pulling latest changes from
+those repositories.
+
+In case you need to install the latest development version of `eu_cbm_hat`, use the
+`--upgrade` parameter and install from the main branch of the gitlab repository. That
+the `--no-dependencies` argument avoids reinstalling all dependencies as well:
+
+    python -m pip install --upgrade --force-reinstall --no-dependencies https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/archive/main/eu_cbm_hat-main.tar.gz
 
 
 ### Installation for development purposes
