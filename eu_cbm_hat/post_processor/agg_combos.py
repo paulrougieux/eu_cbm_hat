@@ -1,4 +1,5 @@
-"""Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
+"""
+Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
 
 For example, aggregate the output of the "reference" scenario combination and
 save all post processing output tables for all countries to parquet files.
@@ -574,8 +575,6 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     return df_agg
 
 
-
-
 def area_by_status_one_country(combo_name: str, iso2_code: str):
     """Area in wide format with one column for each status.
 
@@ -620,7 +619,7 @@ def area_by_status_one_country(combo_name: str, iso2_code: str):
     cols = cols[-2:] + cols[:-2]
     return df_wide[cols]
 
-################################
+""
 def area_by_age_class_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Area in wide format with one column for ageclass.
     """
@@ -628,7 +627,7 @@ def area_by_age_class_one_country(combo_name: str, iso2_code: str, groupby: Unio
     df = area_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
     return df
 
-######################################
+""
 def share_thinn_final_cut(combo_name: str, iso2_code: str):
     """Area in wide format with one column for each status.
 
@@ -645,8 +644,7 @@ def share_thinn_final_cut(combo_name: str, iso2_code: str):
     df_shares ["region"] = runner.country.country_name
     return df_shares
 
-######################################
-
+""
 def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
     """Area in wide format with one column for each status.
 
@@ -688,6 +686,32 @@ def nai_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """
     df_all = apply_to_all_countries(
         nai_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
+
+
+# split on con and broad for nai for one country
+def nai_con_broad_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Net Annual Increment data by status and con-broad grouping, on scenario
+    Usage:
+        >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+        >>> nai_one_country("reference", "LU", ["status"])
+        >>> nai_one_country("reference", "LU", ["status", "con_broad"])
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.nai.df_agg_con_broad(groupby=groupby)
+    df = place_combo_name_and_country_first(df, runner)
+    return df
+
+
+# split on con and broad for nai for all countries
+def nai_con_broad_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+    >>> from eu_cbm_hat.post_processor.area import nai_con_broad_all_countries
+    >>> nai_all_countries("reference", ["year", "con_broad"])
+    """
+    df_all = apply_to_all_countries(
+        nai_con_broad_one_country, combo_name=combo_name, groupby=groupby
     )
     return df_all
 
