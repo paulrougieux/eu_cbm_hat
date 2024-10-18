@@ -195,7 +195,7 @@ class NAI:
         df["merch_stock_vol"] = ton_carbon_to_m3_ob(df, "merch")
         df["agb"] = df["merch"] + df["other"]
         df["agb_stock_vol"] = ton_carbon_to_m3_ob(df, "agb")
-
+    
         # Fluxes to products
         df["merch_prod_vol"] = ton_carbon_to_m3_ob(df, "merch_prod")
         df["other_prod_vol"] = ton_carbon_to_m3_ob(df, "oth_prod")
@@ -276,21 +276,14 @@ class NAI:
 
 
     def df_agg_con_broad(self, groupby: Union[List[str], str]):
-        """Net Annual Increment aggregated by status and forest type. It WILL NOT work properly when there are transitions from con to broad and viceversa.
+        """Net Annual Increment aggregated by status and con_broad. It WILL NOT work properly when there are transitions from con to broad and viceversa.
         Usage:
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['ZZ'][-1]
             >>> # Net Annual Increment of the merchantable pool (nai_merch) and of
             >>> # all the above ground biomass (nai_agb) by status
             >>> nai_st = runner.post_processor.nai.df_agg_con_broad(["status", "con_broad"])
-            >>> selector = nai_st["status"] == 'ForAWS'
-            >>> nai_st.loc[selector, ["year", "status","con_broad", "area", "nai_merch", "nai_agb"]].head()
-               year  status         area      nai_merch        nai_agb
-            0  1999  ForAWS  91880.00000       0.000000       0.000000
-            1  2000  ForAWS  91880.00000  362883.178649  469452.158547
-            2  2001  ForAWS  91879.99912  362494.285355 -488554.806845
-            3  2002  ForAWS  91879.99877  378072.436366  212918.717178
-            4  2003  ForAWS  91879.99841  397329.021290  496215.446031
+       
         """
         if isinstance(groupby, str):
             groupby = [groupby]
@@ -302,7 +295,6 @@ class NAI:
         df_agg = (
             df.groupby(["year"] + groupby)[NAI_AGG_COLS].agg("sum").reset_index()
         )
-
         # Add NF movements to products back to ForAWS
         # Note this is a problem when we use grouping variables other than
         # "status" alone For example if groupby = ["status", "forest_type"]
@@ -319,4 +311,5 @@ class NAI:
             df_agg[col1] += df_agg[col2]
         # Compute NAI and GAI
         df_out_con_broad = compute_nai_gai(df_agg, groupby=groupby)
+        df_out_con_broad = df_out_con_broad[df_out_con_broad["status"] != "NF"]
         return df_out_con_broad

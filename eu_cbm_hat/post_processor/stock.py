@@ -2,7 +2,8 @@
 from typing import List, Union
 from functools import cached_property
 from eu_cbm_hat.post_processor.harvest import ton_carbon_to_m3_ub
-
+from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
+import pandas as pd
 
 class Stock:
     """Compute dw stock indicators
@@ -18,9 +19,52 @@ class Stock:
 
     def __init__(self, parent):
         self.parent = parent
+        self.runner = parent.runner
+        self.combo_name = self.runner.combo.short_name
         self.pools = self.parent.pools
         self.fluxes = self.parent.fluxes
-
+        
+    def volume_standing_stocks(self, groupby: Union[List[str], str] = None):
+        """Estimate the mean ratio of standing stocks, ONLY merchantable"""
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        df = self.pools
+        df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
+        df = df[df ['status'] != 'NF']
+        df["broad_standing_vol_ob"] = ton_carbon_to_m3_ob(df, "hardwood_merch")
+        df["con_standing_vol_ob"] = ton_carbon_to_m3_ob(df, "softwood_merch")
+        # Aggregate separately for softwood and hardwood
+        #groupby = ['year','status', 'con_broad']
+                  
+        # Create a new column to identify the rows to be summed
+        df_faws_ar = df[df['status'].isin(['AR', 'ForAWS'])]
+        df_fnaws = df[df['status'].isin(['ForNAWS'])]
+      
+        # Group by the new column and the other columns
+        df_faws = df_faws_ar.groupby(groupby).agg(
+                    con_standing_for_volume=("con_standing_vol_ob", "sum"),
+                    broad_standing_for_volume=("broad_standing_vol_ob", "sum"),
+                    area = ("area", "sum")
+                    ).reset_index()
+            
+        # rename the sum of AR and ForAWS as ForAWS
+        df_faws['status'] = 'ForAWS'
+        # Group by the new column and the other columns
+        df_fnaws = df_fnaws.groupby(groupby).agg(
+                    con_standing_for_volume=("con_standing_vol_ob", "sum"),
+                    broad_standing_for_volume=("broad_standing_vol_ob", "sum"),
+                    area = ("area", "sum")
+                    ).reset_index()
+        df_fnaws['status'] = 'ForNAWS'
+        df_for = pd.concat([df_faws, df_fnaws])
+        df_for['standing_stock_volume'] = df_for['con_standing_for_volume']+df_for['broad_standing_for_volume']
+        df_for['standing_stock_volume_ha'] = df_for['standing_stock_volume']/df_for['area']
+        df_for["combo_name"] = self.combo_name
+        df_for["iso2_code"] = self.runner.country.iso2_code
+        df_for["country"] = self.runner.country.country_name
+        df_for=df_for.reset_index()
+        return df_for
+    
     def dw_stock_ratio(self, groupby: Union[List[str], str] = None):
         """Estimate the mean ratio of standing stocks, dead_wood to merchantable"""
         if isinstance(groupby, str):

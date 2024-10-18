@@ -434,6 +434,48 @@ class Harvest:
         percentage_df['share_to_total'] = percentage_df['harvest_prov_ub'] / percentage_df['harvest_prov_ub_total']
         #percentage_df.to_csv('percentage_df.csv', mode='w', index=False, header=True)
         return percentage_df
+
+        # to keep this temporary omnly
+        # Match the values in df with the keys in dist_silv_corresp
+        #for i in range(len(df)):
+        #    disturbance_type = df.loc[i, 'disturbance_type']
+        #    if disturbance_type in dist_silv_corresp:
+        #        df.loc[i, 'silv_practice'] = dist_silv_corresp[disturbance_type]
+        #df.to_csv('overall.csv', mode='w', index=False, header=True)
+        
+        ##summed_df = df.groupby(['year', 'con_broad', 'silv_practice'])['harvest_prov_ub'].sum()
+        ##summed_df = summed_df.reset_index() 
+        
+        ## Camlculate the total harvest_prov_ub for each year and con_broad
+        ##total_harvest = summed_df.groupby(['year', 'con_broad'])['harvest_prov_ub'].transform('sum')
+        ##total_harvest.to_csv('summed_df.csv', mode='w', index=False, header=True)
+        
+        ## Merge the total_harvest back to the dataframe
+        ##percentage_df = summed_df.merge(total_harvest, left_index=True, right_index=True, suffixes=('', '_total'))
+        ##percentage_df.to_csv('percentage_df.csv', mode='w', index=False, header=True)
+        #######
+
+        ## a) Share of harvest_prov_ub for con and broad in the sum of con and broad for each year
+        #total_harvest_by_year_con_broad = df.groupby(['year', 'con_broad'])['harvest_prov_ub'].sum()
+        #total_harvest_by_year = df.groupby(['year'])['harvest_prov_ub'].sum()
+        #share_con_broad = total_harvest_by_year_con_broad / total_harvest_by_year
+        
+        ## Convert Series to DataFrame and reset index
+        #share_con_broad_df = share_con_broad.reset_index(name='share_con_broad_in_total')
+        
+        ## b) Share of final_cut in the sum of final_cut and thinnings for each of con and broad for each year
+        #final_cut_total = df[df['silv_practice'] == 'final_cut'].groupby(['year', 'con_broad'])['harvest_prov_ub'].sum()
+        #total_practices = df.groupby(['year', 'con_broad'])['harvest_prov_ub'].sum()
+        #share_final_cut = final_cut_total / total_practices
+        
+        ## Convert Series to DataFrame and reset index
+        #share_final_cut_df = share_final_cut.reset_index(name='share_final_cut_in_total')
+        
+        #df = share_final_cut_df.merge(share_con_broad_df, on  = ['year','con_broad'])
+        
+        ##df.to_csv('df.csv', mode='w', index=False, header=True)  
+        
+        #return df
         # #################
       
 
@@ -450,18 +492,6 @@ class Harvest:
                  "fw_harvest_prov_ub_broad" ])
         df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()
         return df_agg
-
-
-
-
-
-
-
-
-
-
-
-    
 
     def expected_provided(self, groupby: Union[List[str], str]):
         """Harvest excepted provided in one country

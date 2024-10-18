@@ -102,7 +102,7 @@ import warnings
 from tqdm import tqdm
 from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
-
+from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
 from eu_cbm_hat import eu_cbm_data_pathlib
 
 # Define where to store the data
@@ -192,7 +192,6 @@ def get_df_all_countries(combo_name, runner_method_name, **kwargs):
         **kwargs,
     )
     return df_all
-
 
 def apply_to_all_countries_and_save(args):
     """Get data for all countries and save it to a parquet file
@@ -342,53 +341,53 @@ def save_agg_combo_output(combo_name: str):
     return result
 
 
-def save_agg_combo_output_legacy(combo_name: str):
-    """Aggregate scenario combination output and store them in parquet files
-    inside the `eu_cbm_data/output_agg` directory.
-    """
-    warnings.warn("This is the legacy version, use save_agg_combo_output instead")
-    combo_dir = output_agg_dir / combo_name
-    combo_dir.mkdir(exist_ok=True)
-    # Harvest expected provided by year
-    print(f"Processing {combo_name} harvest expected provided.")
-    hexprov_by_year = harvest_exp_prov_all_countries(combo_name, "year")
-    hexprov_by_year.to_parquet(combo_dir / "hexprov_by_year.parquet")
-    # Harvest expected provided by year, forest type and disturbance type
-    hexprov_by_year_ft_dist = harvest_exp_prov_all_countries(
-        combo_name, ["year", "forest_type", "disturbance_type"]
-    )
-    hexprov_by_year_ft_dist.to_parquet(combo_dir / "hexprov_by_year_ft_dist.parquet")
-    # Sink by year
-    print(f"Processing {combo_name} sink.")
-    sink = apply_to_all_countries(
-        sink_one_country, combo_name=combo_name, groupby="year"
-    )
-    sink.to_parquet(combo_dir / "sink_by_year.parquet")
-    # Sink by year and status
-    sink_ys = apply_to_all_countries(
-        sink_one_country, combo_name=combo_name, groupby=["year", "status"]
-    )
-    sink_ys.to_parquet(combo_dir / "sink_by_year_st.parquet")
-    print(f"Processing {combo_name} area.")
-    # Area by year and status
-    area_status = apply_to_all_countries(
-        area_by_status_one_country, combo_name=combo_name
-    )
-    area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
-    print(f"Processing {combo_name} harvest area.")
-    harvest_area = apply_to_all_countries(
-        harvest_area_by_dist_one_country, combo_name=combo_name
-    )
-    harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
-    print(f"Processing {combo_name} Net Annual Increment.")
-    nai_sf = apply_to_all_countries(
-        nai_one_country, combo_name=combo_name, groupby=["status", "forest_type"]
-    )
-    nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
-    nai_s = apply_to_all_countries(
-        nai_one_country, combo_name=combo_name, groupby=["status"]
-    )
-    nai_s.to_parquet(combo_dir / "nai_by_year_st.parquet")
+#def save_agg_combo_output_legacy(combo_name: str):
+#    """Aggregate scenario combination output and store them in parquet files
+#    inside the `eu_cbm_data/output_agg` directory.
+#    """
+#    warnings.warn("This is the legacy version, use save_agg_combo_output instead")
+#    combo_dir = output_agg_dir / combo_name
+#    combo_dir.mkdir(exist_ok=True)
+#    # Harvest expected provided by year
+#    print(f"Processing {combo_name} harvest expected provided.")
+#    hexprov_by_year = harvest_exp_prov_all_countries(combo_name, "year")
+#    hexprov_by_year.to_parquet(combo_dir / "hexprov_by_year.parquet")
+#    # Harvest expected provided by year, forest type and disturbance type
+#    hexprov_by_year_ft_dist = harvest_exp_prov_all_countries(
+#        combo_name, ["year", "forest_type", "disturbance_type"]
+#    )
+#    hexprov_by_year_ft_dist.to_parquet(combo_dir / "hexprov_by_year_ft_dist.parquet")
+#    # Sink by year
+#    print(f"Processing {combo_name} sink.")
+#    sink = apply_to_all_countries(
+#        sink_one_country, combo_name=combo_name, groupby="year"
+#    )
+#    sink.to_parquet(combo_dir / "sink_by_year.parquet")
+#    # Sink by year and status
+#    sink_ys = apply_to_all_countries(
+#        sink_one_country, combo_name=combo_name, groupby=["year", "status"]
+#    )
+#    sink_ys.to_parquet(combo_dir / "sink_by_year_st.parquet")
+#    print(f"Processing {combo_name} area.")
+#    # Area by year and status
+#    area_status = apply_to_all_countries(
+#        area_by_status_one_country, combo_name=combo_name
+#    )
+#    area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
+#    print(f"Processing {combo_name} harvest area.")
+#    harvest_area = apply_to_all_countries(
+#        harvest_area_by_dist_one_country, combo_name=combo_name
+#    )
+#    harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
+#    print(f"Processing {combo_name} Net Annual Increment.")
+#    nai_sf = apply_to_all_countries(
+#        nai_one_country, combo_name=combo_name, groupby=["status", "forest_type"]
+#    )
+#    nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
+#    nai_s = apply_to_all_countries(
+#        nai_one_country, combo_name=combo_name, groupby=["status"]
+#    )
+#    nai_s.to_parquet(combo_dir / "nai_by_year_st.parquet")
 
 
 def read_agg_combo_output(combo_name: list, file_name: str):
@@ -575,6 +574,8 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     return df_agg
 
 
+
+
 def area_by_status_one_country(combo_name: str, iso2_code: str):
     """Area in wide format with one column for each status.
 
@@ -622,10 +623,25 @@ def area_by_status_one_country(combo_name: str, iso2_code: str):
 ""
 def area_by_age_class_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Area in wide format with one column for ageclass.
+        from eu_cbm_hat.post_processor.area import aarea_by_age_class_one_country
+        area_by_age_class_one_country("reference", ["year", "status", "con_broad", "disturbance_type"])
     """
     groupby = ["year", "status", "age_class"]
     df = area_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
+    df=df[['combo_name', 'iso2_code', 'country', 'year', 'age_class', 'area']]
     return df
+
+def area_by_age_class_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import area_by_age_class_all_countries
+    >>> area_by_age_class_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        area_by_age_class_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
 
 ""
 def share_thinn_final_cut(combo_name: str, iso2_code: str):
@@ -634,7 +650,7 @@ def share_thinn_final_cut(combo_name: str, iso2_code: str):
     Usage:
 
         >>> from eu_cbm_hat.post_processor.agg_combos import share_thinn_final_cut
-        >>> harvest_area_by_dist_one_country("reference", "LU")
+        >>> hare_thinn_final_cut("reference", "LU")
 
     """
     #groupby = ['year', 'con_broad', 'silv_practice']
@@ -689,32 +705,80 @@ def nai_all_countries(combo_name: str, groupby: Union[List[str], str]):
     )
     return df_all
 
-
-# split on con and broad for nai for one country
 def nai_con_broad_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
-    """Net Annual Increment data by status and con-broad grouping, on scenario
+    """Net Annual Increment data by status and con_broad
+
     Usage:
+
         >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
         >>> nai_one_country("reference", "LU", ["status"])
-        >>> nai_one_country("reference", "LU", ["status", "con_broad"])
+        >>> nai_one_country("reference", "LU", ["status", "forest_type"])
+
     """
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df = runner.post_processor.nai.df_agg_con_broad(groupby=groupby)
     df = place_combo_name_and_country_first(df, runner)
     return df
 
-
-# split on con and broad for nai for all countries
 def nai_con_broad_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """NAI area by status in wide format for all countries in the given scenario combination.
-    >>> from eu_cbm_hat.post_processor.area import nai_con_broad_all_countries
-    >>> nai_all_countries("reference", ["year", "con_broad"])
+
+    >>> from eu_cbm_hat.post_processor.area import nai_all_countries
+    >>> nai_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
     """
     df_all = apply_to_all_countries(
         nai_con_broad_one_country, combo_name=combo_name, groupby=groupby
     )
+    cols_to_keep = ['combo_name', 'country', 'year', 'status', 'con_broad',
+       'area', 'nai_merch', 'gai_merch','nai_agb', 'gai_agb', 'nai_merch_ha', 'gai_merch_ha', 'nai_agb_ha','gai_agb_ha']
+    df_all = df_all[cols_to_keep]
     return df_all
 
+def weighted_nai_con_broad_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Net Annual Increment data weighted by status
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+        >>> nai_one_country("reference", "LU", ["status"])
+        >>> nai_one_country("reference", "LU", ["status", "forest_type"])
+
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.nai.df_agg_con_broad(groupby=groupby)
+    df = place_combo_name_and_country_first(df, runner)
+    # Calculate the weighted values for nai_merch_ha and gai_merch_ha by multiplying by area
+    df['weighted_nai'] = df['nai_merch_ha'] * df['area']
+    df['weighted_gai'] = df['gai_merch_ha'] * df['area']
+    
+    # Group by the necessary columns and sum the weighted values and the area
+    grouped = df.groupby(['country', 'year', 'con_broad']).agg(
+        total_weighted_nai=('weighted_nai', 'sum'),
+        total_weighted_gai=('weighted_gai', 'sum'),
+        total_area=('area', 'sum')
+    ).reset_index()
+    
+    # Calculate the weighted averages
+    grouped['avg_nai_merch_ha'] = grouped['total_weighted_nai'] / grouped['total_area']
+    grouped['avg_gai_merch_ha'] = grouped['total_weighted_gai'] / grouped['total_area']
+    
+    # Select the relevant columns for the final output
+    final_df = grouped[['country', 'year', 'con_broad', 'avg_nai_merch_ha', 'avg_gai_merch_ha']]
+    return final_df
+
+
+def weighted_nai_con_broad_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import nai_all_countries
+    >>> nai_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        weighted_nai_con_broad_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
 
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Harvest area by status in wide format for all countries in the given scenario combination.
@@ -784,6 +848,41 @@ def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], st
     )
     return df_all
 
+def volume_stock_one_country(
+    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
+):
+    """
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import volume_stock_one_country
+        >>> import pandas
+        >>> pandas.set_option('display.precision', 0) # Display rounded numbers
+        >>> volume_stock_one_country("reference", "ZZ", "year")
+        >>> volume_stock_one_country("reference", "ZZ", ["year", "status"])
+
+    """
+    if isinstance(groupby, str):
+        groupby = [groupby]
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.stock.volume_standing_stocks(groupby=groupby)
+    print(df.head(3))
+    df = place_combo_name_and_country_first(df, runner)
+    return df
+
+def volume_stock_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """Information on both harvest expected and provided for all countries in
+    the combo_name.
+    Example use:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_all_countries
+        >>> harvest_exp_prov_all_countries("reference", "year")
+        >>> harvest_exp_prov_all_countries("reference", ["year", "status"])
+
+    """
+    df_all = apply_to_all_countries(
+        volume_stock_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
 
 def soc_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Harvest provided in one country
