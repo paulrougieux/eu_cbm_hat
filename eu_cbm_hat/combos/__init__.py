@@ -7,7 +7,7 @@ Written by Lucas Sinclair, Paul Rougieux and Viorel Blujdea.
 JRC Biomass Project.
 Unit D1 Bioeconomy.
 
-A list of all combo classes.
+A list of all combo classes. A combo is a scenario combination.
 
 Creating a new scenario combination only requires an update to the input files
 and to a yaml file that specifies which scenarios will be used in the combo for
