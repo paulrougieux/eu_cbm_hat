@@ -101,7 +101,6 @@ class Stock:
             df_agg["hardwood_stem_snag_tc"] + df_agg["softwood_stem_snag_tc"]
         ) / df_agg["area"]
         df_agg["laying_dw_c_per_ha"] = df_agg["medium_tc"] / df_agg["area"]
-
         return df_agg
 
     def dw_contribution_harvest(self, groupby: Union[List[str], str] = None):
@@ -196,4 +195,39 @@ class Stock:
             )
         cols = ["area"] + list(column_dict.keys()) + ["dom"]
         df_agg = df.groupby(groupby)[cols].agg("sum").reset_index()
+        return df_agg
+
+    def dw_merch_stock_age_class(self, groupby: Union[List[str], str] = None):
+        """Estimate the mean ratio of standing stocks, dead_wood to merchantable
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.post_processor.stock.dw_merch_stock_age_class("year")
+        """
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        df = self.pools
+        df['age_class'] = df.age // 10 + 1
+        df['age_class'] = 'AGEID' + df.age_class.astype(str)
+        # Aggregate separately for softwood and hardwood
+        df_agg = df.groupby(groupby+ ['age_class']).agg(
+            softwood_stem_snag_tc=("softwood_stem_snag", "sum"),
+            softwood_merch_tc=("softwood_merch", "sum"),
+            hardwood_stem_snag_tc=("hardwood_stem_snag", "sum"),
+            hardwood_merch_tc=("hardwood_merch", "sum"),
+            #area=("area", sum),
+            medium_tc=("medium_soil", "sum"),
+        )
+        df_agg.reset_index(inplace=True)
+        df_agg["softwood_standing_dw_ratio"] = (
+            df_agg["softwood_stem_snag_tc"] / df_agg["softwood_merch_tc"]
+        )
+        df_agg["hardwood_standing_dw_ratio"] = (
+            df_agg["hardwood_stem_snag_tc"] / df_agg["hardwood_merch_tc"]
+        )
+        # agregate over con and broad
+        #df_agg["standing_dw_c_per_ha"] = (
+        #    df_agg["hardwood_stem_snag_tc"] + df_agg["softwood_stem_snag_tc"]
+        #) / df_agg["area"]
+        #df_agg["laying_dw_c_per_ha"] = df_agg["medium_tc"] / df_agg["area"]
+        df_agg=df_agg.query('year == 2025 | year == 2030')
         return df_agg
