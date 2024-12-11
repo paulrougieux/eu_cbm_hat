@@ -260,6 +260,7 @@ class Harvest:
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
         df = df.merge(area, on=index)
+        #print(self.provided)
         #df.to_csv('harvest_check.csv', mode='a', index=False, header=True)
         return df
 
@@ -490,7 +491,7 @@ class Harvest:
                  "irw_harvest_prov_ob", "fw_harvest_prov_ub", "fw_harvest_prov_ob", 
                  "irw_harvest_prov_ub_con","irw_harvest_prov_ub_broad", "fw_harvest_prov_ub_con", 
                  "fw_harvest_prov_ub_broad" ])
-        df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()
+        df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()       
         return df_agg
 
     def expected_provided(self, groupby: Union[List[str], str]):
@@ -512,6 +513,10 @@ class Harvest:
         # to products especially in the historical period
         df_expected = self.expected_agg(groupby=groupby)
         df_provided = self.provided_agg(groupby=groupby)
+
+        #print(df_provided)
+
+        
         df = df_expected.merge(df_provided, on=groupby, how="outer")
 
         # Join demand from the economic model, if grouping on years only

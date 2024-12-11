@@ -324,6 +324,11 @@ def save_agg_combo_output(combo_name: str):
             "data_func": share_thinn_final_cut,
             "groupby": None,
             "file_name": "share_thinn_final_cut.parquet",
+        
+        ### to add stocks
+        
+        
+        
         },
         ]
     # List of parameters to be fed p_umap
@@ -341,7 +346,7 @@ def save_agg_combo_output(combo_name: str):
     return result
 
 
-#def save_agg_combo_output_legacy(combo_name: str):
+# def save_agg_combo_output_legacy(combo_name: str):
 #    """Aggregate scenario combination output and store them in parquet files
 #    inside the `eu_cbm_data/output_agg` directory.
 #    """
@@ -865,7 +870,7 @@ def volume_stock_one_country(
         groupby = [groupby]
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df = runner.post_processor.stock.volume_standing_stocks(groupby=groupby)
-    print(df.head(3))
+    #print(df.head(3))
     df = place_combo_name_and_country_first(df, runner)
     return df
 

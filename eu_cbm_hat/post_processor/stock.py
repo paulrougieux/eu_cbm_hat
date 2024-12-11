@@ -66,7 +66,15 @@ class Stock:
         return df_for
     
     def dw_stock_ratio(self, groupby: Union[List[str], str] = None):
-        """Estimate the mean ratio of standing stocks, dead_wood to merchantable"""
+        """Estimate the mean ratio of standing stocks, dead_wood to merchantable
+        
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.post_processor.stock.dw_stock_ratio("year")
+        
+        """
+
+        
         if isinstance(groupby, str):
             groupby = [groupby]
         df = self.pools
