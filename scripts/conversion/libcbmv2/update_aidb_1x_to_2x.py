@@ -17,10 +17,11 @@ specific country:
 
     >>> import sys
     >>> import pathlib
-    >>> sys.path.append(str(pathlib.Path.home() /  "eu_cbm/eu_cbm_hat/scripts/conversion/"))
+    >>> sys.path.append(str(pathlib.Path.home() /  "eu_cbm/eu_cbm_hat/scripts/conversion/libcbmv2/"))
     >>> from update_aidb_1x_to_2x import convert_aidb_to_v2
     >>> from update_aidb_1x_to_2x import countries_dir
     >>> convert_aidb_to_v2(countries_dir / "SI/aidb.db")
+    >>> convert_aidb_to_v2(countries_dir / "IE/aidb.db")
 
 See also:
 
