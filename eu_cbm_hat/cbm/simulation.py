@@ -11,6 +11,7 @@ Unit D1 Bioeconomy.
 # Built-in modules #
 
 # Third party modules #
+import logging
 from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm import cbm_simulator
 from libcbm.model.cbm.cbm_output import CBMOutput
@@ -93,10 +94,12 @@ class Simulation(object):
         except Exception:
             message = "Runner '%s' encountered an exception. See log file at %s"
             # Find the path to the log file if available
-            try:
-                log_file_path = self.runner.log.handlers[1].baseFilename
-            except AttributeError:
-                log_file_path = "log file path not found"
+            # The first handler is standard error, the second handler is a file
+            log_file_path = "unknown"
+            for handler in self.runner.log.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    log_file_path = handler.baseFilename
+                    break
             self.runner.log.error(message % (self.runner.short_name, log_file_path))
             self.runner.log.exception("Exception", exc_info=True)
             self.error = True
