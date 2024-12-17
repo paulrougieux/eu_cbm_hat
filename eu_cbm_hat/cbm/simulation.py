@@ -91,8 +91,13 @@ class Simulation(object):
         try:
             self.run()
         except Exception:
-            message = "Runner '%s' encountered an exception. See log file."
-            self.runner.log.error(message % self.runner.short_name)
+            message = "Runner '%s' encountered an exception. See log file at %s"
+            # Find the path to the log file if available
+            try:
+                log_file_path = self.runner.log.handlers[1].baseFilename
+            except AttributeError:
+                log_file_path = "log file path not found"
+            self.runner.log.error(message % (self.runner.short_name, log_file_path))
             self.runner.log.exception("Exception", exc_info=True)
             self.error = True
             if interrupt_on_error: raise
