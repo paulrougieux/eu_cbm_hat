@@ -3,6 +3,10 @@ Workflow pipeline object to run libcbm by pointing it to a data directory. It
 is a small self contained object that makes it possible to run test without
 the need for the eu_cbm_data directory.
 
+TODO :
+
+    - replace print statements by proper logging
+
 """
 
 import pathlib
@@ -83,7 +87,7 @@ class Bud:
         # Print message #
         msg = "Carbon pool initialization period is finished." \
               " Now starting the `current` period.\n"
-        self.parent.log.info(msg)
+        print(msg)
         # The name of our extra classifier #
         key = 'growth_period'
         # The value that the classifier should take for all timesteps #
@@ -105,7 +109,7 @@ class Bud:
         # Check if we want to switch growth period #
         if timestep == 1: cbm_vars = self.switch_period(cbm_vars)
         # Print a message #
-        self.parent.log.info(f"Time step {timestep} is about to run.")
+        print(f"Time step {timestep} is about to run.")
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
         # Return #
