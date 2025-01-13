@@ -25,6 +25,11 @@ specific country:
 
 Display issues with unique constraints
 
+    >>> display_unique_constraint_issue(db_path = countries_dir / "PL/aidb.db",
+    >>>                                 table = "disturbance_matrix_value",
+    >>>                                 columns = ["disturbance_matrix_id",
+    >>>                                            "source_pool_id",
+    >>>                                            "sink_pool_id"])
 
 See also:
 
