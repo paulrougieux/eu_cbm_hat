@@ -25,6 +25,7 @@ specific country:
 
 Display issues with unique constraints
 
+    >>> from update_aidb_1x_to_2x import display_unique_constraint_issue
     >>> display_unique_constraint_issue(db_path = countries_dir / "PL/aidb.db",
     ...                                 table = "disturbance_matrix_value",
     ...                                 columns = ["disturbance_matrix_id",
