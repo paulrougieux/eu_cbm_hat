@@ -23,6 +23,9 @@ specific country:
     >>> convert_aidb_to_v2(countries_dir / "SI/aidb.db")
     >>> convert_aidb_to_v2(countries_dir / "IE/aidb.db")
 
+Display issues with unique constraints
+
+
 See also:
 
     - The documentation on how to migrate from libcbm version 1 to libcbm
@@ -88,6 +91,25 @@ def convert_aidb_to_v2(db_path):
     shutil.copy(db_path_v2, db_path)
     print(f"\n{db_path} updated to V2\n\n")
 
+def display_unique_constraint_issue(db_path, table, columns):
+    """Display rows that don't respect the unique constraint in the given table and column
+
+    Example use:
+        
+        >>> # See above on how to add this script to your path if needed
+        >>> from update_aidb_1x_to_2x import display_unique_constraint_issue
+        >>> from update_aidb_1x_to_2x import countries_dir
+        >>> db_path = countries_dir / "PL/aidb.db"
+        >>> table = "disturbance_matrix_value"
+        >>> columns = ["disturbance_matrix_id", "source_pool_id", "sink_pool_id"]
+        >>> display_unique_constraint_issue(db_path, table, columns)
+
+    """
+    db = SQLiteDatabase(str(db_path))
+    df = db.read_df(table)
+    df[columns].duplicated()
+    dup = df[columns].duplicated(keep=False)
+    print(df[dup])
 
 if __name__ == "__main__":
     aidbs = countries_dir.glob("**/aidb.db")
