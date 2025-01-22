@@ -26,17 +26,20 @@ class OrigData(object):
     This class will provide access to the original data of a Country
     as several pandas data frames.
 
-    The data content itself for the historical period was taken from the
-    original `cbmcfs3` dataset composed by Roberto P.
-
-    To copy all the data from the `cbmcfs3_data` repository do the following:
+    Get origin data that is common to all activities
 
         >>> from eu_cbm_hat.core.continent import continent
-        >>> for country in continent: country.orig_data.copy_from_cbmcfs3()
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> runner.country.orig_data[("age_classes")]
+        >>> runner.country.orig_data[("classifiers")]
+        >>> runner.country.orig_data[("events_templates")]
 
-    This was done at some point before the data was reorganized and changed
-    by Viorel B. It can still be seen in `f42fb77` and it depends on the
-    `cbmcfs3_runner` python module to be run.
+    Get orig data for a particular activity, using a tuple (activity_name,
+    file_name) as a key:
+
+        >>> runner.country.orig_data[("mgmt", "growth_curves")]
+        >>> # Identical to
+        >>> runner.country.orig_data.__getitem__(("mgmt", "growth_curves"))
 
     Get disturbance ids that contain a particular word in their description
 
@@ -58,6 +61,19 @@ class OrigData(object):
         >>>     return df
         >>> print(dist_desc_contains("afforestation"))
         >>> print(dist_desc_contains("deforestation"))
+
+    Historical note on the transition from the legacy model. The data content
+    itself for the historical period was taken from the original `cbmcfs3`
+    dataset composed by Roberto Pilli.
+
+    To copy all the data from the `cbmcfs3_data` repository do the following:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> for country in continent: country.orig_data.copy_from_cbmcfs3()
+
+    This was done at some point before the data was reorganized and changed
+    by Viorel Blujdea. It can still be seen in `f42fb77` and it depends on the
+    `cbmcfs3_runner` python module to be run.
 
     """
 

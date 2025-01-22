@@ -261,4 +261,26 @@ class PostProcessor(object):
         """
         df = self.runner.silv.coefs.raw
         return df[["forest_type", "wood_density", "bark_frac"]].copy()
+    
+    @cached_property
+    def irw_frac(self):
+        """load irw_frac for converting output to IRW and FW, ready to join"""
+        df = self.runner.silv.irw_frac.raw
+        df['disturbance_type']=df['disturbance_type'].astype(int)
+        
+        # Get the last three columns
+        cols_to_rename = df.columns[-8:]
+
+        # Rename the columns by appending '_irw_frac'
+        new_column_names = {col: f"{col}_irw_frac" for col in cols_to_rename}
+
+        # Apply the renaming
+        df.rename(columns=new_column_names, inplace=True)
+        
+        # Drop the 'climate' column
+        df.drop(columns=['climate'], inplace=True)
+
+        # Remove duplicate rows based on the remaining columns
+        df.drop_duplicates(inplace=True)
+        return df
 

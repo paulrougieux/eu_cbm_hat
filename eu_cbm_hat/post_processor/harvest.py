@@ -4,6 +4,7 @@ from typing import Union, List
 from functools import cached_property
 import numpy as np
 import pandas
+import yaml
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
@@ -62,13 +63,18 @@ class Harvest:
 
     @cached_property
     def demand(self) -> pandas.DataFrame:
-        """Get demand from the economic model using eu_cbm_hat/info/harvest.py"""
+        """Get demand from the economic model using eu_cbm_hat/info/harvest.py
+
+        Convert demand volumes from 1000m3 ub to m3 ub.
+        """
         harvest_scenario_name = self.runner.combo.config["harvest"]
         irw = combined["irw"]
         irw["product"] = "irw_demand"
         fw = combined["fw"]
         fw["product"] = "fw_demand"
         df = pandas.concat([irw, fw]).reset_index(drop=True)
+        # Convert volumes from 1000m3 ub to m3 ub
+        df["value"] *= 1e3
         index = ["scenario", "iso2_code", "year"]
         df = df.pivot(index=index, columns="product", values="value").reset_index()
         df["rw_demand"] = df["fw_demand"] + df["irw_demand"]
@@ -161,6 +167,7 @@ class Harvest:
     def provided(self):
         """Harvest provided in one country"""
         df = self.fluxes
+        
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
         df["to_product"] = df[cols_to_product].sum(axis=1)
@@ -175,19 +182,314 @@ class Harvest:
             raise ValueError(msg)
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
+
         # Convert tons of carbon to volume under bark
         df["harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
         df["harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
+       
+        # #################
+        # add irw fractions from input file to convert to IRW and FW
+        df_irw = self.parent.irw_frac
+                
+        #df.to_csv('harv_check_before.csv')
+        # define the scenario applicable for IRW from .yaml combo
+        yaml_path = self.runner.combo.yaml_path
+        with open(yaml_path, 'r') as file:
+            yaml_data = file.read()
+        data = yaml.safe_load(yaml_data)
+        min_year = min(data['irw_frac_by_dist'].keys())
+        mngm_scenario = data['irw_frac_by_dist'][min_year]
+        df_irw = df_irw[df_irw['scenario'] == mngm_scenario]
+        #print(self.runner.country.iso2_code)      
+        
+        # exclude climate which is often "?"
+        # dropna to get rid of events which may not apply (e.g., deforestation)
+        df= df.merge(df_irw, on = ["status","forest_type", "region",
+                                    "mgmt_type","mgmt_strategy",
+                                    "disturbance_type", "con_broad", 
+                                    "site_index", "growth_period"], how='inner')
+        
+        #df.to_csv('harv_check_after.csv')
+        #convert roundwood output to IRW and FW
+        # add adintional split on con and broad
+        df["irw_to_product_soft"] = (
+            df["softwood_merch_to_product"]* df["softwood_merch_irw_frac"]+
+            df["softwood_other_to_product"]*df["softwood_other_irw_frac"]+
+            df["softwood_stem_snag_to_product"]*df["softwood_stem_snag_irw_frac"]+
+            df["softwood_branch_snag_to_product"]*df["softwood_branch_snag_irw_frac"]
+                                    )
+        df["irw_to_product_hard"] = (
+            df["hardwood_merch_to_product"]*df["hardwood_merch_irw_frac"]+
+            df["hardwood_other_to_product"]*df["hardwood_other_irw_frac"]+
+            df["hardwood_stem_snag_to_product"]*df["hardwood_stem_snag_irw_frac"]+
+            df["hardwood_branch_snag_to_product"]*df["hardwood_branch_snag_irw_frac"]
+                               )
+        df["fw_to_product_soft"] = (
+            df["softwood_merch_to_product"]*(1-df["softwood_merch_irw_frac"])+
+            df["softwood_other_to_product"]*(1-df["softwood_other_irw_frac"])+
+            df["softwood_stem_snag_to_product"]*(1-df["softwood_stem_snag_irw_frac"])+
+            df["softwood_branch_snag_to_product"]*(1-df["softwood_branch_snag_irw_frac"])
+                                )
+        df["fw_to_product_hard"] = (    
+            df["hardwood_merch_to_product"]*(1-df["hardwood_merch_irw_frac"])+
+            df["hardwood_other_to_product"]*(1-df["hardwood_other_irw_frac"])+
+            df["hardwood_stem_snag_to_product"]*(1-df["hardwood_stem_snag_irw_frac"])+
+            df["hardwood_branch_snag_to_product"]*(1-df["hardwood_branch_snag_irw_frac"])
+                            )
+        df["irw_to_product"] = (df["irw_to_product_soft"] + df["irw_to_product_hard"] )
+        df["fw_to_product"] = (df["fw_to_product_soft"] + df["fw_to_product_hard"] )
+            
+                              
+        # Convert tons of carbon to volume under bark
+        df["irw_harvest_prov_ub_con"] = ton_carbon_to_m3_ub(df, "irw_to_product_soft")
+        df["irw_harvest_prov_ub_broad"] = ton_carbon_to_m3_ub(df, "irw_to_product_hard")
+        df["irw_harvest_prov_ob_con"] = ton_carbon_to_m3_ob(df, "irw_to_product_soft")
+        df["irw_harvest_prov_ob_broad"] = ton_carbon_to_m3_ob(df, "irw_to_product_hard")
+        df["fw_harvest_prov_ub_con"] = ton_carbon_to_m3_ub(df, "fw_to_product_soft")
+        df["fw_harvest_prov_ub_broad"] = ton_carbon_to_m3_ub(df, "fw_to_product_hard")
+        df["fw_harvest_prov_ob_con"] = ton_carbon_to_m3_ob(df, "fw_to_product_soft")
+        df["fw_harvest_prov_ob_broad"] = ton_carbon_to_m3_ob(df, "fw_to_product_hard")
+
+
+        df["irw_harvest_prov_ub"] =  df["irw_harvest_prov_ub_con"] + df["irw_harvest_prov_ub_broad"]
+        df["irw_harvest_prov_ob"] = df["irw_harvest_prov_ob_con"] + df["irw_harvest_prov_ob_broad"]
+        df["fw_harvest_prov_ub"] = df["fw_harvest_prov_ub_con"] + df["fw_harvest_prov_ub_broad"]
+        df["fw_harvest_prov_ob"] = df["fw_harvest_prov_ob_con"] + df["fw_harvest_prov_ob_broad"]
+
         # Area information
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
         df = df.merge(area, on=index)
+        #df.to_csv('harvest_check.csv', mode='a', index=False, header=True)
         return df
+
+
+    @cached_property
+    def provided_shares(self):
+        """Harvest provided in one country on disturbance types"""
+        df = self.fluxes
+        
+        # Sum all columns that have a flux to products
+        cols_to_product = df.columns[df.columns.str.contains("to_product")]
+        df["to_product"] = df[cols_to_product].sum(axis=1)
+        # Keep only rows with a flux to product
+        selector = df.to_product > 0
+        df = df[selector]
+        # Check we only have 1 year since last disturbance
+        time_since_last = df["time_since_last_disturbance"].unique()
+        if not time_since_last == 1:
+            msg = "Time since last disturbance should be one"
+            msg += f"it is {time_since_last}"
+            raise ValueError(msg)
+        # Add wood density information by forest type
+        df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
+        #df.to_csv('harvest_check.csv', mode='a', index=False, header=True)
+        
+        # Convert tons of carbon to volume under bark
+        df["harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
+        df["harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
+
+        dist_silv_corresp = { 
+                1 :'thinnings',#generic 5%
+                1 :'thinnings',#generic 5% (calibration)
+                2 :'salvage',#Wildfire
+                3 :'final_cut',#Clearcut harvesting without salvage
+                7 :'salvage',#Deforestation
+                8 :'NA',#Afforestation
+                10 :'thinnings',#10% commercial thinning
+                11 :'thinnings',#generic 10%
+                12 :'thinnings',#10% commercial thinning
+                12 :'thinnings',#15% commercial thinning
+                13 :'thinnings',#generic 15%
+                13 :'thinnings',#generic 20%
+                14 :'thinnings',#15% commercial thinning
+                14 :'thinnings',#20% commercial thinning
+                15 :'thinnings',#generic 20%
+                15 :'thinnings',#generic 25%
+                16 :'thinnings',#20% commercial thinning
+                16 :'thinnings',#25% commercial thinning
+                16 :'thinnings',#30% commercial thinning
+                17 :'thinnings',#generic 25%
+                17 :'thinnings',#generic 30%
+                18 :'thinnings',#25% commercial thinning
+                18 :'thinnings',#30% commercial thinning
+                18 :'thinnings',#35% commercial thinning
+                18 :'thinnings',#35% Commercial thinning
+                19 :'thinnings',#35% commercial thinning
+                21 :'final_cut',#97% clearcut
+                22 :'final_cut',#Clearcut harvesting with salvage
+                24 :'final_cut',#Clearcut with slash-burn
+                40 :'thinnings',#generic 15% (calibration)
+                40 :'final_cut',#Stand Replacing Natural Succession
+                40 :'final_cut',#Stand Replacing Natural Succession (calibration)
+                41 :'salvage',#generic 40% mortality (calibration)
+                41 :'final_cut',#generic 90% mortality
+                41 :'final_cut',#generic 90% mortality (calibration)
+                41 :'salvage',#Insects with salvage logging
+                41 :'salvage',#Insects with salvage logging (calibration)
+                42 :'salvage',#generic 90% mortality (calibration)
+                42 :'salvage',#Insects with salvage logging (calibration)
+                42 :'salvage',#Insects with salvage logging (nd_nsr), Matrix ID 25
+                43 :'salvage',#generic 60% mortality (calibration)
+                43 :'salvage',#Salvage logging after insects (calibration)
+                45 :'salvage',#generic 90% mortality (calibration)
+                45 :'salvage',#Salvage logging after insects (calibration)
+                50 :'salvage',#Fire with salvage logging
+                50 :'salvage',#Fire with salvage logging (calibration)
+                50 :'salvage',#generic 50% mortality (calibration)
+                51 :'salvage',#Fire with salvage logging (calibration)
+                115 :'thinnings',#15% commercial thinning
+                120 :'thinnings',#generic 40% mortality
+                125 :'final_cut',#generic 70%
+                130 :'final_cut',#generic 85%
+                400 :'final_cut',#Stand Replacing Natural Succession (projection)
+                401 :'thinnings',#generic 15% (projection)
+                401 :'final_cut',#generic 90% mortality (projection)
+                401 :'final_cut',#Stand Replacing Natural Succession (projection)
+                402 :'salvage',#Insects with salvage logging (projection)
+                411 :'thinnings',#generic 40% mortality (projection)
+                411 :'salvage',#generic 90% mortality (projection)
+                411 :'salvage',#Insects with salvage logging (projection)
+                420 :'salvage',#Insects with salvage logging (projection)
+                421 :'salvage',#generic 90% mortality (projection)
+                421 :'salvage',#Insects with salvage logging (projection)
+                431 :'salvage',#generic 60% mortality (projection)
+                431 :'salvage',#Salvage logging after insects (projection)
+                451 :'salvage',#generic 90% mortality (projection)
+                451 :'salvage',#Salvage logging after insects (projection)
+                491 :'final_cut',#Stand Replacing Natural Succession (projection)
+                500 :'salvage',#Fire with salvage logging (projection)
+                501 :'salvage',#Fire with salvage logging (projection)
+                501 :'salvage',#generic 50% mortality (projection)
+                515 :'thinnings',#Post_conversion_LA_15%_commercial_thinning
+                516 :'final_cut',#Conversion_to_u_u_con
+                517 :'final_cut',#Conversion_to_u_u_broad
+                518 :'final_cut',#Conversion_to_u_u_con
+                535 :'thinnings',#Step_1_conversion_LA_35%_commercial_thinning
+                550 :'thinnings',#Step_2_conversion_LA_50%_commercial_thinning
+                615 :'thinnings',#Post_conversion_ST_15%_commercial_thinning
+                625 :'thinnings',#Step_1_conversion_ST_25%_commercial_thinning
+                640 :'thinnings',#Step_2_conversion_ST_40%_commercial_thinning
+                700 :'final_cut',#Conversion_of_coppice_to_high_stands
+                701 :'final_cut',#Conversion_of_old_stands_to_coppice
+                1010 :'thinnings',#10% commercial thinning hist
+                1111 :'thinnings',#generic 10% hist
+                1212 :'thinnings',#10% commercial thinning hist
+                1212 :'thinnings',#15% commercial thinning hist
+                1313 :'thinnings',#generic 15% hist
+                1313 :'thinnings',#generic 20% hist
+                1414 :'thinnings',#15% commercial thinning hist
+                1414 :'thinnings',#20% commercial thinning hist
+                1515 :'thinnings',#generic 20% hist
+                1515 :'thinnings',#generic 25% hist
+                1616 :'thinnings',#20% commercial thinning hist
+                1616 :'thinnings',#25% commercial thinning hist
+                1616 :'thinnings',#30% commercial thinning hist
+                1717 :'thinnings',#generic 25% hist
+                1717 :'thinnings',#generic 30% hist
+                1818 :'thinnings',#25% commercial thinning hist
+                1818 :'thinnings',#30% commercial thinning hist
+                1818 :'thinnings',#35% commercial thinning hist
+                1818 :'thinnings',#35% Commercial thinning hist
+                2121 :'final_cut',#97% clearcut hist
+                2222 :'final_cut',#Clearcut harvesting with salvage hist
+                2424 :'final_cut',#Clearcut with slash-burn hist
+                4040 :'final_cut',#Stand Replacing Natural Succession (calibration) hist
+                4141 :'thinnings',#generic 40% mortality (calibration) hist
+                4141 :'salvage',#generic 90% mortality (calibration) hist
+                4141 :'salvage',#generic 90% mortality hist
+                4141 :'salvage',#Insects with salvage logging (calibration) hist
+                4242 :'salvage',#generic 90% mortality (calibration) hist
+                4242 :'salvage',#Insects with salvage logging (calibration) hist
+                4343 :'salvage',#generic 60% mortality (calibration) hist
+                4343 :'salvage',#Salvage logging after insects (calibration) hist
+                4545 :'salvage',#generic 90% mortality (calibration) hist
+                4545 :'salvage',#Salvage logging after insects (calibration) hist
+                115115 :'thinnings',#15% commercial thinning hist
+                120120 :'thinnings',#generic 40% mortality hist
+                125125 :'salvage',#generic 70% hist
+                130130 :'salvage',#generic 85% hist
+                }
+
+        # Add a new column to the DataFrame
+        df['silv_practice'] = None
+                        
+        # Match the values in df with the keys in dist_silv_corresp
+        for i in range(len(df)):
+            disturbance_type = df.loc[i, 'disturbance_type']
+            if disturbance_type in dist_silv_corresp:
+                df.loc[i, 'silv_practice'] = dist_silv_corresp[disturbance_type]
+        #df.to_csv('overall.csv', mode='w', index=False, header=True)
+        
+        summed_df = df.groupby(['year', 'con_broad', 'silv_practice'])['harvest_prov_ub'].sum()
+        summed_df = summed_df.reset_index() 
+        
+        # Camlculate the total harvest_prov_ub for each year and con_broad
+        total_harvest = summed_df.groupby(['year', 'con_broad'])['harvest_prov_ub'].transform('sum')
+        #sumed_df.to_csv('summed_df.csv', mode='w', index=False, header=True)
+        # Merge the total_harvest back to the dataframe
+        percentage_df = summed_df.merge(total_harvest, left_index=True, right_index=True, suffixes=('', '_total'))
+        #percentage_df.to_csv('percentage_df_0.csv', mode='w', index=False, header=True)
+        # Calculate the share of thinnings to final_cut
+        percentage_df['share_to_total'] = percentage_df['harvest_prov_ub'] / percentage_df['harvest_prov_ub_total']
+        #percentage_df.to_csv('percentage_df.csv', mode='w', index=False, header=True)
+        return percentage_df
+
+        # to keep this temporary omnly
+        # Match the values in df with the keys in dist_silv_corresp
+        #for i in range(len(df)):
+        #    disturbance_type = df.loc[i, 'disturbance_type']
+        #    if disturbance_type in dist_silv_corresp:
+        #        df.loc[i, 'silv_practice'] = dist_silv_corresp[disturbance_type]
+        #df.to_csv('overall.csv', mode='w', index=False, header=True)
+        
+        ##summed_df = df.groupby(['year', 'con_broad', 'silv_practice'])['harvest_prov_ub'].sum()
+        ##summed_df = summed_df.reset_index() 
+        
+        ## Camlculate the total harvest_prov_ub for each year and con_broad
+        ##total_harvest = summed_df.groupby(['year', 'con_broad'])['harvest_prov_ub'].transform('sum')
+        ##total_harvest.to_csv('summed_df.csv', mode='w', index=False, header=True)
+        
+        ## Merge the total_harvest back to the dataframe
+        ##percentage_df = summed_df.merge(total_harvest, left_index=True, right_index=True, suffixes=('', '_total'))
+        ##percentage_df.to_csv('percentage_df.csv', mode='w', index=False, header=True)
+        #######
+
+        ## a) Share of harvest_prov_ub for con and broad in the sum of con and broad for each year
+        #total_harvest_by_year_con_broad = df.groupby(['year', 'con_broad'])['harvest_prov_ub'].sum()
+        #total_harvest_by_year = df.groupby(['year'])['harvest_prov_ub'].sum()
+        #share_con_broad = total_harvest_by_year_con_broad / total_harvest_by_year
+        
+        ## Convert Series to DataFrame and reset index
+        #share_con_broad_df = share_con_broad.reset_index(name='share_con_broad_in_total')
+        
+        ## b) Share of final_cut in the sum of final_cut and thinnings for each of con and broad for each year
+        #final_cut_total = df[df['silv_practice'] == 'final_cut'].groupby(['year', 'con_broad'])['harvest_prov_ub'].sum()
+        #total_practices = df.groupby(['year', 'con_broad'])['harvest_prov_ub'].sum()
+        #share_final_cut = final_cut_total / total_practices
+        
+        ## Convert Series to DataFrame and reset index
+        #share_final_cut_df = share_final_cut.reset_index(name='share_final_cut_in_total')
+        
+        #df = share_final_cut_df.merge(share_con_broad_df, on  = ['year','con_broad'])
+        
+        ##df.to_csv('df.csv', mode='w', index=False, header=True)  
+        
+        #return df
+        # #################
+      
 
     def provided_agg(self, groupby: Union[List[str], str]):
         """Aggregated version of harvest provided
         Group rows and sum all identifier rows in the same group"""
-        cols = ["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"]
+        
+        # add the new columns with IRW and FW
+        
+        cols = (["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"] +
+                ["irw_to_product","fw_to_product","irw_harvest_prov_ub",
+                 "irw_harvest_prov_ob", "fw_harvest_prov_ub", "fw_harvest_prov_ob", 
+                 "irw_harvest_prov_ub_con","irw_harvest_prov_ub_broad", "fw_harvest_prov_ub_con", 
+                 "fw_harvest_prov_ub_broad" ])
         df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()
         return df_agg
 
@@ -229,11 +531,16 @@ class Harvest:
         df = self.runner.country.orig_data["disturbance_types"]
         df.rename(columns={"dist_type_name": "disturbance_type"}, inplace=True)
         df["disturbance_type"] = df["disturbance_type"].astype(int)
-        df["disturbance"] = "thinning"
-        clearcut = df["dist_desc_input"].str.contains("deforestation|cut", case=False)
-        df.loc[clearcut, "disturbance"] = "clearcut"
-        salvage = df["dist_desc_input"].str.contains("salvage", case=False)
-        df.loc[salvage, "disturbance"] = "salvage"
+        df["disturbance"] = "thinning"  # Default to thinning
+        dist_dict = {
+            "afforestation": "afforestation",
+            "deforestation|cut": "clearcut",
+            "salvage": "salvage",
+            "fire": "natural",
+        }
+        for key, value in dist_dict.items():
+            selector = df["dist_desc_input"].str.contains(key, case=False)
+            df.loc[selector, "disturbance"] = value
         return df
 
     @cached_property

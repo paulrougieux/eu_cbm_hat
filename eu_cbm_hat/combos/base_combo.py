@@ -99,6 +99,14 @@ class Combination(object):
         >>> r = combo.runners['LU'][-1]
         >>> r.run(True, True, True)
 
+
+    Print information on the inventory and yield curve used in the management
+    activity for this runner
+
+      print("Scenario combinations")
+      for key in ["inventory", "growth_curves", "events"]:
+          print(key, ":", runner.combo.config[key])
+
     You can then check the output pools:
 
         >>> r.output.load('pools')

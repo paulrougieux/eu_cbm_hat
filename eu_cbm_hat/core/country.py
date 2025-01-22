@@ -121,15 +121,27 @@ class Country(object):
         self.nuts_zero_2006 = row['nuts_zero_2006']
         self.nuts_zero_2016 = row['nuts_zero_2010']
 
+#    def set_years(self):
+#        """Update all the reference years for this country."""
+#        # This is the same for all countries #
+#        #self.base_year = 2021
+#        row = ref_years.loc[ref_years['country'] == 'base_year'].iloc[0]
+#        self.base_year = row['inv_start_year']
+#        # This is different for each country.
+#        # The `inventory_start_year` is the oldest year in the inventory data
+#        # reported by the national forest inventory.
+#        row = ref_years.loc[ref_years['country'] == self.iso2_code].iloc[0]
+#        self.inventory_start_year = row['inv_start_year']
+   
     def set_years(self):
         """Update all the reference years for this country."""
-        # This is the same for all countries #
-        self.base_year = 2021
         # This is different for each country.
         # The `inventory_start_year` is the oldest year in the inventory data
         # reported by the national forest inventory.
         row = ref_years.loc[ref_years['country'] == self.iso2_code].iloc[0]
         self.inventory_start_year = row['inv_start_year']
+        self.base_year = row['base_year']
+
 
     def timestep_to_year(self, timestep):
         """

@@ -1,15 +1,27 @@
-"""Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
+"""
+Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
 
-- For a given scenario such as "reference", save all post processing output for
-  all countries to parquet files. This function implements all post processing
-  steps.
+For example, aggregate the output of the "reference" scenario combination and
+save all post processing output tables for all countries to parquet files.
 
     >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
     >>> save_agg_combo_output("reference")
 
 Other examples below explain how to run only some of the post processing steps.
+This was useful as we were developing these output aggregation methods, we
+often wanted to update only one type of output table for all scenarios at once,
+and not have to wait to update all output tables for all scenarios.
 
-- Save a specific data frame for all countries and all combos to parquet files
+- Save a specific data frame for all countries and all scenario combinations to
+  parquet files
+
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import get_df_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
+    >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
 
     >>> combos = ["pikssp2_fel1", "pikssp2_owc_max", "pikssp2_owc_min",
     >>>           "pikfair_fel1", "pikfair_owc_max", "pikfair_owc_min"]
@@ -19,15 +31,20 @@ Other examples below explain how to run only some of the post processing steps.
     ...                     "hexprov_by_year.parquet", groupby=["year"])
     >>> apply_to_all_combos(area_one_country, combos, "area_st_ft_agecl.parquet",
     ...                     groupby=["year", "status", "forest_type", "age_class"])
+    >>> apply_to_all_combos(harvest_exp_prov_one_country, combos, "hexprov_by_year_ft_dist.parquet",
+    ...                     groupby=["year", "forest_type", "con_broad", "disturbance_type"])
+    >>> apply_to_all_combos(get_df_one_country, combos, "stock_agg_by_year_ldist.parquet",
+    ...                     groupby=["year", "last_disturbance"], runner_method_name="post_processor.stock.df_agg")
 
-- Save a specific data frame for all all countries to a parquet file
+- Open the resulting parquet files to check the content of the data frames
 
-    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
-    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
-    >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
-    >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
-    >>> from eu_cbm_hat.post_processor.agg_combos import pools_length_one_country
-    >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
+    >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
+    >>> sink = read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
+    >>> nai_st = read_agg_combo_output(combos, "nai_by_year_st_test_to_delete.parquet")
+    >>> pools_length = read_agg_combo_output(combos, "pools_length.parquet")
+
+- Save a specific data frame for all countries and only one scenario
+  combination to parquet files
 
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
@@ -37,13 +54,6 @@ Other examples below explain how to run only some of the post processing steps.
     >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
     >>> pools_length = apply_to_all_countries(pools_length_one_country, combo_name)
     >>> pools_length.to_parquet(combo_dir / "pools_length.parquet")
-
-- Open the resulting parquet files to check the content of the data frames
-
-    >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
-    >>> sink = read_agg_combo_output(["reference", "pikfair"], "sink_by_year.parquet")
-    >>> nai_st = read_agg_combo_output(combos, "nai_by_year_st_test_to_delete.parquet")
-    >>> pools_length = read_agg_combo_output(combos, "pools_length.parquet")
 
 - Get data frames in all countries:
 
@@ -61,6 +71,15 @@ Other examples below explain how to run only some of the post processing steps.
     >>>     combo_name="reference",
     >>>     runner_method_name="post_processor.wood_density_bark_frac"
     >>> )
+    >>> # Load inventory in all countries and sum the area by management type
+    >>> inventory_all = get_df_all_countries(
+    >>>     combo_name="reference",
+    >>>     runner_method_name="country.orig_data.__getitem__",
+    >>>     item=("mgmt", "inventory")
+    >>> )
+    >>> inventory_all["area"] = inventory_all["area"].astype(float)
+    >>> inv_agg = inventory_all.groupby(["mgmt_strategy"]).agg(area = ("area","sum"))
+    >>> inv_agg = inv_agg.assign(share = lambda x: x.area / x.area.sum())
 
 - *Implementation note*: this script cannot be made a method of the
   combos/base_combo.py/Combination class because of circular references such as
@@ -73,7 +92,7 @@ Other examples below explain how to run only some of the post processing steps.
     - Removing the "continent" could be done by changing functions to pass runner
       objects as arguments instead of creating the runner from the continent object.
     - The call to combined could be removed by loading the harvest demand table
-      directly from csv files.
+      directly from CSV files.
 
 """
 
@@ -83,7 +102,7 @@ import warnings
 from tqdm import tqdm
 from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
-
+from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
 from eu_cbm_hat import eu_cbm_data_pathlib
 
 # Define where to store the data
@@ -102,16 +121,20 @@ def place_combo_name_and_country_first(df, runner):
     return df[cols]
 
 
-def function_one_country(combo_name, iso2_code, runner_method_name):
+def get_df_one_country(combo_name, iso2_code, runner_method_name, **kwargs):
     """A generic function that returns the data frame output of the given
-    runner method. Works only if the method is a @cached_property without
-    arguments. See example use in the `get_df_all_countries()` function.
+    runner method. See example use in the `get_df_all_countries()` function.
     """
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     method = runner
     for method_name in runner_method_name.split("."):
         method = getattr(method, method_name)
-    df = method
+    # If it's a @cached_property that returns a data frame directly
+    if method.__class__.__name__ ==  "DataFrame":
+        df = method
+    # Otherwise call the method with additional arguments
+    else:
+        df = method(**kwargs)
     df = place_combo_name_and_country_first(df, runner)
     return df
 
@@ -132,27 +155,43 @@ def apply_to_all_countries(data_func, combo_name, **kwargs):
     return df_all
 
 
-def get_df_all_countries(combo_name, runner_method_name):
+def get_df_all_countries(combo_name, runner_method_name, **kwargs):
     """Get a data frame for all countries.
-    Only works for runner methods which are decorated with @cached_property.
 
     Check wood density and bark fraction in all countries:
 
         >>> from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
         >>> wood_density_bark_all = get_df_all_countries(
-        >>>     combo_name="reference",
-        >>>     runner_method_name="post_processor.wood_density_bark_frac"
-        >>> )
+        ...     combo_name="reference",
+        ...     runner_method_name="post_processor.wood_density_bark_frac"
+        ... )
+
+    Check aggregated stock in all countries:
+
+        >>> stock_agg_all = get_df_all_countries(
+        ...     combo_name="reference",
+        ...     runner_method_name="post_processor.stock.df_agg",
+        ...     groupby = ["year", "last_disturbance"],
+        ... )
+
+    Area in all countries grouped by status, forest type, age and disturbances:
+
+        >>> area_sfad_all = get_df_all_countries(
+        ...     combo_name="reference",
+        ...     runner_method_name="post_processor.area.df_agg",
+        ...     groupby = ["year", 'status', "forest_type", "age","disturbance_type"],
+        ... )
 
     Note: data types should be harmonized to avoid this error when writing to a parquet file
     ArrowTypeError: ("Expected bytes, got a 'int' object", 'Conversion failed for column climate with type object')
     """
     df_all = apply_to_all_countries(
-        function_one_country,
+        data_func=get_df_one_country,
         combo_name=combo_name,
-        runner_method_name=runner_method_name)
+        runner_method_name=runner_method_name,
+        **kwargs,
+    )
     return df_all
-
 
 def apply_to_all_countries_and_save(args):
     """Get data for all countries and save it to a parquet file
@@ -161,26 +200,52 @@ def apply_to_all_countries_and_save(args):
         - p_umap() in apply_to_all_combos().
         - and in save_agg_combo_output
     """
-    data_func, combo_name, file_path, groupby = args
+    data_func, combo_name, file_path, groupby, runner_method_name = args
     # Have to check if defined or not because combo_name is passed in **kwargs
-    if groupby is None:
+    # TODO: check if it's possible to pass groupby, runner_method_name and
+    # combo_name in kwargs
+    if groupby is None and runner_method_name is None:
         print(f"Processing {combo_name} {data_func}.")
         df = apply_to_all_countries(data_func=data_func, combo_name=combo_name)
-    else:
+    elif runner_method_name is None:
         print(f"Processing {combo_name} {data_func} grouped by {groupby}.")
         df = apply_to_all_countries(
             data_func=data_func, combo_name=combo_name, groupby=groupby
         )
+    else:
+        msg = f"Processing {combo_name} {data_func} with {runner_method_name} "
+        msg += f"grouped by {groupby}."
+        print(msg)
+        df = apply_to_all_countries(
+            data_func=data_func, combo_name=combo_name, groupby=groupby, runner_method_name=runner_method_name
+        )
     df.to_parquet(file_path)
 
 
-def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
+def apply_to_all_combos(data_func, combo_names, file_name, groupby=None, runner_method_name=None):
     """Apply a function to all scenario combinations and save to parquet files
 
     This saves data for all countries in all scenario combinations into the
     given parquet file name. One file for each sub-directory in the
     eu_cbm_data/output_agg directory. These files can then be read and
     concatenated later with the read_agg_combo_output() function.
+
+    Usage with the get_df_one_country function:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_combos
+        >>> from eu_cbm_hat.post_processor.agg_combos import read_agg_combo_output
+        >>> from eu_cbm_hat.post_processor.agg_combos import get_df_one_country
+        >>> apply_to_all_combos(get_df_one_country, ["reference", "pikfair_fel1"], "stock_agg_example_to_delete.parquet", ["year", "last_disturbance"], "post_processor.stock.df_agg")
+        >>> # Read the parquet file
+        >>> stock_agg = read_agg_combo_output(["reference", "pikfair_fel1"], "stock_agg_example_to_delete.parquet")
+
+   It can also be used with a custom function:
+    
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
+        >>> apply_to_all_combos(harvest_exp_prov_one_country, ["reference", "pikfair_fel1"], "hexprov_example_to_delete.parquet",
+        ...                     groupby=["year", "forest_type", "con_broad", "disturbance_type"])
+        >>> hexprov = read_agg_combo_output(["reference", "pikfair_fel1"], "hexprov_example_to_delete.parquet")
+
     """
     items = [
         (
@@ -188,6 +253,7 @@ def apply_to_all_combos(data_func, combo_names, file_name, groupby=None):
             combo_name,
             output_agg_dir / combo_name / file_name,  # file path
             groupby,
+            runner_method_name,
         )
         for combo_name in combo_names
     ]
@@ -221,7 +287,7 @@ def save_agg_combo_output(combo_name: str):
         },
         {
             "data_func": harvest_exp_prov_one_country,
-            "groupby": ["year", "forest_type", "disturbance_type"],
+            "groupby": ["year", "forest_type", "con_broad", "disturbance_type"],
             "file_name": "hexprov_by_year_ft_dist.parquet",
         },
         {
@@ -249,7 +315,17 @@ def save_agg_combo_output(combo_name: str):
             "groupby": ["status"],
             "file_name": "nai_by_year_st.parquet",
         },
-    ]
+        {
+            "data_func": area_by_age_class_one_country,
+            "groupby": ["year", "status", "age_class"],
+            "file_name": "area_by_age_class.parquet",
+        },
+        {
+            "data_func": share_thinn_final_cut,
+            "groupby": None,
+            "file_name": "share_thinn_final_cut.parquet",
+        },
+        ]
     # List of parameters to be fed p_umap
     items = [
         (
@@ -257,6 +333,7 @@ def save_agg_combo_output(combo_name: str):
             combo_name,
             output_agg_dir / combo_name / param["file_name"],  # file path
             param["groupby"],
+            param.get("runner_method_name", None)
         )
         for param in parameters
     ]
@@ -264,53 +341,53 @@ def save_agg_combo_output(combo_name: str):
     return result
 
 
-def save_agg_combo_output_legacy(combo_name: str):
-    """Aggregate scenario combination output and store them in parquet files
-    inside the `eu_cbm_data/output_agg` directory.
-    """
-    warnings.warn("This is the legacy version, use save_agg_combo_output instead")
-    combo_dir = output_agg_dir / combo_name
-    combo_dir.mkdir(exist_ok=True)
-    # Harvest expected provided by year
-    print(f"Processing {combo_name} harvest expected provided.")
-    hexprov_by_year = harvest_exp_prov_all_countries(combo_name, "year")
-    hexprov_by_year.to_parquet(combo_dir / "hexprov_by_year.parquet")
-    # Harvest expected provided by year, forest type and disturbance type
-    hexprov_by_year_ft_dist = harvest_exp_prov_all_countries(
-        combo_name, ["year", "forest_type", "disturbance_type"]
-    )
-    hexprov_by_year_ft_dist.to_parquet(combo_dir / "hexprov_by_year_ft_dist.parquet")
-    # Sink by year
-    print(f"Processing {combo_name} sink.")
-    sink = apply_to_all_countries(
-        sink_one_country, combo_name=combo_name, groupby="year"
-    )
-    sink.to_parquet(combo_dir / "sink_by_year.parquet")
-    # Sink by year and status
-    sink_ys = apply_to_all_countries(
-        sink_one_country, combo_name=combo_name, groupby=["year", "status"]
-    )
-    sink_ys.to_parquet(combo_dir / "sink_by_year_st.parquet")
-    print(f"Processing {combo_name} area.")
-    # Area by year and status
-    area_status = apply_to_all_countries(
-        area_by_status_one_country, combo_name=combo_name
-    )
-    area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
-    print(f"Processing {combo_name} harvest area.")
-    harvest_area = apply_to_all_countries(
-        harvest_area_by_dist_one_country, combo_name=combo_name
-    )
-    harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
-    print(f"Processing {combo_name} Net Annual Increment.")
-    nai_sf = apply_to_all_countries(
-        nai_one_country, combo_name=combo_name, groupby=["status", "forest_type"]
-    )
-    nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
-    nai_s = apply_to_all_countries(
-        nai_one_country, combo_name=combo_name, groupby=["status"]
-    )
-    nai_s.to_parquet(combo_dir / "nai_by_year_st.parquet")
+#def save_agg_combo_output_legacy(combo_name: str):
+#    """Aggregate scenario combination output and store them in parquet files
+#    inside the `eu_cbm_data/output_agg` directory.
+#    """
+#    warnings.warn("This is the legacy version, use save_agg_combo_output instead")
+#    combo_dir = output_agg_dir / combo_name
+#    combo_dir.mkdir(exist_ok=True)
+#    # Harvest expected provided by year
+#    print(f"Processing {combo_name} harvest expected provided.")
+#    hexprov_by_year = harvest_exp_prov_all_countries(combo_name, "year")
+#    hexprov_by_year.to_parquet(combo_dir / "hexprov_by_year.parquet")
+#    # Harvest expected provided by year, forest type and disturbance type
+#    hexprov_by_year_ft_dist = harvest_exp_prov_all_countries(
+#        combo_name, ["year", "forest_type", "disturbance_type"]
+#    )
+#    hexprov_by_year_ft_dist.to_parquet(combo_dir / "hexprov_by_year_ft_dist.parquet")
+#    # Sink by year
+#    print(f"Processing {combo_name} sink.")
+#    sink = apply_to_all_countries(
+#        sink_one_country, combo_name=combo_name, groupby="year"
+#    )
+#    sink.to_parquet(combo_dir / "sink_by_year.parquet")
+#    # Sink by year and status
+#    sink_ys = apply_to_all_countries(
+#        sink_one_country, combo_name=combo_name, groupby=["year", "status"]
+#    )
+#    sink_ys.to_parquet(combo_dir / "sink_by_year_st.parquet")
+#    print(f"Processing {combo_name} area.")
+#    # Area by year and status
+#    area_status = apply_to_all_countries(
+#        area_by_status_one_country, combo_name=combo_name
+#    )
+#    area_status.to_parquet(combo_dir / "area_by_year_status.parquet")
+#    print(f"Processing {combo_name} harvest area.")
+#    harvest_area = apply_to_all_countries(
+#        harvest_area_by_dist_one_country, combo_name=combo_name
+#    )
+#    harvest_area.to_parquet(combo_dir / "harvest_area_by_year_dist.parquet")
+#    print(f"Processing {combo_name} Net Annual Increment.")
+#    nai_sf = apply_to_all_countries(
+#        nai_one_country, combo_name=combo_name, groupby=["status", "forest_type"]
+#    )
+#    nai_sf.to_parquet(combo_dir / "nai_by_year_st_ft.parquet")
+#    nai_s = apply_to_all_countries(
+#        nai_one_country, combo_name=combo_name, groupby=["status"]
+#    )
+#    nai_s.to_parquet(combo_dir / "nai_by_year_st.parquet")
 
 
 def read_agg_combo_output(combo_name: list, file_name: str):
@@ -497,6 +574,8 @@ def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], 
     return df_agg
 
 
+
+
 def area_by_status_one_country(combo_name: str, iso2_code: str):
     """Area in wide format with one column for each status.
 
@@ -541,7 +620,47 @@ def area_by_status_one_country(combo_name: str, iso2_code: str):
     cols = cols[-2:] + cols[:-2]
     return df_wide[cols]
 
+""
+def area_by_age_class_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Area in wide format with one column for ageclass.
+        from eu_cbm_hat.post_processor.area import aarea_by_age_class_one_country
+        area_by_age_class_one_country("reference", ["year", "status", "con_broad", "disturbance_type"])
+    """
+    groupby = ["year", "status", "age_class"]
+    df = area_one_country(combo_name=combo_name, iso2_code=iso2_code, groupby=groupby)
+    df=df[['combo_name', 'iso2_code', 'country', 'year', 'age_class', 'area']]
+    return df
 
+def area_by_age_class_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import area_by_age_class_all_countries
+    >>> area_by_age_class_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        area_by_age_class_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
+
+""
+def share_thinn_final_cut(combo_name: str, iso2_code: str):
+    """Area in wide format with one column for each status.
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import share_thinn_final_cut
+        >>> hare_thinn_final_cut("reference", "LU")
+
+    """
+    #groupby = ['year', 'con_broad', 'silv_practice']
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df_shares = runner.post_processor.harvest.provided_shares
+    df_shares ["scenario"] = runner.combo.short_name
+    df_shares ["region"] = runner.country.country_name
+    return df_shares
+
+""
 def harvest_area_by_dist_one_country(combo_name: str, iso2_code: str):
     """Area in wide format with one column for each status.
 
@@ -573,6 +692,93 @@ def nai_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], s
     df = place_combo_name_and_country_first(df, runner)
     return df
 
+
+def nai_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import nai_all_countries
+    >>> nai_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        nai_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
+
+def nai_con_broad_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Net Annual Increment data by status and con_broad
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+        >>> nai_one_country("reference", "LU", ["status"])
+        >>> nai_one_country("reference", "LU", ["status", "forest_type"])
+
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.nai.df_agg_con_broad(groupby=groupby)
+    df = place_combo_name_and_country_first(df, runner)
+    return df
+
+def nai_con_broad_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import nai_all_countries
+    >>> nai_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        nai_con_broad_one_country, combo_name=combo_name, groupby=groupby
+    )
+    cols_to_keep = ['combo_name', 'country', 'year', 'status', 'con_broad',
+       'area', 'nai_merch', 'gai_merch','nai_agb', 'gai_agb', 'nai_merch_ha', 'gai_merch_ha', 'nai_agb_ha','gai_agb_ha']
+    df_all = df_all[cols_to_keep]
+    return df_all
+
+def weighted_nai_con_broad_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Net Annual Increment data weighted by status
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import nai_one_country
+        >>> nai_one_country("reference", "LU", ["status"])
+        >>> nai_one_country("reference", "LU", ["status", "forest_type"])
+
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.nai.df_agg_con_broad(groupby=groupby)
+    df = place_combo_name_and_country_first(df, runner)
+    # Calculate the weighted values for nai_merch_ha and gai_merch_ha by multiplying by area
+    df['weighted_nai'] = df['nai_merch_ha'] * df['area']
+    df['weighted_gai'] = df['gai_merch_ha'] * df['area']
+    
+    # Group by the necessary columns and sum the weighted values and the area
+    grouped = df.groupby(['country', 'year', 'con_broad']).agg(
+        total_weighted_nai=('weighted_nai', 'sum'),
+        total_weighted_gai=('weighted_gai', 'sum'),
+        total_area=('area', 'sum')
+    ).reset_index()
+    
+    # Calculate the weighted averages
+    grouped['avg_nai_merch_ha'] = grouped['total_weighted_nai'] / grouped['total_area']
+    grouped['avg_gai_merch_ha'] = grouped['total_weighted_gai'] / grouped['total_area']
+    
+    # Select the relevant columns for the final output
+    final_df = grouped[['country', 'year', 'con_broad', 'avg_nai_merch_ha', 'avg_gai_merch_ha']]
+    return final_df
+
+
+def weighted_nai_con_broad_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """NAI area by status in wide format for all countries in the given scenario combination.
+
+    >>> from eu_cbm_hat.post_processor.area import nai_all_countries
+    >>> nai_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
+
+    """
+    df_all = apply_to_all_countries(
+        weighted_nai_con_broad_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
 
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """Harvest area by status in wide format for all countries in the given scenario combination.
@@ -642,6 +848,41 @@ def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], st
     )
     return df_all
 
+def volume_stock_one_country(
+    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
+):
+    """
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import volume_stock_one_country
+        >>> import pandas
+        >>> pandas.set_option('display.precision', 0) # Display rounded numbers
+        >>> volume_stock_one_country("reference", "ZZ", "year")
+        >>> volume_stock_one_country("reference", "ZZ", ["year", "status"])
+
+    """
+    if isinstance(groupby, str):
+        groupby = [groupby]
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.stock.volume_standing_stocks(groupby=groupby)
+    print(df.head(3))
+    df = place_combo_name_and_country_first(df, runner)
+    return df
+
+def volume_stock_all_countries(combo_name: str, groupby: Union[List[str], str]):
+    """Information on both harvest expected and provided for all countries in
+    the combo_name.
+    Example use:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_all_countries
+        >>> harvest_exp_prov_all_countries("reference", "year")
+        >>> harvest_exp_prov_all_countries("reference", ["year", "status"])
+
+    """
+    df_all = apply_to_all_countries(
+        volume_stock_one_country, combo_name=combo_name, groupby=groupby
+    )
+    return df_all
 
 def soc_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
     """Harvest provided in one country

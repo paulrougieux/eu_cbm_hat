@@ -71,6 +71,16 @@ class AIDB(object):
         To overwrite a table with a df:
 
             >>> country.aidb.db.write_df(df, 'species', index=False)
+            >>> country.aidb.db.write_df(df, 'species')
+
+        List all tables:
+
+            db.tables
+
+        Read a table:
+
+            db.read_df("disturbance_matrix_value")
+
         """
         from plumbing.databases.sqlite_database import SQLiteDatabase
         return SQLiteDatabase(self.paths.aidb)
