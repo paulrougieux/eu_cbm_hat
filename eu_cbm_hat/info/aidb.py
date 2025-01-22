@@ -70,8 +70,8 @@ class AIDB(object):
 
         To overwrite a table with a df:
 
+            >>> country.aidb.db.write_df(df, 'species', index=False)
             >>> country.aidb.db.write_df(df, 'species')
-
 
         List all tables:
 

@@ -18,13 +18,22 @@ import pandas
 # First party modules #
 from plumbing.cache import property_cached
 from libcbm.input.sit import sit_cbm_factory
-from libcbm.model.cbm import cbm_variables
+from libcbm.model.cbm.cbm_variables import CBMVariables
 
 # Internal modules #
 from eu_cbm_hat.cbm.simulation import Simulation
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
 # Constants #
+
+def cbm_vars_to_df(cbmvariables: CBMVariables, df_name:str) -> pandas.DataFrame:
+    """Extract a data frame from cbm_vars and rename columns if it's the inventory"""
+    df = getattr(cbmvariables, df_name).to_pandas()
+    # The age and land_class columns appears twice, rename those in the inventory
+    if df_name == "inventory":
+        df.rename(columns = {'age':        'inv_start_age',
+                             'land_class': 'inv_start_land_class'}, inplace=True)
+    return df
 
 
 class DynamicRunner(Runner):
@@ -113,20 +122,14 @@ class DynamicSimulation(Simulation):
 
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)
-        end_vars = cbm_variables.prepare(end_vars)
         end_vars = self.cbm.step(end_vars)
 
-        # Check we always have the same sized dataframes #
-        get_num_rows = lambda name: len(getattr(end_vars, name))
+        # Check that all data frames in cbm_vars have the same size #
+        get_num_rows = lambda name: getattr(end_vars, name).n_rows
         assert len({get_num_rows(name) for name in self.df_names}) == 1
 
-        # The age and land_class columns appears twice #
-        renaming = {'age':        'inv_start_age',
-                    'land_class': 'inv_start_land_class'}
-        end_vars.inventory = end_vars.inventory.rename(columns=renaming)
-
         # Concatenate dataframes together by columns into one big df #
-        stands = pandas.concat([getattr(end_vars, name)
+        stands = pandas.concat([cbm_vars_to_df(end_vars,name)
                                 for name in self.df_names], axis=1)
 
         # Check that the 'Input' column is always one and remove #

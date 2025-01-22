@@ -40,7 +40,7 @@ class InternalData(object):
         # Special case for values #
         if item == 'values': return self.sim.sit.classifier_value_ids
         # Load #
-        df = getattr(self.sim.results, item).copy()
+        df = getattr(self.sim.cbm_output, item).to_pandas()
         # Modify column names #
         df.columns = df.columns.to_series().apply(camel_to_snake)
         # Rename column names #

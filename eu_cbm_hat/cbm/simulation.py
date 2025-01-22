@@ -11,8 +11,13 @@ Unit D1 Bioeconomy.
 # Built-in modules #
 
 # Third party modules #
+import logging
 from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm import cbm_simulator
+from libcbm.model.cbm.cbm_output import CBMOutput
+from libcbm.model.cbm.cbm_variables import CBMVariables
+from libcbm.storage.backends import BackendType
+
 
 # First party modules #
 
@@ -20,7 +25,6 @@ from libcbm.model.cbm import cbm_simulator
 
 # Constants #
 create_proc = sit_cbm_factory.create_sit_rule_based_processor
-create_func = cbm_simulator.create_in_memory_reporting_func
 
 ###############################################################################
 class Simulation(object):
@@ -38,7 +42,7 @@ class Simulation(object):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
 
     #--------------------------- Special Methods -----------------------------#
-    def switch_period(self, cbm_vars):
+    def switch_period(self, cbm_vars: CBMVariables) -> CBMVariables:
         """
         If t=1, we know this is the first timestep, and nothing has yet been
         done to the post-spinup pools. It is at this moment that we want to
@@ -56,11 +60,11 @@ class Simulation(object):
         # Get the corresponding ID in the libcbm simulation #
         id_of_cur = self.sit.classifier_value_ids[key][val]
         # Modify the whole column of the dataframe #
-        cbm_vars.classifiers[key] = id_of_cur
+        cbm_vars.classifiers[key].assign(id_of_cur)
         # Return #
         return cbm_vars
 
-    def dynamics_func(self, timestep, cbm_vars):
+    def dynamics_func(self, timestep:int, cbm_vars: CBMVariables) -> CBMVariables:
         """
         See the simulate method of the `libcbm_py` simulator:
 
@@ -88,8 +92,15 @@ class Simulation(object):
         try:
             self.run()
         except Exception:
-            message = "Runner '%s' encountered an exception. See log file."
-            self.runner.log.error(message % self.runner.short_name)
+            message = "Runner '%s' encountered an exception. See log file at %s"
+            # Find the path to the log file if available
+            # The first handler is standard error, the second handler is a file
+            log_file_path = "unknown"
+            for handler in self.runner.log.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    log_file_path = handler.baseFilename
+                    break
+            self.runner.log.error(message % (self.runner.short_name, log_file_path))
             self.runner.log.exception("Exception", exc_info=True)
             self.error = True
             if interrupt_on_error: raise
@@ -115,7 +126,7 @@ class Simulation(object):
         init_inv = sit_cbm_factory.initialize_inventory
         self.clfrs, self.inv = init_inv(self.sit)
         # This will contain results #
-        self.results, self.reporting_func = create_func()
+        self.cbm_output = CBMOutput(backend_type=BackendType.numpy)
         # Create a CBM object #
         with sit_cbm_factory.initialize_cbm(self.sit) as self.cbm:
             # Create a function to apply rule based events #
@@ -129,12 +140,12 @@ class Simulation(object):
                 classifiers       = self.clfrs,
                 inventory         = self.inv,
                 pre_dynamics_func = self.dynamics_func,
-                reporting_func    = self.reporting_func
+                reporting_func    = self.cbm_output.append_simulation_result,
             )
         # If we got here then we did not encounter any simulation error #
         self.error = False
         # Return for convenience #
-        return self.results
+        return self.cbm_output
 
     def clear(self):
         """
@@ -147,3 +158,4 @@ class Simulation(object):
         if hasattr(self, 'inv'):            del self.inv
         if hasattr(self, 'results'):        del self.results
         if hasattr(self, 'reporting_func'): del self.reporting_func
+        if hasattr(self, 'cbm_output'):     del self.cbm_output
