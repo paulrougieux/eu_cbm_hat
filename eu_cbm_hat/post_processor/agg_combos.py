@@ -653,7 +653,7 @@ def share_thinn_final_cut(combo_name: str, iso2_code: str):
         >>> hare_thinn_final_cut("reference", "LU")
 
     """
-    #groupby = ['year', 'con_broad', 'silv_practice']
+    groupby = ['year', 'con_broad', 'silv_practice']
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df_shares = runner.post_processor.harvest.provided_shares
     df_shares ["scenario"] = runner.combo.short_name

@@ -221,5 +221,4 @@ class Stock:
         #    df_agg["hardwood_stem_snag_tc"] + df_agg["softwood_stem_snag_tc"]
         #) / df_agg["area"]
         #df_agg["laying_dw_c_per_ha"] = df_agg["medium_tc"] / df_agg["area"]
-        df_agg=df_agg.query('year == 2025 | year == 2030')
         return df_agg
