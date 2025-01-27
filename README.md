@@ -60,11 +60,9 @@ for python in the shell on Linux or Mac or in the **Anaconda prompt** on windows
     # or
     python -m pip install eu_cbm_hat
 
-Install libcbm using pip. Note: currently only version 1 is supported. Update to version
-2 is under discussion in [issue
-53](https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/53):
+Install libcbm using pip.
 
-    python -m pip install https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
+    python -m pip install https://github.com/cat-cfs/libcbm_py/archive/refs/heads/main.tar.gz
 
 By default, the data is located in your home folder. You can display the default
 location where the data should be with these commands in python:
