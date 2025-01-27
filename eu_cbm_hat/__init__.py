@@ -17,7 +17,7 @@ feedback under [issue
 """
 
 # Special variables #
-__version__ = '0.7.1'
+__version__ = '1.0.0'
 
 # Built-in modules #
 import os
