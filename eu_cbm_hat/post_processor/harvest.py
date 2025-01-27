@@ -390,11 +390,7 @@ class Harvest:
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
         df = df.merge(area, on=index)
-<<<<<<< Updated upstream
         #df.to_csv('harvest_check.csv', mode='a', index=False, header=True)
-=======
-               
->>>>>>> Stashed changes
         return df
 
    
@@ -497,11 +493,7 @@ class Harvest:
                 ["irw_to_product","fw_to_product","irw_harvest_prov_ub",
                  "irw_harvest_prov_ob", "fw_harvest_prov_ub", "fw_harvest_prov_ob", 
                  "irw_harvest_prov_ub_con","irw_harvest_prov_ub_broad", "fw_harvest_prov_ub_con", 
-<<<<<<< Updated upstream
                  "fw_harvest_prov_ub_broad" ])
-        df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()
-=======
-                 "fw_harvest_prov_ub_broad"])
         df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()   
         return df_agg
 
@@ -531,7 +523,6 @@ class Harvest:
         df_agg = df.groupby(['year', 'silv_practice'])["irw_harvest_prov_ub_con","irw_harvest_prov_ub_broad"].sum()
         df_agg = df_agg.reset_index()
         df_agg['country'] = self.runner.country.country_name
->>>>>>> Stashed changes
         return df_agg
 
     def expected_provided(self, groupby: Union[List[str], str]):
