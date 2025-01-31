@@ -52,7 +52,7 @@ if os.environ.get("EU_CBM_DATA"):
     eu_cbm_data_dir = DirectoryPath(os.environ['EU_CBM_DATA'])
 
 # Prepare the move to pathlib
-eu_cbm_data_pathlib = pathlib.Path(eu_cbm_data_dir)
+eu_cbm_data_pathlib = pathlib.Path(str(eu_cbm_data_dir))
 
 # Where are the AIDBs, default case
 eu_cbm_aidb_dir = DirectoryPath("~/eu_cbm/eu_cbm_aidb/")
