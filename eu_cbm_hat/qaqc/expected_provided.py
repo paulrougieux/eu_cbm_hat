@@ -114,14 +114,14 @@ class ExpectedProvided:
         events["measurement_type"] = "amount_" + events["measurement_type"].str.lower()
         events_agg = (events
                       .groupby(index + ["measurement_type"])
-                      .agg(amount = ("amount", sum))
+                      .agg(amount = ("amount", "sum"))
                       .reset_index()
                       # Reshape measurement type in columns
                       .pivot(index = index, columns="measurement_type", values="amount")
                      )
         # Add start and end age information
-        events_agg["sw_start_min"] = events.groupby(index)["sw_start"].agg(min)
-        events_agg["sw_end_max"] = events.groupby(index)["sw_end"].agg(max)
+        events_agg["sw_start_min"] = events.groupby(index)["sw_start"].agg("min")
+        events_agg["sw_end_max"] = events.groupby(index)["sw_end"].agg("max")
 
         # Make index columns available for merging
         events_agg = events_agg.reset_index()
@@ -134,8 +134,8 @@ class ExpectedProvided:
         flux_agg = pool_flux.groupby(index)[product_cols].agg("sum")
         flux_agg["sum_flux_to_product"] = flux_agg.sum(axis=1)
         # Add age information
-        flux_agg["age_min"] = pool_flux.groupby(index)["age"].agg(min)
-        flux_agg["age_max"] = pool_flux.groupby(index)["age"].agg(max)
+        flux_agg["age_min"] = pool_flux.groupby(index)["age"].agg("min")
+        flux_agg["age_max"] = pool_flux.groupby(index)["age"].agg("max")
         # Add the area
         flux_agg["area"] = pool_flux.groupby(index)["area"].agg("sum")
         flux_agg = flux_agg.reset_index()
