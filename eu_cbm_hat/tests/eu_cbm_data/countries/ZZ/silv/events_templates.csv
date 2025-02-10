@@ -12,9 +12,10 @@ reference,ForAWS,OC,LU00,H,E,?,con,1,Cur,irw_and_fw,10,FALSE,41,60,41,60,5,-1,-1
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,irw_and_fw,10,FALSE,41,60,41,60,5,-1,-1,3,14,20% commercial thinning,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
 reference,ForAWS,DF,LU00,H,E,?,con,1,Cur,irw_and_fw,10,FALSE,91,210,91,210,5,-1,-1,3,22,Generic 90 % mortality (clearcut conif on area),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
 reference,ForAWS,OC,LU00,H,E,?,con,1,Cur,irw_and_fw,10,FALSE,61,210,61,210,5,-1,-1,3,22,Generic 90 % mortality (clearcut conif on area),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
-reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,irw_and_fw,10,FALSE,61,200,61,200,5,-1,-1,3,22,Generic 90 % mortality (clearcut conif on area),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
+reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,irw_and_fw,10,FALSE,61,200,61,200,5,-1,-1,3,49,Windstorm (for projection),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,irw_and_fw,1,FALSE,1,2,1,2,-1,-1,49,7,29,Salvage year 1 post-windstorm,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,irw_and_fw,1,FALSE,0,2,0,2,-1,-1,29,7,30,Salvage year 2 post-windstorm,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
+reference,ForAWS,PA,LU01,H,E,?,con,1,Cur,irw_and_fw,1,FALSE,0,3,0,3,-1,-1,30,3,31,Salvage year 3  post-windstorm insects,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
 full_storied,ForAWS,FS,LU00,H,E,?,broad,1,Cur,fw_only,5,FALSE,36,80,36,80,5,-1,-1,3,11,Generic 15%,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
 full_storied,ForAWS,FS,LU00,H,E,?,broad,1,Cur,irw_and_fw,6,FALSE,81,95,81,95,-1,-1,11,3,151,Step_1_conversion_25%_commercial thinning,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1
 full_storied,ForAWS,FS,LU00,H,E,?,broad,1,Cur,irw_and_fw,10,FALSE,96,110,96,110,-1,-1,151,3,152,Step_2_conversion_20%_commercial thinning,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1

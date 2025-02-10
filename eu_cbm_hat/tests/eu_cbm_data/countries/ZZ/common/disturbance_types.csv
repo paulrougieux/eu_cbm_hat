@@ -13,6 +13,7 @@ dist_type_name,dist_desc_input,silv_practice
 22,Generic 90 % mortality (clearcut conif on area),fc
 29,Salvage year 1 post-windstorm,sr
 30,Salvage year 2 post-windstorm,sr
+31,Salvage year 3  post-windstorm insects,sr
 42,Insects with salvage logging (within year),nr
 49,Windstorm (for projection),sr
 14,20% commercial thinning,th
