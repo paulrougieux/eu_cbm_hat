@@ -20,6 +20,7 @@ reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,4,Windstorm (for CP),0.8,0,0,0,0.8,0,0,
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,49,Windstorm (for projection),0,0,0,0,0,0,0,0
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,29,Salvage year 1 post-windstorm,0,0,0.5,0,0,0,0.5,0
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,30,Salvage year 2 post-windstorm,0,0,0.5,0,0,0,0.5,0
+reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,31,Salvage year 3  post-windstorm insects,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5
 full_storied,ForAWS,FS,LU00,H,E,?,broad,1,Cur,11,Generic 15%,0,0,0,0,0,0,0,0
 full_storied,ForAWS,FS,LU00,H,E,?,broad,1,Cur,151,Step_1_conversion_25%_commercial thinning,0.8,0,0,0,0.8,0,0,0
 full_storied,ForAWS,FS,LU00,H,E,?,broad,1,Cur,152,Step_2_conversion_20%_commercial thinning,0.8,0,0,0,0.8,0,0,0

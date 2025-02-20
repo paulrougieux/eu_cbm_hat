@@ -1,47 +1,48 @@
-category,name_input,name_aidb
-MapAdminBoundary,Luxembourg,Luxembourg
-MapEcoBoundary,CLU24,CLU24
-MapEcoBoundary,CLU25,CLU25
-MapEcoBoundary,CLU34,CLU34
-MapEcoBoundary,CLU35,CLU35
-MapEcoBoundary,CLU44,CLU44
-MapEcoBoundary,CLU45,CLU45
-MapEcoBoundary,CLU54,CLU54
-MapEcoBoundary,CLU55,CLU55
-MapSpecies,DF_BL,DF_BL
-MapSpecies,FS_BL,FS_BL
-MapSpecies,OB_BL,OB_BL
-MapSpecies,OC_BL,OC_BL
-MapSpecies,PA_BL,PA_BL
-MapSpecies,QR_BL,QR_BL
-MapDisturbanceType,Wild Fire,Wild Fire
-MapDisturbanceType,Deforestation,Deforestation
-MapDisturbanceType,Afforestation,Afforestation
-MapDisturbanceType,Generic 15%,generic 15% mortality
-MapDisturbanceType,Step_1_conversion_25%_commercial thinning,25% Commercial thinning
-MapDisturbanceType,Step_2_conversion_20%_commercial thinning,20% Commercial thinning
-MapDisturbanceType,Post_conversion_15%_commercial thinnings,15% Commercial thinning
-MapDisturbanceType,Generic 20%,generic 20% mortality
-MapDisturbanceType,Generic 25%,generic 25% mortality
-MapDisturbanceType,Generic 60% (INSECTS widespread),generic 60% mortality
-MapDisturbanceType,Windstorm (for CP),Windstorm
-MapDisturbanceType,Windstorm (for projection),Windstorm
-MapDisturbanceType,Generic 90 % mortality (clearcut conif on area),generic 90% mortality
-MapDisturbanceType,Salvage year 1 post-windstorm,Salvage year 1 post-windstorm
-MapDisturbanceType,Salvage year 2 post-windstorm,Salvage year 2 post-windstorm
-MapDisturbanceType,Clearcut  with slash burn (broad based on area),Clearcut with slash-burn
-MapDisturbanceType,10% commercial thinning,10% Commercial thinning
-MapDisturbanceType,15% commercial thinning,15% Commercial thinning
-MapDisturbanceType,20% commercial thinning,20% Commercial thinning
-MapDisturbanceType,30% commercial thinning,30% Commercial thinning
-MapDisturbanceType,35% commercial thinning,35% Commercial thinning
-MapDisturbanceType,Insects with salvage logging (within year),generic 60% mortality
-MapDisturbanceType,Final cut intervention 1,generic 30% mortality
-MapDisturbanceType,Final cut intervention 2,generic 55% mortality
-MapDisturbanceType,Final cut intervention 3,generic 95% mortality
-MapSpecies,non-forest to PA,Average
-MapSpecies,non-forest to FS,Average
-MapSpecies,non-forest to DF,Average
-MapSpecies,non-forest to OB,Average
-MapSpecies,non-forest to OC,Average
-MapSpecies,non-forest to QR,Average
+category,name_input,name_aidb,
+MapAdminBoundary,Luxembourg,Luxembourg,
+MapEcoBoundary,CLU24,CLU24,
+MapEcoBoundary,CLU25,CLU25,
+MapEcoBoundary,CLU34,CLU34,
+MapEcoBoundary,CLU35,CLU35,
+MapEcoBoundary,CLU44,CLU44,
+MapEcoBoundary,CLU45,CLU45,
+MapEcoBoundary,CLU54,CLU54,
+MapEcoBoundary,CLU55,CLU55,
+MapSpecies,DF_BL,DF_BL,
+MapSpecies,FS_BL,FS_BL,
+MapSpecies,OB_BL,OB_BL,
+MapSpecies,OC_BL,OC_BL,
+MapSpecies,PA_BL,PA_BL,
+MapSpecies,QR_BL,QR_BL,
+MapDisturbanceType,Wild Fire,Wild Fire,
+MapDisturbanceType,Deforestation,Deforestation,
+MapDisturbanceType,Afforestation,Afforestation,
+MapDisturbanceType,Generic 15%,generic 15% mortality,
+MapDisturbanceType,Step_1_conversion_25%_commercial thinning,25% Commercial thinning,
+MapDisturbanceType,Step_2_conversion_20%_commercial thinning,20% Commercial thinning,
+MapDisturbanceType,Post_conversion_15%_commercial thinnings,15% Commercial thinning,
+MapDisturbanceType,Generic 20%,generic 20% mortality,
+MapDisturbanceType,Generic 25%,generic 25% mortality,
+MapDisturbanceType,Generic 60% (INSECTS widespread),generic 60% mortality,
+MapDisturbanceType,Windstorm (for CP),Windstorm,
+MapDisturbanceType,Windstorm (for projection),Windstorm,
+MapDisturbanceType,Generic 90 % mortality (clearcut conif on area),generic 90% mortality,
+MapDisturbanceType,Salvage year 1 post-windstorm,Salvage year 1 post-windstorm,
+MapDisturbanceType,Salvage year 2 post-windstorm,Salvage year 2 post-windstorm,
+MapDisturbanceType,Salvage year 3  post-windstorm insects,generic 90% mortality,
+MapDisturbanceType,Clearcut  with slash burn (broad based on area),Clearcut with slash-burn,
+MapDisturbanceType,10% commercial thinning,10% Commercial thinning,
+MapDisturbanceType,15% commercial thinning,15% Commercial thinning,
+MapDisturbanceType,20% commercial thinning,20% Commercial thinning,
+MapDisturbanceType,30% commercial thinning,30% Commercial thinning,
+MapDisturbanceType,35% commercial thinning,35% Commercial thinning,
+MapDisturbanceType,Insects with salvage logging (within year),generic 60% mortality,
+MapDisturbanceType,Final cut intervention 1,generic 30% mortality,
+MapDisturbanceType,Final cut intervention 2,generic 55% mortality,
+MapDisturbanceType,Final cut intervention 3,generic 95% mortality,
+MapSpecies,non-forest to PA,Average,
+MapSpecies,non-forest to FS,Average,
+MapSpecies,non-forest to DF,Average,
+MapSpecies,non-forest to OB,Average,
+MapSpecies,non-forest to OC,Average,
+MapSpecies,non-forest to QR,Average,
