@@ -393,7 +393,7 @@ class Harvest:
         return df
 
     def provided_fw(self):
-        """Harvest provided in one country"""
+        """explicit split on FW from IRW and FW dedicated silviculturasl practices, provided in one country"""
         df = self.fluxes
         
         # Sum all columns that have a flux to products
@@ -411,9 +411,9 @@ class Harvest:
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
 
-        # Convert tons of carbon to volume under and over bark
-        df["harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
-        df["harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
+        # Convert tons of carbon to volume under and over bark, the total harvest volume 
+        df["total_harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
+        df["total_harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
 
         # add silvicultural practices
         # Add a new column to the DataFrame
@@ -446,7 +446,9 @@ class Harvest:
                                     "disturbance_type", "con_broad", 
                                     "site_index", "growth_period"], how='inner')
 
-        #split df on 2df, one for primary fw, th eother for irw colateral fw, df_fw, df_fw_irw
+        # here the plit of df on 2dfs: one accounting for when there is no industrial use of roundwood, the other for the FW colateral IRW production, 
+        # 'df_fw' and 'df_fw_irw'. Both contain the four source pools: merch, other, stem_snags and branch_snag
+        
         columns = ['softwood_merch_irw_frac',
            'softwood_other_irw_frac',
            'softwood_stem_snag_irw_frac',
@@ -458,11 +460,9 @@ class Harvest:
         df_fw = df[~df[columns].any(axis=1)]
         df_irw_fw = df[df[columns].any(axis=1)]
 
-        #print(df_fw.dtypes)
-        #print(df_irw_fw.dtypes)
-
-        ##############
-        # workout the FW colateral to IRW
+        ############# 
+        # STREAM: FW colateral to IRW
+        # total C on con broad
         df_irw_fw['irw_fw_to_product_soft'] = (
             df_irw_fw['softwood_merch_to_product']*(1-df_irw_fw['softwood_merch_irw_frac'])+
             df_irw_fw['softwood_other_to_product']*(1-df_irw_fw['softwood_other_irw_frac'])+
@@ -475,6 +475,10 @@ class Harvest:
             df_irw_fw['hardwood_stem_snag_to_product']*(1-df_irw_fw['hardwood_stem_snag_irw_frac'])+
             df_irw_fw['hardwood_branch_snag_to_product']*(1-df_irw_fw['hardwood_branch_snag_irw_frac'])
                             )
+        # total C of FW from IRW
+        df_irw_fw['irw_fw_to_product'] = (df_irw_fw['irw_fw_to_product_soft'] + df_irw_fw['irw_fw_to_product_hard'])
+        
+        # C on components
         df_irw_fw['irw_softwood_merch_to_product'] = df_irw_fw['softwood_merch_to_product']*(1-df_irw_fw['softwood_merch_irw_frac'])
         df_irw_fw['irw_softwood_other_to_product'] = df_irw_fw['softwood_other_to_product']*(1-df_irw_fw['softwood_other_irw_frac'])
         df_irw_fw['irw_softwood_stem_snag_to_product'] = df_irw_fw['softwood_stem_snag_to_product']*(1-df_irw_fw['softwood_stem_snag_irw_frac'])
@@ -482,11 +486,10 @@ class Harvest:
         df_irw_fw['irw_hardwood_merch_to_product'] = df_irw_fw['hardwood_merch_to_product']*(1-df_irw_fw['hardwood_merch_irw_frac'])
         df_irw_fw['irw_hardwood_other_to_product'] = df_irw_fw['hardwood_other_to_product']*(1-df_irw_fw['hardwood_other_irw_frac'])
         df_irw_fw['irw_hardwood_stem_snag_to_product'] = df_irw_fw['hardwood_stem_snag_to_product']*(1-df_irw_fw['hardwood_stem_snag_irw_frac'])
-        df_irw_fw['irw_hardwood_branch_snag_to_product'] = df_irw_fw['hardwood_branch_snag_to_product']*(1-df_irw_fw['hardwood_branch_snag_irw_frac'])
+        df_irw_fw['irw_hardwood_branch_snag_to_product'] = df_irw_fw['hardwood_branch_snag_to_product']*(1-df_irw_fw['hardwood_branch_snag_irw_frac']) 
         
-        df_irw_fw['irw_fw_to_product'] = (df_irw_fw['irw_fw_to_product_soft'] + df_irw_fw['irw_fw_to_product_hard'] )
-                
-        # Convert to volume underbark fw
+        # in the following, 'harvest' in the string means that value is 'volume' (m3)
+        # Convert to volume underbark fw, 'harvest' in the string means that value is 'volume' (m3)
         df_irw_fw['irw_fw_harvest_prov_softwood_merch_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_softwood_merch_to_product')
         df_irw_fw['irw_fw_harvest_prov_softwood_other_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_softwood_other_to_product')
         df_irw_fw['irw_fw_harvest_prov_softwood_stem_snag_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_softwood_stem_snag_to_product')
@@ -495,7 +498,13 @@ class Harvest:
         df_irw_fw['irw_fw_harvest_prov_hardwood_other_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_hardwood_other_to_product')
         df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_hardwood_stem_snag_to_product')
         df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_hardwood_branch_snag_to_product')
-        
+
+        # group on volume of biomass componsnts ub
+        df_irw_fw['irw_fw_harvest_prov_merch_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_merch_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_merch_ub']
+        df_irw_fw['irw_fw_harvest_prov_other_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_other_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_other_ub']
+        df_irw_fw['irw_fw_harvest_prov_stem_snag_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_stem_snag_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ub']
+        df_irw_fw['irw_fw_harvest_prov_branch_snag_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_branch_snag_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ub']
+
         # Convert to volume overbark fw
         df_irw_fw['irw_fw_harvest_prov_softwood_merch_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_softwood_merch_to_product')
         df_irw_fw['irw_fw_harvest_prov_softwood_other_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_softwood_other_to_product')
@@ -505,18 +514,25 @@ class Harvest:
         df_irw_fw['irw_fw_harvest_prov_hardwood_other_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_hardwood_other_to_product')
         df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_hardwood_stem_snag_to_product')
         df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_hardwood_branch_snag_to_product')
+
+        # group on volume of biomass componsnts ob
+        df_irw_fw['irw_fw_harvest_prov_merch_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_merch_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_merch_ob']
+        df_irw_fw['irw_fw_harvest_prov_other_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_other_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_other_ob']
+        df_irw_fw['irw_fw_harvest_prov_stem_snag_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_stem_snag_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ob']
+        df_irw_fw['irw_fw_harvest_prov_branch_snag_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_branch_snag_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ob']
         
-        # totals in volume under bark and overbark
+        # total volume under bark and overbark on con and broad
         df_irw_fw['irw_fw_harvest_prov_ub_con'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_fw_to_product_soft')
         df_irw_fw['irw_fw_harvest_prov_ub_broad'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_fw_to_product_hard')
         df_irw_fw['irw_fw_harvest_prov_ob_con'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_fw_to_product_soft')
         df_irw_fw['irw_fw_harvest_prov_ob_broad'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_fw_to_product_hard')
-        
+
+        # total volume under bark and overbark
         df_irw_fw['irw_fw_harvest_prov_ub'] = df_irw_fw['irw_fw_harvest_prov_ub_con'] + df_irw_fw['irw_fw_harvest_prov_ub_broad']
         df_irw_fw['irw_fw_harvest_prov_ob'] = df_irw_fw['irw_fw_harvest_prov_ob_con'] + df_irw_fw['irw_fw_harvest_prov_ob_broad']
         
         ##############
-        # workout the FW from FW-dedictated silvicultural practices (1- irw_frac = 0 always)
+        # STREAM: FW from FW-dedictated silvicultural practices (1- irw_frac = 0 always)
         # explicit on tree biomass components
         
         # Convert to volume underbark fw
@@ -538,9 +554,22 @@ class Harvest:
         df_fw['fw_harvest_prov_hardwood_other_ob'] = ton_carbon_to_m3_ob(df_fw, 'hardwood_other_to_product')
         df_fw['fw_harvest_prov_hardwood_stem_snag_ob'] = ton_carbon_to_m3_ob(df_fw, 'hardwood_stem_snag_to_product')
         df_fw['fw_harvest_prov_hardwood_branch_snag_ob'] = ton_carbon_to_m3_ob(df_fw, 'hardwood_branch_snag_to_product')
+
         
-        
-        # Convert to underbark fw
+        # group on volume of biomass componsnts ub
+        df_fw['fw_harvest_prov_merch_ub'] = df_fw['fw_harvest_prov_softwood_merch_ub'] + df_fw['fw_harvest_prov_hardwood_merch_ub']
+        df_fw['fw_harvest_prov_other_ub'] = df_fw['fw_harvest_prov_softwood_other_ub'] + df_fw['fw_harvest_prov_hardwood_other_ub']
+        df_fw['fw_harvest_prov_stem_snag_ub'] = df_fw['fw_harvest_prov_softwood_stem_snag_ub'] + df_fw['fw_harvest_prov_hardwood_stem_snag_ub']
+        df_fw['fw_harvest_prov_branch_snag_ub'] = df_fw['fw_harvest_prov_softwood_branch_snag_ub']  + df_fw['fw_harvest_prov_hardwood_branch_snag_ub'] 
+
+        # group on volume of biomass componsnts ob
+        df_fw['fw_harvest_prov_merch_ob'] = df_fw['fw_harvest_prov_softwood_merch_ob'] + df_fw['fw_harvest_prov_hardwood_merch_ob']
+        df_fw['fw_harvest_prov_other_ob'] = df_fw['fw_harvest_prov_softwood_other_ob'] + df_fw['fw_harvest_prov_hardwood_other_ob']
+        df_fw['fw_harvest_prov_stem_snag_ob'] = df_fw['fw_harvest_prov_softwood_stem_snag_ob'] + df_fw['fw_harvest_prov_hardwood_stem_snag_ob']
+        df_fw['fw_harvest_prov_branch_snag_ob'] = df_fw['fw_harvest_prov_softwood_branch_snag_ob']  + df_fw['fw_harvest_prov_hardwood_branch_snag_ob'] 
+
+      
+        # Convert to con broad totals ub
         df_fw['fw_harvest_prov_softwood_ub'] = (df_fw['fw_harvest_prov_softwood_merch_ub'] +
                                                         df_fw['fw_harvest_prov_softwood_other_ub'] +
                                                         df_fw['fw_harvest_prov_softwood_stem_snag_ub'] +
@@ -564,64 +593,79 @@ class Harvest:
         
         df_fw['fw_harvest_prov_ub'] = df_fw['fw_harvest_prov_softwood_ub'] + df_fw['fw_harvest_prov_hardwood_ub']
         df_fw['fw_harvest_prov_ob'] = df_fw['fw_harvest_prov_softwood_ob'] + df_fw['fw_harvest_prov_hardwood_ob']
+
+   
         
-      
-
-
-
+        # tick/untick as needed
+        
         cols_irw_fw = ['year',
                         # collateral FW, volume on biomass components, under and over bark
-                        'irw_fw_harvest_prov_softwood_merch_ub',
-                         'irw_fw_harvest_prov_softwood_other_ub', 
-                        'irw_fw_harvest_prov_softwood_stem_snag_ub', 'irw_fw_harvest_prov_softwood_branch_snag_ub', 
-                        'irw_fw_harvest_prov_hardwood_merch_ub', 
-                        'irw_fw_harvest_prov_hardwood_other_ub',
-                         'irw_fw_harvest_prov_hardwood_stem_snag_ub', 'irw_fw_harvest_prov_hardwood_branch_snag_ub', 
-                        'irw_fw_harvest_prov_softwood_merch_ob', 
-                        'irw_fw_harvest_prov_softwood_other_ob',
-                         'irw_fw_harvest_prov_softwood_stem_snag_ob', 
-                        'irw_fw_harvest_prov_softwood_branch_snag_ob',
-                         'irw_fw_harvest_prov_hardwood_merch_ob', 
-                        'irw_fw_harvest_prov_hardwood_other_ob', 
-                        'irw_fw_harvest_prov_hardwood_stem_snag_ob', 
-                        'irw_fw_harvest_prov_hardwood_branch_snag_ob', 
+                        #'irw_fw_harvest_prov_softwood_merch_ub',
+                        #'irw_fw_harvest_prov_softwood_other_ub', 
+                        #'irw_fw_harvest_prov_softwood_stem_snag_ub', 
+                        #'irw_fw_harvest_prov_softwood_branch_snag_ub', 
+                        #'irw_fw_harvest_prov_hardwood_merch_ub', 
+                        #'irw_fw_harvest_prov_hardwood_other_ub',
+                        #'irw_fw_harvest_prov_hardwood_stem_snag_ub', 
+                        #'irw_fw_harvest_prov_hardwood_branch_snag_ub', 
+                        #'irw_fw_harvest_prov_softwood_merch_ob', 
+                        #'irw_fw_harvest_prov_softwood_other_ob',
+                        #'irw_fw_harvest_prov_softwood_stem_snag_ob', 
+                        #'irw_fw_harvest_prov_softwood_branch_snag_ob',
+                        #'irw_fw_harvest_prov_hardwood_merch_ob', 
+                        #'irw_fw_harvest_prov_hardwood_other_ob', 
+                        #'irw_fw_harvest_prov_hardwood_stem_snag_ob', 
+                        #'irw_fw_harvest_prov_hardwood_branch_snag_ob', 
                         # FW, volume aggregation on softwood and hardwood, under and over bark
-                        'irw_fw_harvest_prov_ub_con', 
-                        'irw_fw_harvest_prov_ub_broad',
-                         'irw_fw_harvest_prov_ob_con',
-                         'irw_fw_harvest_prov_ob_broad',
-                         'irw_fw_harvest_prov_ub',
-                         'irw_fw_harvest_prov_ob']
+                        #'irw_fw_harvest_prov_ub_con', 
+                        #'irw_fw_harvest_prov_ub_broad',
+                        #'irw_fw_harvest_prov_ob_con',
+                        #'irw_fw_harvest_prov_ob_broad',
+                        'irw_fw_harvest_prov_ub',
+                        'irw_fw_harvest_prov_ob',
+                        'irw_fw_harvest_prov_merch_ub',
+                        'irw_fw_harvest_prov_other_ub',
+                        'irw_fw_harvest_prov_stem_snag_ub',
+                        'irw_fw_harvest_prov_branch_snag_ub',
+                      ]
 
         cols_fw = ['year',
-                    'to_product',
                     # total volume incl IRW under and over bark per year
-                    'harvest_prov_ub', 'harvest_prov_ob', 
+                    'total_harvest_prov_ub', 
+                    'total_harvest_prov_ob', 
                     # FW, volume on biomass components, under and over bark
-                    'fw_harvest_prov_softwood_merch_ub', 
-                    'fw_harvest_prov_softwood_other_ub',
-                     'fw_harvest_prov_softwood_stem_snag_ub',
-                     'fw_harvest_prov_softwood_branch_snag_ub', 
-                    'fw_harvest_prov_hardwood_merch_ub', 
-                    'fw_harvest_prov_hardwood_other_ub', 
-                    'fw_harvest_prov_hardwood_stem_snag_ub', 
-                    'fw_harvest_prov_hardwood_branch_snag_ub', 
-                    'fw_harvest_prov_softwood_merch_ob', 
-                    'fw_harvest_prov_softwood_other_ob', 
-                    'fw_harvest_prov_softwood_stem_snag_ob',
-                     'fw_harvest_prov_softwood_branch_snag_ob', 
-                    'fw_harvest_prov_hardwood_merch_ob', 
-                    'fw_harvest_prov_hardwood_other_ob', 
-                    'fw_harvest_prov_hardwood_stem_snag_ob', 
-                    'fw_harvest_prov_hardwood_branch_snag_ob', 
+                    #'fw_harvest_prov_softwood_merch_ub', 
+                    #'fw_harvest_prov_softwood_other_ub',
+                    #'fw_harvest_prov_softwood_stem_snag_ub',
+                    #'fw_harvest_prov_softwood_branch_snag_ub', 
+                    #'fw_harvest_prov_hardwood_merch_ub', 
+                    #'fw_harvest_prov_hardwood_other_ub', 
+                    #'fw_harvest_prov_hardwood_stem_snag_ub', 
+                    #'fw_harvest_prov_hardwood_branch_snag_ub', 
+                    #'fw_harvest_prov_softwood_merch_ob', 
+                    #'fw_harvest_prov_softwood_other_ob', 
+                    #'fw_harvest_prov_softwood_stem_snag_ob',
+                    #'fw_harvest_prov_softwood_branch_snag_ob', 
+                    #'fw_harvest_prov_hardwood_merch_ob', 
+                    #'fw_harvest_prov_hardwood_other_ob', 
+                    #'fw_harvest_prov_hardwood_stem_snag_ob', 
+                    #'fw_harvest_prov_hardwood_branch_snag_ob', 
                     # FW, volume aggregation on softwood and hardwood, under and over bark
-                    'fw_harvest_prov_softwood_ub', 
-                    'fw_harvest_prov_hardwood_ub', 
-                    'fw_harvest_prov_softwood_ob', 
-                    'fw_harvest_prov_hardwood_ob',
+                    #'fw_harvest_prov_softwood_ub', 
+                    #'fw_harvest_prov_hardwood_ub', 
+                    #'fw_harvest_prov_softwood_ob', 
+                    #'fw_harvest_prov_hardwood_ob',
                     'fw_harvest_prov_ub', 
-                    'fw_harvest_prov_ob']
-     
+                    'fw_harvest_prov_ob',
+                    'fw_harvest_prov_merch_ub',
+                    'fw_harvest_prov_merch_ob',
+                    'fw_harvest_prov_other_ub',
+                    'fw_harvest_prov_other_ob',
+                    'fw_harvest_prov_stem_snag_ub',
+                    'fw_harvest_prov_stem_snag_ob',
+                    'fw_harvest_prov_branch_snag_ub',
+                    'fw_harvest_prov_branch_snag_ob'
+                  ]
         
         # Aggregate the columns by 'year'
         df_irw_fw_year = df_irw_fw[cols_irw_fw].groupby('year').sum().reset_index()
@@ -635,13 +679,39 @@ class Harvest:
         df_fw_year = df_fw_year.set_index('year')
 
         df_merged = pandas.merge(df_irw_fw_year, df_fw_year, on='year')
-        
 
-        # this sum does not work for some reason, to be done in exel output
-        df_merged['irw_fw_harvest_ub_in_total_fw'] = df_merged['irw_fw_harvest_prov_ub']/(df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])
-        df_merged["irw_fw_harvest_merch_ub_in_total_irw_fw_ub"] = ((df_merged["irw_fw_harvest_prov_softwood_merch_ub"]+df_merged["irw_fw_harvest_prov_hardwood_merch_ub"])/df_merged["irw_fw_harvest_prov_ub"])
+        # aggregated indicators, fractions
+        # total fuelwood amount
+        df_merged['fw_prov_ub'] = df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub']
         
-        return df_merged
+        # fraction of total FW in total harvest
+        df_merged['fw_ub_in_total_harvest_frac'] = (df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])/df_merged['total_harvest_prov_ub']
+        
+        # FW colateral to IRW and FW in total FW harvest, i.e. sum of the frac = 1
+        df_merged['irw_fw_ub_in_total_harvest_frac'] = df_merged['irw_fw_harvest_prov_ub']/(df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])
+        df_merged['fw_ub_in_total_harvest_frac'] = df_merged['fw_harvest_prov_ub']/(df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])
+
+        # stems in FW colateral to IRW
+        df_merged['irw_fw_harvest_prov_merch_ub_frac'] = df_merged['irw_fw_harvest_prov_merch_ub']/df_merged['irw_fw_harvest_prov_ub']
+
+        # stems in FW colateral to IRW
+        df_merged['fw_harvest_prov_merch_ub_frac'] = df_merged['fw_harvest_prov_merch_ub']/(df_merged['fw_harvest_prov_ub'])
+
+        keep_cols = [
+                     # quantitites
+                    'total_harvest_prov_ub',
+                    'fw_prov_ub',
+                    'irw_fw_harvest_prov_ub',
+                    'fw_harvest_prov_ub', 
+                     # fractions
+                    'fw_ub_in_total_harvest_frac',
+                    'irw_fw_ub_in_total_harvest_frac',
+                    'fw_ub_in_total_harvest_frac',
+                    'irw_fw_harvest_prov_merch_ub_frac',
+                    'fw_harvest_prov_merch_ub_frac'   
+                    ]
+        df_fw = df_merged[keep_cols]    
+        return df_fw
 
     @cached_property
     def provided_shares(self):
