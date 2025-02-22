@@ -309,8 +309,8 @@ class Harvest:
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
 
         # Convert tons of carbon to volume under bark
-        df["harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
-        df["harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
+        df["total_harvest_ub_provided"] = ton_carbon_to_m3_ub(df, "to_product")
+        df["total_harvest_ob_provided"] = ton_carbon_to_m3_ob(df, "to_product")
 
         # add silvicultural practices
         # Add a new column to the DataFrame
@@ -395,7 +395,13 @@ class Harvest:
     def provided_fw(self):
         """explicit split on FW from IRW and FW dedicated silviculturasl practices, provided in one country"""
         df = self.fluxes
+        df_total = self.provided
         
+        # total harvest ub/ob on years need to calculate aggregated indicators at the end of the fuction
+        df_total_harvest = df_total[["year","total_harvest_ub_provided", "total_harvest_ob_provided"]]
+        # group on years to get the total harvest
+        df_total_harvest = df_total_harvest.groupby("year")[["total_harvest_ub_provided", "total_harvest_ob_provided"]].sum().reset_index()
+
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
         df["to_product"] = df[cols_to_product].sum(axis=1)
@@ -412,8 +418,8 @@ class Harvest:
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
 
         # Convert tons of carbon to volume under and over bark, the total harvest volume 
-        df["total_harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
-        df["total_harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
+        df["total_harvest_ub_provided"] = ton_carbon_to_m3_ub(df, "to_product")
+        df["total_harvest_ob_provided"] = ton_carbon_to_m3_ob(df, "to_product")
 
         # add silvicultural practices
         # Add a new column to the DataFrame
@@ -478,7 +484,7 @@ class Harvest:
         # total C of FW from IRW
         df_irw_fw['irw_fw_to_product'] = (df_irw_fw['irw_fw_to_product_soft'] + df_irw_fw['irw_fw_to_product_hard'])
         
-        # C on components
+        # C OB on components
         df_irw_fw['irw_softwood_merch_to_product'] = df_irw_fw['softwood_merch_to_product']*(1-df_irw_fw['softwood_merch_irw_frac'])
         df_irw_fw['irw_softwood_other_to_product'] = df_irw_fw['softwood_other_to_product']*(1-df_irw_fw['softwood_other_irw_frac'])
         df_irw_fw['irw_softwood_stem_snag_to_product'] = df_irw_fw['softwood_stem_snag_to_product']*(1-df_irw_fw['softwood_stem_snag_irw_frac'])
@@ -488,8 +494,8 @@ class Harvest:
         df_irw_fw['irw_hardwood_stem_snag_to_product'] = df_irw_fw['hardwood_stem_snag_to_product']*(1-df_irw_fw['hardwood_stem_snag_irw_frac'])
         df_irw_fw['irw_hardwood_branch_snag_to_product'] = df_irw_fw['hardwood_branch_snag_to_product']*(1-df_irw_fw['hardwood_branch_snag_irw_frac']) 
         
-        # in the following, 'harvest' in the string means that value is 'volume' (m3)
-        # Convert to volume underbark fw, 'harvest' in the string means that value is 'volume' (m3)
+        # in the following, 'harvest' in the string means that unit is 'volume' (m3)
+        # disaggregated. Convert to volume underbark fw, 'harvest' in the string means that value is 'volume' (m3)
         df_irw_fw['irw_fw_harvest_prov_softwood_merch_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_softwood_merch_to_product')
         df_irw_fw['irw_fw_harvest_prov_softwood_other_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_softwood_other_to_product')
         df_irw_fw['irw_fw_harvest_prov_softwood_stem_snag_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_softwood_stem_snag_to_product')
@@ -499,13 +505,13 @@ class Harvest:
         df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_hardwood_stem_snag_to_product')
         df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ub'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_hardwood_branch_snag_to_product')
 
-        # group on volume of biomass componsnts ub
-        df_irw_fw['irw_fw_harvest_prov_merch_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_merch_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_merch_ub']
-        df_irw_fw['irw_fw_harvest_prov_other_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_other_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_other_ub']
-        df_irw_fw['irw_fw_harvest_prov_stem_snag_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_stem_snag_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ub']
-        df_irw_fw['irw_fw_harvest_prov_branch_snag_ub'] = df_irw_fw['irw_fw_harvest_prov_softwood_branch_snag_ub'] + df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ub']
+        # disaggregated. group on volume of biomass componsnts ub
+        df_irw_fw['irw_fw_harvest_prov_merch_ub'] = df_irw_fw[['irw_fw_harvest_prov_softwood_merch_ub', 'irw_fw_harvest_prov_hardwood_merch_ub']].sum(axis=1)
+        df_irw_fw['irw_fw_harvest_prov_other_ub'] = df_irw_fw[['irw_fw_harvest_prov_softwood_other_ub', 'irw_fw_harvest_prov_hardwood_other_ub']].sum(axis=1)
+        df_irw_fw['irw_fw_harvest_prov_stem_snag_ub'] = df_irw_fw[['irw_fw_harvest_prov_softwood_stem_snag_ub', 'irw_fw_harvest_prov_hardwood_stem_snag_ub']].sum(axis=1)
+        df_irw_fw['irw_fw_harvest_prov_branch_snag_ub'] = df_irw_fw[['irw_fw_harvest_prov_softwood_branch_snag_ub', 'irw_fw_harvest_prov_hardwood_branch_snag_ub']].sum(axis=1)
 
-        # Convert to volume overbark fw
+        # disaggregated. Convert to volume overbark fw
         df_irw_fw['irw_fw_harvest_prov_softwood_merch_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_softwood_merch_to_product')
         df_irw_fw['irw_fw_harvest_prov_softwood_other_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_softwood_other_to_product')
         df_irw_fw['irw_fw_harvest_prov_softwood_stem_snag_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_softwood_stem_snag_to_product')
@@ -515,13 +521,13 @@ class Harvest:
         df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_hardwood_stem_snag_to_product')
         df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ob'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_hardwood_branch_snag_to_product')
 
-        # group on volume of biomass componsnts ob
-        df_irw_fw['irw_fw_harvest_prov_merch_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_merch_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_merch_ob']
-        df_irw_fw['irw_fw_harvest_prov_other_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_other_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_other_ob']
-        df_irw_fw['irw_fw_harvest_prov_stem_snag_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_stem_snag_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_stem_snag_ob']
-        df_irw_fw['irw_fw_harvest_prov_branch_snag_ob'] = df_irw_fw['irw_fw_harvest_prov_softwood_branch_snag_ob'] + df_irw_fw['irw_fw_harvest_prov_hardwood_branch_snag_ob']
+        # disaggregated. group on volume of biomass componsnts ob
+        df_irw_fw['irw_fw_harvest_prov_merch_ob'] = df_irw_fw[['irw_fw_harvest_prov_softwood_merch_ob', 'irw_fw_harvest_prov_hardwood_merch_ob']].sum(axis=1)
+        df_irw_fw['irw_fw_harvest_prov_other_ob'] = df_irw_fw[['irw_fw_harvest_prov_softwood_other_ob', 'irw_fw_harvest_prov_hardwood_other_ob']].sum(axis=1)
+        df_irw_fw['irw_fw_harvest_prov_stem_snag_ob'] = df_irw_fw[['irw_fw_harvest_prov_softwood_stem_snag_ob', 'irw_fw_harvest_prov_hardwood_stem_snag_ob']].sum(axis=1)
+        df_irw_fw['irw_fw_harvest_prov_branch_snag_ob'] = df_irw_fw[['irw_fw_harvest_prov_softwood_branch_snag_ob', 'irw_fw_harvest_prov_hardwood_branch_snag_ob']].sum(axis=1)
         
-        # total volume under bark and overbark on con and broad
+        # aggregated. total FW colateral to IRW volume under bark and overbark on con and broad
         df_irw_fw['irw_fw_harvest_prov_ub_con'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_fw_to_product_soft')
         df_irw_fw['irw_fw_harvest_prov_ub_broad'] = ton_carbon_to_m3_ub(df_irw_fw, 'irw_fw_to_product_hard')
         df_irw_fw['irw_fw_harvest_prov_ob_con'] = ton_carbon_to_m3_ob(df_irw_fw, 'irw_fw_to_product_soft')
@@ -594,11 +600,10 @@ class Harvest:
         df_fw['fw_harvest_prov_ub'] = df_fw['fw_harvest_prov_softwood_ub'] + df_fw['fw_harvest_prov_hardwood_ub']
         df_fw['fw_harvest_prov_ob'] = df_fw['fw_harvest_prov_softwood_ob'] + df_fw['fw_harvest_prov_hardwood_ob']
 
-   
-        
         # tick/untick as needed
         
         cols_irw_fw = ['year',
+                        # total volume harvested has to be retrived from def provided(self) because of the split on fw_only, and irw_and_fw
                         # collateral FW, volume on biomass components, under and over bark
                         #'irw_fw_harvest_prov_softwood_merch_ub',
                         #'irw_fw_harvest_prov_softwood_other_ub', 
@@ -606,8 +611,8 @@ class Harvest:
                         #'irw_fw_harvest_prov_softwood_branch_snag_ub', 
                         #'irw_fw_harvest_prov_hardwood_merch_ub', 
                         #'irw_fw_harvest_prov_hardwood_other_ub',
-                        #'irw_fw_harvest_prov_hardwood_stem_snag_ub', 
-                        #'irw_fw_harvest_prov_hardwood_branch_snag_ub', 
+                        #'irw_fw_harvest_prov_hardwood_stem_snag_ub',
+                        #'irw_fw_harvest_prov_hardwood_branch_snag_ub',
                         #'irw_fw_harvest_prov_softwood_merch_ob', 
                         #'irw_fw_harvest_prov_softwood_other_ob',
                         #'irw_fw_harvest_prov_softwood_stem_snag_ob', 
@@ -630,9 +635,6 @@ class Harvest:
                       ]
 
         cols_fw = ['year',
-                    # total volume incl IRW under and over bark per year
-                    'total_harvest_prov_ub', 
-                    'total_harvest_prov_ob', 
                     # FW, volume on biomass components, under and over bark
                     #'fw_harvest_prov_softwood_merch_ub', 
                     #'fw_harvest_prov_softwood_other_ub',
@@ -677,42 +679,29 @@ class Harvest:
 
         df_irw_fw_year = df_irw_fw_year.set_index('year')
         df_fw_year = df_fw_year.set_index('year')
-
-        df_merged = pandas.merge(df_irw_fw_year, df_fw_year, on='year')
-
+        
+        # merge the two types of wood, and also add the total harvest per year
+        df_merged = pandas.merge(df_total_harvest, df_irw_fw_year, on='year')
+        df_merged = pandas.merge(df_merged, df_fw_year, on='year')
+                   
         # aggregated indicators, fractions
         # total fuelwood amount
-        df_merged['fw_total_provided_ub'] = df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub']
+        df_merged['total_fw_ub_provided'] = df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub']
         
         # fraction of total FW in total harvest
-        df_merged['fw_total_ub_in_total_harvest_frac'] = (df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])/df_merged['total_harvest_prov_ub']
+        df_merged['total_fw_ub_in_total_harvest_ub_frac'] = df_merged['total_fw_ub_provided']/df_merged['total_harvest_ub_provided']
         
         # FW colateral to IRW and FW in total FW harvest, i.e. sum of the frac = 1
-        df_merged['irw_fw_ub_in_total_harvest_frac'] = df_merged['irw_fw_harvest_prov_ub']/(df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])
-        df_merged['fw_ub_in_total_harvest_frac'] = df_merged['fw_harvest_prov_ub']/(df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])
-
+        df_merged['irw_fw_ub_in_total_fw_ub_frac'] = df_merged['irw_fw_harvest_prov_ub']/df_merged['total_fw_ub_provided']
+        df_merged['fw_ub_in_total_fw_ub_frac'] = df_merged['fw_harvest_prov_ub']/df_merged['total_fw_ub_provided']
+        
         # stems in FW colateral to IRW
-        df_merged['irw_fw_harvest_prov_merch_ub_frac'] = df_merged['irw_fw_harvest_prov_merch_ub']/df_merged['irw_fw_harvest_prov_ub']
-
-        # stems in FW colateral to IRW
-        df_merged['fw_harvest_prov_merch_ub_frac'] = df_merged['fw_harvest_prov_merch_ub']/(df_merged['fw_harvest_prov_ub'])
-
-        keep_cols = [
-                     # quantitites
-                    'total_harvest_prov_ub',
-                    'fw_total_provided_ub', 
-                    'fw_harvest_prov_ub',
-                    'irw_fw_harvest_prov_ub',
-                    
-                     # fractions
-                    'fw_total_ub_in_total_harvest_frac',
-                    'irw_fw_ub_in_total_harvest_frac',
-                    'fw_ub_in_total_harvest_frac',
-                    'irw_fw_harvest_prov_merch_ub_frac',
-                    'fw_harvest_prov_merch_ub_frac',
-                                        ]
-        df_fw_provided = df_merged[keep_cols]      
-        return df_fw_provided
+        df_merged['irw_fw_merch_ub_in_irw_fw_ub_provided_frac'] = df_merged['irw_fw_harvest_prov_merch_ub']/df_merged['irw_fw_harvest_prov_ub']
+        
+        # stems in FW dedicated silvicultural practices
+        df_merged['fw_merch_ub_in_fw_ub_provided_frac'] = df_merged['fw_harvest_prov_merch_ub']/(df_merged['fw_harvest_prov_ub'])
+         
+        return df_merged
 
     @cached_property
     def provided_shares(self):
@@ -722,21 +711,24 @@ class Harvest:
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
         df["to_product"] = df[cols_to_product].sum(axis=1)
+        
         # Keep only rows with a flux to product
         selector = df.to_product > 0
         df = df[selector]
+        
         # Check we only have 1 year since last disturbance
         time_since_last = df["time_since_last_disturbance"].unique()
         if not time_since_last == 1:
             msg = "Time since last disturbance should be one"
             msg += f"it is {time_since_last}"
             raise ValueError(msg)
+        
         # Add wood density information by forest type
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
         
         # Convert tons of carbon to volume under bark
-        df["harvest_prov_ub"] = ton_carbon_to_m3_ub(df, "to_product")
-        df["harvest_prov_ob"] = ton_carbon_to_m3_ob(df, "to_product")
+        df["total_harvest_ub_provided"] = ton_carbon_to_m3_ub(df, "to_product")
+        df["total_harvest_ob_provided"] = ton_carbon_to_m3_ob(df, "to_product")
         
         # Add a new column to the DataFrame
         df['silv_practice'] = None
@@ -808,7 +800,7 @@ class Harvest:
         
         # add the new columns with IRW and FW
         
-        cols = (["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"] +
+        cols = (["area", "to_product", "total_harvest_ub_provided", "total_harvest_ob_provided"] +
                 ["irw_to_product","fw_to_product","irw_harvest_prov_ub",
                  "irw_harvest_prov_ob", "fw_harvest_prov_ub", "fw_harvest_prov_ob", 
                  "irw_harvest_prov_ub_con","irw_harvest_prov_ub_broad", "fw_harvest_prov_ub_con", 
@@ -829,7 +821,7 @@ class Harvest:
         
         # add the new columns with IRW and FW
         
-        cols = (["area", "to_product", "harvest_prov_ub", "harvest_prov_ob"] +
+        cols = (["area", "to_product", "total_harvest_ub_provided", "total_harvest_ob_provided"] +
                 ["irw_to_product","fw_to_product","irw_harvest_prov_ub",
                  "irw_harvest_prov_ob", "fw_harvest_prov_ub", "fw_harvest_prov_ob", 
                  "irw_harvest_prov_ub_con","irw_harvest_prov_ub_broad", "fw_harvest_prov_ub_con", 
@@ -899,7 +891,7 @@ class Harvest:
         df = self.provided
         cols = self.parent.classifiers_list + ["year"]
         cols += df.columns[df.columns.str.contains("to_product")].to_list()
-        cols += ["harvest_prov_ub", "harvest_prov_ob", "area", "disturbance_type"]
+        cols += ["total_harvest_ub_provided", "total_harvest_ob_provided", "area", "disturbance_type"]
         df = df[cols]
         df = df.merge(
             self.disturbance_types[["disturbance_type", "disturbance"]],
@@ -913,6 +905,6 @@ class Harvest:
             groupby = [groupby]
         df = self.area
         cols = df.columns[df.columns.str.contains("to_product")].to_list()
-        cols += ["harvest_prov_ub", "harvest_prov_ob", "area"]
+        cols += ["total_harvest_ub_provided", "total_harvest_ob_provided", "area"]
         df_agg = self.area.groupby(groupby)[cols].agg("sum").reset_index()
         return df_agg
