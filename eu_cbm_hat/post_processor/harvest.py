@@ -682,10 +682,10 @@ class Harvest:
 
         # aggregated indicators, fractions
         # total fuelwood amount
-        df_merged['fw_prov_ub'] = df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub']
+        df_merged['fw_total_provided_ub'] = df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub']
         
         # fraction of total FW in total harvest
-        df_merged['fw_ub_in_total_harvest_frac'] = (df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])/df_merged['total_harvest_prov_ub']
+        df_merged['fw_total_ub_in_total_harvest_frac'] = (df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])/df_merged['total_harvest_prov_ub']
         
         # FW colateral to IRW and FW in total FW harvest, i.e. sum of the frac = 1
         df_merged['irw_fw_ub_in_total_harvest_frac'] = df_merged['irw_fw_harvest_prov_ub']/(df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub'])
@@ -700,39 +700,19 @@ class Harvest:
         keep_cols = [
                      # quantitites
                     'total_harvest_prov_ub',
-                    'fw_prov_ub',
+                    'fw_total_provided_ub', 
+                    'fw_harvest_prov_ub',
                     'irw_fw_harvest_prov_ub',
-                    'fw_harvest_prov_ub', 
+                    
                      # fractions
-                    'fw_ub_in_total_harvest_frac',
+                    'fw_total_ub_in_total_harvest_frac',
                     'irw_fw_ub_in_total_harvest_frac',
                     'fw_ub_in_total_harvest_frac',
                     'irw_fw_harvest_prov_merch_ub_frac',
-                    'fw_harvest_prov_merch_ub_frac'   
-                    ]
-        df_fw_provided = df_merged[keep_cols]    
-
-        # Calculate the weighted average of 'frac'
-        #df_fw_provided['weighted_frac'] = df_fw_provided['frac'] * df_fw_provided['harvest']
-        df_fw_provided['weighted_frac_fw_eu'] = df_fw_provided['fw_ub_in_total_harvest_frac'] * df_fw_provided['total_harvest_prov_ub']
-        
-        # Create a new DataFrame with the sum of harvest over years and the weighted average of 'irw_fw_frac_1'
-        #mss_df = df.groupby('year').agg({'harvest': 'sum', 'weighted_frac': 'sum'}).reset_index()
-        mss_df = df.groupby('year').agg({'total_harvest_prov_ub': 'sum', 'weighted_frac_fw_eu': 'sum'}).reset_index()
-        
-        # Calculate the weighted average of 'irw_fw_frac_1'
-        #mss_df['frac_eu'] = mss_df['weighted_frac'] / mss_df['harvest']
-        mss_df['frac_eu'] = mss_df['weighted_frac_fw'] / mss_df['total_harvest_prov_ub']
-        
-        # Rename the columns
-        #mss_df = mss_df.rename(columns={'harvest': 'harvest_eu'})
-        mss_df = mss_df.rename(columns={'harvest': 'harvest_eu'})
-        
-        # Drop the 'weighted_irw_fw_frac_1' column
-        #mss_df = mss_df.drop(columns=['weighted_frac'])
-        mss_df = mss_df.drop(columns=['weighted_frac_fw_eu'])
-       
-        return mss_df
+                    'fw_harvest_prov_merch_ub_frac',
+                                        ]
+        df_fw_provided = df_merged[keep_cols]      
+        return df_fw_provided
 
     @cached_property
     def provided_shares(self):
