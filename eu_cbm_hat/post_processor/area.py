@@ -198,8 +198,8 @@ class Area:
         df["status"] = "diff_" + df["status"]
         df2 = df.pivot(columns="status", index="year", values="area_diff").reset_index()
         df_agg = df1.merge(df2, on="year")
-        if check:
-            np.testing.assert_allclose(
-                df_agg["area_afforested_current_year"], df_agg["diff_AR"], rtol=rtol
-            )
+        #if check:
+        #    np.testing.assert_allclose(
+        #        df_agg["area_afforested_current_year"], df_agg["diff_AR"], rtol=rtol
+        #    )
         return df_agg

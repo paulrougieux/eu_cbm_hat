@@ -418,7 +418,7 @@ def read_agg_combo_output(combo_name: list, file_name: str):
     df_all.reset_index(inplace=True, drop=True)
     return df_all
 
-
+# better check sink.py
 def sink_one_country(
     combo_name: str,
     iso2_code: str,
@@ -565,7 +565,7 @@ def sink_one_country(
 
 
 def area_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
-    """Harvest provided in one country
+    """area provided in one country
 
     Usage:
 
@@ -658,7 +658,7 @@ def share_thinn_final_cut(combo_name: str, iso2_code: str):
         >>> hare_thinn_final_cut("reference", "LU")
 
     """
-    #groupby = ['year', 'con_broad', 'silv_practice']
+    groupby = ['year', 'con_broad', 'silv_practice']
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df_shares = runner.post_processor.harvest.provided_shares
     df_shares ["scenario"] = runner.combo.short_name
@@ -701,7 +701,7 @@ def nai_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], s
 def nai_all_countries(combo_name: str, groupby: Union[List[str], str]):
     """NAI area by status in wide format for all countries in the given scenario combination.
 
-    >>> from eu_cbm_hat.post_processor.area import nai_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import nai_all_countries
     >>> nai_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
 
     """
@@ -738,6 +738,89 @@ def nai_con_broad_all_countries(combo_name: str, groupby: Union[List[str], str])
     cols_to_keep = ['combo_name', 'country', 'year', 'status', 'con_broad',
        'area', 'nai_merch', 'gai_merch','nai_agb', 'gai_agb', 'nai_merch_ha', 'gai_merch_ha', 'nai_agb_ha','gai_agb_ha']
     df_all = df_all[cols_to_keep]
+    return df_all
+
+def weighted_nai_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
+    """Net Annual Increment data weighted by status
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import weighted_nai_one_country
+        >>> weighted_nai_one_country("reference", "LU", ["status"])
+        >>> weighted_nai_one_country("reference", "LU", ["status", "forest_type"])
+
+    """
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.nai.df_agg(groupby=groupby)
+    df = place_combo_name_and_country_first(df, runner)
+
+    # Calculate the weighted values for nai_merch_ha and gai_merch_ha by multiplying by area
+    df['weighted_merch_nai'] = df['nai_merch_ha'] * df['area']
+    df['weighted_merch_gai'] = df['gai_merch_ha'] * df['area']
+    df['weighted_agb_nai'] = df['nai_agb_ha'] * df['area']
+    df['weighted_agb_gai'] = df['gai_agb_ha'] * df['area']
+
+    # Group by the necessary columns and sum the weighted values and the area
+    grouped = df.groupby(['country', 'year']).agg(
+        total_weighted_nai_merch=('weighted_merch_nai', 'sum'),
+        total_weighted_gai_merch=('weighted_merch_gai', 'sum'),
+        total_weighted_nai_agb=('weighted_agb_gai', 'sum'),
+        total_weighted_gai_agb=('weighted_agb_gai', 'sum'),
+        total_area=('area', 'sum')
+    ).reset_index()
+    
+    # Calculate the weighted averages
+    grouped['nai_merch_ha'] = grouped['total_weighted_nai_merch'] / grouped['total_area']
+    grouped['gai_merch_ha'] = grouped['total_weighted_gai_merch'] / grouped['total_area']
+    grouped['nai_agb_ha'] = grouped['total_weighted_nai_agb'] / grouped['total_area']
+    grouped['gai_agb_ha'] = grouped['total_weighted_gai_agb'] / grouped['total_area']
+
+    grouped = grouped.rename(columns = {'total_area':'area', 'total_weighted_nai_merch':'nai_merch', 'total_weighted_gai_merch':'gai_merch',
+                                       'total_weighted_nai_agb':'nai_agb', 'total_weighted_gai_agb':'gai_agb'})
+    
+    # Select the relevant columns for the final output
+    final_df = grouped[['country', 'year', 'area', 'nai_merch', 'gai_merch',
+                       'nai_agb', 'gai_agb', 'nai_merch_ha', 'gai_merch_ha', 
+                        'nai_agb_ha', 'gai_agb_ha']]
+    return final_df
+
+def nai_all_countries_weighted_nai_eu(combo_name: str, groupby: Union[List[str], str]):
+    """
+    This function nai for all countries and EU, 
+    calculates the sums and weighted averages for the 'eu' iso2_code.
+    """
+    
+    df_all = apply_to_all_countries(
+        weighted_nai_one_country, combo_name=combo_name, groupby=groupby
+    )
+    
+    # Filter out the 'eu' code if it already exists
+    df_all = df_all[df_all['country'] != 'EU']
+    
+    # Group by year and calculate the sums and weighted averages
+    df_eu = df_all.groupby('year').apply(
+        lambda x: pandas.Series({
+            'country': 'EU',
+            #'combo_name': combo_name,
+            #'status': '',  # You can set this to any value you want
+            'area': x['area'].sum(),
+            'nai_merch': x['nai_merch'].sum(),
+            'gai_merch': x['gai_merch'].sum(),
+            'nai_agb': x['nai_agb'].sum(),
+            'gai_agb': x['gai_agb'].sum(),
+            'nai_merch_ha': (x['nai_merch_ha'] * x['area']).sum() / x['area'].sum(),
+            'gai_merch_ha': (x['gai_merch_ha'] * x['area']).sum() / x['area'].sum(),
+            'nai_agb_ha': (x['nai_agb_ha'] * x['area']).sum() / x['area'].sum(),
+            'gai_agb_ha': (x['gai_agb_ha'] * x['area']).sum() / x['area'].sum()
+        })
+    ).reset_index()
+    
+    # Reset the index to create a new column for the year
+    df_eu = df_eu.rename(columns={'index': 'year'})
+    
+    # Concatenate the original DataFrame with the new 'eu' DataFrame
+    df_all = pandas.concat([df_all, df_eu], ignore_index=True)
+    
     return df_all
 
 def weighted_nai_con_broad_one_country(combo_name: str, iso2_code: str, groupby: Union[List[str], str]):
@@ -786,7 +869,7 @@ def weighted_nai_con_broad_all_countries(combo_name: str, groupby: Union[List[st
     return df_all
 
 def area_all_countries(combo_name: str, groupby: Union[List[str], str]):
-    """Harvest area by status in wide format for all countries in the given scenario combination.
+    """area area by status in wide format for all countries in the given scenario combination.
 
     >>> from eu_cbm_hat.post_processor.area import area_all_countries
     >>> area_all_countries("reference", ["year", "status", "con_broad", "disturbance_type"])
@@ -830,8 +913,9 @@ def harvest_exp_prov_one_country(
     # to products especially in the historical period
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df = runner.post_processor.harvest.expected_provided(groupby=groupby)
-    df = place_combo_name_and_country_first(df, runner)
-    return df
+    df_all = place_combo_name_and_country_first(df, runner)
+
+    return df_all
 
 
 def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], str]):
@@ -851,6 +935,39 @@ def harvest_exp_prov_all_countries(combo_name: str, groupby: Union[List[str], st
     df_all = apply_to_all_countries(
         harvest_exp_prov_one_country, combo_name=combo_name, groupby=groupby
     )
+    return df_all
+
+def harvest_exp_prov_all_countries_eu(combo_name: str, groupby: Union[List[str], str]):
+    """
+    This function harvest for all countries and EU, 
+    calculates the sums and weighted averages for the 'eu' iso2_code.
+    """
+    
+    df_all = apply_to_all_countries(
+       harvest_exp_prov_one_country, combo_name=combo_name, groupby=groupby
+    )
+    
+    # Filter out the 'eu' code if it already exists
+    df_all = df_all[df_all['country'] != 'EU']
+    
+    # Group by year and calculate the sums and weighted averages
+    df_eu = df_all.groupby('year').apply(
+        lambda x: pandas.Series({
+            'country': 'EU',
+            'rw_demand': x['rw_demand'].sum(),
+            'fw_demand': x['fw_demand'].sum(),
+            'irw_demand': x['irw_demand'].sum(),
+            'total_harvest_ub_provided': x['total_harvest_ub_provided'].sum(),
+            'total_harvest_ob_provided': x['total_harvest_ob_provided'].sum(),
+        })
+    ).reset_index()
+   
+    # Reset the index to create a new column for the year
+    df_eu = df_eu.rename(columns={'index': 'year'})
+    
+    # Concatenate the original DataFrame with the new 'eu' DataFrame
+    df_all = pandas.concat([df_all, df_eu], ignore_index=True)
+    
     return df_all
 
 def volume_stock_one_country(
@@ -996,3 +1113,87 @@ def pools_length_one_country(
     # Fix for older versions of pandas
     df.rename(columns={0: "count"}, inplace=True)
     return df
+
+
+def fw_source_provided_one_country(
+    combo_name: str, iso2_code: str, groupby: Union[List[str], str]
+):
+    """Harvest excepted provided in one country
+
+    Usage:
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import harvest_exp_prov_one_country
+        >>> import pandas
+        >>> pandas.set_option('display.precision', 0) # Display rounded numbers
+        >>> harvest_exp_prov_one_country("reference", "ZZ", "year")
+        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "forest_type"])
+        >>> harvest_exp_prov_one_country("reference", "ZZ", ["year", "disturbance_type"])
+
+    """
+    if isinstance(groupby, str):
+        groupby = [groupby]
+
+    # TODO: current version of harvest_exp_one_country() only contains HAT
+    # disturbances. This should also provide static events that generate fluxes
+    # to products especially in the historical period
+    runner = continent.combos[combo_name].runners[iso2_code][-1]
+    df = runner.post_processor.harvest.provided_fw()
+    df = place_combo_name_and_country_first(df, runner)
+    return df
+    
+def fw_source_provided_eu(combo_name: str, groupby: Union[List[str], str]):
+    """
+    This function nai for all countries and EU, 
+    calculates the sums and weighted averages for the 'eu' iso2_code.
+    """
+    
+    df_all = apply_to_all_countries(
+        fw_source_provided_one_country, combo_name=combo_name, groupby=groupby
+    )
+    
+    # Filter out the 'eu' code if it already exists
+    df_all = df_all[df_all['country'] != 'EU']
+   
+    # Group by year and calculate the sums and weighted averages
+    df_eu = df_all.groupby('year').apply(
+        lambda x: pandas.Series({
+            'country': 'EU',
+            #'combo_name': combo_name,
+            #'status': '',  # You can set this to any value you want
+            # totals
+            'total_harvest_ub_provided': x['total_harvest_ub_provided'].sum(),
+            'total_harvest_ob_provided': x['total_harvest_ob_provided'].sum(),
+            'irw_fw_harvest_prov_ub': x['irw_fw_harvest_prov_ub'].sum(),
+            'irw_fw_harvest_prov_ob': x['irw_fw_harvest_prov_ob'].sum(),
+            'irw_fw_harvest_prov_merch_ub': x['irw_fw_harvest_prov_merch_ub'].sum(),
+            'irw_fw_harvest_prov_other_ub': x['irw_fw_harvest_prov_merch_ob'].sum(),
+            'irw_fw_harvest_prov_stem_snag_ub': x['irw_fw_harvest_prov_stem_snag_ub'].sum(),
+            'irw_fw_harvest_prov_branch_snag_ub': x['irw_fw_harvest_prov_stem_snag_ob'].sum(),
+            'fw_harvest_prov_ub': x['fw_harvest_prov_ub'].sum(),
+            'fw_harvest_prov_ob': x['fw_harvest_prov_ob'].sum(),
+            'fw_harvest_prov_merch_ub': x['fw_harvest_prov_merch_ub'].sum(),
+            'fw_harvest_prov_merch_ob': x['fw_harvest_prov_merch_ob'].sum(),
+            'fw_harvest_prov_other_ub': x['fw_harvest_prov_other_ub'].sum(),
+            'fw_harvest_prov_other_ob': x['fw_harvest_prov_other_ob'].sum(),
+            'fw_harvest_prov_stem_snag_ub': x['fw_harvest_prov_stem_snag_ub'].sum(),
+            'fw_harvest_prov_stem_snag_ob': x['fw_harvest_prov_stem_snag_ob'].sum(),
+            'fw_harvest_prov_branch_snag_ub': x['fw_harvest_prov_branch_snag_ub'].sum(),
+            'fw_harvest_prov_branch_snag_ob': x['fw_harvest_prov_branch_snag_ob'].sum(),
+            'total_fw_ub_provided': x['total_fw_ub_provided'].sum(),
+            'total_fw_ob_provided': x['total_fw_ob_provided'].sum(),
+            # fractions
+            'total_fw_ub_in_total_harvest_ub_frac': (x['total_fw_ub_in_total_harvest_ub_frac'] * x['area']).sum() / x['area'].sum(),
+            'irw_fw_ub_in_total_fw_ub_frac': (x['irw_fw_ub_in_total_fw_ub_frac'] * x['area']).sum() / x['area'].sum(),
+            'fw_ub_in_total_fw_ub_frac': (x['fw_ub_in_total_fw_ub_frac'] * x['area']).sum() / x['area'].sum(),
+            'irw_fw_merch_ub_in_irw_fw_ub_provided_frac': (x['irw_fw_merch_ub_in_irw_fw_ub_provided_frac'] * x['area']).sum() / x['area'].sum(),
+            'fw_merch_ub_in_fw_ub_provided_frac': (x['fw_merch_ub_in_fw_ub_provided_frac'] * x['area']).sum() / x['area'].sum()    
+        })
+    ).reset_index()
+    
+    # Reset the index to create a new column for the year
+    df_eu = df_eu.rename(columns={'index': 'year'})
+    
+    # Concatenate the original DataFrame with the new 'eu' DataFrame
+    df_all = pandas.concat([df_all, df_eu], ignore_index=True)
+    
+    return df_all

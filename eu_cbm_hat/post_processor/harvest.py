@@ -341,10 +341,11 @@ class Harvest:
                                     "disturbance_type", "con_broad", 
                                     "site_index", "growth_period"], how='inner')
 
+        
         #convert roundwood output to IRW and FW
         # add adintional split on con and broad
         df["irw_to_product_soft"] = (
-            df["softwood_merch_to_product"]* df["softwood_merch_irw_frac"]+
+            df["softwood_merch_to_product"]*df["softwood_merch_irw_frac"]+
             df["softwood_other_to_product"]*df["softwood_other_irw_frac"]+
             df["softwood_stem_snag_to_product"]*df["softwood_stem_snag_irw_frac"]+
             df["softwood_branch_snag_to_product"]*df["softwood_branch_snag_irw_frac"]
@@ -398,9 +399,9 @@ class Harvest:
         df_total = self.provided
         
         # total harvest ub/ob on years need to calculate aggregated indicators at the end of the fuction
-        df_total_harvest = df_total[["year","total_harvest_ub_provided", "total_harvest_ob_provided"]]
+        df_total_harvest = df_total[["year","area","total_harvest_ub_provided", "total_harvest_ob_provided"]]
         # group on years to get the total harvest
-        df_total_harvest = df_total_harvest.groupby("year")[["total_harvest_ub_provided", "total_harvest_ob_provided"]].sum().reset_index()
+        df_total_harvest = df_total_harvest.groupby("year")[["area","total_harvest_ub_provided", "total_harvest_ob_provided"]].sum().reset_index()
 
         # Sum all columns that have a flux to products
         cols_to_product = df.columns[df.columns.str.contains("to_product")]
@@ -430,8 +431,6 @@ class Harvest:
             if disturbance_type in dist_silv_corresp:
                 df.loc[i, 'silv_practice'] = dist_silv_corresp[disturbance_type]
         
-       
-        # #################
         # add irw fractions from input file to convert to IRW and FW
         df_irw = self.parent.irw_frac
                 
@@ -443,8 +442,6 @@ class Harvest:
         min_year = min(data['irw_frac_by_dist'].keys())
         mngm_scenario = data['irw_frac_by_dist'][min_year]
         df_irw = df_irw[df_irw['scenario'] == mngm_scenario]
-        #print(self.runner.country.iso2_code)      
-
         # exclude climate which is often "?"
         # dropna to get rid of events which may not apply (e.g., deforestation)
         df= df.merge(df_irw, on = ["status","forest_type", "region",
@@ -452,7 +449,7 @@ class Harvest:
                                     "disturbance_type", "con_broad", 
                                     "site_index", "growth_period"], how='inner')
 
-        # here the plit of df on 2dfs: one accounting for when there is no industrial use of roundwood, the other for the FW colateral IRW production, 
+        # here the split on 2dfs: one accounting for when there is no industrial use of roundwood, the other for the FW colateral IRW production. Because of this split, total_harvest_ub_provided is split. 
         # 'df_fw' and 'df_fw_irw'. Both contain the four source pools: merch, other, stem_snags and branch_snag
         
         columns = ['softwood_merch_irw_frac',
@@ -492,7 +489,7 @@ class Harvest:
         df_irw_fw['irw_hardwood_merch_to_product'] = df_irw_fw['hardwood_merch_to_product']*(1-df_irw_fw['hardwood_merch_irw_frac'])
         df_irw_fw['irw_hardwood_other_to_product'] = df_irw_fw['hardwood_other_to_product']*(1-df_irw_fw['hardwood_other_irw_frac'])
         df_irw_fw['irw_hardwood_stem_snag_to_product'] = df_irw_fw['hardwood_stem_snag_to_product']*(1-df_irw_fw['hardwood_stem_snag_irw_frac'])
-        df_irw_fw['irw_hardwood_branch_snag_to_product'] = df_irw_fw['hardwood_branch_snag_to_product']*(1-df_irw_fw['hardwood_branch_snag_irw_frac']) 
+        df_irw_fw['irw_hardwood_branch_snag_to_product'] = df_irw_fw['hardwood_branch_snag_to_product']*(1-df_irw_fw['hardwood_branch_snag_irw_frac'])
         
         # in the following, 'harvest' in the string means that unit is 'volume' (m3)
         # disaggregated. Convert to volume underbark fw, 'harvest' in the string means that value is 'volume' (m3)
@@ -629,10 +626,14 @@ class Harvest:
                         'irw_fw_harvest_prov_ub',
                         'irw_fw_harvest_prov_ob',
                         'irw_fw_harvest_prov_merch_ub',
+                        'irw_fw_harvest_prov_merch_ob',
                         'irw_fw_harvest_prov_other_ub',
+                        'irw_fw_harvest_prov_other_ob',
                         'irw_fw_harvest_prov_stem_snag_ub',
+                        'irw_fw_harvest_prov_stem_snag_ob',
                         'irw_fw_harvest_prov_branch_snag_ub',
-                      ]
+                        'irw_fw_harvest_prov_branch_snag_ob',
+                        ]
 
         cols_fw = ['year',
                     # FW, volume on biomass components, under and over bark
@@ -680,13 +681,14 @@ class Harvest:
         df_irw_fw_year = df_irw_fw_year.set_index('year')
         df_fw_year = df_fw_year.set_index('year')
         
-        # merge the two types of wood, and also add the total harvest per year
+        # merge the two types of wood, and also add the total harvest per year 'total_harvest_ub_provided'
         df_merged = pandas.merge(df_total_harvest, df_irw_fw_year, on='year')
         df_merged = pandas.merge(df_merged, df_fw_year, on='year')
                    
         # aggregated indicators, fractions
         # total fuelwood amount
         df_merged['total_fw_ub_provided'] = df_merged['irw_fw_harvest_prov_ub']+df_merged['fw_harvest_prov_ub']
+        df_merged['total_fw_ob_provided'] = df_merged['irw_fw_harvest_prov_ob']+df_merged['fw_harvest_prov_ob']
         
         # fraction of total FW in total harvest
         df_merged['total_fw_ub_in_total_harvest_ub_frac'] = df_merged['total_fw_ub_provided']/df_merged['total_harvest_ub_provided']
@@ -700,8 +702,13 @@ class Harvest:
         
         # stems in FW dedicated silvicultural practices
         df_merged['fw_merch_ub_in_fw_ub_provided_frac'] = df_merged['fw_harvest_prov_merch_ub']/(df_merged['fw_harvest_prov_ub'])
-         
+
+        df_merged['country'] = self.runner.country.iso2_code
+  
         return df_merged
+
+
+#################################################        
 
     @cached_property
     def provided_shares(self):
