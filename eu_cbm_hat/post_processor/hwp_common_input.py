@@ -10,11 +10,11 @@ import pandas as pd
 from functools import cached_property
 from eu_cbm_hat import eu_cbm_data_pathlib
 
-class HWPInput():
+class HWPCommonInput():
     """Input data for Harvested Wood Product sink computation"""
 
-    def __init__(self, parent):
-        self.parent = parent
+    def __init__(self):
+        self.common_dir = eu_cbm_data_pathlib / "common"
 
     @cached_property
     def hwp_types(self):
@@ -71,23 +71,17 @@ class HWPInput():
         Silv_to_hwp = pd.read_csv( eu_cbm_data_pathlib / 'common/silv_practices_to_hwp.csv')
         return Silv_to_hwp
 
-# %%
-class HWP(object):
-    """Harvest Wood Products input and processing
-
-    Usage:
-
-        >>> from eu_cbm_hat.post_processor.hwp import HWP
-        >>> hwp = HWP
-        >>> hwp.rw_export_correction_factor
-
-    """
+    @cached_property
+    def irw_allocation_by_dbh(self):
+        """IRW fraction by DBH classes"""
+        df = pd.read_csv(eu_cbm_data_pathlib / "common" / "irw_allocation_by_dbh.csv")
+        return df
 
     @cached_property
-    def input(self):
-        """Input data for HWP computations"""
-        return HWPInput(self)
-
+    def hwp_genus(self):
+        """IRW fraction by DBH classes"""
+        df = pd.read_csv(self.common_dir / "hwp_genus.csv")
+        return df
     
     @cached_property
     def rw_export_correction_factor(self):
@@ -99,14 +93,14 @@ class HWP(object):
 
         # you should make this a method of HWP so that 
         # df_fao = self.faostat_bulk_data
-        df_fao = self.input.faostat_bulk_data
+        df_fao = self.faostat_bulk_data
 
         # remove rows which do not reffer to "quantity" from original data
         filter = df_fao['Element'].str.contains('Value')
         df_fao = df_fao[~filter].rename(columns = {'Item':'Item_orig', 'Element':'Element_orig'})
 
         # add lables used in the hwp scripts
-        df = df_fao.merge(self.input.hwp_types, on = ['Item Code','Item_orig']).merge(self.input.eu_member_states, on = ['Area'])
+        df = df_fao.merge(self.hwp_types, on = ['Item Code','Item_orig']).merge(self.eu_member_states, on = ['Area'])
 
         # Filter the columns that start with 'Y' and do not end with a letter
         keep_columns = ['Area Code', 'Area', 'Item Code','Item_orig', 'Item', 'Element Code', 'Element_orig', 'Unit']
@@ -215,27 +209,7 @@ class HWP(object):
 
 # %%
 #initiate the class
-hwp = HWP()
-
-# These intermediate data frames are not needed,
-# hwp.input.faostat_bulk_data can be called directly instead
-faostat_bulk_data = hwp.input.faostat_bulk_data
-hwp_types = hwp.input.hwp_types
-eu_member_states = hwp.input.eu_member_states
-euwrb_stat = hwp.input.euwrb_stat
-fao_rw_prod_gapfilled = hwp.input.fao_rw_prod_gapfilled
-crf_stat = hwp.input.crf_stat
-subst_params = hwp.input.subst_params
-subst_ref = hwp.input.subst_ref
-silv_to_hwp = hwp.input.silv_to_hwp
-
-
-# %%
-# TODO remove this legacy function that just mirrors the HWP method
-def rw_export_correction_factor():
-    """Ugly function which should not exist"""
-    return hwp.rw_export_correction_factor
-
+hwp_common_input = HWPCommonInput()
 
 # %%
 def crf_semifinished_data():
