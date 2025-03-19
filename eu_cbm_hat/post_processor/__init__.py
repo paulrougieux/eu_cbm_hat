@@ -12,6 +12,7 @@ from typing import Union, List
 from functools import cached_property
 from eu_cbm_hat.post_processor.sink import Sink
 from eu_cbm_hat.post_processor.harvest import Harvest
+from eu_cbm_hat.post_processor.hwp import HWP
 from eu_cbm_hat.post_processor.area import Area
 from eu_cbm_hat.post_processor.stock import Stock
 from eu_cbm_hat.post_processor.nai import NAI
@@ -202,6 +203,11 @@ class PostProcessor(object):
     def harvest(self):
         """Compute harvest expected and provided"""
         return Harvest(self)
+
+    @cached_property
+    def hwp(self):
+        """Compute harvest expected and provided"""
+        return HWP(self)
 
     @cached_property
     def nai(self):
