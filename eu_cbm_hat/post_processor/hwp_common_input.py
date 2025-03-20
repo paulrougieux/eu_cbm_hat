@@ -73,8 +73,23 @@ class HWPCommonInput():
 
     @cached_property
     def irw_allocation_by_dbh(self):
-        """IRW fraction by DBH classes"""
-        df = pd.read_csv(eu_cbm_data_pathlib / "common" / "irw_allocation_by_dbh.csv")
+        """IRW fraction by DBH classes with genus and forest type information
+
+        Merge with the genus table to obtain the forest type information."""
+        csv_path = eu_cbm_data_pathlib / "common" / "irw_allocation_by_dbh.csv"
+        df = pd.read_csv(csv_path)
+        df = df.merge(self.hwp_genus,on=["country", "genus"], how="left")
+        # Check that proportions sum to one over the forest type and age class
+        index = ['country', 'mgmt_type', 'mgmt_strategy', "forest_type", 'age_class']
+        df_agg = (
+            df.groupby(index)["fraction_smoothed_theoretical_volume"]
+            .agg("sum").reset_index()
+        )
+        selector = ~np.isclose(df_agg["fraction_smoothed_theoretical_volume"],1)
+        if any(selector):
+            msg = f"Some proportion in {csv_path} do not sum to one over the age class:\n"
+            msg += f"{df_agg.loc[selector]}"
+            raise ValueError(msg)
         return df
 
     @cached_property

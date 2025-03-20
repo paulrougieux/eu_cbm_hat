@@ -13,7 +13,7 @@ class HWP:
         >>> runner.post_processor.irw_frac
         >>> runner.post_processor.hwp.fluxes_to_products
         >>> runner.post_processor.hwp.fluxes_to_irw
-
+        >>> runner.post_processor.hwp.fluxes_by_age_to_dbh
     """
 
     def __init__(self, parent):
@@ -140,19 +140,12 @@ class HWP:
     @cached_property
     def fluxes_by_age_to_dbh(self) -> pandas.DataFrame:
         """Allocate fluxes by age to a dbh_alloc distrubution"""
-
-        # TODO: move this preparation to the common input object
-        # Prepare dbh_alloc distribution table by forest types
+        # Select data for one country only
         dbh_alloc = hwp_common_input.irw_allocation_by_dbh
         selector = dbh_alloc["country"] == self.runner.country.iso2_code
         dbh_alloc = dbh_alloc.loc[selector]
-        genus = hwp_common_input.hwp_genus
-        selector = genus["country"] == self.runner.country.iso2_code
-        genus = genus.loc[selector]
-        dbh_alloc = dbh_alloc.merge(genus,on=["country", "genus"])
-        # TODO: check that fraction_smoothed_theoretical_volume sum to one over AGEID
-
         # Merge with fluxes
         index = ['mgmt_type', 'mgmt_strategy', 'age_class', "forest_type"]
         df = self.fluxes_to_irw.merge(dbh_alloc, on=index, how="left")
+        return df
 
