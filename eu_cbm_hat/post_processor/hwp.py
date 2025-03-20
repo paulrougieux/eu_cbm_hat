@@ -1,4 +1,6 @@
 from functools import cached_property
+import numpy as np
+import warnings
 import pandas
 from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
 
@@ -147,5 +149,36 @@ class HWP:
         # Merge with fluxes
         index = ['mgmt_type', 'mgmt_strategy', 'age_class', "forest_type"]
         df = self.fluxes_to_irw.merge(dbh_alloc, on=index, how="left")
+        # Multiply old tc_irw with the fraction
+        df["tc_irw"] = df["tc_irw"] * df["fraction_smoothed_theoretical_volume"]
+        # Reaggregate and check that values didn't change
+        index = ['forest_type', 'mgmt_type', 'mgmt_strategy', 'con_broad', 'age_class']
+        df_agg = df.groupby(index)["tc_irw"].agg("sum")
+        df_comp = self.fluxes_to_irw.merge(df_agg, on=index, how="left",
+                                          suffixes=('_before', '_after'))
+        selector = ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
+        if any(selector):
+            msg = f"The following tc_irw values  don't match between "
+            msg += "input before and after dbh allocation\n"
+            msg += f"{df_comp.loc[selector]}"
+            warnings.warn(msg)
         return df
+
+
+    @cached_property
+    def fluxes_by_grade(self) -> pandas.DataFrame:
+        """Allocate fluxes by age to a dbh_alloc distrubution"""
+        # Select the country for nb grading
+        nb_grading = hwp_common_input.nb_grading
+        selector = nb_grading["country"] == self.runner.country.iso2_code
+        nb_grading = nb_grading.loc[selector]
+        # Aggregate previous data frame by genus
+        df = self.fluxes_by_age_to_dbh
+        index = ['country', 'genus', 'mgmt_type', 'mgmt_strategy',
+                 'con_broad', 'dbh_class']
+        df_agg = df.groupby(index)["tc_irw"].agg("sum").reset_index()
+        # Merge with grading information
+        index = ['country', 'genus', 'mgmt_type', 'mgmt_strategy',
+                 'dbh_class']
+        df = df.merge(nb_grading, on= index, how="left")
 

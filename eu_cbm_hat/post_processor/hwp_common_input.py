@@ -10,6 +10,15 @@ import pandas as pd
 from functools import cached_property
 from eu_cbm_hat import eu_cbm_data_pathlib
 
+def generate_dbh_intervals():
+    """Generate DBH intervals for a dictionnary mapping"""
+    base_range = np.arange(0, 100, 2.5)
+    intervals = [f'[{start:.1f}, {start+2.5:.1f})' for start in base_range]
+    return {f"dbh_class_{i+1}":intervals[i] for i in range(1,40)}
+
+DBH_CLASSES = generate_dbh_intervals()
+
+
 class HWPCommonInput():
     """Input data for Harvested Wood Product sink computation"""
 
@@ -87,7 +96,9 @@ class HWPCommonInput():
         )
         selector = ~np.isclose(df_agg["fraction_smoothed_theoretical_volume"],1)
         if any(selector):
-            msg = f"Some proportion in {csv_path} do not sum to one over the age class:\n"
+            msg = "Some proportion in irw_allocation_by_dbh do not sum to one\n"
+            msg += f"over the index: {index}\n"
+            msg += f"CSV file path: {csv_path}\n"
             msg += f"{df_agg.loc[selector]}"
             raise ValueError(msg)
         return df
@@ -96,6 +107,30 @@ class HWPCommonInput():
     def hwp_genus(self):
         """IRW fraction by DBH classes"""
         df = pd.read_csv(self.common_dir / "hwp_genus.csv")
+        return df
+
+    @cached_property
+    def nb_grading(self):
+        """Grading Nicolas Bozzolan
+
+        Keep only sawlogs and pulpwood from that grading table."""
+        df_wide = pd.read_csv(self.common_dir / "nb_grading.csv")
+        selector = df_wide["grade"].isin(["sawlogs", "pulpwood"])
+        df_wide = df_wide.loc[selector]
+        # Reshape to long format
+        index = ['country', 'genus', 'species', 'mgmt_type', 'mgmt_strategy', 'grade']
+        df = df_wide.melt(id_vars=index, var_name="dbh_class", value_name="proportion")
+        df["dbh_class"] = df["dbh_class"].map(DBH_CLASSES)
+        # Check that proportions sum to either zero or one
+        index = ['country', 'genus', 'species', 'mgmt_type', 'mgmt_strategy', 'dbh_class']
+        df_agg = df.groupby(index)["proportion"].agg("sum").reset_index()
+        zero = np.isclose(df_agg["proportion"], 0)
+        one = np.isclose(df_agg["proportion"], 1)
+        zero_or_one = zero | one
+        if any(~zero_or_one):
+            msg = "Proportions do not sum to zero or one for the following lines\n"
+            msg += f"{df_agg.loc[~zero_or_one]}"
+            raise ValueError(msg)
         return df
     
     @cached_property
