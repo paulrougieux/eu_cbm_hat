@@ -58,7 +58,7 @@ class HWPCommonInput():
     @cached_property
     def crf_stat (self):
         # crf sumbissions
-        CRF_stat = pd.read_csv(eu_cbm_data_pathlib / 'common/hwp_crf_submission_2023.csv')
+        CRF_stat = pd.read_csv(eu_cbm_data_pathlib / 'common/hwp_crf_submission.csv')
         CRF_stat = CRF_stat.rename(columns = {'country':'area'})
         return CRF_stat
 
@@ -254,7 +254,29 @@ class HWPCommonInput():
         #replacing NA to 0, so possible to make operations
         df_exp['fREC_PAPER'] =df_exp['fREC_PAPER'].fillna(0)
         df_exp['year'] =df_exp['year'].astype(int)
-        return df_exp   
+        return df_exp
+
+    @cached_property
+    def crf_semifinished_data(self):
+            """ data 1961-2021 from common\hwp_crf_submission.csv
+            input timeseries of quantities of semifinshed products reported under the CRF"""
+            df_crf = self.crf_stat.set_index(['area', 'year'])
+            selector = '_crf'
+            df_crf = df_crf.filter(regex=selector).reset_index()
+            
+            # remove strings in names
+            df_crf.columns=df_crf.columns.str.replace(selector,'')
+            df_crf=df_crf.set_index(['area', 'year'])
+            
+            # remove notation kew from CRF based data
+            df_crf=df_crf.replace (["NO", 'NE', 'NA', 'NA,NE'], 0)
+            df_crf=df_crf.fillna(0).astype(float)
+            df_crf=df_crf.filter(regex='_prod').reset_index()
+            df_crf['year'] =df_crf['year'].astype(int)
+            return df_crf
+
+
+
 
 
 # %%
@@ -262,24 +284,6 @@ class HWPCommonInput():
 hwp_common_input = HWPCommonInput()
 
 # %%
-def crf_semifinished_data():
-        """ data 1961-2021 from common\hwp_crf_submission.csv
-        input timeseries of quantities of semifinshed products reported under the CRF"""
-        df_crf=crf_stat.set_index(['area', 'year'])
-        selector = '_crf'
-        df_crf=df_crf.filter(regex=selector).reset_index()
-        
-        # remove strings in names
-        df_crf.columns=df_crf.columns.str.replace(selector,'')
-        df_crf=df_crf.set_index(['area', 'year'])
-        
-        # remove notation kew from CRF based data
-        df_crf=df_crf.replace (["NO", 'NE', 'NA', 'NA,NE'], 0)
-        df_crf=df_crf.fillna(0).astype(float)
-        df_crf=df_crf.filter(regex='_prod').reset_index()
-        df_crf['year'] =df_crf['year'].astype(int)
-        return df_crf
-
 
 # %%
 # these are the historical domestic feedstock (corrected for export)
