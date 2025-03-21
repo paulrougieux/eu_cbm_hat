@@ -263,7 +263,7 @@ hwp_common_input = HWPCommonInput()
 
 # %%
 def crf_semifinished_data():
-        """ data 1961-2021 from common\hwp_crf_submission_2023.csv
+        """ data 1961-2021 from common\hwp_crf_submission.csv
         input timeseries of quantities of semifinshed products reported under the CRF"""
         df_crf=crf_stat.set_index(['area', 'year'])
         selector = '_crf'
