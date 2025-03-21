@@ -276,7 +276,23 @@ class HWPCommonInput():
             return df_crf
 
 
+    def export_correction_factor(self):
+        """Export correction factor combining
 
+        TODO: fIRW_SW_WP_con_dom
+
+        Merge 
+
+            self.rw_export_correction_factor
+            self.crf_semifinished_data
+
+        Compute
+
+            df['SW_domestic'] = df['sw_prod_m3_crf']* df['fIRW_SW_WP']
+            df['WP_domestic'] = df['wp_prod_m3_crf']* df['fIRW_SW_WP']
+            df['PP_domestic'] = df['pp_prod_t_crf']* df['fPULP_dom']
+
+        """
 
 
 # %%

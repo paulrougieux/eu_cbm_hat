@@ -107,7 +107,6 @@ class HWP:
         df = df.merge(self.irw_frac, on=coi, how="left")
         return df
 
-
     @cached_property
     def fluxes_to_irw(self) -> pandas.DataFrame:
         """Fluxes to Industrial Roundwood Aggregated by index Extract the IRW
@@ -116,9 +115,10 @@ class HWP:
         IRW fraction.
         """
         df = self.fluxes_to_products
-        # Add bark fraction 
+        # Add bark fraction
         df = df.merge(self.parent.wood_density_bark_frac, on="forest_type", how="left")
 
+        # fmt: off
         # Keep only the IRW fraction by multiplying with the fractions coming from self.irw_frac
         df["tc_soft_irw_merch"] = ( df["softwood_merch_to_product"] * df["softwood_merch_irw_frac"] * (1 - df["bark_frac"]))
         df["tc_soft_irw_other"] = ( df["softwood_other_to_product"] * df["softwood_other_irw_frac"] * (1 - df["bark_frac"]))
@@ -129,10 +129,17 @@ class HWP:
         df["tc_hard_irw_other"] = ( df["hardwood_other_to_product"] * df["hardwood_other_irw_frac"] * (1 - df["bark_frac"]))
         df["tc_hard_irw_stem_snag"] = ( df["hardwood_stem_snag_to_product"] * df["hardwood_stem_snag_irw_frac"] * (1 - df["bark_frac"]))
         df["tc_hard_irw_branch_snag"] = ( df["hardwood_branch_snag_to_product"] * df["hardwood_branch_snag_irw_frac"] * (1 - df["bark_frac"]))
+        # fmt: on
 
         # Aggregate
-        index = ["year", "forest_type", "mgmt_type", "mgmt_strategy", "con_broad",
-                 "age_class"]
+        index = [
+            "year",
+            "forest_type",
+            "mgmt_type",
+            "mgmt_strategy",
+            "con_broad",
+            "age_class",
+        ]
         tc_cols = df.columns[df.columns.str.contains("tc_")]
         # Aggregate over the index
         df_agg = df.groupby(index)[tc_cols].agg("sum")
@@ -149,16 +156,23 @@ class HWP:
         selector = dbh_alloc["country"] == self.runner.country.iso2_code
         dbh_alloc = dbh_alloc.loc[selector]
         # Merge with fluxes
-        index = ['mgmt_type', 'mgmt_strategy', 'age_class', "forest_type"]
+        index = ["mgmt_type", "mgmt_strategy", "age_class", "forest_type"]
         df = self.fluxes_to_irw.merge(dbh_alloc, on=index, how="left")
         # Multiply old tc_irw with the fraction
         df["tc_irw"] = df["tc_irw"] * df["fraction_smoothed_theoretical_volume"]
         # Reaggregate and check that values didn't change
-        index = ["year", 'forest_type', 'mgmt_type', 'mgmt_strategy', 'con_broad',
-                 'age_class']
+        index = [
+            "year",
+            "forest_type",
+            "mgmt_type",
+            "mgmt_strategy",
+            "con_broad",
+            "age_class",
+        ]
         df_agg = df.groupby(index)["tc_irw"].agg("sum")
-        df_comp = self.fluxes_to_irw.merge(df_agg, on=index, how="left",
-                                          suffixes=('_before', '_after'))
+        df_comp = self.fluxes_to_irw.merge(
+            df_agg, on=index, how="left", suffixes=("_before", "_after")
+        )
         selector = ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
         if any(selector):
             msg = f"The following tc_irw values  don't match between "
@@ -167,9 +181,8 @@ class HWP:
             warnings.warn(msg)
         return df
 
-
     @cached_property
-    def fluxes_by_grade(self) -> pandas.DataFrame:
+    def fluxes_by_grade_dbh(self) -> pandas.DataFrame:
         """Allocate fluxes by age to a dbh_alloc distrubution"""
         # Select the country for nb grading
         nb_grading = hwp_common_input.nb_grading
@@ -177,22 +190,37 @@ class HWP:
         nb_grading = nb_grading.loc[selector]
         # Aggregate previous data frame by genus
         df = self.fluxes_by_age_to_dbh
-        index = ['country', "year", 'genus', 'mgmt_type', 'mgmt_strategy',
-                 'con_broad', 'dbh_class']
+        index = [
+            "country",
+            "year",
+            "genus",
+            "mgmt_type",
+            "mgmt_strategy",
+            "con_broad",
+            "dbh_class",
+        ]
         df_agg = df.groupby(index)["tc_irw"].agg("sum").reset_index()
         # Merge with grading information
-        index = ['country', 'genus', 'mgmt_type', 'mgmt_strategy',
-                 'dbh_class']
-        df2 = df_agg.merge(nb_grading, on= index, how="left")
+        index = ["country", "genus", "mgmt_type", "mgmt_strategy", "dbh_class"]
+        df2 = df_agg.merge(nb_grading, on=index, how="left")
         # Compute the allocation
         df2["tc_irw"] = df2["tc_irw"] * df2["proportion"]
         # Check that values didn't change before and after the allocation
-        index = ['country', "year", 'genus', 'mgmt_type', 'mgmt_strategy',
-                 'con_broad', 'dbh_class']
-        df_agg2 = df2.groupby(index).agg(tc_irw = ("tc_irw", "sum"),
-                                         proportion = ("proportion", "sum"))
-        df_comp = df_agg.merge(df_agg2, on=index, how="left",
-                               suffixes=('_before', '_after'))
+        index = [
+            "country",
+            "year",
+            "genus",
+            "mgmt_type",
+            "mgmt_strategy",
+            "con_broad",
+            "dbh_class",
+        ]
+        df_agg2 = df2.groupby(index).agg(
+            tc_irw=("tc_irw", "sum"), proportion=("proportion", "sum")
+        )
+        df_comp = df_agg.merge(
+            df_agg2, on=index, how="left", suffixes=("_before", "_after")
+        )
         selector = ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
         if any(selector):
             msg = f"The following tc_irw values  don't match between "
@@ -201,3 +229,14 @@ class HWP:
             warnings.warn(msg)
         return df2
 
+    @cached_property
+    def fluxes_by_grade(self) -> pandas.DataFrame:
+        """Aggregate previous data frame and reshape wide by feedstock"""
+        index = ["year", "grade"]
+        df_long = (
+            self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
+        )
+        df = df_long.pivot(
+            columns="grade", index=["year"], values="tc_irw"
+        ).reset_index()
+        return df
