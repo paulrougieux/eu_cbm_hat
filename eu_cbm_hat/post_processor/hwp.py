@@ -16,6 +16,9 @@ class HWP:
         >>> runner.post_processor.hwp.fluxes_to_products
         >>> runner.post_processor.hwp.fluxes_to_irw
         >>> runner.post_processor.hwp.fluxes_by_age_to_dbh
+        >>> runner.post_processor.hwp.fluxes_by_grade_dbh
+        >>> runner.post_processor.hwp.fluxes_by_grade
+
     """
 
     def __init__(self, parent):
