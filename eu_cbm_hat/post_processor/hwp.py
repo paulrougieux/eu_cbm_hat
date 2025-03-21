@@ -180,5 +180,21 @@ class HWP:
         # Merge with grading information
         index = ['country', 'genus', 'mgmt_type', 'mgmt_strategy',
                  'dbh_class']
-        df = df.merge(nb_grading, on= index, how="left")
+        df2 = df_agg.merge(nb_grading, on= index, how="left")
+        # Compute the allocation
+        df2["tc_irw"] = df2["tc_irw"] * df2["proportion"]
+        # Check that values didn't change before and after the allocation
+        index = ['country', 'genus', 'mgmt_type', 'mgmt_strategy',
+                 'con_broad', 'dbh_class']
+        df_agg2 = df2.groupby(index).agg(tc_irw = ("tc_irw", "sum"),
+                                         proportion = ("proportion", "sum"))
+        df_comp = df_agg.merge(df_agg2, on=index, how="left",
+                               suffixes=('_before', '_after'))
+        selector = ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
+        if any(selector):
+            msg = f"The following tc_irw values  don't match between "
+            msg += "input before and after NB grading allocation\n"
+            msg += f"{df_comp.loc[selector]}"
+            warnings.warn(msg)
+        return df2
 
