@@ -30,45 +30,6 @@ class HWP:
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
 
     @cached_property
-    def fluxes_to_products(self) -> pandas.DataFrame:
-        """Fluxes to products retain from the cbm output the all transfers to
-        products pool Remove lines where there are no fluxes to products. Keep
-        only lines with positive flues.
-
-            >>> from eu_cbm_hat.core.continent import continent
-            >>> runner = continent.combos['reference'].runners['LU'][-1]
-            >>> runner.post_processor.hwp.fluxes_to_products
-        """
-        index_cols = ["year", "area", "disturbance_type", "age_class"]
-        fluxes_cols = [
-            "softwood_merch_to_product",
-            "softwood_other_to_product",
-            "softwood_stem_snag_to_product",
-            "softwood_branch_snag_to_product",
-            "hardwood_merch_to_product",
-            "hardwood_other_to_product",
-            "hardwood_stem_snag_to_product",
-            "hardwood_branch_snag_to_product",
-        ]
-        cols_of_interest = self.classifiers_list + index_cols + fluxes_cols
-        df = self.pools_fluxes[cols_of_interest]
-        # Keep only lines where there are fluxes to products.
-        selector = df[fluxes_cols].sum(axis=1) > 0
-        df = df.loc[selector].reset_index(drop=True)
-        # Merge with IRW fractions
-        coi = [
-            "status",
-            "region",
-            "forest_type",
-            "mgmt_type",
-            "mgmt_strategy",
-            "con_broad",
-            "disturbance_type",
-        ]
-        df = df.merge(self.irw_frac, on=coi, how="left")
-        return df
-
-    @cached_property
     def irw_frac(self) -> pandas.DataFrame:
         """Industrial Roundwood Fraction
 
@@ -108,6 +69,46 @@ class HWP:
         return df
 
     @cached_property
+    def fluxes_to_products(self) -> pandas.DataFrame:
+        """Fluxes to products retain from the cbm output the all transfers to
+        products pool Remove lines where there are no fluxes to products. Keep
+        only lines with positive flues.
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> runner.post_processor.hwp.fluxes_to_products
+        """
+        index_cols = ["year", "area", "disturbance_type", "age_class"]
+        fluxes_cols = [
+            "softwood_merch_to_product",
+            "softwood_other_to_product",
+            "softwood_stem_snag_to_product",
+            "softwood_branch_snag_to_product",
+            "hardwood_merch_to_product",
+            "hardwood_other_to_product",
+            "hardwood_stem_snag_to_product",
+            "hardwood_branch_snag_to_product",
+        ]
+        cols_of_interest = self.classifiers_list + index_cols + fluxes_cols
+        df = self.pools_fluxes[cols_of_interest]
+        # Keep only lines where there are fluxes to products.
+        selector = df[fluxes_cols].sum(axis=1) > 0
+        df = df.loc[selector].reset_index(drop=True)
+        # Merge with IRW fractions
+        coi = [
+            "status",
+            "region",
+            "forest_type",
+            "mgmt_type",
+            "mgmt_strategy",
+            "con_broad",
+            "disturbance_type",
+        ]
+        df = df.merge(self.irw_frac, on=coi, how="left")
+        return df
+
+
+    @cached_property
     def fluxes_to_irw(self) -> pandas.DataFrame:
         """Fluxes to Industrial Roundwood Aggregated by index Extract the IRW
         only, e.g. separate the df as IRW ub exclude bark, because cbm output
@@ -130,7 +131,8 @@ class HWP:
         df["tc_hard_irw_branch_snag"] = ( df["hardwood_branch_snag_to_product"] * df["hardwood_branch_snag_irw_frac"] * (1 - df["bark_frac"]))
 
         # Aggregate
-        index = ["forest_type", "mgmt_type", "mgmt_strategy", "con_broad", "age_class"]
+        index = ["year", "forest_type", "mgmt_type", "mgmt_strategy", "con_broad",
+                 "age_class"]
         tc_cols = df.columns[df.columns.str.contains("tc_")]
         # Aggregate over the index
         df_agg = df.groupby(index)[tc_cols].agg("sum")
@@ -152,7 +154,8 @@ class HWP:
         # Multiply old tc_irw with the fraction
         df["tc_irw"] = df["tc_irw"] * df["fraction_smoothed_theoretical_volume"]
         # Reaggregate and check that values didn't change
-        index = ['forest_type', 'mgmt_type', 'mgmt_strategy', 'con_broad', 'age_class']
+        index = ["year", 'forest_type', 'mgmt_type', 'mgmt_strategy', 'con_broad',
+                 'age_class']
         df_agg = df.groupby(index)["tc_irw"].agg("sum")
         df_comp = self.fluxes_to_irw.merge(df_agg, on=index, how="left",
                                           suffixes=('_before', '_after'))
@@ -174,7 +177,7 @@ class HWP:
         nb_grading = nb_grading.loc[selector]
         # Aggregate previous data frame by genus
         df = self.fluxes_by_age_to_dbh
-        index = ['country', 'genus', 'mgmt_type', 'mgmt_strategy',
+        index = ['country', "year", 'genus', 'mgmt_type', 'mgmt_strategy',
                  'con_broad', 'dbh_class']
         df_agg = df.groupby(index)["tc_irw"].agg("sum").reset_index()
         # Merge with grading information
@@ -184,7 +187,7 @@ class HWP:
         # Compute the allocation
         df2["tc_irw"] = df2["tc_irw"] * df2["proportion"]
         # Check that values didn't change before and after the allocation
-        index = ['country', 'genus', 'mgmt_type', 'mgmt_strategy',
+        index = ['country', "year", 'genus', 'mgmt_type', 'mgmt_strategy',
                  'con_broad', 'dbh_class']
         df_agg2 = df2.groupby(index).agg(tc_irw = ("tc_irw", "sum"),
                                          proportion = ("proportion", "sum"))
