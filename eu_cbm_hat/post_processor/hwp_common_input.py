@@ -2,6 +2,13 @@
 # coding: utf-8
 # %%
 """Import FAO and CRF databases needed for HWP estimation. This will include all countries.
+
+
+Usage: 
+
+    >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+    >>> hwp_common_input.crf_semifinished_data
+
 """
 
 # %%
@@ -135,16 +142,25 @@ class HWPCommonInput():
     
     @cached_property
     def rw_export_correction_factor(self):
-        """ data 1961-2021 is from Forestry_E_Europe.csv
-        this function allows the estimation of the factor "f" that represents the feedstock for the HWP of domestic origin, 
-        after the correction for the export of roundwood, to be applied to eu_cbm_hat simulated IRW. 
-        Even two types of fractions are calculated, fraction with string '_dom' is used further """
-        """runner.post_processor.hwp.rw_export_correction_factor()"""
+        """ data 1961-2021 is from Forestry_E_Europe.csv this function allows
+        the estimation of the factor "f" that represents the feedstock for the
+        HWP of domestic origin, after the correction for the export of
+        roundwood, to be applied to eu_cbm_hat simulated IRW. Even two types of
+        fractions are calculated, fraction with string '_dom' is used further
 
-        # you should make this a method of HWP so that 
-        # df_fao = self.faostat_bulk_data
+        Plot export correction factors by country
+
+            >>> import seaborn
+            >>> import matplotlib.pyplot as plt
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> df = hwp_common_input.rw_export_correction_factor
+            >>> g = seaborn.relplot( data=df, x="year", y="fIRW_SW_WP",
+            ...                     col="area", kind="line", col_wrap=4,
+            ...                     height=3, facet_kws={'sharey': True,
+            ...                                          'sharex': True})
+
+        """
         df_fao = self.faostat_bulk_data
-
         # remove rows which do not reffer to "quantity" from original data
         filter = df_fao['Element'].str.contains('Value')
         df_fao = df_fao[~filter].rename(columns = {'Item':'Item_orig', 'Element':'Element_orig'})
@@ -275,86 +291,98 @@ class HWPCommonInput():
             df_crf['year'] =df_crf['year'].astype(int)
             return df_crf
 
+    @cached_property
+    def gap_fill_ms(self):
+        """TODO: this is not working.
 
-    def export_correction_factor(self):
-        """Export correction factor combining
-
-        TODO: fIRW_SW_WP_con_dom
-
-        Merge 
-
-            self.rw_export_correction_factor
-            self.crf_semifinished_data
-
-        Compute
-
-            df['SW_domestic'] = df['sw_prod_m3_crf']* df['fIRW_SW_WP']
-            df['WP_domestic'] = df['wp_prod_m3_crf']* df['fIRW_SW_WP']
-            df['PP_domestic'] = df['pp_prod_t_crf']* df['fPULP_dom']
+        - Gap fill the export correction factors fPULP_dom fIRW_SW_WP
+        using the first to available numbers from the time series
 
         """
+        index = ["area", "year"]
+        selected_cols = index + ['fPULP_dom', 'fIRW_SW_WP']
+        df = self.rw_export_correction_factor[selected_cols]
+        # Warn about countries which don't have data at all
+        no_data = df.groupby("area").agg(no_value = ("fIRW_SW_WP", lambda x: all(x.isna()))).reset_index()
+        country_with_no_data = no_data.loc[no_data.no_value, 'area'].to_list()
+        msg = f"No data for these countries \n{country_with_no_data}"
+        warnings.warn(msg)
+        # Identify which values to be used for the gap filling
+        selector = df["fIRW_SW_WP"].isna()
+        selector &= df["year"] > 1960 # Ignore first year
+        # Remove countries without data
+        selector &= ~df["area"].isin(country_with_no_data)
+        df2 = df.loc[selector].copy()
+        # Find earliest year of data
+        df2.groupby(["area"])["year"].agg("max")
+        # TODO: gap fill using average of most recent two years
+
+    @cached_property
+    def production_from_domestic_harvest(self):
+        """Compute production from domestic harvest
+        Use export correction factors to compute the sawnwood, panel and paper
+        production from domestic roundwood harvest
+        These are the historical domestic feedstock (corrected for export)
+        this merges the export with semifinished inputs to generate HWP of
+        domestic origin, in original unit m3 or t for 1961-2021
+        """
+        index = ["area", "year"]
+        selected_cols = index + ['fPULP_dom', 'fIRW_SW_WP']
+        df = self.crf_semifinished_data.merge(
+            self.rw_export_correction_factor[selected_cols],
+            on=index,
+            how="left"
+        )
+        df['sw_domestic'] = df['sw_prod_m3']* df['fIRW_SW_WP']
+        df['wp_domestic'] = df['wp_prod_m3']* df['fIRW_SW_WP']
+        df['pp_domestic'] = df['pp_prod_t']* df['fPULP_dom']
+        return df
 
 
-# %%
-#initiate the class
+
+    @cached_property
+    def gap_filling_eu_totals(self):
+        """TODO: this is not working. 
+
+        Add a EU total excluding the countries with incomplete time series,
+           to be used as proxy for gap filling of missing data by ms
+           in original unit m3 or t for 1961-2021"""
+        df_dp = self.production_from_domestic_harvest
+        df_dp = df_dp[['year', 'area', 'sw_prod', 'wp_prod', 'pp_prod']]
+        df_ms = df_dp.rename (columns = {'sw_domestic':'sw_prod_ms','wp_prod':'wp_prod_ms','pp_prod':'pp_prod_ms'})
+        
+        # Group by Area, Item, and Element
+        grouped = df_ms.groupby(['year', 'area'])
+       
+        complete_groups = grouped.filter(lambda x: 
+                                      not ((x['sw_prod_ms'] == 0).any() or 
+                                           (x['wp_prod_ms'] == 0).any() or
+                                           (x['pp_prod_ms'] == 0).any()))
+        
+        # Group by Area, Item, and Element and sum the amount
+        df_eu = complete_groups.groupby(['year'])[['sw_prod_ms','wp_prod_ms','pp_prod_ms']].sum().reset_index()
+        df_eu = df_eu.rename(columns={
+            'sw_prod_ms': 'sw_prod_eu',
+            'wp_prod_ms': 'wp_prod_eu',
+            'pp_prod_ms': 'pp_prod_eu'
+        })
+        
+        df_eu['EU'] = 'EU'
+        df_crf_eu = df_eu.merge(df_ms, on = ['year'])
+        df_crf_eu = df_crf_eu.sort_values (by = ['year','area'] )
+        df_crf_eu.replace(0, np.nan, inplace=True)
+        return df_crf_eu
+
+
+
+# Initiate the class
 hwp_common_input = HWPCommonInput()
 
-# %%
 
-# %%
-# these are the historical domestic feedstock (corrected for export)
-def hist_domestic_semifinished_production():
-        """this merges the export with semifinished inputs to generate HWP of domestic origin, 
-        in original unit m3 or t for 1961-2021"""
-        
-        df_exp = rw_export_correction_factor()
-        df_crf = crf_semifinished_data()
-        df_dp = df_exp.merge(df_crf, on=['year', 'area'])
-        # generic factor is used
-        df_dp ['sw_prod'] = df_dp ['sw_prod_m3']*df_dp ['fIRW_SW_WP'].astype(float) 
-        df_dp['wp_prod'] = df_dp ['wp_prod_m3']*df_dp ['fIRW_SW_WP'].astype(float)
-        #_dom is used
-        df_dp ['pp_prod'] = df_dp ['pp_prod_t']*df_dp ['fPULP_dom'].astype(float)
-        df_dp =df_dp [['area', 'year','sw_prod', 'wp_prod', 'pp_prod']]
-        return df_dp
 
 
 # %%
 #def gap_filling_ms_crf():
-def gap_filling_eu_totals():
-
-    """add a EU total excluding the countries with incomplete time series, 
-       to be used as proxy for gap filling of missing data by ms
-       in original unit m3 or t for 1961-2021"""
-    """runner.post_processor.hwp.rw_export_correction_factor()"""
-    
-    df_dp = hist_domestic_semifinished_production()
-    df_dp = df_dp[['year', 'area', 'sw_prod', 'wp_prod', 'pp_prod']]
-    df_ms = df_dp.rename (columns = {'sw_prod':'sw_prod_ms','wp_prod':'wp_prod_ms','pp_prod':'pp_prod_ms'})
-    
-    # Group by Area, Item, and Element
-    grouped = df_ms.groupby(['year', 'area'])
-   
-    complete_groups = grouped.filter(lambda x: 
-                                  not ((x['sw_prod_ms'] == 0).any() or 
-                                       (x['wp_prod_ms'] == 0).any() or
-                                       (x['pp_prod_ms'] == 0).any()))
-    
-    # Group by Area, Item, and Element and sum the amount
-    df_eu = complete_groups.groupby(['year'])[['sw_prod_ms','wp_prod_ms','pp_prod_ms']].sum().reset_index()
-    df_eu = df_eu.rename(columns={
-        'sw_prod_ms': 'sw_prod_eu',
-        'wp_prod_ms': 'wp_prod_eu',
-        'pp_prod_ms': 'pp_prod_eu'
-    })
-    
-    df_eu['EU'] = 'EU'
-    df_crf_eu = df_eu.merge(df_ms, on = ['year'])
-    df_crf_eu = df_crf_eu.sort_values (by = ['year','area'] )
-    df_crf_eu.replace(0, np.nan, inplace=True)
-    #df_crf_eu.to_csv('C:/CBM/interpolated.csv')
-    return df_crf_eu
-
 
 # %%
 def gapfill_hwp_ms_backward(df):
