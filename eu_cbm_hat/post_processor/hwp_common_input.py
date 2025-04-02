@@ -291,13 +291,101 @@ class HWPCommonInput():
             df_crf['year'] =df_crf['year'].astype(int)
             return df_crf
 
+
     @cached_property
-    def gap_fill_ms(self):
-        """TODO: this is not working.
+    def eu_semifinished_complete_series(self):
+        """ Filter countries which have complete time series, compute the total
+        values and compute the backward rate of change from the current year to
+        the previous year.
 
-        - Gap fill the export correction factors fPULP_dom fIRW_SW_WP
-        using the first to available numbers from the time series
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> df = hwp_common_input.eu_complete_series_totals
+            >>> df.set_index("year").plot()
 
+        Add a EU total excluding the countries with incomplete time series. To
+        be used as proxy for gap filling of missing data by ms in original unit
+        m3 or t for 1961-2021"""
+        df_ms = self.crf_semifinished_data
+        df_ms = df_ms[['year', 'area', 'sw_prod_m3','wp_prod_m3','pp_prod_t']]
+        # Keep only countries which have the complete time series for all products
+        complete_groups = (
+            df_ms.groupby(['area'])
+            .filter(lambda x:
+                    not ((x['sw_prod_m3'] == 0).any() or
+                         (x['wp_prod_m3'] == 0).any() or
+                         (x['pp_prod_t'] == 0).any()))
+        ) 
+        # Aggregate, sum for the whole EU countries which have data
+        df = complete_groups.groupby(['year'])[['sw_prod_m3','wp_prod_m3','pp_prod_t']].sum().reset_index()
+        df = df.rename(columns={
+            'sw_prod_m3': 'sw_prod_eu',
+            'wp_prod_m3': 'wp_prod_eu',
+            'pp_prod_t': 'pp_prod_eu'
+        })
+        # Calculate the ratio of change from the current year to the previous year
+        # irw_eu for each row to the next row. It's a ratio that goes backward in time
+        df['sw_ratio'] = df['sw_prod_eu'] / df['sw_prod_eu'].shift(-1)
+        df['wp_ratio'] = df['wp_prod_eu'] / df['wp_prod_eu'].shift(-1)
+        df['pp_ratio'] = df['pp_prod_eu'] / df['pp_prod_eu'].shift(-1)
+        # TODO: delete this experiment on cumsum
+        # Cumulative product and sum from first yeazr
+        # df["sw_ratio_cum"] = df["sw_ratio"].cumprod()
+        # df["check_sw_prod"]
+        return df
+
+
+    @cached_property
+    def gap_fill_prod(self):
+        """ Gap fill member state production values Gap
+
+        This function fills sw_prod_m3, wp_prod_m3 and pp_prod_t using the
+        change rate from EU totals. It computes back the production in the current
+        year based on the value of the next year multiplied by the EU change
+        rate from the next year to the current year.
+        """
+        # Copy the original DataFrame to avoid modifying the original data for 1961-2021
+        ratio_columns = ['sw_ratio', 'wp_ratio', 'pp_ratio']
+        selected_columns = ["year"] + ratio_columns
+        df = self.crf_semifinished_data.merge(
+            self.eu_semifinished_complete_series[selected_columns],
+            on="year", how="left"
+        )
+        df.replace(0, np.nan, inplace=True)
+        # Arrange by country and year, reset index
+        df = df.sort_values(["area", "year"]).reset_index(drop=True)
+        # Reverse the DataFrame to fill missing values in reverse order
+        df = df.iloc[::-1]
+        # Fill missing values using the ratio
+        for index, row in df.iterrows():
+            # Skip the highest index
+            if index > len(df)-2: 
+                continue
+            # Skip if we are not in the same country
+            if df.at[index, 'area'] != df.at[index + 1, 'area']:
+                continue
+            # Back compute the production in the current year 
+            if pd.isnull(row['sw_prod_m3']):
+                next_value = df.at[index + 1, 'sw_prod_m3']
+                df.at[index, 'sw_prod_m3'] = next_value / row['sw_ratio']
+            if pd.isnull(row['wp_prod_m3']):
+                next_value = df.at[index + 1, 'wp_prod_m3']
+                df.at[index, 'wp_prod_m3'] = next_value / row['wp_ratio']
+            if pd.isnull(row['pp_prod_t']):
+                next_value = df.at[index + 1, 'pp_prod_t']
+                df.at[index, 'pp_prod_t'] = next_value / row['pp_ratio']
+        # Reverse the DataFrame back to the original order
+        df = df.iloc[::-1]
+        # Drop the temporary 'ratio' columns as they are no longer needed
+        df.drop(columns=ratio_columns, inplace=True)
+        return df
+       
+
+
+    @cached_property
+    def gap_fill_factors(self):
+        """
+        Gap fill the export correction factors fPULP_dom fIRW_SW_WP
+        using the first two available numbers from the time series
         """
         index = ["area", "year"]
         selected_cols = index + ['fPULP_dom', 'fIRW_SW_WP']
@@ -317,6 +405,7 @@ class HWPCommonInput():
         df2.groupby(["area"])["year"].agg("max")
         # TODO: gap fill using average of most recent two years
 
+
     @cached_property
     def production_from_domestic_harvest(self):
         """Compute production from domestic harvest
@@ -328,6 +417,7 @@ class HWPCommonInput():
         """
         index = ["area", "year"]
         selected_cols = index + ['fPULP_dom', 'fIRW_SW_WP']
+        # TODO use gap fill data frames here
         df = self.crf_semifinished_data.merge(
             self.rw_export_correction_factor[selected_cols],
             on=index,
@@ -336,42 +426,17 @@ class HWPCommonInput():
         df['sw_domestic'] = df['sw_prod_m3']* df['fIRW_SW_WP']
         df['wp_domestic'] = df['wp_prod_m3']* df['fIRW_SW_WP']
         df['pp_domestic'] = df['pp_prod_t']* df['fPULP_dom']
+        # compute values in Tons of Carbon
+        c_sw = 0.225
+        c_pw = 0.294
+        c_pp = 0.450
+        df['sw_domestic_tc'] = c_sw * df['new_sw_ms']
+        df['wp_domestic_tc'] = c_pw * df['new_wp_ms']
+        df['pp_domestic_tc'] = c_pp * df['new_pp_ms']
         return df
 
 
 
-    @cached_property
-    def gap_filling_eu_totals(self):
-        """TODO: this is not working. 
-
-        Add a EU total excluding the countries with incomplete time series,
-           to be used as proxy for gap filling of missing data by ms
-           in original unit m3 or t for 1961-2021"""
-        df_dp = self.production_from_domestic_harvest
-        df_dp = df_dp[['year', 'area', 'sw_prod', 'wp_prod', 'pp_prod']]
-        df_ms = df_dp.rename (columns = {'sw_domestic':'sw_prod_ms','wp_prod':'wp_prod_ms','pp_prod':'pp_prod_ms'})
-        
-        # Group by Area, Item, and Element
-        grouped = df_ms.groupby(['year', 'area'])
-       
-        complete_groups = grouped.filter(lambda x: 
-                                      not ((x['sw_prod_ms'] == 0).any() or 
-                                           (x['wp_prod_ms'] == 0).any() or
-                                           (x['pp_prod_ms'] == 0).any()))
-        
-        # Group by Area, Item, and Element and sum the amount
-        df_eu = complete_groups.groupby(['year'])[['sw_prod_ms','wp_prod_ms','pp_prod_ms']].sum().reset_index()
-        df_eu = df_eu.rename(columns={
-            'sw_prod_ms': 'sw_prod_eu',
-            'wp_prod_ms': 'wp_prod_eu',
-            'pp_prod_ms': 'pp_prod_eu'
-        })
-        
-        df_eu['EU'] = 'EU'
-        df_crf_eu = df_eu.merge(df_ms, on = ['year'])
-        df_crf_eu = df_crf_eu.sort_values (by = ['year','area'] )
-        df_crf_eu.replace(0, np.nan, inplace=True)
-        return df_crf_eu
 
 
 
