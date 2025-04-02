@@ -12,6 +12,7 @@ Usage:
 """
 
 # %%
+import warnings
 import numpy as np
 import pandas as pd
 from functools import cached_property
@@ -50,11 +51,15 @@ class HWPCommonInput:
 
     @cached_property
     def faostat_bulk_data(self):
-        # faostat as downloaded as bulk from FAOSTAT, namely :"Forestry_E_Europe" is a bulk download from  FAOSTAT.
-        Faostat_bulk_data = pd.read_csv(
+        """faostat as downloaded as bulk from FAOSTAT, namely
+        "Forestry_E_Europe" is a bulk download from  FAOSTAT."""
+        df = pd.read_csv(
             eu_cbm_data_pathlib / "common/Forestry_E_Europe.csv", low_memory=False
         )
-        return Faostat_bulk_data
+        # Rename countries
+        area_dict = {'Netherlands (Kingdom of the)': "Netherlands"}
+        df["Area"] = df["Area"].replace(area_dict)
+        return df
 
     @cached_property
     def euwrb_stat(self):
@@ -444,7 +449,7 @@ class HWPCommonInput:
             # Skip the highest index
             if index > len(df) - 2:
                 continue
-            # Skip if we are not in the same country
+            # Skip to next row if we are not in the same country
             if df.at[index, "area"] != df.at[index + 1, "area"]:
                 continue
             # Back compute the production in the current year
@@ -464,14 +469,17 @@ class HWPCommonInput:
         return df
 
     @cached_property
-    def gap_fill_factors(self):
+    def gap_fill_export_factors(self):
         """
         Gap fill the export correction factors fPULP_dom fIRW_SW_WP
         using the first two available numbers from the time series
         """
+
         index = ["area", "year"]
         selected_cols = index + ["fPULP_dom", "fIRW_SW_WP"]
-        df = self.rw_export_correction_factor[selected_cols]
+        df = self.rw_export_correction_factor[selected_cols].copy()
+        # Replace zero by NA
+        df.replace(0, np.nan, inplace=True)
         # Warn about countries which don't have data at all
         no_data = (
             df.groupby("area")
@@ -479,17 +487,22 @@ class HWPCommonInput:
             .reset_index()
         )
         country_with_no_data = no_data.loc[no_data.no_value, "area"].to_list()
-        msg = f"No data for these countries \n{country_with_no_data}"
-        warnings.warn(msg)
+        if any(country_with_no_data):
+            msg = f"No data for these countries \n{country_with_no_data}"
+            warnings.warn(msg)
         # Identify which values to be used for the gap filling
         selector = df["fIRW_SW_WP"].isna()
         selector &= df["year"] > 1960  # Ignore first year
+
         # Remove countries without data
-        selector &= ~df["area"].isin(country_with_no_data)
+        # selector &= ~df["area"].isin(country_with_no_data)
         df2 = df.loc[selector].copy()
+
         # Find earliest year of data
         df2.groupby(["area"])["year"].agg("max")
+        df["fPULP_dom2"] = df.groupby("area")["fPULP_dom"].bfill()
         # TODO: gap fill using average of most recent two years
+
 
     @cached_property
     def production_from_domestic_harvest(self):
