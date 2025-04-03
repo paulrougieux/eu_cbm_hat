@@ -521,7 +521,6 @@ class HWPCommonInput:
             >>> plt.show()
 
         """
-
         df = self.prod_gap_filled.copy()
         # Get the value for the first year
         first_year = df["year"].min()
@@ -555,31 +554,6 @@ class HWPCommonInput:
         return df
 
     @cached_property
-    def export_factors_gap_filled(self):
-        """
-        Gap fill the export correction factors fPULP_dom fIRW_SW_WP
-        using the first two available numbers from the time series
-        """
-        index = ["area", "year"]
-        selected_cols = index + ["fPULP_dom", "fIRW_SW_WP"]
-        df = self.rw_export_correction_factor[selected_cols].copy()
-        # Replace zero by NA
-        df.replace(0, np.nan, inplace=True)
-        # Warn about countries which don't have data at all
-        no_data = (
-            df.groupby("area")
-            .agg(no_value=("fIRW_SW_WP", lambda x: all(x.isna())))
-            .reset_index()
-        )
-        country_with_no_data = no_data.loc[no_data.no_value, "area"].to_list()
-        if any(country_with_no_data):
-            msg = f"No data for these countries \n{country_with_no_data}"
-            warnings.warn(msg)
-        df = backfill_avg_first_n_year(df, var="fIRW_SW_WP", n=2)
-        df = backfill_avg_first_n_year(df, var="fPULP_dom", n=2)
-        return df
-
-    @cached_property
     def production_from_domestic_harvest(self):
         """Compute production from domestic harvest
         Use export correction factors to compute the sawnwood, panel and paper
@@ -590,20 +564,36 @@ class HWPCommonInput:
         """
         index = ["area", "year"]
         selected_cols = index + ["fPULP_dom", "fIRW_SW_WP"]
-        # TODO use gap fill data frames here
-        df = self.prod_gap_filled.merge(
-            self.export_factors_gap_filled[selected_cols], on=index, how="left"
+        exp_fact = self.rw_export_correction_factor[selected_cols].copy()
+        # Replace zero by NA
+        exp_fact.replace(0, np.nan, inplace=True)
+        # Merge production data with export factors data
+        df = self.prod_backcast_to_1900.merge(exp_fact, on=index, how="left")
+        # Warn about countries which don't have factors data at all
+        no_data = (
+            df.groupby("area")
+            .agg(no_value=("fIRW_SW_WP", lambda x: all(x.isna())))
+            .reset_index()
         )
-        df["sw_domestic"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
-        df["wp_domestic"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
-        df["pp_domestic"] = df["pp_prod_t"] * df["fPULP_dom"]
-        # # compute values in Tons of Carbon
-        # c_sw = 0.225
-        # c_pw = 0.294
-        # c_pp = 0.450
-        # df["sw_domestic_tc"] = c_sw * df["new_sw_ms"]
-        # df["wp_domestic_tc"] = c_pw * df["new_wp_ms"]
-        # df["pp_domestic_tc"] = c_pp * df["new_pp_ms"]
+        country_with_no_data = no_data.loc[no_data.no_value, "area"].to_list()
+        if any(country_with_no_data):
+            msg = "\nNo export correction factor data for these countries:"
+            msg += f"\n{country_with_no_data}"
+            warnings.warn(msg)
+        # Gap fill export correction factors
+        df = backfill_avg_first_n_year(df, var="fIRW_SW_WP", n=2)
+        df = backfill_avg_first_n_year(df, var="fPULP_dom", n=2)
+        # Compute production from domestic roundwood
+        df["sw_dom_m3"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
+        df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
+        df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP_dom"]
+        # compute values in Tons of Carbon
+        c_sw = 0.225
+        c_pw = 0.294
+        c_pp = 0.450
+        df["sw_dom_tc"] = c_sw * df["sw_dom_m3"]
+        df["wp_dom_tc"] = c_pw * df["wp_dom_m3"]
+        df["pp_dom_tc"] = c_pp * df["pp_dom_t"]
         return df
 
 
