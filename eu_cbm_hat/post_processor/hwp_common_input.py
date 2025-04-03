@@ -11,10 +11,11 @@ Usage:
 
 """
 
-# %%
+import math
 import warnings
 import numpy as np
 import pandas as pd
+import itertools
 from functools import cached_property
 from eu_cbm_hat import eu_cbm_data_pathlib
 
@@ -53,7 +54,7 @@ def backfill_avg_first_n_year(df, var, n):
     df2 = df.loc[selector, index + [var]].groupby(["area"]).head(n)
     df2 = df2.groupby("area").agg(mean=(var, "mean")).reset_index()
     df = df.merge(df2, on="area", how="left")
-    # Use this to fill the NA values at the beginning of the series
+    # Use this to fill the remaining NA values at the beginning of the series
     df[var].fillna(df["mean"], inplace=True)
     df.drop(columns="mean", inplace=True)
     return df
@@ -453,7 +454,7 @@ class HWPCommonInput:
         return df
 
     @cached_property
-    def gap_fill_prod(self):
+    def prod_gap_filled(self):
         """Gap fill member state production values Gap
 
         This function fills sw_prod_m3, wp_prod_m3 and pp_prod_t using the
@@ -499,7 +500,62 @@ class HWPCommonInput:
         return df
 
     @cached_property
-    def gap_fill_export_factors(self):
+    def prod_backcast_to_1900(self):
+        """Backcast production values to 1900
+        # apply U value
+        #TABLE 12.3 ESTIMATED ANNUAL RATES OF INCREASE FOR INDUSTRIAL ROUNDWOOD
+        PRODUCTION (HARVEST) BY WORLD REGION FOR THE PERIOD 1900 TO 1961
+        u_const = 0.0151
+
+        Plot backcast production by country
+
+            >>> import seaborn
+            >>> import matplotlib.pyplot as plt
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> df = hwp_common_input.prod_backcast_to_1900
+            >>> var = "sw_prod_m3"
+            >>> g = seaborn.relplot( data=df, x="year", y=var,
+            ...                     col="area", kind="line", col_wrap=4,
+            ...                     height=3, facet_kws={'sharey': False,
+            ...                                          'sharex': True})
+            >>> plt.show()
+
+        """
+
+        df = self.prod_gap_filled.copy()
+        # Get the value for the first year
+        first_year = df["year"].min()
+        print(f"Backcasting from {first_year} to 1900")
+        # Extract the first value to be used to initiate the backcast to 1900
+        selector = df["year"] == first_year
+        df1 = df.loc[selector].copy()
+        cols = ["sw_prod_m3", "wp_prod_m3", "pp_prod_t"]
+        cols_1 = [c + "_1" for c in cols]
+        col_dict = dict(zip(cols, cols_1))
+        df1.rename(columns=col_dict, inplace=True)
+        df1.drop(columns="year", inplace=True)
+        # Backcast between 1900 and first_year
+        area = df["area"].unique()
+        year = range(1900, first_year)
+        expand_grid = list(itertools.product(area, year))
+        df_back = pd.DataFrame(expand_grid, columns=("area", "year"))
+        index = ["area", "year"]
+        # Generate the time series
+        df_back = df_back.merge(df1, on="area", how="left")
+        for var in cols:
+            u_const = 0.0151
+            df_back[var] = df_back[var + "_1"] * math.e ** (
+                u_const * (df_back["year"] - first_year)
+            )
+        df_back.drop(columns=cols_1, inplace=True)
+        # concatenate with the later years
+        df = pd.concat([df, df_back])
+        df.sort_values(index, inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        return df
+
+    @cached_property
+    def export_factors_gap_filled(self):
         """
         Gap fill the export correction factors fPULP_dom fIRW_SW_WP
         using the first two available numbers from the time series
@@ -535,19 +591,19 @@ class HWPCommonInput:
         index = ["area", "year"]
         selected_cols = index + ["fPULP_dom", "fIRW_SW_WP"]
         # TODO use gap fill data frames here
-        df = self.crf_semifinished_data.merge(
-            self.rw_export_correction_factor[selected_cols], on=index, how="left"
+        df = self.prod_gap_filled.merge(
+            self.export_factors_gap_filled[selected_cols], on=index, how="left"
         )
         df["sw_domestic"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
         df["wp_domestic"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
         df["pp_domestic"] = df["pp_prod_t"] * df["fPULP_dom"]
-        # compute values in Tons of Carbon
-        c_sw = 0.225
-        c_pw = 0.294
-        c_pp = 0.450
-        df["sw_domestic_tc"] = c_sw * df["new_sw_ms"]
-        df["wp_domestic_tc"] = c_pw * df["new_wp_ms"]
-        df["pp_domestic_tc"] = c_pp * df["new_pp_ms"]
+        # # compute values in Tons of Carbon
+        # c_sw = 0.225
+        # c_pw = 0.294
+        # c_pp = 0.450
+        # df["sw_domestic_tc"] = c_sw * df["new_sw_ms"]
+        # df["wp_domestic_tc"] = c_pw * df["new_wp_ms"]
+        # df["pp_domestic_tc"] = c_pp * df["new_pp_ms"]
         return df
 
 
