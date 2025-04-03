@@ -29,6 +29,36 @@ def generate_dbh_intervals():
 DBH_CLASSES = generate_dbh_intervals()
 
 
+def backfill_avg_first_n_year(df, var, n):
+    """Backfill with the average of the first n years
+
+    Example
+
+        >>> data = {
+        ...     "area": ["Bulgaria", "Bulgaria", "Bulgaria", "Germany", "Germany", "Germany"],
+        ...     "year": [1960, 1961, 1962, 1960, 1961, 1962],
+        ...     "sw_prod_m3": [np.nan, np.nan, 1000, np.nan, 2000, 3000]
+        ... }
+        >>> df = pd.DataFrame(data)
+        >>> df_filled2 = backfill_avg_first_n_year(df, var="sw_prod_m3", n=2)
+        >>> df_filled1 = backfill_avg_first_n_year(df, var="sw_prod_m3", n=1)
+
+    """
+    index = ["area", "year"]
+    df = df.sort_values(index)
+    # Interpolate for the gaps between existing years of data (not at the beginning)
+    df[var] = df.groupby("area")[var].transform(pd.Series.interpolate)
+    # Compute the average of the first 2 years of data
+    selector = ~df[var].isna()
+    df2 = df.loc[selector, index + [var]].groupby(["area"]).head(n)
+    df2 = df2.groupby("area").agg(mean=(var, "mean")).reset_index()
+    df = df.merge(df2, on="area", how="left")
+    # Use this to fill the NA values at the beginning of the series
+    df[var].fillna(df["mean"], inplace=True)
+    df.drop(columns="mean", inplace=True)
+    return df
+
+
 class HWPCommonInput:
     """Input data for Harvested Wood Product sink computation"""
 
@@ -57,7 +87,7 @@ class HWPCommonInput:
             eu_cbm_data_pathlib / "common/Forestry_E_Europe.csv", low_memory=False
         )
         # Rename countries
-        area_dict = {'Netherlands (Kingdom of the)': "Netherlands"}
+        area_dict = {"Netherlands (Kingdom of the)": "Netherlands"}
         df["Area"] = df["Area"].replace(area_dict)
         return df
 
@@ -474,7 +504,6 @@ class HWPCommonInput:
         Gap fill the export correction factors fPULP_dom fIRW_SW_WP
         using the first two available numbers from the time series
         """
-
         index = ["area", "year"]
         selected_cols = index + ["fPULP_dom", "fIRW_SW_WP"]
         df = self.rw_export_correction_factor[selected_cols].copy()
@@ -490,19 +519,9 @@ class HWPCommonInput:
         if any(country_with_no_data):
             msg = f"No data for these countries \n{country_with_no_data}"
             warnings.warn(msg)
-        # Identify which values to be used for the gap filling
-        selector = df["fIRW_SW_WP"].isna()
-        selector &= df["year"] > 1960  # Ignore first year
-
-        # Remove countries without data
-        # selector &= ~df["area"].isin(country_with_no_data)
-        df2 = df.loc[selector].copy()
-
-        # Find earliest year of data
-        df2.groupby(["area"])["year"].agg("max")
-        df["fPULP_dom2"] = df.groupby("area")["fPULP_dom"].bfill()
-        # TODO: gap fill using average of most recent two years
-
+        df = backfill_avg_first_n_year(df, var="fIRW_SW_WP", n=2)
+        df = backfill_avg_first_n_year(df, var="fPULP_dom", n=2)
+        return df
 
     @cached_property
     def production_from_domestic_harvest(self):
