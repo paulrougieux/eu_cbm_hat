@@ -554,7 +554,7 @@ class HWPCommonInput:
         return df
 
     @cached_property
-    def production_from_domestic_harvest(self):
+    def prod_from_dom_harv_stat(self):
         """Compute production from domestic harvest
         Use export correction factors to compute the sawnwood, panel and paper
         production from domestic roundwood harvest
