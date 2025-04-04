@@ -247,6 +247,7 @@ class HWP:
         ).reset_index()
         return df
 
+    @property  # Don't cache, in case we change the number of years
     def fraction_semifinished(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products
 
@@ -260,9 +261,9 @@ class HWP:
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
             >>> runner.post_processor.hwp.n_years_dom_frac = 3
-            >>> df3 = runner.post_processor.hwp.fraction_semifinished()
+            >>> df3 = runner.post_processor.hwp.fraction_semifinished
             >>> runner.post_processor.hwp.n_years_dom_frac = 4
-            >>> df4 = runner.post_processor.hwp.fraction_semifinished()
+            >>> df4 = runner.post_processor.hwp.fraction_semifinished
 
         """
         # Country statistics on domestic harvest
@@ -288,13 +289,12 @@ class HWP:
         mean_frac = df[cols].mean()
         return mean_frac
 
-    @cached_property
+    @property  # Don't cache, in case we change the number of years
     def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
-        """Compute the fraction of semi finished products
-        """
-        df = self.fluxes_by_grade
+        """Compute the fraction of semi finished products"""
+        df = self.fluxes_by_grade.copy()
         cols = ["sw_fraction", "pp_fraction", "wp_fraction"]
-        mean_frac = self.fraction_semifinished()
+        mean_frac = self.fraction_semifinished
         # Add the mean fraction to the CBM output data
         for col in cols:
             df[col] = mean_frac[col]
@@ -304,7 +304,7 @@ class HWP:
         df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
         return df
 
-    @cached_property
+    @property  # Don't cache, in case we change the number of years
     def concat_1900_to_last_sim_year(self) -> pandas.DataFrame:
         """Concatenate backcasted data from 1900, reported historical country data
         and CBM output until the end of the simulation.
@@ -315,18 +315,12 @@ class HWP:
         Plot production from domestic harvest for both historically reported
         data and simulation output:
 
-            >>> import seaborn
             >>> import matplotlib.pyplot as plt
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
             >>> df = runner.post_processor.hwp.concat_1900_to_last_sim_year
             >>> df.set_index("year").plot()
             >>> plt.show()
-
-            >>> g = seaborn.relplot(data=df, x="year", y="",
-            ...                     col="area", kind="line", col_wrap=4,
-            ...                     height=3, facet_kws={'sharey': False,
-            ...                                          'sharex': True})
 
         """
         # Input data frames
@@ -344,3 +338,95 @@ class HWP:
         df = pandas.concat([dstat, df_out])
         return df
 
+    @property  # Don't cache, in case we change the number of years
+    def prepare_decay_and_inflow(self):
+        """Prepare decay parameters and compute inflow"""
+
+        df = self.concat_1900_to_last_sim_year.copy()
+        # Define half life in years
+        hl_sw = 35
+        hl_wp = 25
+        hl_pp = 2
+        hl_sw_wp = 30
+        # prepare the params according the needs in HWP calcualtions
+        df["log_2"] = np.log(2)
+        df["hl_sw"] = hl_sw
+        df["hl_wp"] = hl_wp
+        df["hl_pp"] = hl_pp
+        df["hl_sw_wp"] = hl_sw_wp
+        # calculate **k_** the decay constant for each of SW, WP, PP
+        df = df.assign(
+            k_sw=(df.log_2 / df.hl_sw),
+            k_wp=(df.log_2 / df.hl_wp),
+            k_pp=(df.log_2 / df.hl_pp),
+            k_sw_wp=(df.log_2 / df.hl_sw_wp),
+        )
+        # calculate **e_** the remaining C stock from the historical stock, e-k (see see eq. 2.8.5 (gpg)),
+        df = df.assign(
+            e_sw=np.exp(-df.k_sw),
+            e_wp=np.exp(-df.k_wp),
+            e_pp=np.exp(-df.k_pp),
+            e_sw_wp=np.exp(-df.k_sw_wp),
+        )
+        # calculate **k1_** the remaining from the current year inflow, k1=(1-e-k)/k (see eq. 2.8.2 (gpg))
+        df = df.assign(
+            k1_sw=(1 - df.e_sw) / df.k_sw,
+            k1_wp=(1 - df.e_wp) / df.k_wp,
+            k1_pp=(1 - df.e_pp) / df.k_pp,
+        )
+        # Compute the corrected inflow according to decay elements in the square bracket
+        # Estimate the annual inflows
+        df = df.assign(
+            sw_inflow=(df.sw_dom_tc * df.k1_sw),
+            wp_inflow=(df.wp_dom_tc * df.k1_wp),
+            pp_inflow=(df.pp_dom_tc * df.k1_pp),
+        )
+        return df
+
+    @property  # Don't cache, in case we change the number of years
+    def build_hwp_stock(self):
+        """Build HWP stock values
+
+        Plot stock evolution
+
+            >>> import matplotlib.pyplot as plt
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> df = runner.post_processor.hwp.build_hwp_stock
+            >>> cols = ['sw_stock', 'wp_stock', 'pp_stock']
+            >>> df.set_index("year")[cols].plot()
+            >>> plt.show()
+
+        """
+
+        df = self.prepare_decay_and_inflow.copy()
+        cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
+        cols += ["e_sw", "e_wp", "e_pp"]
+        df = df[["year"] + cols]
+        # Initiate stock values
+        df["sw_stock"] = 0
+        df["wp_stock"] = 0
+        df["pp_stock"] = 0
+        # Compute the stock for each semi finite product for all subsequent years
+        df = df.set_index("year")
+        for t in range(df.index.min() + 1, df.index.max()):
+            df.loc[t, "sw_stock"] = (
+                df.loc[t - 1, "sw_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_inflow"]
+            )
+            df.loc[t, "wp_stock"] = (
+                df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
+            )
+            df.loc[t, "pp_stock"] = (
+                df.loc[t - 1, "pp_stock"] * df.loc[t, "e_pp"] + df.loc[t, "pp_inflow"]
+            )
+        df.reset_index(inplace=True)
+        df.fillna(0, inplace=True)
+        # Compute the total stock
+        df['hwp_tot_stock_tc'] = df['sw_stock']+ df['wp_stock']+df['pp_stock']
+
+        # Do the difference between consecutive years
+        df['hwp_tot_diff_tc'] = df['hwp_tot_stock_tc'].diff(periods=1)
+        # Stock diff shifted by one year
+        # df['hwp_tot_diff_tc_m1'] = df['hwp_tot_stock_tc'].diff(periods=1).shift(-1)
+        df['hwp_tot_sink_tco2']=df['hwp_tot_diff_tc']*(-44/12)
+        return df
