@@ -178,7 +178,7 @@ class HWP:
         )
         selector = ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
         if any(selector):
-            msg = f"The following tc_irw values  don't match between "
+            msg = f"\nThe following tc_irw values  don't match between "
             msg += "input before and after dbh allocation\n"
             msg += f"{df_comp.loc[selector]}"
             warnings.warn(msg)
