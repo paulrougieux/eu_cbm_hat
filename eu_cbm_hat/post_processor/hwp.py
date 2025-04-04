@@ -18,6 +18,7 @@ class HWP:
         >>> runner.post_processor.hwp.fluxes_by_age_to_dbh
         >>> runner.post_processor.hwp.fluxes_by_grade_dbh
         >>> runner.post_processor.hwp.fluxes_by_grade
+        >>> runner.post_processor.hwp.build_hwp_stock
 
     """
 
