@@ -422,11 +422,11 @@ class HWP:
         df.reset_index(inplace=True)
         df.fillna(0, inplace=True)
         # Compute the total stock
-        df['hwp_tot_stock_tc'] = df['sw_stock']+ df['wp_stock']+df['pp_stock']
+        df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
 
         # Do the difference between consecutive years
-        df['hwp_tot_diff_tc'] = df['hwp_tot_stock_tc'].diff(periods=1)
+        df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
         # Stock diff shifted by one year
         # df['hwp_tot_diff_tc_m1'] = df['hwp_tot_stock_tc'].diff(periods=1).shift(-1)
-        df['hwp_tot_sink_tco2']=df['hwp_tot_diff_tc']*(-44/12)
+        df["hwp_tot_sink_tco2"] = df["hwp_tot_diff_tc"] * (-44 / 12)
         return df
