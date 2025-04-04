@@ -28,6 +28,9 @@ class HWP:
         self.classifiers_list = self.parent.classifiers_list
         # Use pool fluxes to get area and age class as well
         self.pools_fluxes = self.runner.output.pool_flux
+        # Number of common years to be used to compute the
+        # Fraction domestic semi finished products
+        self.n_years_dom_frac = 3
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -244,7 +247,7 @@ class HWP:
         ).reset_index()
         return df
 
-    def fraction_semifinished(self, n) -> pandas.DataFrame:
+    def fraction_semifinished(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products
 
         Merge country statistics on domestic harvest and
@@ -252,14 +255,16 @@ class HWP:
 
         param n: Number of years to keep from domestic harvest
 
-        Example use using n=3 years:
+        Example use using 3 or 4 years:
 
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
-            >>> df = runner.post_processor.hwp.fraction_semifinished(n=3)
+            >>> runner.post_processor.hwp.n_years_dom_frac = 3
+            >>> df3 = runner.post_processor.hwp.fraction_semifinished()
+            >>> runner.post_processor.hwp.n_years_dom_frac = 4
+            >>> df4 = runner.post_processor.hwp.fraction_semifinished()
 
         """
-
         # Country statistics on domestic harvest
         dstat = hwp_common_input.prod_from_dom_harv_stat
         # CBM output
@@ -267,7 +272,7 @@ class HWP:
         index = ["area", "year"]
         cols = ["sw_dom_tc", "wp_dom_tc", "pp_dom_tc"]
         # Keep data for the last n years and for the selected country
-        selector = dstat["year"] > dstat["year"].max() - n
+        selector = dstat["year"] > dstat["year"].max() - self.n_years_dom_frac
         selector &= dstat["area"] == self.runner.country.country_name
         dstat = dstat.loc[selector, index + cols]
         dstat = dstat.fillna(0)
@@ -279,13 +284,63 @@ class HWP:
         df["wp_fraction"] = df["wp_dom_tc"] / (
             (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
         )
-        # Add the mean fraction to the CBM output data
         cols = ["sw_fraction", "pp_fraction", "wp_fraction"]
         mean_frac = df[cols].mean()
+        return mean_frac
+
+    @cached_property
+    def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
+        """Compute the fraction of semi finished products
+        """
+        df = self.fluxes_by_grade
+        cols = ["sw_fraction", "pp_fraction", "wp_fraction"]
+        mean_frac = self.fraction_semifinished()
+        # Add the mean fraction to the CBM output data
         for col in cols:
-            df_out[col] = mean_frac[col]
+            df[col] = mean_frac[col]
         # Compute production from domestic harvest for the future
-        df_out["sw_dom_tc"] = df_out["sawlogs"] * df_out["sw_fraction"]
-        df_out["wp_dom_tc"] = df_out["sawlogs"] * df_out["wp_fraction"]
-        df_out["pp_dom_tc"] = df_out["pulpwood"] * df_out["pp_fraction"]
-        return df_out
+        df["sw_dom_tc"] = df["sawlogs"] * df["sw_fraction"]
+        df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
+        df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
+        return df
+
+    @cached_property
+    def concat_1900_to_last_sim_year(self) -> pandas.DataFrame:
+        """Concatenate backcasted data from 1900, reported historical country data
+        and CBM output until the end of the simulation.
+
+        In the CBM simulated output, keep only years that are not already in
+        country statistics.
+
+        Plot production from domestic harvest for both historically reported
+        data and simulation output:
+
+            >>> import seaborn
+            >>> import matplotlib.pyplot as plt
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> df = runner.post_processor.hwp.concat_1900_to_last_sim_year
+            >>> df.set_index("year").plot()
+            >>> plt.show()
+
+            >>> g = seaborn.relplot(data=df, x="year", y="",
+            ...                     col="area", kind="line", col_wrap=4,
+            ...                     height=3, facet_kws={'sharey': False,
+            ...                                          'sharex': True})
+
+        """
+        # Input data frames
+        dstat = hwp_common_input.prod_from_dom_harv_stat.copy()
+        df_out = self.prod_from_dom_harv_sim.copy()
+        cols = ["sw_dom_tc", "wp_dom_tc", "pp_dom_tc"]
+        # Keep data for the selected country
+        selector = dstat["area"] == self.runner.country.country_name
+        dstat = dstat.loc[selector, ["year"] + cols]
+        df_out = df_out[["year"] + cols].copy()
+        # Keep only years not in country statistics
+        selector = df_out["year"] > dstat["year"].max()
+        df_out = df_out.loc[selector]
+        # Concatenate
+        df = pandas.concat([dstat, df_out])
+        return df
+
