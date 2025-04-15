@@ -955,13 +955,3 @@ class Harvest:
             .reset_index()
             )
         return df
-
-    def area_agg(self, groupby: Union[List[str], str]):
-        """Aggregated area by classifiers or other grouping columns available"""
-        if isinstance(groupby, str):
-            groupby = [groupby]
-        df = self.area_disturbance_groups
-        cols = df.columns[df.columns.str.contains("to_product")].to_list()
-        cols += ["total_harvest_ub_provided", "total_harvest_ob_provided", "area"]
-        df_agg = self.area.groupby(groupby)[cols].agg("sum").reset_index()
-        return df_agg
