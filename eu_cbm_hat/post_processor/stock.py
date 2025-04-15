@@ -153,7 +153,10 @@ class Stock:
                 "softwood_coarse_roots",
                 "hardwood_coarse_roots",
             ],
-            "foliage": ["softwood_foliage", "hardwood_foliage"],
+            "foliage": [
+                "softwood_foliage", "hardwood_foliage"
+            ],
+            
             "litter": [
                 "above_ground_very_fast_soil",
                 "above_ground_fast_soil",
@@ -167,7 +170,14 @@ class Stock:
                 "below_ground_fast_soil",
                 "medium_soil",
             ],
+
+            "soil": [
+                "below_ground_very_fast_soil",
+                "below_ground_slow_soil"
+            ]
         }
+
+        
         df = self.parent.pools.copy()
         for key, cols in column_dict.items():
             df[key] = df[cols].sum(axis=1)
