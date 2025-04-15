@@ -19,7 +19,6 @@ dist_silv_corresp = {
                 2 :'salvage',#Wildfire
                 3 :'final_cut',#Clearcut harvesting without salvage
                 7 :'salvage',#Deforestation
-                8 :'NA',#Afforestation
                 10 :'thinnings',#10% commercial thinning
                 11 :'thinnings',#generic 10%
                 12 :'thinnings',#10% commercial thinning
@@ -66,14 +65,22 @@ dist_silv_corresp = {
                 120 :'thinnings',#generic 40% mortality
                 125 :'final_cut',#generic 70%
                 130 :'final_cut',#generic 85%
+                49	:'salvage',#Windstorm (with multiyears salvage, for projection)
+                29	:'salvage',#Salvage year 1 post-windstorm
+                30	:'salvage',#Salvage year 2 post-windstorm
                 400 :'final_cut',#Stand Replacing Natural Succession (projection)
+                400: 'final_cut', #Stand Replacing Natural Succession (no salvage, projection)
                 401 :'thinnings',#generic 15% (projection)
                 401 :'final_cut',#generic 90% mortality (projection)
                 401 :'final_cut',#Stand Replacing Natural Succession (projection)
+                401	: 'final_cut', #Windstorm (with full salvage in the year, for projection)
                 402 :'salvage',#Insects with salvage logging (projection)
                 411 :'thinnings',#generic 40% mortality (projection)
                 411 :'salvage',#generic 90% mortality (projection)
                 411 :'salvage',#Insects with salvage logging (projection)
+                411	:'salvage',#Insect outbreak low intensity with salvage logging (projection)
+                412	:'salvage',#Insect outbreak medium intensity with salvage logging (projection)
+                413	:'salvage',#Insect outbreak high intensity with salvage logging (projection)
                 420 :'salvage',#Insects with salvage logging (projection)
                 421 :'salvage',#generic 90% mortality (projection)
                 421 :'salvage',#Insects with salvage logging (projection)
@@ -85,12 +92,14 @@ dist_silv_corresp = {
                 500 :'salvage',#Fire with salvage logging (projection)
                 501 :'salvage',#Fire with salvage logging (projection)
                 501 :'salvage',#generic 50% mortality (projection)
+                501	:'salvage',#Fire with salvage logging (projection)
+                502	:'salvage',#Forest floor fire without salvage logging (projection)
                 515 :'thinnings',#Post_conversion_LA_15%_commercial_thinning
+                535 :'thinnings',#Step_1_conversion_LA_35%_commercial_thinning
+                550 :'thinnings',#Step_2_conversion_LA_50%_commercial_thinning
                 516 :'final_cut',#Conversion_to_u_u_con
                 517 :'final_cut',#Conversion_to_u_u_broad
                 518 :'final_cut',#Conversion_to_u_u_con
-                535 :'thinnings',#Step_1_conversion_LA_35%_commercial_thinning
-                550 :'thinnings',#Step_2_conversion_LA_50%_commercial_thinning
                 615 :'thinnings',#Post_conversion_ST_15%_commercial_thinning
                 625 :'thinnings',#Step_1_conversion_ST_25%_commercial_thinning
                 640 :'thinnings',#Step_2_conversion_ST_40%_commercial_thinning
@@ -119,7 +128,7 @@ dist_silv_corresp = {
                 2222 :'final_cut',#Clearcut harvesting with salvage hist
                 2424 :'final_cut',#Clearcut with slash-burn hist
                 4040 :'final_cut',#Stand Replacing Natural Succession (calibration) hist
-                4141 :'thinnings',#generic 40% mortality (calibration) hist
+                4141 :'salvage',#generic 40% mortality (calibration) hist
                 4141 :'salvage',#generic 90% mortality (calibration) hist
                 4141 :'salvage',#generic 90% mortality hist
                 4141 :'salvage',#Insects with salvage logging (calibration) hist
@@ -898,7 +907,7 @@ class Harvest:
         df = self.provided
         cols = self.parent.classifiers_list + ["year"]
         cols += df.columns[df.columns.str.contains("to_product")].to_list()
-        cols += ["total_harvest_ub_provided", "total_harvest_ob_provided", "area", "disturbance_type"]
+        cols += ["total_harvest_ub_provided", "total_harvest_ob_provided", "area", "disturbance_type"]      
         df = df[cols]
         df = df.merge(
             self.disturbance_types[["disturbance_type", "disturbance"]],
@@ -911,6 +920,47 @@ class Harvest:
         if isinstance(groupby, str):
             groupby = [groupby]
         df = self.area
+        cols = df.columns[df.columns.str.contains("to_product")].to_list()
+        cols += ["total_harvest_ub_provided", "total_harvest_ob_provided", "area"]
+        df_agg = self.area.groupby(groupby)[cols].agg("sum").reset_index()
+        return df_agg
+
+
+    @cached_property
+    def area_disturbance_groups(self):
+        """Harvest area"""
+        index = ["identifier", "timestep"]
+        df = self.fluxes
+        area = self.pools[index + ["area"]]
+        df = df.merge(area, on=index)
+        df = df.query("time_since_last_disturbance == 1 and disturbance_type > 1")
+        
+        # Check we only have 1 year since last disturbance
+        time_since_last = df["time_since_last_disturbance"].unique()
+        if not (time_since_last == 1).all():
+            msg = "Time since last disturbance should be one"
+            msg += f"it is {time_since_last}"
+            raise ValueError(msg)
+        cols = self.parent.classifiers_list + ["year", "disturbance_type"]
+        cols += ["area", "disturbance_type"]
+        # Match the values in df with the keys in dist_silv_corresp
+
+        for index, row in df.iterrows():
+            disturbance_type = row['disturbance_type']
+            if disturbance_type in dist_silv_corresp:
+                df.loc[index, 'disturbance_groups'] = dist_silv_corresp[disturbance_type]
+        df = (df
+            .groupby(["year","disturbance_groups"])
+            .agg(disturbed_area = ('area', sum) ).astype(int)
+            .reset_index()
+            )
+        return df
+
+    def area_agg(self, groupby: Union[List[str], str]):
+        """Aggregated area by classifiers or other grouping columns available"""
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        df = self.area_disturbance_groups
         cols = df.columns[df.columns.str.contains("to_product")].to_list()
         cols += ["total_harvest_ub_provided", "total_harvest_ob_provided", "area"]
         df_agg = self.area.groupby(groupby)[cols].agg("sum").reset_index()
