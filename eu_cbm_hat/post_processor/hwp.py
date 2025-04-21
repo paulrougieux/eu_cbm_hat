@@ -180,11 +180,12 @@ class HWP:
         df_comp = self.fluxes_to_irw.merge(
             df_agg, on=index, how="left", suffixes=("_before", "_after")
         )
-        selector = ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
+        selector = (df_comp["year"] > 2020) & (~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"]))
         if any(selector):
-            msg = f"\nThe following tc_irw values  don't match between "
+            msg = f"\n For post-2020, the following tc_irw values don't match between "
             msg += "input before and after dbh allocation\n"
-            msg += f"{df_comp.loc[selector]}"
+            msg += f"i.e., allocation on the specified age_class missing because incomplete input in irw_allocation_by_dbh.csv\n"
+            msg += f" {df_comp.loc[selector]}"
             warnings.warn(msg)
         return df
 
@@ -228,10 +229,11 @@ class HWP:
         df_comp = df_agg.merge(
             df_agg2, on=index, how="left", suffixes=("_before", "_after")
         )
-        selector = ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
+        selector = (df_comp["year"] > 2020) & (~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"]))
         if any(selector):
-            msg = f"The following tc_irw values  don't match between "
+            msg = f"For post-2020, the following tc_irw values don't match between "
             msg += "input before and after NB grading allocation\n"
+            msg = f"For post-2020, fractions for allocation on saw and pulplogs are missing for specified dbh_class"
             msg += f"{df_comp.loc[selector]}"
             warnings.warn(msg)
         return df2
@@ -307,7 +309,7 @@ class HWP:
 
     @property  # Don't cache, in case we change the number of years
     def concat_1900_to_last_sim_year(self) -> pandas.DataFrame:
-        """Concatenate backcasted data from 1900, reported historical country data
+        """This applies with IPCC method. Concatenate backcasted data from 1900, reported historical country data
         and CBM output until the end of the simulation.
 
         In the CBM simulated output, keep only years that are not already in
@@ -338,7 +340,7 @@ class HWP:
         # Concatenate
         df = pandas.concat([dstat, df_out])
         return df
-
+    
     @property  # Don't cache, in case we change the number of years
     def prepare_decay_and_inflow(self):
         """Prepare decay parameters and compute inflow"""
@@ -385,8 +387,9 @@ class HWP:
         return df
 
     @property  # Don't cache, in case we change the number of years
-    def build_hwp_stock(self):
-        """Build HWP stock values
+    def build_hwp_stock_since_1900(self):
+    #def build_hwp_stock(self):
+        """IPCC method: Build HWP stock values for 1900 to end of simulated period
 
         Plot stock evolution
 
@@ -402,12 +405,63 @@ class HWP:
 
         df = self.prepare_decay_and_inflow.copy()
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
-        cols += ["e_sw", "e_wp", "e_pp"]
+        cols += ["e_sw", "e_wp", "e_pp" ]
         df = df[["year"] + cols]
         # Initiate stock values
         df["sw_stock"] = 0
         df["wp_stock"] = 0
         df["pp_stock"] = 0
+        # Compute the stock for each semi finite product for all subsequent years
+        df = df.set_index("year")
+        for t in range(df.index.min() + 1, df.index.max()):
+            df.loc[t, "sw_stock"] = (
+                df.loc[t - 1, "sw_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_inflow"]
+            )
+            df.loc[t, "wp_stock"] = (
+                df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
+            )
+            df.loc[t, "pp_stock"] = (
+                df.loc[t - 1, "pp_stock"] * df.loc[t, "e_pp"] + df.loc[t, "pp_inflow"]
+            )
+        df.reset_index(inplace=True)
+        df.fillna(0, inplace=True)
+        # Compute the total stock
+        df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
+
+        # Do the difference between consecutive years
+        df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
+        # Stock diff shifted by one year
+        # df['hwp_tot_diff_tc_m1'] = df['hwp_tot_stock_tc'].diff(periods=1).shift(-1)
+        df["hwp_tot_sink_tco2"] = df["hwp_tot_diff_tc"] * (-44 / 12)
+        return df
+
+
+    @property  # Don't cache, in case we change the number of years
+    def build_hwp_stock_since_1990(self):
+        """complementary KP method: build HWP stock values for 1990 to the end of simulated period
+
+        Plot stock evolution
+
+            >>> import matplotlib.pyplot as plt
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> df = runner.post_processor.hwp.build_hwp_stock_1990
+            >>> cols = ['sw_stock', 'wp_stock', 'pp_stock']
+            >>> df.set_index("year")[cols].plot()
+            >>> plt.show()
+
+        """
+
+        df = self.prepare_decay_and_inflow.copy()
+        cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
+        cols += ["e_sw", "e_wp", "e_pp","k_sw", "k_wp", "k_pp"]
+        df = df[["year"] + cols]
+        #retain only the first five years including 1990
+        df=df[df['year']>=1990]
+        # Initiate stock values as average of 1990-1995 as the average of the first five years for each inflow type
+        df["sw_stock"] = (df["sw_inflow"].head(5).mean()) / (df["k_sw"].head(5).mean())
+        df["wp_stock"] = (df["wp_inflow"].head(5).mean()) / (df["k_wp"].head(5).mean())
+        df["pp_stock"] = (df["pp_inflow"].head(5).mean()) / (df["k_pp"].head(5).mean())
         # Compute the stock for each semi finite product for all subsequent years
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
