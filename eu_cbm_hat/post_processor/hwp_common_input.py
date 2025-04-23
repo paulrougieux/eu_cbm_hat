@@ -201,25 +201,9 @@ class HWPCommonInput:
         return df
 
     @cached_property
-    def rw_export_correction_factor(self):
-        """data 1961-2021 is from Forestry_E_Europe.csv this function allows
-        the estimation of the factor "f" that represents the feedstock for the
-        HWP of domestic origin, after the correction for the export of
-        roundwood, to be applied to eu_cbm_hat simulated IRW. Even two types of
-        fractions are calculated, fraction with string '_dom' is used further
-
-        Plot export correction factors by country
-
-            >>> import seaborn
-            >>> import matplotlib.pyplot as plt
-            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
-            >>> df = hwp_common_input.rw_export_correction_factor
-            >>> g = seaborn.relplot( data=df, x="year", y="fIRW_SW_WP",
-            ...                     col="area", kind="line", col_wrap=4,
-            ...                     height=3, facet_kws={'sharey': True,
-            ...                                          'sharex': True})
-
-        """
+    def fao_correction_factor(self):
+        """Data 1961-2021 is from Forestry_E_Europe.csv this function
+        Prepare the FAO correction factor data"""
         df_fao = self.faostat_bulk_data
         # remove rows which do not reffer to "quantity" from original data
         filter = df_fao["Element"].str.contains("Value")
@@ -304,7 +288,30 @@ class HWPCommonInput:
 
         # replacing NA to 0, so possible to make aritmetic operations
         df_exp = df_exp.fillna(0)
+        return df_exp
 
+
+    @cached_property
+    def rw_export_correction_factor(self):
+        """data 1961-2021 is from Forestry_E_Europe.csv this function allows
+        the estimation of the factor "f" that represents the feedstock for the
+        HWP of domestic origin, after the correction for the export of
+        roundwood, to be applied to eu_cbm_hat simulated IRW. Even two types of
+        fractions are calculated, fraction with string '_dom' is used further
+
+        Plot export correction factors by country
+
+            >>> import seaborn
+            >>> import matplotlib.pyplot as plt
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> df = hwp_common_input.rw_export_correction_factor
+            >>> g = seaborn.relplot( data=df, x="year", y="fIRW_SW_WP",
+            ...                     col="area", kind="line", col_wrap=4,
+            ...                     height=3, facet_kws={'sharey': True,
+            ...                                          'sharex': True})
+
+        """
+        df_exp = self.fao_correction_factor
         # add con and broad aggregates, for information purpose only as split on con and broad is mantained
         # reduce to IRW
         df_exp["irw_prod"] = df_exp["irw_broad_prod"] + df_exp["irw_con_prod"]
@@ -563,10 +570,11 @@ class HWPCommonInput:
         domestic origin, in original unit m3 or t for 1961-2021
         """
         index = ["area", "year"]
-        selected_cols = index + ["fPULP_dom", "fIRW_SW_WP"]
+        selected_cols = index + ["fPULP_dom", "fIRW_SW_WP",
+                                 "recycled_paper_prod", "recycled_wood_prod"]
         exp_fact = self.rw_export_correction_factor[selected_cols].copy()
         # Replace zero by NA
-        exp_fact.replace(0, np.nan, inplace=True)
+        exp_fact.replace(np.nan, 0, inplace=True)
         # Merge production data with export factors data
         df = self.prod_backcast_to_1900.merge(exp_fact, on=index, how="left")
         # Warn about countries which don't have factors data at all
@@ -594,6 +602,9 @@ class HWPCommonInput:
         df["sw_dom_tc"] = c_sw * df["sw_dom_m3"]
         df["wp_dom_tc"] = c_pw * df["wp_dom_m3"]
         df["pp_dom_tc"] = c_pp * df["pp_dom_t"]
+        # Correct for recycled wood panel and paper amounts
+        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * c_pw
+        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"] * c_pp
         return df
 
 
