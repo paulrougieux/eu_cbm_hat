@@ -515,3 +515,24 @@ class HWP:
         # df['hwp_tot_diff_tc_m1'] = df['hwp_tot_stock_tc'].diff(periods=1).shift(-1)
         df["hwp_tot_sink_tco2"] = df["hwp_tot_diff_tc"] * (-44 / 12)
         return df
+
+
+    @property  # Don't cache, in case we change the number of years
+    def substitution_reference(self):
+        """Substitution reference scenario"""
+
+        df = self.build_hwp_stock_since_1990.copy()
+        split_wp = hwp_common_input.split_wood_panels.copy()
+        # Keep data for the selected country
+        selector = split_wp["area"] == self.runner.country.country_name
+        split_wp = split_wp.loc[selector]
+        # Add fractions
+        cols = ['fwp_fibboa', 'fwp_partboa', 'fwp_pv']
+        return df
+
+    @property  # Don't cache, in case we change the number of years
+    def substitution_scenario(self):
+        """Substitution reference scenario"""
+        df = self.build_hwp_stock_since_1990.copy()
+        return df
+

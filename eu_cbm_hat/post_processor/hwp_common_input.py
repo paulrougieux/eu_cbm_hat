@@ -152,19 +152,23 @@ class HWPCommonInput:
         selector = df["year"] > df["year"].max() - 3
         df = df.loc[selector, ["area", "year"] + selected_cols]
         # Compute the average
-        df.groupby(["area"])[selected_cols].agg("mean")
-        # Compute the total
+        df = df.groupby(["area"])[selected_cols].agg("mean").reset_index()
         # Compute the fraction
         df["fwp_fibboa"] = df["fibboa_prod"] / df["wood_panels_prod"]
         df["fwp_partboa"] = df["partboa_prod"] / df["wood_panels_prod"]
-        df["fwp_pv"] = df["veneer_prod"] / df["wood_panels_prod"]
+        # Note Veneer is not part of particle board and OSB
+        # df["fwp_pv"] = df["veneer_prod"] / df["wood_panels_prod"]
         # Assert that the ratio sums to one
         cols = ["fwp_fibboa", "fwp_partboa"]  # , "fwp_pv"]
-        selector = df[cols].sum(axis=1).isin([0, 1])
+        sum_frac = df[cols].sum(axis=1)
+        selector = np.isclose(sum_frac,1)
+        selector = (selector) | (sum_frac == 0)
         if not all(selector):
             msg = "The wood panels ratios do not sum to one. Check:\n"
             msg += f"{df.loc[~selector]}"
             raise ValueError(msg)
+
+        return df
 
     @cached_property
     def subst_ref(self):
