@@ -180,7 +180,9 @@ class HWP:
         df_comp = self.fluxes_to_irw.merge(
             df_agg, on=index, how="left", suffixes=("_before", "_after")
         )
-        selector = (df_comp["year"] > 2020) & (~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"]))
+        selector = (df_comp["year"] > 2020) & (
+            ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
+        )
         if any(selector):
             msg = f"\n For post-2020, the following tc_irw values don't match between "
             msg += "input before and after dbh allocation\n"
@@ -229,7 +231,9 @@ class HWP:
         df_comp = df_agg.merge(
             df_agg2, on=index, how="left", suffixes=("_before", "_after")
         )
-        selector = (df_comp["year"] > 2020) & (~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"]))
+        selector = (df_comp["year"] > 2020) & (
+            ~np.isclose(df_comp["tc_irw_before"], df_comp["tc_irw_after"])
+        )
         if any(selector):
             msg = f"For post-2020, the following tc_irw values don't match between "
             msg += "input before and after NB grading allocation\n"
@@ -279,8 +283,13 @@ class HWP:
         # CBM output
         df_out = self.fluxes_by_grade
         index = ["area", "year"]
-        cols = ["sw_dom_tc", "wp_dom_tc", "pp_dom_tc",
-                'recycled_paper_prod', 'recycled_wood_prod']
+        cols = [
+            "sw_dom_tc",
+            "wp_dom_tc",
+            "pp_dom_tc",
+            "recycled_paper_prod",
+            "recycled_wood_prod",
+        ]
         # Keep data for the last n years and for the selected country
         selector = dstat["year"] > dstat["year"].max() - self.n_years_dom_frac
         selector &= dstat["area"] == self.runner.country.country_name
@@ -294,8 +303,13 @@ class HWP:
         df["wp_fraction"] = df["wp_dom_tc"] / (
             (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
         )
-        cols = ["sw_fraction", "pp_fraction", "wp_fraction",
-                'recycled_paper_prod', 'recycled_wood_prod']
+        cols = [
+            "sw_fraction",
+            "pp_fraction",
+            "wp_fraction",
+            "recycled_paper_prod",
+            "recycled_wood_prod",
+        ]
         mean_frac = df[cols].mean()
         return mean_frac
 
@@ -303,8 +317,13 @@ class HWP:
     def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products"""
         df = self.fluxes_by_grade.copy()
-        cols = ["sw_fraction", "pp_fraction", "wp_fraction",
-                "recycled_paper_prod", "recycled_wood_prod"]
+        cols = [
+            "sw_fraction",
+            "pp_fraction",
+            "wp_fraction",
+            "recycled_paper_prod",
+            "recycled_wood_prod",
+        ]
         mean_frac = self.fraction_semifinished
         # Add the mean fraction to the CBM output data
         for col in cols:
@@ -320,8 +339,9 @@ class HWP:
 
     @property  # Don't cache, in case we change the number of years
     def concat_1900_to_last_sim_year(self) -> pandas.DataFrame:
-        """This applies with IPCC method. Concatenate backcasted data from 1900, reported historical country data
-        and CBM output until the end of the simulation.
+        """This applies with IPCC method. Concatenate backcasted data from
+        1900, reported historical country data and CBM output until the end of
+        the simulation.
 
         In the CBM simulated output, keep only years that are not already in
         country statistics.
@@ -350,12 +370,11 @@ class HWP:
         df_out = df_out.loc[selector]
         # Concatenate
         df = pandas.concat([dstat, df_out])
-        return df
-    
+        return df.reset_index(drop=True)
+
     @property  # Don't cache, in case we change the number of years
     def prepare_decay_and_inflow(self):
         """Prepare decay parameters and compute inflow"""
-
         df = self.concat_1900_to_last_sim_year.copy()
         # Define half life in years
         hl_sw = 35
@@ -399,7 +418,7 @@ class HWP:
 
     @property  # Don't cache, in case we change the number of years
     def build_hwp_stock_since_1900(self):
-    #def build_hwp_stock(self):
+        # def build_hwp_stock(self):
         """IPCC method: Build HWP stock values for 1900 to end of simulated period
 
         Plot stock evolution
@@ -416,7 +435,7 @@ class HWP:
 
         df = self.prepare_decay_and_inflow.copy()
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
-        cols += ["e_sw", "e_wp", "e_pp" ]
+        cols += ["e_sw", "e_wp", "e_pp"]
         df = df[["year"] + cols]
         # Initiate stock values
         df["sw_stock"] = 0
@@ -446,10 +465,10 @@ class HWP:
         df["hwp_tot_sink_tco2"] = df["hwp_tot_diff_tc"] * (-44 / 12)
         return df
 
-
     @property  # Don't cache, in case we change the number of years
     def build_hwp_stock_since_1990(self):
-        """complementary KP method: build HWP stock values for 1990 to the end of simulated period
+        """complementary KP method: build HWP stock values for 1990 to the end
+        of simulated period
 
         Plot stock evolution
 
@@ -465,11 +484,12 @@ class HWP:
 
         df = self.prepare_decay_and_inflow.copy()
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
-        cols += ["e_sw", "e_wp", "e_pp","k_sw", "k_wp", "k_pp"]
+        cols += ["e_sw", "e_wp", "e_pp", "k_sw", "k_wp", "k_pp"]
         df = df[["year"] + cols]
-        #retain only the first five years including 1990
-        df=df[df['year']>=1990]
-        # Initiate stock values as average of 1990-1995 as the average of the first five years for each inflow type
+        # retain only the first five years including 1990
+        df = df[df["year"] >= 1990]
+        # Initiate stock values as average of 1990-1995 as the average of the
+        # first five years for each inflow type
         df["sw_stock"] = (df["sw_inflow"].head(5).mean()) / (df["k_sw"].head(5).mean())
         df["wp_stock"] = (df["wp_inflow"].head(5).mean()) / (df["k_wp"].head(5).mean())
         df["pp_stock"] = (df["pp_inflow"].head(5).mean()) / (df["k_pp"].head(5).mean())
@@ -489,7 +509,6 @@ class HWP:
         df.fillna(0, inplace=True)
         # Compute the total stock
         df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
-
         # Do the difference between consecutive years
         df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
         # Stock diff shifted by one year

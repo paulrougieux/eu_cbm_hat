@@ -20,7 +20,6 @@ from functools import cached_property
 from eu_cbm_hat import eu_cbm_data_pathlib
 
 
-
 def generate_dbh_intervals():
     """Generate DBH intervals for a dictionnary mapping"""
     base_range = np.arange(0, 100, 2.5)
@@ -294,7 +293,6 @@ class HWPCommonInput:
         # replacing NA to 0, so possible to make aritmetic operations
         df_exp = df_exp.fillna(0)
         return df_exp
-
 
     @cached_property
     def rw_export_correction_factor(self):
@@ -575,8 +573,12 @@ class HWPCommonInput:
         domestic origin, in original unit m3 or t for 1961-2021
         """
         index = ["area", "year"]
-        selected_cols = index + ["fPULP_dom", "fIRW_SW_WP",
-                                 "recycled_paper_prod", "recycled_wood_prod"]
+        selected_cols = index + [
+            "fPULP_dom",
+            "fIRW_SW_WP",
+            "recycled_paper_prod",
+            "recycled_wood_prod",
+        ]
         exp_fact = self.rw_export_correction_factor[selected_cols].copy()
         # Replace zero by NA
         exp_fact.replace(np.nan, 0, inplace=True)
