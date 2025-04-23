@@ -20,6 +20,7 @@ from functools import cached_property
 from eu_cbm_hat import eu_cbm_data_pathlib
 
 
+
 def generate_dbh_intervals():
     """Generate DBH intervals for a dictionnary mapping"""
     base_range = np.arange(0, 100, 2.5)
@@ -65,6 +66,10 @@ class HWPCommonInput:
 
     def __init__(self):
         self.common_dir = eu_cbm_data_pathlib / "common"
+        # Constant Carbon Conversion Factors for semi finished products
+        self.c_sw = 0.225
+        self.c_wp = 0.294
+        self.c_pp = 0.450
 
     @cached_property
     def hwp_types(self):
@@ -596,15 +601,12 @@ class HWPCommonInput:
         df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
         df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP_dom"]
         # compute values in Tons of Carbon
-        c_sw = 0.225
-        c_pw = 0.294
-        c_pp = 0.450
-        df["sw_dom_tc"] = c_sw * df["sw_dom_m3"]
-        df["wp_dom_tc"] = c_pw * df["wp_dom_m3"]
-        df["pp_dom_tc"] = c_pp * df["pp_dom_t"]
+        df["sw_dom_tc"] = self.c_sw * df["sw_dom_m3"]
+        df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
+        df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
         # Correct for recycled wood panel and paper amounts
-        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * c_pw
-        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"] * c_pp
+        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp
+        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"] * self.c_pp
         return df
 
 

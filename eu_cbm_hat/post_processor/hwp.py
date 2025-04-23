@@ -254,6 +254,11 @@ class HWP:
     def fraction_semifinished(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products
 
+        Also compute the average of the absolute amounts of recycled wood
+        entering in wood panels and the amount of recycled paper entering in
+        paper production. So that we don't overestimate the contribution of
+        fresh forest fibre from domestic production.
+
         Merge country statistics on domestic harvest and
         CBM output for n common years.
 
@@ -274,7 +279,8 @@ class HWP:
         # CBM output
         df_out = self.fluxes_by_grade
         index = ["area", "year"]
-        cols = ["sw_dom_tc", "wp_dom_tc", "pp_dom_tc"]
+        cols = ["sw_dom_tc", "wp_dom_tc", "pp_dom_tc",
+                'recycled_paper_prod', 'recycled_wood_prod']
         # Keep data for the last n years and for the selected country
         selector = dstat["year"] > dstat["year"].max() - self.n_years_dom_frac
         selector &= dstat["area"] == self.runner.country.country_name
@@ -288,15 +294,17 @@ class HWP:
         df["wp_fraction"] = df["wp_dom_tc"] / (
             (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
         )
-        cols = ["sw_fraction", "pp_fraction", "wp_fraction"]
+        cols = ["sw_fraction", "pp_fraction", "wp_fraction",
+                'recycled_paper_prod', 'recycled_wood_prod']
         mean_frac = df[cols].mean()
         return mean_frac
 
-    @property  # Don't cache, in case we change the number of years
+    @property  # Don"t cache, in case we change the number of years
     def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products"""
         df = self.fluxes_by_grade.copy()
-        cols = ["sw_fraction", "pp_fraction", "wp_fraction"]
+        cols = ["sw_fraction", "pp_fraction", "wp_fraction",
+                "recycled_paper_prod", "recycled_wood_prod"]
         mean_frac = self.fraction_semifinished
         # Add the mean fraction to the CBM output data
         for col in cols:
@@ -305,6 +313,9 @@ class HWP:
         df["sw_dom_tc"] = df["sawlogs"] * df["sw_fraction"]
         df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
         df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
+        # Correct for recycling
+        df["wp_dom_tc"] += df["recycled_wood_prod"] * hwp_common_input.c_wp
+        df["pp_dom_tc"] += df["recycled_paper_prod"] * hwp_common_input.c_pp
         return df
 
     @property  # Don't cache, in case we change the number of years
