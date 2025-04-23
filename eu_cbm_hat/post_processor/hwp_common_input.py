@@ -121,15 +121,54 @@ class HWPCommonInput:
 
     @cached_property
     def subst_params(self):
-        # substitution file
+        """Substitution parameters
+
+        There are two types of variables:
+        - the fraction variables mean how much is replaced.
+        - the factor variables mean the actual GHG saving due to the
+          substitution of that material.
+
+        See report on HWP for more information.
+        """
         Subst_params = pd.read_csv(
             eu_cbm_data_pathlib / "common/substitution_factors.csv"
         )
         return Subst_params
 
     @cached_property
+    def split_wood_panels(self):
+        """Split wood panels amount between particle board, fibre board and veneer.
+
+        Keep only the average of the last 3 years.
+        """
+
+        df = self.fao_correction_factor.copy()
+        selected_cols = [
+            "wood_panels_prod",
+            "fibboa_prod",
+            "partboa_prod",
+            "veneer_prod",
+        ]
+        selector = df["year"] > df["year"].max() - 3
+        df = df.loc[selector, ["area", "year"] + selected_cols]
+        # Compute the average
+        df.groupby(["area"])[selected_cols].agg("mean")
+        # Compute the total
+        # Compute the fraction
+        df["fwp_fibboa"] = df["fibboa_prod"] / df["wood_panels_prod"]
+        df["fwp_partboa"] = df["partboa_prod"] / df["wood_panels_prod"]
+        df["fwp_pv"] = df["veneer_prod"] / df["wood_panels_prod"]
+        # Assert that the ratio sums to one
+        cols = ["fwp_fibboa", "fwp_partboa"]  # , "fwp_pv"]
+        selector = df[cols].sum(axis=1).isin([0, 1])
+        if not all(selector):
+            msg = "The wood panels ratios do not sum to one. Check:\n"
+            msg += f"{df.loc[~selector]}"
+            raise ValueError(msg)
+
+    @cached_property
     def subst_ref(self):
-        # substitution reference scenario
+        """substitution reference scenario"""
         Subst_ref = pd.read_csv(
             eu_cbm_data_pathlib / "common/substitution_reference_scenario.csv"
         )
@@ -215,9 +254,9 @@ class HWPCommonInput:
             columns={"Item": "Item_orig", "Element": "Element_orig"}
         )
 
-        # add lables used in the hwp scripts
+        # Add labels used in the hwp scripts, keep only Items in the hwp_types table
         df = df_fao.merge(self.hwp_types, on=["Item Code", "Item_orig"]).merge(
-            self.eu_member_states, on=["Area"]
+            self.eu_member_states, on=["Area"], how="inner"
         )
 
         # Filter the columns that start with 'Y' and do not end with a letter
@@ -292,6 +331,27 @@ class HWPCommonInput:
 
         # replacing NA to 0, so possible to make aritmetic operations
         df_exp = df_exp.fillna(0)
+
+        # Sum up Particle board values with OSB
+        # Sum all 3 columns together for each variable
+        for var in ["exp", "imp", "prod"]:
+            cols = ["partboa_and_osb", "partboa_original", "osb"]
+            cols_var = [x + "_" + var for x in cols]
+            # To avoid double counting assert that there is no value in
+            # "partboa_and_osb" when there is a value in partboa_original
+            # column and in the osb column The sum of colvars value should be
+            # one or 2 not 3
+            df_exp["check_" + var] = (df_exp[cols_var] > 0).sum(axis=1)
+            selector = df_exp["check_" + var] > 2
+            if any(selector):
+                msg = "Double counting for Particle Board and OSB. Check:\n"
+                msg += f"{df_exp.loc[selector, ['area', 'year'] + cols_var]}"
+                raise ValueError(msg)
+            # Compute the sum
+            df_exp["partboa_" + var] = df_exp[cols_var].sum(axis=1)
+
+        # Convert year to an integer
+        df_exp["year"] = df_exp["year"].astype(int)
         return df_exp
 
     @cached_property
