@@ -211,19 +211,45 @@ class HWPCommonInput:
     @cached_property
     def irw_allocation_by_dbh(self):
         """IRW fraction by DBH classes with genus and forest type information
-
-        Merge with the genus table to obtain the forest type information."""
+        Merge with the genus table to obtain the forest type information.
+        DBH structure: (in cm), * - threshold values
+        {'dbh_class_1': (0.0, 2.5),
+         'dbh_class_2': (2.6, 5.0),
+         'dbh_class_3': (5.1, 7.5),
+         'dbh_class_4': (7.6, 10.0),
+         'dbh_class_5': (10.1, 12.5),
+         'dbh_class_6': (12.6, 15.0), * threshold limit for pulplogs (100% pulpwood) for con and broad
+         'dbh_class_7': (15.1, 17.5),
+         'dbh_class_8': (17.6, 20.0),
+         'dbh_class_9': (20.1, 22.5),
+         'dbh_class_10': (22.6, 25.0),* threshold limit for sawlogs (<100% sawlog + <100% pulpood) for con
+         'dbh_class_11': (25.1, 27.5),
+         'dbh_class_12': (27.6, 30.0),
+         'dbh_class_13': (30.1, 32.5),
+         'dbh_class_14': (32.6, 35.0),
+         'dbh_class_15': (35.1, 37.5),
+         'dbh_class_16': (37.6, 40.0),
+         'dbh_class_17': (40.1, 42.5),
+         'dbh_class_18': (42.6, 45.0),* threshold limit for sawlogs (<100% sawlog + <100% pulpood) for broad
+         'dbh_class_19': (45.1, 47.5),
+         'dbh_class_20': (47.6, 50.0),
+         .............................
+         'dbh_class_38': (92.6, 95.0),
+         'dbh_class_39': (95.1, 97.5),
+         'dbh_class_40': (97.6, 100.0)}
+        
+        """
         csv_path = eu_cbm_data_pathlib / "common" / "irw_allocation_by_dbh.csv"
         df = pd.read_csv(csv_path)
         df = df.merge(self.hwp_genus, on=["country", "genus"], how="left")
         # Check that proportions sum to one over the forest type and age class
         index = ["country", "mgmt_type", "mgmt_strategy", "forest_type", "age_class"]
         df_agg = (
-            df.groupby(index)["fraction_smoothed_theoretical_volume"]
+            df.groupby(index)["fraction_theoretical_volume"]
             .agg("sum")
             .reset_index()
         )
-        selector = ~np.isclose(df_agg["fraction_smoothed_theoretical_volume"], 1)
+        selector = ~np.isclose(df_agg["fraction_theoretical_volume"], 1)
         if any(selector):
             msg = "Some proportion in irw_allocation_by_dbh do not sum to one\n"
             msg += f"over the index: {index}\n"
