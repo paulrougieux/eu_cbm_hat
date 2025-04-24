@@ -533,8 +533,7 @@ class HWP:
             >>> hwp_other = runner_other.post_processor.hwp
             >>> subst_other = hwp_other.substitution(hwp_scenario="substitution")
 
-            >>> # Compute the difference between the two substitution data frames
-            >>> subst_comp = subst_other - subst_ref
+            >>> # See below how to compute the difference between the two substitution data frames
 
         Example compute the difference between two HWP scenarios within the
         reference combo:
