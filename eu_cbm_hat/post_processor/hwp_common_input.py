@@ -128,6 +128,28 @@ class HWPCommonInput:
         - the factor variables mean the actual GHG saving due to the
           substitution of that material.
 
+        | Code     | Wood semi-finished product | Expected substitute    |
+        |----------|----------------------------|------------------------|
+        | wp_pb_st | Particle board             | Steel*                 |
+        | wp_pb_ce | Particle board             | Cement and concrete**  |
+        | wp_pb_om | Particle board             | Oil-based materials*** |
+        | wp_fb_st | Fibre board                | Steel                  |
+        | wp_fb_ce | Fibre board                | Cement and concrete    |
+        | wp_fb_om | Fibre board                | Oil-based materials    |
+        | wp_py_om | Plywood and veneer         | Steel                  |
+        | wp_vn_om | Plywood and veneer         | Cement and concrete    |
+        | sw_st    | Sawnwood                   | Steel                  |
+        | sw_ce    | Sawnwood                   | Cement and concrete    |
+        | sw_fi_om | Sawnwood                   | Oil-based materials    |
+        | sw_fd_om | Sawnwood                   | Oil-based materials    |
+        | pp_du_om | Pulp and paper             | Oil-based materials    |
+        | pp_pp_tx | Pulp and paper             | Oil-based materials    |
+        | pp_pk_om | Pulp and paper             | Oil-based materials    |
+        | pp_fd_om | Pulp and paper             | Oil-based materials    |
+        | wf_om    | Woodfuel                   | Oil-based materials    |
+        | wf_tx    | Woodfuel                   | Textile                |
+        | wf_fu    | Woodfuel                   | Oil-based materials    |
+
         See report on HWP for more information.
         """
         df = pd.read_csv(
