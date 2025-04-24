@@ -130,10 +130,10 @@ class HWPCommonInput:
 
         See report on HWP for more information.
         """
-        Subst_params = pd.read_csv(
-            eu_cbm_data_pathlib / "common/substitution_factors.csv"
+        df = pd.read_csv(
+            eu_cbm_data_pathlib / "common/substitution_params.csv"
         )
-        return Subst_params
+        return df
 
     @cached_property
     def split_wood_panels(self):
@@ -1038,11 +1038,6 @@ def fao_pulp_to_irw():
     return average_pulp_ms
 
 
-# %%
-def substitution_factors():
-    "this merges the export with seminished inputs to generate HWP of domestic origin"
-    df_subst_factors = subst_params.rename(columns={"Area": "area"})
-    return df_subst_factors
 
 
 # %%

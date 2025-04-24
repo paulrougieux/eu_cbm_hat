@@ -516,23 +516,69 @@ class HWP:
         df["hwp_tot_sink_tco2"] = df["hwp_tot_diff_tc"] * (-44 / 12)
         return df
 
+    def substitution(self, hwp_scenario):
+        """Substitution scenarios with a reference and a comparison point
 
-    @property  # Don't cache, in case we change the number of years
-    def substitution_reference(self):
-        """Substitution reference scenario"""
+        Merge with the data from steel, cement and other materials.
 
+        Example compare the reference combo and reference hwp_scenario to
+        another combo and another hwp_scenario called "substitution":
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner_ref = continent.combos['reference'].runners['LU'][-1]
+            >>> hwp_ref = runner_ref.post_processor.hwp
+            >>> subst_ref = hwp_ref.substitution(hwp_scenario="reference")
+
+            >>> runner_other = continent.combos['other_scenario'].runners['LU'][-1]
+            >>> hwp_other = runner_other.post_processor.hwp
+            >>> subst_other = hwp_other.substitution(hwp_scenario="substitution")
+
+            >>> # Compute the difference between the two substitution data frames
+            >>> subst_comp = subst_other - subst_ref
+
+        Example compute the difference between two HWP scenarios within the
+        reference combo:
+
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> subst_ref = runner.post_processor.hwp.substitution(hwp_scenario="reference")
+            >>> subst_subst = runner.post_processor.hwp.substitution(hwp_scenario="substitution")
+
+            >>> inflow_cols = subst_ref.columns[subst_ref.columns.str.contains("inflow")].to_list()
+            >>> subst_diff = subst_ref[["year"] + inflow_cols].copy()
+            >>> subst_diff[inflow_cols] = subst_subst[inflow_cols] - subst_ref[inflow_cols]
+
+        """
+        # Load inflows
         df = self.build_hwp_stock_since_1990.copy()
+        selected_cols = ["year", "sw_inflow", "wp_inflow", "pp_inflow"]
+        df = df[selected_cols]
+        # Load split data
         split_wp = hwp_common_input.split_wood_panels.copy()
         # Keep data for the selected country
         selector = split_wp["area"] == self.runner.country.country_name
         split_wp = split_wp.loc[selector]
-        # Add fractions
-        cols = ['fwp_fibboa', 'fwp_partboa', 'fwp_pv']
+        if not len(split_wp) == 1:
+            msg = "There should not be more than one value for split_wp\n"
+            msg += f"{split_wp}"
+            raise ValueError(msg)
+        # Split wood panels
+        df["wp_fb_inflow"] = df["wp_inflow"] * split_wp["fwp_fibboa"].iloc[0]
+        df["wp_pb_inflow"] = df["wp_inflow"] * split_wp["fwp_partboa"].iloc[0]
+        # Load substitution parameters
+        subst_params = hwp_common_input.subst_params.copy()
+        selector = subst_params["scenario"] == hwp_scenario
+        selector &= subst_params["country"] == self.runner.country.country_name
+        subst_params_ref = subst_params.loc[selector]
+        # Merge with substitution parameters
+        df = df.merge(subst_params_ref, on="year", how="left")
+        # Estimate the avoidance by substitution in wp based substitutes
+        cols = subst_params_ref.columns
+        frac_cols = cols[cols.str.contains("frac")]
+        for x in ["wp_pb", "wp_fb", "sw", "pp"]:
+            # Find which fractions are available for this product
+            selected_frac_cols = frac_cols[frac_cols.str.contains(x)].to_list()
+            # Create new variables based on the available fractions
+            for frac in selected_frac_cols:
+                new_inflow = frac.replace("frac", "inflow")
+                df[new_inflow] = df[f"{x}_inflow"] * df[frac]
         return df
-
-    @property  # Don't cache, in case we change the number of years
-    def substitution_scenario(self):
-        """Substitution reference scenario"""
-        df = self.build_hwp_stock_since_1990.copy()
-        return df
-
