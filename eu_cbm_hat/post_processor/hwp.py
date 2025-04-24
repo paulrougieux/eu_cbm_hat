@@ -166,7 +166,7 @@ class HWP:
         index = ["mgmt_type", "mgmt_strategy", "age_class", "forest_type"]
         df = self.fluxes_to_irw.merge(dbh_alloc, on=index, how="left")
         # Multiply old tc_irw with the fraction
-        df["tc_irw"] = df["tc_irw"] * df["fraction_smoothed_theoretical_volume"]
+        df["tc_irw"] = df["tc_irw"] * df["fraction_theoretical_volume"]
         # Reaggregate and check that values didn't change
         index = [
             "year",
