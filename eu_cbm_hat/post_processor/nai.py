@@ -45,12 +45,12 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
         >>> nai_st_2 = compute_nai_gai(nai_st_2, groupby=index)
         >>> cols = ["year", "status", "nai_merch", "nai_agb"]
         >>> nai_st_2.query("status == 'ForAWS'")[cols].tail().round()
-            year  status  nai_merch   nai_agb
-        35  2025  ForAWS   435110.0  562391.0
-        38  2026  ForAWS   428422.0  552260.0
-        41  2027  ForAWS   421882.0  538261.0
-        44  2028  ForAWS   422830.0  521565.0
-        47  2029  ForAWS   414102.0  505772.0
+            year  status  nai_merch    nai_agb
+        35  2025  ForAWS   741289.0  1040573.0
+        38  2026  ForAWS   741157.0  1042235.0
+        41  2027  ForAWS   733556.0  1001680.0
+        44  2028  ForAWS   729052.0  1010633.0
+        47  2029  ForAWS   726057.0   997929.0
 
     """
     if isinstance(groupby, str):
@@ -123,31 +123,32 @@ class NAI:
         >>> pfv = runner.post_processor.nai.pools_fluxes_vol
         >>> pfv[["year", "disturbance_type", "merch_stock_vol", "agb_stock_vol"]].round()
              year  disturbance_type  merch_stock_vol  agb_stock_vol
-        0    1999                 0         210788.0       288140.0
-        1    1999                 0         260786.0       356455.0
-        2    2000                 0         220762.0       300918.0
-        3    2000                 0         273105.0       372236.0
-        4    2001                 0         219576.0       299263.0
+        0    1999                 0         910610.0      1192798.0
+        1    1999                 0        1126951.0      1476133.0
+        2    2000                 0         925037.0      1211039.0
+        3    2000                 0        1144770.0      1498664.0
+        4    2001                 0         939214.0      1228955.0
         ..    ...               ...              ...            ...
-        855  2028                 0         648940.0       881020.0
-        856  2029                 0         958579.0      1613398.0
-        857  2029                 0         174177.0       292668.0
-        858  2029                 0        3615729.0      4908137.0
-        859  2029                 0         653509.0       887099.0
+        765  2028                 0        1026355.0      1399375.0
+        766  2029                 0        6931140.0      9711487.0
+        767  2029                 0        1299132.0      1814424.0
+        768  2029                 0        5503622.0      7509163.0
+        769  2029                 0        1038402.0      1415584.0
         <BLANKLINE>
-        [860 rows x 4 columns]
+        [770 rows x 4 columns]
 
         >>> # Net Annual Increment of the merchantable pool (nai_merch) and of
         >>> # all the above ground biomass (nai_agb) by status
         >>> nai_st = runner.post_processor.nai.df_agg(["status"])
         >>> selector = nai_st["status"] == 'ForAWS'
         >>> nai_st.loc[selector, ["year", "status", "area", "nai_merch", "nai_agb"]].head()
-           year  status         area      nai_merch        nai_agb
-        0  1999  ForAWS  91880.00000       0.000000       0.000000
-        1  2000  ForAWS  91880.00000  362883.178649  469452.158547
-        2  2001  ForAWS  91879.99912  362494.285355 -488554.806845
-        3  2002  ForAWS  91879.99877  378072.436366  212918.717178
-        4  2003  ForAWS  91879.99841  397329.021290  496215.446031
+           year  status      area      nai_merch        nai_agb
+        0  1999  ForAWS  190511.0       0.000000       0.000000
+        1  2000  ForAWS  190511.0  728968.599620  953551.543839
+        2  2001  ForAWS  190511.0  729099.275544  728706.869910
+        3  2002  ForAWS  190511.0  731377.641584  734923.265648
+        4  2003  ForAWS  190511.0  734402.356549  745183.482842
+
 
         >>> # TODO fix this example
         >>> # NAI per ha by status and forest type at country level
@@ -160,12 +161,12 @@ class NAI:
         >>> df_st = df.groupby(["year", "status"])[["area", "nai_merch"]].agg("sum").reset_index()
         >>> df_st["nai_merch_ha"] = df_st["nai_merch"] / df_st["area"]
         >>> df_st.tail()
-            year  status          area      nai_merch  nai_merch_ha
-        44  2028  ForAWS  86236.998804  422829.931377      4.903115
-        45  2028      NF   5643.000250   28488.860714      5.048531
-        46  2029      AR     90.000000      16.971735      0.188575
-        47  2029  ForAWS  85727.998714  414101.528162      4.830412
-        48  2029      NF   6152.000250    3272.171429      0.531887
+            year  status           area      nai_merch  nai_merch_ha
+        44  2028  ForAWS  190431.000498  729052.322451      3.828433
+        45  2028      NF      80.000000    4286.556122     53.581952
+        46  2029      AR      90.000000      16.971735      0.188575
+        47  2029  ForAWS  190421.000047  726056.898576      3.812904
+        48  2029      NF      90.000000    4304.132653     47.823696
 
         >>> # Plot NAI per ha by status (remove NF)
         >>> df_st = runner.post_processor.nai.df_agg(["status"])
@@ -236,12 +237,12 @@ class NAI:
             >>> nai_st = runner.post_processor.nai.df_agg(["status"])
             >>> selector = nai_st["status"] == 'ForAWS'
             >>> nai_st.loc[selector, ["year", "status", "area", "nai_merch", "nai_agb"]].head()
-               year  status         area      nai_merch        nai_agb
-            0  1999  ForAWS  91880.00000       0.000000       0.000000
-            1  2000  ForAWS  91880.00000  362883.178649  469452.158547
-            2  2001  ForAWS  91879.99912  362494.285355 -488554.806845
-            3  2002  ForAWS  91879.99877  378072.436366  212918.717178
-            4  2003  ForAWS  91879.99841  397329.021290  496215.446031
+               year  status      area      nai_merch        nai_agb
+            0  1999  ForAWS  190511.0       0.000000       0.000000
+            1  2000  ForAWS  190511.0  728968.599620  953551.543839
+            2  2001  ForAWS  190511.0  729099.275544  728706.869910
+            3  2002  ForAWS  190511.0  731377.641584  734923.265648
+            4  2003  ForAWS  190511.0  734402.356549  745183.482842
 
         """
         if isinstance(groupby, str):
