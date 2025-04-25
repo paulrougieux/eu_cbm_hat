@@ -128,27 +128,27 @@ class HWPCommonInput:
         - the factor variables mean the actual GHG saving due to the
           substitution of that material.
 
-        | Code     | Wood semi-finished product | Expected substitute    |
-        |----------|----------------------------|------------------------|
-        | wp_pb_st | Particle board             | Steel*                 |
-        | wp_pb_ce | Particle board             | Cement and concrete**  |
-        | wp_pb_om | Particle board             | Oil-based materials*** |
-        | wp_fb_st | Fibre board                | Steel                  |
-        | wp_fb_ce | Fibre board                | Cement and concrete    |
-        | wp_fb_om | Fibre board                | Oil-based materials    |
-        | wp_py_om | Plywood and veneer         | Steel                  |
-        | wp_vn_om | Plywood and veneer         | Cement and concrete    |
-        | sw_st    | Sawnwood                   | Steel                  |
-        | sw_ce    | Sawnwood                   | Cement and concrete    |
-        | sw_fi_om | Sawnwood                   | Oil-based materials    |
-        | sw_fd_om | Sawnwood                   | Oil-based materials    |
-        | pp_du_om | Pulp and paper             | Oil-based materials    |
-        | pp_pp_tx | Pulp and paper             | Oil-based materials    |
-        | pp_pk_om | Pulp and paper             | Oil-based materials    |
-        | pp_fd_om | Pulp and paper             | Oil-based materials    |
-        | wf_om    | Woodfuel                   | Oil-based materials    |
-        | wf_tx    | Woodfuel                   | Textile                |
-        | wf_fu    | Woodfuel                   | Oil-based materials    |
+        | Wood semi-finished product | Expected functionality                                         | Expected substitute    | Code     |
+        |----------------------------|----------------------------------------------------------------|------------------------|----------|
+        | Particle board             | Construction materials (e.g., structure)                       | Steel*                 | wp_pb_st |
+        | Particle board             | Construction materials (e.g., floorings, interior decorations) | Cement and concrete**  | wp_pb_ce |
+        | Particle board             | Other (e.g., furniture)                                        | Oil-based materials*** | wp_pb_om |
+        | Fibre board                | Construction materials (e.g., structure)                       | Steel                  | wp_fb_st |
+        | Fibre board                | Construction materials (e.g., insulation)                      | Cement and concrete    | wp_fb_ce |
+        | Fibre board                | Other (e.g., floorings, interiors decorations)                 | Oil-based materials    | wp_fb_om |
+        | Plywood and veneer         | Construction materials (e.g., floorings, interiors)            | Steel                  | wp_py_om |
+        | Plywood and veneer         | Other (e.g., furniture)                                        | Cement and concrete    | wp_vn_om |
+        | Sawnwood                   | Construction materials (e.g., structure)                       | Steel                  | sw_st    |
+        | Sawnwood                   | Construction materials (e.g., structure)                       | Cement and concrete    | sw_ce    |
+        | Sawnwood                   | Construction materials (e.g., floorings, insulation)           | Oil-based materials    | sw_fi_om |
+        | Sawnwood                   | Other (e.g., furniture, interiors decorations, accents)        | Oil-based materials    | sw_fd_om |
+        | Pulp and paper             | Other (e.g., domestic use)                                     | Oil-based materials    | pp_du_om |
+        | Pulp and paper             | Other (e.g., textile)                                          | Oil-based materials    | pp_pp_tx |
+        | Pulp and paper             | Other (e.g., packaging)                                        | Oil-based materials    | pp_pk_om |
+        | Pulp and paper             | Other (e.g., furniture, interiors decorations)                 | Oil-based materials    | pp_fd_om |
+        | Woodfuel                   | Other (e.g., materials obtained from biomass)                  | Oil-based materials    | wf_om    |
+        | Woodfuel                   | Other (e.g., textile)                                          | Textile                | wf_tx    |
+        | Woodfuel                   | Bioenergy (e.g., fuelmix)                                      | Oil-based materials    | wf_fu    |
 
         See report on HWP for more information.
         """
