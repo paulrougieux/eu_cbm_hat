@@ -71,6 +71,46 @@ class HWPCommonInput:
         self.c_pp = 0.450
 
     @cached_property
+    def decay_params(self):
+        """Decay parameters"""
+        # Define half life in years
+        hl_sw = 35
+        hl_wp = 25
+        hl_pp = 2
+        hl_sw_wp = 30
+        df = pd.DataFrame({
+            "log_2":[np.log(2)],
+            "hl_sw":[hl_sw],
+            "hl_wp":[hl_wp],
+            "hl_pp":[hl_pp],
+            "hl_sw_wp":[hl_sw_wp],
+        })
+        # Prepare the params according the needs in HWP calcualtions
+        # calculate **k_** the decay constant for each of SW, WP, PP
+        df = df.assign(
+            k_sw=(df.log_2 / df.hl_sw),
+            k_wp=(df.log_2 / df.hl_wp),
+            k_pp=(df.log_2 / df.hl_pp),
+            k_sw_wp=(df.log_2 / df.hl_sw_wp),
+        )
+        # Calculate **e_** the remaining C stock from the historical stock
+        # e-k (see see eq. 2.8.5 (gpg)),
+        df = df.assign(
+            e_sw=np.exp(-df.k_sw),
+            e_wp=np.exp(-df.k_wp),
+            e_pp=np.exp(-df.k_pp),
+            e_sw_wp=np.exp(-df.k_sw_wp),
+        )
+        # Calculate **k1_** the remaining from the current year inflow
+        # k1=(1-e-k)/k (see eq. 2.8.2 (gpg))
+        df = df.assign(
+            k1_sw=(1 - df.e_sw) / df.k_sw,
+            k1_wp=(1 - df.e_wp) / df.k_wp,
+            k1_pp=(1 - df.e_pp) / df.k_pp,
+        )
+        return df
+
+    @cached_property
     def hwp_types(self):
         # this is the types of wood use data to be retrieved from FAOSTAT
         HWP_types = pd.read_csv(eu_cbm_data_pathlib / "common/hwp_types.csv")
@@ -725,6 +765,41 @@ class HWPCommonInput:
         df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp
         df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"] * self.c_pp
         return df
+
+    @cached_property
+    def waste(self):
+        """Waste treatment data from EUROSTAT
+        """
+
+        df = pd.read_csv(
+            eu_cbm_data_pathlib / "common/eu_waste_treatment.csv"
+        )
+        # Aggregate over waste types per year and per country
+        df = (
+            df.groupby(['geo','TIME_PERIOD'])
+            .agg(wood_landfill_tfm = ('OBS_VALUE', "sum"))
+            .reset_index()
+        )
+        df.rename(columns={"geo":"country_iso2",
+                           "TIME_PERIOD": "year"}, inplace=True)
+        # Apply humidity correction, and convert to carbon
+        h_corr = 0.15
+        df['w_annual_wood_landfill_tdm'] =(1-h_corr) * df['wood_landfill_tfm']
+
+        # Allocate Eurostat 2020 from 1960 to 2070
+        df_year = pd.DataFrame(range(1960, 2071, 1)).rename(columns = {0:'year'})
+        df = pd.merge(df_year, df, on = 'year', how = 'outer').set_index('year')
+        # Back fill and forward fill
+        df = df.bfill().ffill()
+
+        # Assign decay parameter inside df
+        decay_params = self.decay_params
+        df["e_sw"] = decay_params["e_sw"].values[0]
+
+        # TODO: finalize
+        return df
+
+
 
 
 # Initiate the class

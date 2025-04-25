@@ -128,15 +128,15 @@ class HWP:
 
         # fmt: off
         # Keep only the IRW fraction by multiplying with the fractions coming from self.irw_frac
-        df["tc_soft_irw_merch"] = ( df["softwood_merch_to_product"] * df["softwood_merch_irw_frac"] * (1 - df["bark_frac"]))
-        df["tc_soft_irw_other"] = ( df["softwood_other_to_product"] * df["softwood_other_irw_frac"] * (1 - df["bark_frac"]))
-        df["tc_soft_irw_stem_snag"] = ( df["softwood_stem_snag_to_product"] * df["softwood_stem_snag_irw_frac"] * (1 - df["bark_frac"]))
-        df["tc_soft_irw_branch_snag"] = ( df["softwood_branch_snag_to_product"] * df["softwood_branch_snag_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_soft_irw_merch"] = (df["softwood_merch_to_product"] * df["softwood_merch_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_soft_irw_other"] = (df["softwood_other_to_product"] * df["softwood_other_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_soft_irw_stem_snag"] = (df["softwood_stem_snag_to_product"] * df["softwood_stem_snag_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_soft_irw_branch_snag"] = (df["softwood_branch_snag_to_product"] * df["softwood_branch_snag_irw_frac"] * (1 - df["bark_frac"]))
 
-        df["tc_hard_irw_merch"] = ( df["hardwood_merch_to_product"] * df["hardwood_merch_irw_frac"] * (1 - df["bark_frac"]))
-        df["tc_hard_irw_other"] = ( df["hardwood_other_to_product"] * df["hardwood_other_irw_frac"] * (1 - df["bark_frac"]))
-        df["tc_hard_irw_stem_snag"] = ( df["hardwood_stem_snag_to_product"] * df["hardwood_stem_snag_irw_frac"] * (1 - df["bark_frac"]))
-        df["tc_hard_irw_branch_snag"] = ( df["hardwood_branch_snag_to_product"] * df["hardwood_branch_snag_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_hard_irw_merch"] = (df["hardwood_merch_to_product"] * df["hardwood_merch_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_hard_irw_other"] = (df["hardwood_other_to_product"] * df["hardwood_other_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_hard_irw_stem_snag"] = (df["hardwood_stem_snag_to_product"] * df["hardwood_stem_snag_irw_frac"] * (1 - df["bark_frac"]))
+        df["tc_hard_irw_branch_snag"] = (df["hardwood_branch_snag_to_product"] * df["hardwood_branch_snag_irw_frac"] * (1 - df["bark_frac"]))
         # fmt: on
 
         # Aggregate
@@ -155,6 +155,8 @@ class HWP:
         df_agg = df_agg[tc_cols].sum(axis=1).reset_index()
         df_agg.rename(columns={0: "tc_irw"}, inplace=True)
         return df_agg
+
+
 
     @cached_property
     def fluxes_by_age_to_dbh(self) -> pandas.DataFrame:
@@ -377,37 +379,10 @@ class HWP:
     def prepare_decay_and_inflow(self):
         """Prepare decay parameters and compute inflow"""
         df = self.concat_1900_to_last_sim_year.copy()
-        # Define half life in years
-        hl_sw = 35
-        hl_wp = 25
-        hl_pp = 2
-        hl_sw_wp = 30
-        # prepare the params according the needs in HWP calcualtions
-        df["log_2"] = np.log(2)
-        df["hl_sw"] = hl_sw
-        df["hl_wp"] = hl_wp
-        df["hl_pp"] = hl_pp
-        df["hl_sw_wp"] = hl_sw_wp
-        # calculate **k_** the decay constant for each of SW, WP, PP
-        df = df.assign(
-            k_sw=(df.log_2 / df.hl_sw),
-            k_wp=(df.log_2 / df.hl_wp),
-            k_pp=(df.log_2 / df.hl_pp),
-            k_sw_wp=(df.log_2 / df.hl_sw_wp),
-        )
-        # calculate **e_** the remaining C stock from the historical stock, e-k (see see eq. 2.8.5 (gpg)),
-        df = df.assign(
-            e_sw=np.exp(-df.k_sw),
-            e_wp=np.exp(-df.k_wp),
-            e_pp=np.exp(-df.k_pp),
-            e_sw_wp=np.exp(-df.k_sw_wp),
-        )
-        # calculate **k1_** the remaining from the current year inflow, k1=(1-e-k)/k (see eq. 2.8.2 (gpg))
-        df = df.assign(
-            k1_sw=(1 - df.e_sw) / df.k_sw,
-            k1_wp=(1 - df.e_wp) / df.k_wp,
-            k1_pp=(1 - df.e_pp) / df.k_pp,
-        )
+        # Assign decay parameters inside df
+        decay_params = hwp_common_input.decay_params
+        for col in decay_params.columns:
+            df[col] = decay_params[col].values[0]
         # Compute the corrected inflow according to decay elements in the square bracket
         # Estimate the annual inflows
         df = df.assign(
@@ -517,6 +492,97 @@ class HWP:
         df["hwp_tot_sink_tco2"] = df["hwp_tot_diff_tc"] * (-44 / 12)
         return df
 
+    @cached_property
+    def fluxes_to_primary_fw(self) -> pandas.DataFrame:
+        """Fluxes to primary Fuel Wood.
+        """
+        df = self.fluxes_to_products
+        # Add bark fraction
+        df = df.merge(self.parent.wood_density_bark_frac, on="forest_type", how="left")
+
+        # fmt: off
+        # Primary Fuel Wood removed directly as fulewood trees
+        df['tc_soft_fw_merch'] = df['softwood_merch_to_product'] * (1-df['softwood_merch_irw_frac'])
+        df['tc_soft_fw_other'] = df['softwood_other_to_product'] * (1-df['softwood_other_irw_frac'])
+        df['tc_soft_fw_stem_snag'] = df['softwood_stem_snag_to_product'] * (1-df['softwood_stem_snag_irw_frac'])
+        df['tc_soft_fw_branch_snag'] = df['softwood_branch_snag_to_product'] * (1-df['softwood_branch_snag_irw_frac'])
+        df['tc_hard_fw_merch'] = df['hardwood_merch_to_product'] * (1-df['hardwood_merch_irw_frac'])
+        df['tc_hard_fw_other'] = df['hardwood_other_to_product'] * (1-df['hardwood_other_irw_frac'])
+        df['tc_hard_fw_stem_snag'] = df['hardwood_stem_snag_to_product'] * (1-df['hardwood_stem_snag_irw_frac'])
+        df['tc_hard_fw_branch_snag'] = df['hardwood_branch_snag_to_product'] * (1-df['hardwood_branch_snag_irw_frac'])
+        # fmt: on
+
+        # Aggregate
+        index = ["year"]
+        tc_cols = df.columns[df.columns.str.contains("tc_")]
+        # Aggregate over the index
+        df_agg = df.groupby(index)[tc_cols].agg("sum")
+        # Sum fluxes columns together into one tc_irw column
+        df_agg = df_agg[tc_cols].sum(axis=1).reset_index()
+        df_agg.rename(columns={0: "tc_primary_fw"}, inplace=True)
+        return df_agg
+
+    @cached_property
+    def fluxes_to_secondary_fw(self) -> pandas.DataFrame:
+        """Deduce actual products from overall industrial roundwood
+
+        Part of the eligible HWP amount is converted to actual products. We
+        consider that the remaining part is burned as secondary fuel wood.
+        """
+        df1 = self.fluxes_by_grade
+        df1["hwp_eligible"] = df1[["pulpwood", "sawlogs"]].sum(axis=1)
+        # TODO: check the bark is included or not
+        df2 = self.prod_from_dom_harv_sim
+        df2["hwp_allocated"] = df2[["sw_dom_tc", "wp_dom_tc", "pp_dom_tc"]].sum(axis=1)
+        df = df1[["year", "hwp_eligible"]].merge(df2[["year", "hwp_allocated"]], on="year")
+        df["tc_secondary_fw"] = df["hwp_eligible"] - df["hwp_allocated"]
+        return df
+
+    @cached_property
+    def ghg_emissions_fw(self) -> pandas.DataFrame:
+        """Green House Gas Emissions from both primary and secondary fuel wood
+        """
+        df1 = self.fluxes_to_primary_fw
+        df2 = self.fluxes_to_secondary_fw
+        df = df1.merge(df2, on="year", how="left")
+        df["tc_fw"] = df[["tc_primary_fw", "tc_secondary_fw"]].sum(axis=1)
+
+        # # convert to joules as EFs are on TJ
+        # #Net Cal Value by mass: Log wood (stacked – air dry: 20% MC) = 14.7 GJ/tonne = 0.0147 Tj/tonne of dry mass (Forestry Commission, 2022).
+        # ncv = 0.0147# TJ/tone dry mass
+        # # EF for Biomass category: Wood / Wood Waste
+
+        # # CO2 emissions are already included in biomass loss
+        # ef_ch4 = 0.003# tCH4/TJ
+        # ef_n2o = 0.0004# tN2O/TJ
+        # gwp_ch4 = 21
+        # gwp_n2o=300
+
+        # fw_production['ncv_x_ef_ch4_x_gwp'] =ncv*ef_ch4*gwp_ch4
+        # fw_production['ncv_x_ef_n2o x gwp'] =ef_n2o*gwp_n2o
+
+        # fw_production['fw_ghg_eq'] = fw_production['fw_prim_sec_tdm']*fw_production['ncv_x_ef_ch4_x_gwp']+fw_production['fw_prim_sec_tdm']*fw_production['ncv_x_ef_n2o x gwp']
+        # fw_production['fw_non_co2_tco2_eq']=fw_production['fw_ghg_eq'].astype(int)
+        # fw_production['tco2eq_m3'] = fw_production['fw_non_co2_tco2_eq']/(2*fw_production['fw_prim_sec_tdm'])
+        # fw_production.iloc[[0,-1]]
+
+        return df
+
+    @cached_property
+    def waste(self) -> pandas.DataFrame:
+        """Non CO2 emissions from waste dumps Waste amounts
+
+        We don't calculate CO2 emissions because CO2 emissions are already
+        accounted under HWP. This is about non-CO2 emissions. Calculation for
+        CH4 emissions.
+
+        """
+        df = hwp_common_input.waste
+        # Select data for this country
+        return df
+
+     
+
     def substitution(self, hwp_scenario):
         """Substitution scenarios with a reference and a comparison point
 
@@ -595,3 +661,5 @@ class HWP:
                 df[new_inflow] = df[f"{x}_inflow_0"] * df[frac] * df[factor]
 
         return df
+
+
