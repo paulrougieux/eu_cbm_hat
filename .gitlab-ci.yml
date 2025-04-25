@@ -1,8 +1,14 @@
 default:
   image: python:3.11-bullseye
+  cache:                      # Pip's cache doesn't store the python packages
+    paths:                    # https://pip.pypa.io/en/stable/topics/caching/
+      - .cache/pip
   before_script:
-  - python --version
-  - pip install .[extras]
+  - python -V
+  - python -m venv .venv
+  - source .venv/bin/activate
+  - pip install --upgrade pip
+  - pip install -e .[extras]
   - pip install pytest
   - pip install pdoc
   - pip install git+https://github.com/cat-cfs/libcbm_py.git@2.x
@@ -12,6 +18,9 @@ default:
   - export EU_CBM_DATA="$CI_PROJECT_DIR/eu_cbm_data/"
   - export EU_CBM_AIDB="$CI_PROJECT_DIR/eu_cbm_aidb/"
   - python scripts/setup/aidb_symlink.py
+
+variables:  # Change pip's cache directory to be inside the project directory because we can only cache local items.
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 stages:
   - document
