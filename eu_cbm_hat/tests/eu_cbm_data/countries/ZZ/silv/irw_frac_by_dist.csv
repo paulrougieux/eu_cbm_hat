@@ -17,7 +17,7 @@ reference,ForAWS,OC,LU00,H,E,?,con,1,Cur,22,Generic 90 % mortality (clearcut con
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,42,Insects with salvage logging (within year),0.85,0,0.5,0,0.85,0,0.5,0
 reference,ForAWS,OB,LU00,H,E,?,broad,1,Cur,18,35% commercial thinning,0.5,0,0,0,0.5,0,0,0
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,4,Windstorm (for CP),0.8,0,0,0,0.8,0,0,0
-reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,49,Windstorm (for projection),0,0,0,0,0,0,0,0
+reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,49,Windstorm (for projection),0.85,0,0,0,0.85,0,0,0
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,29,Salvage year 1 post-windstorm,0,0,0.5,0,0,0,0.5,0
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,30,Salvage year 2 post-windstorm,0,0,0.5,0,0,0,0.5,0
 reference,ForAWS,PA,LU00,H,E,?,con,1,Cur,31,Salvage year 3  post-windstorm insects,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5
@@ -53,3 +53,4 @@ full_storied,ForAWS,PA,LU00,H,E,?,con,1,Cur,30,Salvage year 2 post-windstorm,0,0
 full_storied,ForAWS,OC,LU00,H,E,?,con,1,Cur,5,Generic 60% (INSECTS widespread),0.85,0,0.5,0,0.85,0,0.5,0
 full_storied,NF,PA,LU00,H,E,?,con,1,Cur,7,Deforestation,0.5,0,0,0,0.5,0,0,0
 full_storied,AR,PA,LU00,H,E,?,con,1,Cur,7,Deforestation,0.5,0,0,0,0.5,0,0,0
+reference,ForAWS,QR,LU00,H,E,?,broad,1,Cur,21,Clearcut  with slash burn (broad based on area),0,0,0,0,0,0,0,0
