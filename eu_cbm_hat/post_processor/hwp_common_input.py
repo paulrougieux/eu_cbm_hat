@@ -169,7 +169,7 @@ class HWPCommonInput:
             "wood_panels_prod",
             "fibboa_prod",
             "partboa_prod",
-            "veneer_prod",
+            "veneer_prod",# reported by FAOSTAT as separate category, i.e., under sawnwood, but the life time is similar to partboa and fibboa
         ]
         selector = df["year"] > df["year"].max() - 3
         df = df.loc[selector, ["area", "year"] + selected_cols]
@@ -178,6 +178,7 @@ class HWPCommonInput:
         # Compute the fraction
         df["fwp_fibboa"] = df["fibboa_prod"] / df["wood_panels_prod"]
         df["fwp_partboa"] = df["partboa_prod"] / df["wood_panels_prod"]
+        
         # Note Veneer is not part of particle board and OSB
         # df["fwp_pv"] = df["veneer_prod"] / df["wood_panels_prod"]
         # Assert that the ratio sums to one
@@ -189,7 +190,6 @@ class HWPCommonInput:
             msg = "The wood panels ratios do not sum to one. Check:\n"
             msg += f"{df.loc[~selector]}"
             raise ValueError(msg)
-
         return df
 
     @cached_property

@@ -563,6 +563,8 @@ class HWP:
         # Split wood panels
         df["wp_fb_inflow"] = df["wp_inflow"] * split_wp["fwp_fibboa"].iloc[0]
         df["wp_pb_inflow"] = df["wp_inflow"] * split_wp["fwp_partboa"].iloc[0]
+        
+        
         # Load substitution parameters
         subst_params = hwp_common_input.subst_params.copy()
         selector = subst_params["scenario"] == hwp_scenario
@@ -580,4 +582,34 @@ class HWP:
             for frac in selected_frac_cols:
                 new_inflow = frac.replace("frac", "inflow")
                 df[new_inflow] = df[f"{x}_inflow"] * df[frac]
+
+        # step 1 difference subs_scenario - reference
+        # step 2 aritmetics for substitution
+        """
+            df['wp_pb_st_subst']=df['wp_pb_st_inflow_diff_diff']*df['wp_pb_st_subst_factor']
+            df['wp_pb_ce_subst']=df['wp_pb_ce_inflow_diff']*df['wp_pb_ce_subst_factor']
+            df['wp_pb_om_subst']=df['wp_pb_om_inflow_diff']*df['wp_pb_om_subst_factor']
+            df['wp_fb_st_subst']=df['wp_fb_st_inflow_diff']*df['wp_fb_st_subst_factor']
+            df['wp_fb_ce_subst']=df['wp_fb_st_inflow_diff']*df['wp_fb_ce_subst_factor']
+            df['wp_fb_om_subst']=df['wp_fb_ce_inflow_diff']*df['wp_fb_om_subst_factor']
+            df['wp_py_om_subst']=df['wp_fb_om_inflow_diff']*df['wp_py_om_subst_factor']
+            #df['wp_vn_om_subst']=df['']*df[ 'wp_vn_om_subst_factor']
+            df['sw_st_frasubst']=df['sw_st_inflow_diff']*df['sw_st_subst_factor']
+            df['sw_ce_frasubst']=df['sw_ce_inflow_diff']*df['sw_ce_subst_factor']
+            df['sw_fi_om_subst']=df['sw_fi_om_inflow_diff']*df['sw_fi_om_subst_factor']
+            df['sw_fd_om_subst']=df['sw_fd_om_inflow_diff']*df['sw_fd_om_subst_factor']
+            df['pp_du_om_subst']=df['pp_du_om_inflow_diff']*df['pp_du_om_subst_factor']
+            df['pp_pp_tx_subst']=df['pp_pp_tx_inflow_diff']*df['pp_pp_tx_subst_factor']
+            df['pp_pk_om_subst']=df['pp_pk_om_inflow_diff']*df['pp_pk_om_subst_factor']
+            df['pp_fd_om_subst']=df['pp_fd_om_inflow_diff']*df['pp_fd_om_subst_factor']
+            
+            these are substitution savings for products obtained from otherwise fw-dedictaed biomass
+            #df['wf_om_subst']=df['fw_secondary']*df[ 'wf_om_subst_factor']
+            #df['wf_tx_subst']=df['fw_secondary']*df[ 'wf_tx_subst_factor']
+            #df['wf_fu_subst']=df['fw_secondary']*df[ 'wf_fu_subst_factor']
+
+        """
+        # sum up all the above per year
+
+      
         return df
