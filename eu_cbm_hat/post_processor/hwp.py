@@ -1,5 +1,6 @@
 from functools import cached_property
 import numpy as np
+import re
 import warnings
 import pandas
 from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
@@ -563,6 +564,8 @@ class HWP:
         # Split wood panels
         df["wp_fb_inflow"] = df["wp_inflow"] * split_wp["fwp_fibboa"].iloc[0]
         df["wp_pb_inflow"] = df["wp_inflow"] * split_wp["fwp_partboa"].iloc[0]
+        # Rename the original inflow columns
+        df.rename(columns=lambda x: re.sub(r"inflow", "inflow_0", x), inplace=True)
         # Load substitution parameters
         subst_params = hwp_common_input.subst_params.copy()
         selector = subst_params["scenario"] == hwp_scenario
@@ -581,6 +584,7 @@ class HWP:
             msg = "Some fraction columns do not have a corresponding factor column\n"
             msg += f"{missing_factor_cols}"
             raise ValueError(msg)
+        # TODO: Add wood fuel wf
         for x in ["wp_pb", "wp_fb", "sw", "pp"]:
             # Find which fractions are available for this product
             selected_frac_cols = frac_cols[frac_cols.str.contains(x)].to_list()
@@ -588,5 +592,6 @@ class HWP:
             for frac in selected_frac_cols:
                 new_inflow = frac.replace("frac", "inflow")
                 factor = frac.replace("frac", "subst_factor")
-                df[new_inflow] = df[f"{x}_inflow"] * df[frac] * df[factor]
+                df[new_inflow] = df[f"{x}_inflow_0"] * df[frac] * df[factor]
+
         return df
