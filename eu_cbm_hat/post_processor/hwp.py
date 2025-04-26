@@ -529,13 +529,34 @@ class HWP:
         Part of the eligible HWP amount is converted to actual products. We
         consider that the remaining part is burned as secondary fuel wood.
         """
+        df = self.fluxes_to_products
+        # Add bark fraction
+        df = df.merge(self.parent.wood_density_bark_frac, on="forest_type", how="left")
+        #IRW's bark to be included in "FW_secondary" pools
+        df['tc_soft_fw_irw_merch'] = df['softwood_merch_to_product'] * df ['softwood_merch_irw_frac']*df['bark_frac']
+        df['tc_soft_fw_irw_other'] = df['softwood_other_to_product'] * df['softwood_other_irw_frac']*df['bark_frac']
+        df['tc_soft_fw_irw_stem_snag'] = df['softwood_stem_snag_to_product'] * df['softwood_stem_snag_irw_frac']*df['bark_frac']
+        df['tc_soft_fw_irw_branch_snag'] = df['softwood_branch_snag_to_product'] * df['softwood_branch_snag_irw_frac']*df['bark_frac']
+        df['tc_hard_fw_irw_merch'] = df['hardwood_merch_to_product'] * df['hardwood_merch_irw_frac']*df['bark_frac']
+        df['tc_hard_fw_irw_other'] = df['hardwood_other_to_product'] * df['hardwood_other_irw_frac']*df['bark_frac']
+        df['tc_hard_fw_irw_stem_snag'] = df['hardwood_stem_snag_to_product'] * df['hardwood_stem_snag_irw_frac']*df['bark_frac']
+        df['tc_hard_fw_irw_branch_snag'] = df['hardwood_branch_snag_to_product'] * df['hardwood_branch_snag_irw_frac']*df['bark_frac']
+
+        cols = ['tc_soft_fw_irw_merch', 'tc_soft_fw_irw_other',
+                        'tc_soft_fw_irw_stem_snag', 'tc_soft_fw_irw_branch_snag',
+                        'tc_hard_fw_irw_merch', 'tc_hard_fw_irw_other',
+                        'tc_hard_fw_irw_stem_snag', 'tc_hard_fw_irw_branch_snag']
+
+        df =df.groupby(['year'])[cols].sum().reset_index()
+        df['fw_irw_bark'] = df[cols].sum(axis = 1)
         df1 = self.fluxes_by_grade
         df1["hwp_eligible"] = df1[["pulpwood", "sawlogs"]].sum(axis=1)
         # TODO: check the bark is included or not
         df2 = self.prod_from_dom_harv_sim
         df2["hwp_allocated"] = df2[["sw_dom_tc", "wp_dom_tc", "pp_dom_tc"]].sum(axis=1)
-        df = df1[["year", "hwp_eligible"]].merge(df2[["year", "hwp_allocated"]], on="year")
-        df["tc_secondary_fw"] = df["hwp_eligible"] - df["hwp_allocated"]
+        df = df1[["year", "hwp_eligible"]].merge(df2[["year", "hwp_allocated"]].merge(df[["year", "fw_irw_bark"]]), on="year")
+        df["tc_secondary_fw"] = df["hwp_eligible"] - df["hwp_allocated"] + df["fw_irw_bark"]
+               
         return df
 
     @cached_property
@@ -547,41 +568,73 @@ class HWP:
         df = df1.merge(df2, on="year", how="left")
         df["tc_fw"] = df[["tc_primary_fw", "tc_secondary_fw"]].sum(axis=1)
 
-        # # convert to joules as EFs are on TJ
-        # #Net Cal Value by mass: Log wood (stacked – air dry: 20% MC) = 14.7 GJ/tonne = 0.0147 Tj/tonne of dry mass (Forestry Commission, 2022).
-        # ncv = 0.0147# TJ/tone dry mass
-        # # EF for Biomass category: Wood / Wood Waste
-
-        # # CO2 emissions are already included in biomass loss
-        # ef_ch4 = 0.003# tCH4/TJ
-        # ef_n2o = 0.0004# tN2O/TJ
-        # gwp_ch4 = 21
-        # gwp_n2o=300
-
-        # fw_production['ncv_x_ef_ch4_x_gwp'] =ncv*ef_ch4*gwp_ch4
-        # fw_production['ncv_x_ef_n2o x gwp'] =ef_n2o*gwp_n2o
-
-        # fw_production['fw_ghg_eq'] = fw_production['fw_prim_sec_tdm']*fw_production['ncv_x_ef_ch4_x_gwp']+fw_production['fw_prim_sec_tdm']*fw_production['ncv_x_ef_n2o x gwp']
-        # fw_production['fw_non_co2_tco2_eq']=fw_production['fw_ghg_eq'].astype(int)
-        # fw_production['tco2eq_m3'] = fw_production['fw_non_co2_tco2_eq']/(2*fw_production['fw_prim_sec_tdm'])
-        # fw_production.iloc[[0,-1]]
-
+        # convert to joules as EFs are on TJ
+        # Net Cal Value by mass: logwood (stacked – air dry: 20% MC) = 14.7 GJ/tonne = 0.0147 Tj/tonne of dry mass (Forestry Commission, 2022).
+        ncv = 0.0147# TJ/tone dry mass
+        # EMISSION FACTORS for Biomass category: Wood / Wood Waste. 
+        # Note that CO2 emissions are already included in living biomass loss (for primary) and in HWP loss (for secondary)
+        ef_ch4 = 0.003# tCH4/TJ
+        ef_n2o = 0.0004# tN2O/TJ
+        # GWPs
+        gwp_ch4 = 21
+        gwp_n2o=300
+        #intermediary calcualtions
+        df['ncv_x_ef_ch4_x_gwp'] =ncv*ef_ch4*gwp_ch4
+        df['ncv_x_ef_n2o_x_gwp'] =ef_n2o*gwp_n2o
+        # convert to dry mass
+        df ['fw_dm'] = df ['tc_fw']/0.5
+        #estimate tyhe CO2 equivalent emissions
+        df['fw_co2_eq'] = df['fw_dm']*df['ncv_x_ef_ch4_x_gwp']+df['fw_dm']*df['ncv_x_ef_n2o_x_gwp']
         return df
 
     @cached_property
     def waste(self) -> pandas.DataFrame:
         """Non CO2 emissions from waste dumps Waste amounts
-
         We don't calculate CO2 emissions because CO2 emissions are already
         accounted under HWP. This is about non-CO2 emissions. Calculation for
         CH4 emissions.
-
         """
         df = hwp_common_input.waste
         # Select data for this country
-        return df
+        selector = df["country_iso2"] == self.runner.country.iso2_code
+        df = df.loc[selector]
 
-     
+        # annualize biannual data
+        years = np.arange(1960, 2071)
+        new_df = pandas.DataFrame({'year': years})
+        
+        # Merge the two DataFrames and interpolate
+        df = pandas.merge(new_df, df, on='year', how='left')
+        df['wood_landfill_tfm'] = df['wood_landfill_tfm'].interpolate()
+        df = df.bfill().ffill()        
+        # Assign decay parameter inside df
+        decay_params = hwp_common_input.decay_params
+        df["e_ww"] = decay_params["e_sw"].values[0]
+        #init cumulated wood waste  data from the annualinput
+        df['ddoc_mat_doc_stock_tdm'] = 0
+        #init annual loss from wood waste stock
+        df['ddocm_decompt_tdm'] = 0
+        # add factor for excluding the amount subject to aerobic decomposition
+        df['docf_factor'] = 0.5
+        # add factor for mass convertible to CH4
+        df['mcf_factor'] = 0.5#
+        df = df.set_index('year')
+        #fill the columns for ddocm historiclaly cumulated doc, and annual loss ddoc convertible to ch4
+        for y in range(df.index.min()+1, df.index.max()+1):
+            df.loc[y, "ddoc_mat_doc_stock_tdm"] = (df.loc[y-1, "ddoc_mat_doc_stock_tdm"] * df.loc[y,'e_ww']
+                                                + df.loc[y,'w_annual_wood_landfill_tdm']*df.loc[y,'docf_factor']*df.loc[y,'mcf_factor'])
+            df.loc[y, "ddocm_decompt_tdm"] = df.loc[y-1, "ddoc_mat_doc_stock_tdm"] * (1-df.loc[y,'e_ww'])
+        df= df.reset_index()
+        
+        #reduce dataframe to relevant period
+        df=df[df['year'] > 2020 ]
+ 
+        # get CH4 emissions by appling DOCF and MCF, F
+        f_factor = 0.5
+        df['ch4_generated_tch4']  = df['ddocm_decompt_tdm']*f_factor*16/12
+        #apply GWP
+        df['waste_ch4_emissions_tco2']=df['ch4_generated_tch4']*21
+        return df
 
     def substitution(self, hwp_scenario):
         """Substitution scenarios with a reference and a comparison point

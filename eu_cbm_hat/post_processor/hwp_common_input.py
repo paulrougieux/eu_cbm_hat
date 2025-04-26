@@ -770,7 +770,6 @@ class HWPCommonInput:
     def waste(self):
         """Waste treatment data from EUROSTAT
         """
-
         df = pd.read_csv(
             eu_cbm_data_pathlib / "common/eu_waste_treatment.csv"
         )
@@ -782,21 +781,10 @@ class HWPCommonInput:
         )
         df.rename(columns={"geo":"country_iso2",
                            "TIME_PERIOD": "year"}, inplace=True)
+
         # Apply humidity correction, and convert to carbon
         h_corr = 0.15
         df['w_annual_wood_landfill_tdm'] =(1-h_corr) * df['wood_landfill_tfm']
-
-        # Allocate Eurostat 2020 from 1960 to 2070
-        df_year = pd.DataFrame(range(1960, 2071, 1)).rename(columns = {0:'year'})
-        df = pd.merge(df_year, df, on = 'year', how = 'outer').set_index('year')
-        # Back fill and forward fill
-        df = df.bfill().ffill()
-
-        # Assign decay parameter inside df
-        decay_params = self.decay_params
-        df["e_sw"] = decay_params["e_sw"].values[0]
-
-        # TODO: finalize
         return df
 
 
