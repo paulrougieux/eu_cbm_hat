@@ -313,6 +313,14 @@ class HWP:
             "recycled_paper_prod",
             "recycled_wood_prod",
         ]
+
+##############
+        # include warnings if 
+        # ratio of df["sw_dom_tc"]/df["sawlogs"] < 1 >>>> "Sawnwood can not be satisfied from sawlogs"
+        # ratio of df["pp_dom_tc"]/df["pulplogs"] < 1 >>>> "Paper can not be satisfied from pulpwood"
+        # ratio of df["wp_dom_tc"]/((df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"]) < 1 >>>> "Panels can not be satisfied from available pulpwood and sawnood"
+          '
+           
         mean_frac = df[cols].mean()
         return mean_frac
 
@@ -584,11 +592,12 @@ class HWP:
         # convert to dry mass
         df ['fw_dm'] = df ['tc_fw']/0.5
         #estimate tyhe CO2 equivalent emissions
-        df['fw_co2_eq'] = df['fw_dm']*df['ncv_x_ef_ch4_x_gwp']+df['fw_dm']*df['ncv_x_ef_n2o_x_gwp']
+        df['fw_ghg_co2_eq'] = df['fw_dm']*df['ncv_x_ef_ch4_x_gwp']+df['fw_dm']*df['ncv_x_ef_n2o_x_gwp']
+        df['fw_co2_eq']=df['fw_ghg_co2_eq']+df["tc_fw"]*44/12
         return df
 
     @cached_property
-    def waste(self) -> pandas.DataFrame:
+    def ghg_emissions_waste(self) -> pandas.DataFrame:
         """Non CO2 emissions from waste dumps Waste amounts
         We don't calculate CO2 emissions because CO2 emissions are already
         accounted under HWP. This is about non-CO2 emissions. Calculation for
@@ -633,7 +642,7 @@ class HWP:
         f_factor = 0.5
         df['ch4_generated_tch4']  = df['ddocm_decompt_tdm']*f_factor*16/12
         #apply GWP
-        df['waste_ch4_emissions_tco2']=df['ch4_generated_tch4']*21
+        df['waste_co2_eq']=df['ch4_generated_tch4']*21
         return df
 
     def substitution(self, hwp_scenario):

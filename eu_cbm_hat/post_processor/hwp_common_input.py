@@ -136,13 +136,13 @@ class HWPCommonInput:
         df["Area"] = df["Area"].replace(area_dict)
         return df
 
-    @cached_property
-    def euwrb_stat(self):
-        # input Sankey data
-        EUwrb_stat = pd.read_csv(
-            eu_cbm_data_pathlib / "common/forestry_sankey_data.csv"
-        )
-        return EUwrb_stat
+    #@cached_property
+    #def euwrb_stat(self):
+    #    # input Sankey data
+    #    EUwrb_stat = pd.read_csv(
+    #        eu_cbm_data_pathlib / "common/forestry_sankey_data.csv"
+    #    )
+    #    return EUwrb_stat
 
     @cached_property
     def fao_rw_prod_gapfilled(self):
@@ -158,6 +158,28 @@ class HWPCommonInput:
         CRF_stat = pd.read_csv(eu_cbm_data_pathlib / "common/hwp_crf_submission.csv")
         CRF_stat = CRF_stat.rename(columns={"country": "area"})
         return CRF_stat
+
+
+    @cached_property
+    def ctf_reported(self):
+        # crf sumbissions
+        # import data from CRF database, remove NaNs. Remove also the plots with 0 vol, but with agb
+        crf_ts = pd.read_csv(continent.base_dir + '\common\crf_data.csv')
+        crf_ts=crf_ts[crf_ts['indicator'] == 'crf_hwp_tco2']
+        crf_ts = crf_ts[crf_ts.member_state == country_name]
+        # convert to numeric, so we can multiply input values by 1000 
+        crf_ts.iloc[:,2:] = crf_ts.iloc[:,2:].astype(int)
+        crf_ts=crf_ts.reset_index().drop(columns =['member_state','indicator', 'index'])
+        crf_ts.iloc[:,0:]= crf_ts.iloc[:,0:]*1000
+        crf_ts=crf_ts.T
+        crf_ts=crf_ts.reset_index(drop =False).astype(int)
+        crf_data=crf_ts.rename(columns = {'index':'year'})
+        crf_data=crf_data.rename(columns = {0: 'crf_hwp_tco2'})
+        # add country name
+        crf_data['country'] = country_name
+        crf_data=crf_data[['year','country','crf_hwp_tco2']]
+
+
 
     @cached_property
     def subst_params(self):
@@ -434,7 +456,7 @@ class HWPCommonInput:
             cols_var = [x + "_" + var for x in cols]
             # To avoid double counting assert that there is no value in
             # "partboa_and_osb" when there is a value in partboa_original
-            # column and in the osb column The sum of colvars value should be
+            # column and in the osb column the sum of colvars value should be
             # one or 2 not 3
             df_exp["check_" + var] = (df_exp[cols_var] > 0).sum(axis=1)
             selector = df_exp["check_" + var] > 2
@@ -471,72 +493,53 @@ class HWPCommonInput:
         """
         df_exp = self.fao_correction_factor
         # add con and broad aggregates, for information purpose only as split on con and broad is mantained
-        # reduce to IRW
         df_exp["irw_prod"] = df_exp["irw_broad_prod"] + df_exp["irw_con_prod"]
         df_exp["irw_exp"] = df_exp["irw_broad_exp"] + df_exp["irw_con_exp"]
         df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
 
-        # df_exp.to_csv('C:/CBM/exp.csv')
-        # estimate the fractions of domestic in the country's feedstock: IRW, WP, PULP on con and broad
-        # df_exp['fIRW_SW_WP_con'] = (df_exp['irw_con_prod']-df_exp['irw_con_exp'] )/(df_exp['irw_con_prod']+
-        #                                                                            df_exp['irw_con_imp'] -
-        #                                                                            df_exp['irw_con_exp'] )
-        # df_exp['fIRW_SW_WP_broad'] = (df_exp['irw_broad_prod']-df_exp['irw_broad_exp'] )/(df_exp['irw_broad_prod']+
-        #                                                                                  df_exp['irw_broad_imp'] -
-        #                                                                                  df_exp['irw_broad_exp'] )
-        # df_exp['fPULP'] = (df_exp['wood_pulp_prod']-df_exp['wood_pulp_exp'] )/(df_exp['wood_pulp_prod']+
-        #                                                                       df_exp['wood_pulp_imp'] -
-        #                                                                       df_exp['wood_pulp_exp'] )
+        # estimate the fractions of domestic in the country's feedstock on con and broad: IRW, WP, PULP on con and broad
+        df_exp['fIRW_SW_WP_con'] = (df_exp['irw_con_prod']-df_exp['irw_con_exp'] )/(df_exp['irw_con_prod']+
+                                                                                    df_exp['irw_con_imp'] -
+                                                                                    df_exp['irw_con_exp'] )
+        df_exp['fIRW_SW_WP_broad'] = (df_exp['irw_broad_prod']-df_exp['irw_broad_exp'] )/(df_exp['irw_broad_prod']+
+                                                                                          df_exp['irw_broad_imp'] -
+                                                                                          df_exp['irw_broad_exp'] )
+        
+        #average for a generic value
+        #df_exp['fIRW_SW_WP'] =(df_exp['fIRW_SW_WP_con'] + df_exp['fIRW_SW_WP_broad'])/2
+        # ALTERNATIVELY, estimate the generic fraction of domestic feedstock, i.e., no con/broad split
+        
+        
+        df_exp["fIRW_SW_WP"] = (df_exp["irw_prod"] - df_exp["irw_exp"])/(df_exp["irw_prod"] + df_exp["irw_imp"] - df_exp["irw_exp"])
+        df_exp['fPULP'] = df_exp["fIRW_SW_WP"]*(df_exp['wood_pulp_prod']-df_exp['wood_pulp_exp'] )/(df_exp['wood_pulp_prod']+
+                                                                               df_exp['wood_pulp_imp'] -
+                                                                             df_exp['wood_pulp_exp'] )
 
-        df_exp["fIRW_SW_WP_con_dom"] = (
-            df_exp["irw_con_prod"] - df_exp["irw_con_exp"]
-        ) / df_exp["irw_con_prod"]
-        df_exp["fIRW_SW_WP_broad_dom"] = (
-            df_exp["irw_broad_prod"] - df_exp["irw_broad_exp"]
-        ) / df_exp["irw_con_prod"]
-        df_exp["fPULP_dom"] = (
-            df_exp["wood_pulp_prod"] - df_exp["wood_pulp_exp"]
-        ) / df_exp["irw_con_prod"]
-
-        # estimate the generic fraction of domestic feedstock
-        df_exp["fIRW_SW_WP"] = (df_exp["irw_prod"] - df_exp["irw_exp"]) / (
-            df_exp["irw_prod"] + df_exp["irw_imp"] - df_exp["irw_exp"]
-        )
-
-        # apply assumptions that f = 0 or f = 1 when f values are <0 or >1
-        # when numerator is negative (export > production)
-        # a value f =1 means entire amount corrected result as a domestic feedstock
+        # f values on con and broad
+        # apply assumptions that fIRW_SW_WP = 0 when ratio < 0 or f = 1 when ratio > 1
+        # a value f = 1 means entire amount corrected result as a domestic feedstock
         # a value f = 0 means there is no domestic contribution to the feedstock
-        # df_exp['fIRW_SW_WP_con'] = df_exp['fIRW_SW_WP_con'].mask(df_exp['fIRW_SW_WP_con']<0, 0)
-        # df_exp['fIRW_SW_WP_broad'] = df_exp['fIRW_SW_WP_broad'].mask(df_exp['fIRW_SW_WP_broad']<0, 0)
-        # df_exp ['fPULP']= df_exp['fPULP'].mask(df_exp['fPULP']<0, 0)
-
-        df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con_dom"].mask(
-            df_exp["fIRW_SW_WP_con_dom"] < 0, 0
-        )
-        df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad_dom"].mask(
-            df_exp["fIRW_SW_WP_broad_dom"] < 0, 0
-        )
-        df_exp["fPULP_dom"] = df_exp["fPULP_dom"].mask(df_exp["fPULP_dom"] < 0, 0)
+        # when numerator is negative (export > production)
+        df_exp["fIRW_SW_WP_con"] = df_exp["fIRW_SW_WP_con"].mask(df_exp["fIRW_SW_WP_con"] < 0, 0)
+        df_exp["fIRW_SW_WP_broad"] = df_exp["fIRW_SW_WP_broad"].mask(df_exp["fIRW_SW_WP_broad"] < 0, 0)
+        df_exp["fPULP"] = df_exp["fPULP"].mask(df_exp["fPULP"] < 0, 0)
 
         # when both numerator and denominatore is negative (export > production & export > production + import)
-        # df_exp['fIRW_SW_WP_con'] = df_exp['fIRW_SW_WP_con'].mask(df_exp['fIRW_SW_WP_con']>1, 0)
-        # df_exp['fIRW_SW_WP_broad'] = df_exp['fIRW_SW_WP_broad'].mask(df_exp['fIRW_SW_WP_broad']>1, 0)
-        # df_exp ['fPULP']= df_exp['fPULP'].mask(df_exp['fPULP']>1, 0)
-        # df_exp['fIRW_SW_WP_con'] =df_exp['fIRW_SW_WP_con'].fillna(0)
-        # df_exp['fIRW_SW_WP_broad'] =df_exp['fIRW_SW_WP_broad'].fillna(0)
-        # df_exp['fPULP'] =df_exp['fPULP'].fillna(0)
+        #df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con_dom"].mask(df_exp["fIRW_SW_WP_con_dom"] > 1, 0)
+        #df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad_dom"].mask(df_exp["fIRW_SW_WP_broad_dom"] > 1, 0)
+        #df_exp["fPULP"] = df_exp["fPULP"].mask(df_exp["fPULP"] > 1, 0)
+        #allow arithmetic of #NA cells
+        df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con"].fillna(0)
+        df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad"].fillna(0)
+        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].fillna(0)
+        df_exp["fPULP_dom"] = df_exp["fPULP"].fillna(0)
 
-        df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con_dom"].mask(
-            df_exp["fIRW_SW_WP_con_dom"] > 1, 0
-        )
-        df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad_dom"].mask(
-            df_exp["fIRW_SW_WP_broad_dom"] > 1, 0
-        )
-        df_exp["fPULP_dom"] = df_exp["fPULP_dom"].mask(df_exp["fPULP_dom"] > 1, 0)
-        df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con_dom"].fillna(0)
-        df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad_dom"].fillna(0)
-        df_exp["fPULP_dom"] = df_exp["fPULP_dom"].fillna(0)
+        # f values on roundwood
+       
+        # apply assumptions that fIRW_SW_WP = 0 when ratio <0 or f = 1 when ratio >1
+        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].mask(df_exp["fIRW_SW_WP"] < 0, 0)
+        #df_exp["fIRW_SW_WP_dom"] = df_exp["fIRW_SW_WP_dom"].mask(df_exp["fIRW_SW_WP_dom"] > 1, 0)
+        
 
         # fractions of recycled paper feedstock, exports and exports
         df_exp["fREC_PAPER"] = (
@@ -546,6 +549,9 @@ class HWPCommonInput:
             + df_exp["recycled_paper_imp"]
             - df_exp["recycled_paper_exp"]
         )
+
+        # apply assumptions that f = 0 when ratio < 0
+        df_exp["fREC_PAPER"] = df_exp["fREC_PAPER"].mask(df_exp["fREC_PAPER"] < 0, 0)
 
         # replacing NA to 0, so possible to make operations
         df_exp["fREC_PAPER"] = df_exp["fREC_PAPER"].fillna(0)
