@@ -16,6 +16,7 @@ def compute_substitution(runner, hwp_scenario):
      See the documentation of the compare_substitution function for how to
      compute the difference between the two substitution data frames.
     """
+
     # Load inflows
     df = runner.post_processor.hwp.build_hwp_stock_since_1990.copy()
     selected_cols = ["year", "sw_inflow", "wp_inflow", "pp_inflow"]
@@ -52,8 +53,16 @@ def compute_substitution(runner, hwp_scenario):
         msg = "Some fraction columns do not have a corresponding factor column\n"
         msg += f"{missing_factor_cols}"
         raise ValueError(msg)
-    # TODO: Add wood fuel wf
-    for x in ["wp_pb", "wp_fb", "sw", "pp"]:
+
+    # Add fuel wood inflows
+    df_fw = runner.post_processor.hwp.ghg_emissions_fw
+    col_map = {"tc_primary_fw": "fw_primary_inflow_0",
+               "tc_secondary_fw": "fw_secondary_inflow_0"}
+    df_fw.rename(columns=col_map, inplace=True)
+    df = df.merge(df_fw[["year"] + list(col_map.values())], on="year", how="left")
+
+    # For the substitution we consider only the secondary fuel wood
+    for x in ["wp_pb", "wp_fb", "sw", "pp", "fw_primary", "fw_secondary"]:
         # Find which fractions are available for this product
         selected_frac_cols = frac_cols[frac_cols.str.contains(x)].to_list()
         # Create the inflow based on the available fractions and factors
@@ -63,8 +72,6 @@ def compute_substitution(runner, hwp_scenario):
             df[new_inflow] = df[f"{x}_inflow_0"] * df[frac] * df[factor]
 
     return df
-
-
 
 
 def compare_substitution(df_ref, df):
