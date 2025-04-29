@@ -767,11 +767,13 @@ class HWPCommonInput:
     @cached_property
     def waste(self):
         """Waste treatment data from EUROSTAT
+
+        All emissions factors are based on dry matter.
         """
         df = pd.read_csv(
             eu_cbm_data_pathlib / "common/eu_waste_treatment.csv"
         )
-        # Aggregate over waste types per year and per country
+        # Sum the 3 waste types values per year and per country
         df = (
             df.groupby(['geo','TIME_PERIOD'])
             .agg(wood_landfill_tfm = ('OBS_VALUE', "sum"))
@@ -779,8 +781,11 @@ class HWPCommonInput:
         )
         df.rename(columns={"geo":"country_iso2",
                            "TIME_PERIOD": "year"}, inplace=True)
+        # In the resulting sum, replace zeros by NA values. So that the
+        # interpolation in hwp.py will work only on available values.
+        df["wood_landfill_tfm"] = df["wood_landfill_tfm"].replace(0, np.nan)
 
-        # Apply humidity correction, and convert to carbon
+        # Apply humidity correction
         h_corr = 0.15
         df['w_annual_wood_landfill_tdm'] =(1-h_corr) * df['wood_landfill_tfm']
         return df
