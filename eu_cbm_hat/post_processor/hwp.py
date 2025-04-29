@@ -314,12 +314,13 @@ class HWP:
             "recycled_wood_prod",
         ]
 
-##############
+
+        """
         # include warnings if 
         # ratio of df["sw_dom_tc"]/df["sawlogs"] < 1 >>>> "Sawnwood can not be satisfied from sawlogs"
         # ratio of df["pp_dom_tc"]/df["pulplogs"] < 1 >>>> "Paper can not be satisfied from pulpwood"
         # ratio of df["wp_dom_tc"]/((df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"]) < 1 >>>> "Panels can not be satisfied from available pulpwood and sawnood"
-          '
+          """
            
         mean_frac = df[cols].mean()
         return mean_frac
