@@ -516,18 +516,10 @@ class HWPCommonInput:
                                                                              df_exp['wood_pulp_exp'] )
 
         # f values on con and broad
-        # apply assumptions that fIRW_SW_WP = 0 when ratio < 0 or f = 1 when ratio > 1
-        # a value f = 1 means entire amount corrected result as a domestic feedstock
-        # a value f = 0 means there is no domestic contribution to the feedstock
-        # when numerator is negative (export > production)
         df_exp["fIRW_SW_WP_con"] = df_exp["fIRW_SW_WP_con"].mask(df_exp["fIRW_SW_WP_con"] < 0, 0)
         df_exp["fIRW_SW_WP_broad"] = df_exp["fIRW_SW_WP_broad"].mask(df_exp["fIRW_SW_WP_broad"] < 0, 0)
         df_exp["fPULP"] = df_exp["fPULP"].mask(df_exp["fPULP"] < 0, 0)
 
-        # when both numerator and denominatore is negative (export > production & export > production + import)
-        #df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con_dom"].mask(df_exp["fIRW_SW_WP_con_dom"] > 1, 0)
-        #df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad_dom"].mask(df_exp["fIRW_SW_WP_broad_dom"] > 1, 0)
-        #df_exp["fPULP"] = df_exp["fPULP"].mask(df_exp["fPULP"] > 1, 0)
         #allow arithmetic of #NA cells
         df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con"].fillna(0)
         df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad"].fillna(0)
