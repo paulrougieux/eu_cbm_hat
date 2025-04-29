@@ -420,9 +420,9 @@ class HWP:
         cols += ["e_sw", "e_wp", "e_pp"]
         df = df[["year"] + cols]
         # Initiate stock values
-        df["sw_stock"] = 0
-        df["wp_stock"] = 0
-        df["pp_stock"] = 0
+        df["sw_stock"] = 0.0  # Keep it with a dot to create a floating point number
+        df["wp_stock"] = 0.0
+        df["pp_stock"] = 0.0
         # Compute the stock for each semi finite product for all subsequent years
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
@@ -677,3 +677,51 @@ class HWP:
         # Apply GWP Global Warming Potential
         df["waste_co2_eq"] = df["ch4_generated_tch4"] * 21
         return df
+
+    @cached_property
+    def ctf_unfccc(self) -> pandas.DataFrame:
+        """Common Table Format for HWP calibration
+        Exogenous reporting data from the CTF country reports to the UNFCCC.
+        """
+        df = hwp_common_input.ctf_unfccc
+        # Select the country
+        selector = df["member_state"] == self.runner.country.country_name
+        df = df.loc[selector].copy()
+        return df
+
+
+    @cached_property
+    def stock_sink_results(self) -> pandas.DataFrame:
+        """Comparison table for HWP calibration
+
+
+        Collect data from different initial year, which correspond to different
+        methodologies:
+
+            - Base year 1900 (IPCC 2006/2018/2019)
+            - Base year 1990 (IPCC 2013)
+            - non-CO2 emissions and total GHG emissions from burning wood for
+              energy
+            - Load GHG emissions from waste
+
+        """
+        # Load stock and sink
+        cols = ["year", "hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
+        # Base year 1900 (IPCC 2006/2018/2019)
+        df_1900 = self.build_hwp_stock_since_1900[cols].copy()
+        selector = df_1900["year"] >= 1990
+        df_1900 = df_1900.loc[selector]
+        # Base year 1990 (IPCC 2013)
+        df_1990 = self.build_hwp_stock_since_1990[cols]
+        # Load GHG emissions from burning wood for energy
+        cols = ["year", "fw_ghg_co2_eq", "fw_co2_eq"]
+        df_fw = self.ghg_emissions_fw[cols]
+        # Load GHG emissions from waste
+        cols = ["year", "waste_co2_eq"]
+        df_waste = self.ghg_emissions_waste[cols]
+        # Merge
+        df = df_1900.merge(df_1990, on="year", how="outer")
+        df = df.merge(df_fw, on="year", how="outer")
+        df = df.merge(df_waste, on="year", how="outer")
+        return df
+

@@ -154,31 +154,32 @@ class HWPCommonInput:
 
     @cached_property
     def crf_stat(self):
-        # crf sumbissions
+        """crf sumbissions"""
         CRF_stat = pd.read_csv(eu_cbm_data_pathlib / "common/hwp_crf_submission.csv")
         CRF_stat = CRF_stat.rename(columns={"country": "area"})
         return CRF_stat
 
 
     @cached_property
-    def ctf_reported(self):
-        # crf sumbissions
-        # import data from CRF database, remove NaNs. Remove also the plots with 0 vol, but with agb
-        crf_ts = pd.read_csv(continent.base_dir + '\common\crf_data.csv')
-        crf_ts=crf_ts[crf_ts['indicator'] == 'crf_hwp_tco2']
-        crf_ts = crf_ts[crf_ts.member_state == country_name]
-        # convert to numeric, so we can multiply input values by 1000 
-        crf_ts.iloc[:,2:] = crf_ts.iloc[:,2:].astype(int)
-        crf_ts=crf_ts.reset_index().drop(columns =['member_state','indicator', 'index'])
-        crf_ts.iloc[:,0:]= crf_ts.iloc[:,0:]*1000
-        crf_ts=crf_ts.T
-        crf_ts=crf_ts.reset_index(drop =False).astype(int)
-        crf_data=crf_ts.rename(columns = {'index':'year'})
-        crf_data=crf_data.rename(columns = {0: 'crf_hwp_tco2'})
-        # add country name
-        crf_data['country'] = country_name
-        crf_data=crf_data[['year','country','crf_hwp_tco2']]
+    def ctf_unfccc(self):
+        """Common Reporting Format CRF submissions of green house gas reported
+        by the countries to the UNFCCC.
 
+        Note: the old name  of the input table was Common Reporting Format, the
+        new name is CTF for Common Table Format.
+        """
+        # Import data from CRF database, remove NaNs. Remove also the plots with 0 vol, but with agb
+        df_wide = pd.read_csv(eu_cbm_data_pathlib / 'common/crf_data.csv')
+        indicator = 'crf_hwp_tco2'
+        selector = df_wide['indicator'] == indicator
+        df_wide = df_wide[selector].copy()
+        # Reshape to long format
+        df = df_wide.melt(id_vars=["member_state", "indicator"], var_name="year", value_name=indicator)
+        # convert to numeric
+        df[indicator] = pd.to_numeric(df[indicator], errors="coerce")
+        # Convert kilo tons to tons
+        df[indicator] = df[indicator] * 1000
+        return df
 
 
     @cached_property
@@ -768,7 +769,8 @@ class HWPCommonInput:
     def waste(self):
         """Waste treatment data from EUROSTAT
 
-        All emissions factors are based on dry matter.
+        All emissions factors are based on wet material, then we apply the
+        humidity correction to convert to dry matter.
         """
         df = pd.read_csv(
             eu_cbm_data_pathlib / "common/eu_waste_treatment.csv"
