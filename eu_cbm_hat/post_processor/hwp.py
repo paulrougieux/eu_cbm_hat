@@ -313,7 +313,16 @@ class HWP:
         ]
 
         """
-        # include warnings if 
+        # include warnings + comment if 
+        if df["sw_dom_tc"] < df["sawlogs"]:
+            df["sw_fraction"] = df["sw_dom_tc"] / df["sawlogs"]
+        else
+            df["sw_fraction"] = df["sawlogs"] / df["sw_dom_tc"
+            # warnings with the ratio value {df["sw_dom_tc"]/df["sawlogs"]} and {f" "Sawnwood can not be satisfied from sawlogs"}
+
+
+
+        
         # ratio of df["sw_dom_tc"]/df["sawlogs"] < 1 >>>> "Sawnwood can not be satisfied from sawlogs"
         # ratio of df["pp_dom_tc"]/df["pulplogs"] < 1 >>>> "Paper can not be satisfied from pulpwood"
         # ratio of df["wp_dom_tc"]/((df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"]) < 1 >>>> "Panels can not be satisfied from available pulpwood and sawnood"
@@ -694,7 +703,6 @@ class HWP:
     def stock_sink_results(self) -> pandas.DataFrame:
         """Comparison table for HWP calibration
 
-
         Collect data from different initial year, which correspond to different
         methodologies:
 
@@ -705,23 +713,42 @@ class HWP:
             - Load GHG emissions from waste
 
         """
+        # Load GHG emissions reported by country to UNFCCC for HWP pool
+        cols =  ['member_state', 'year', 'crf_hwp_tco2']
+        df_ctf = self.ctf_unfccc[cols]
+        df_ctf['year'] = df_ctf['year'].astype(int)
+       
         # Load stock and sink
         cols = ["year", "hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
-        # Base year 1900 (IPCC 2006/2018/2019)
+        # Initial year 1900 (IPCC 2006/2018/2019)
         df_1900 = self.build_hwp_stock_since_1900[cols].copy()
+        # Add '_1900' to the columns
+        cols_1900 = ["hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
+        df_1900 = df_1900.rename(columns={col: f"{col}_1900" for col in cols_1900})
         selector = df_1900["year"] >= 1990
         df_1900 = df_1900.loc[selector]
-        # Base year 1990 (IPCC 2013)
+        
+        # Initial year 1990 (IPCC 2013)
         df_1990 = self.build_hwp_stock_since_1990[cols]
+        # Add '_1990' to the columns
+        cols_1990 = ["hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
+        df_1990 = df_1990.rename(columns={col: f"{col}_1990" for col in cols_1990})
+        
         # Load GHG emissions from burning wood for energy
         cols = ["year", "fw_ghg_co2_eq", "fw_co2_eq"]
         df_fw = self.ghg_emissions_fw[cols]
+        
         # Load GHG emissions from waste
         cols = ["year", "waste_co2_eq"]
         df_waste = self.ghg_emissions_waste[cols]
+        
         # Merge
-        df = df_1900.merge(df_1990, on="year", how="outer")
+        df = df_ctf.merge(df_1900, on="year", how="outer")
+        df = df.merge(df_1900, on="year", how="outer")
+        df = df.merge(df_1990, on="year", how="outer")
         df = df.merge(df_fw, on="year", how="outer")
-        df = df.merge(df_waste, on="year", how="outer")
+        df = df.merge(df_waste, on="year", how="outer")        
+
+        
         return df
 

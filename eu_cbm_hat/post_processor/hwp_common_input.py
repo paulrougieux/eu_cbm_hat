@@ -522,17 +522,15 @@ class HWPCommonInput:
         df_exp["fPULP"] = df_exp["fPULP"].mask(df_exp["fPULP"] < 0, 0)
 
         #allow arithmetic of #NA cells
-        df_exp["fIRW_SW_WP_con_dom"] = df_exp["fIRW_SW_WP_con"].fillna(0)
-        df_exp["fIRW_SW_WP_broad_dom"] = df_exp["fIRW_SW_WP_broad"].fillna(0)
+        df_exp["fIRW_SW_WP_con"] = df_exp["fIRW_SW_WP_con"].fillna(0)
+        df_exp["fIRW_SW_WP_broad"] = df_exp["fIRW_SW_WP_broad"].fillna(0)
         df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].fillna(0)
-        df_exp["fPULP_dom"] = df_exp["fPULP"].fillna(0)
+        df_exp["fPULP"] = df_exp["fPULP"].fillna(0)
 
         # f values on roundwood
        
-        # apply assumptions that fIRW_SW_WP = 0 when ratio <0 or f = 1 when ratio >1
-        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].mask(df_exp["fIRW_SW_WP"] < 0, 0)
-        #df_exp["fIRW_SW_WP_dom"] = df_exp["fIRW_SW_WP_dom"].mask(df_exp["fIRW_SW_WP_dom"] > 1, 0)
-        
+        # apply assumptions that fIRW_SW_WP = 0 when ratio <0
+        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].mask(df_exp["fIRW_SW_WP"] < 0, 0)        
 
         # fractions of recycled paper feedstock, exports and exports
         df_exp["fREC_PAPER"] = (
@@ -728,7 +726,7 @@ class HWPCommonInput:
         """
         index = ["area", "year"]
         selected_cols = index + [
-            "fPULP_dom",
+            "fPULP",
             "fIRW_SW_WP",
             "recycled_paper_prod",
             "recycled_wood_prod",
@@ -750,12 +748,12 @@ class HWPCommonInput:
             msg += f"\n{country_with_no_data}"
             warnings.warn(msg)
         # Gap fill export correction factors
-        df = backfill_avg_first_n_year(df, var="fIRW_SW_WP", n=2)
-        df = backfill_avg_first_n_year(df, var="fPULP_dom", n=2)
+        df = backfill_avg_first_n_year(df, var="fIRW_SW_WP", n=10)
+        df = backfill_avg_first_n_year(df, var="fPULP", n=10)
         # Compute production from domestic roundwood
         df["sw_dom_m3"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
         df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
-        df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP_dom"]
+        df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP"]
         # compute values in Tons of Carbon
         df["sw_dom_tc"] = self.c_sw * df["sw_dom_m3"]
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
