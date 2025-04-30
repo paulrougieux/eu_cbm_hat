@@ -41,10 +41,8 @@ class HWP:
         >>> # Display the effect on the final results
         >>> print(hwp.stock_sink_results)
 
-
     TODO:
 
-        - Illustrate a change of hwp_scenario
         - Illustrate change of number of years used to compute domestic factors
           self.n_years_dom_frac = 10
 
