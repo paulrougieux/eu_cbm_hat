@@ -21,6 +21,8 @@ class HWP:
         >>> runner.post_processor.hwp.fluxes_by_grade
         >>> runner.post_processor.hwp.build_hwp_stock
 
+    TODO: illustrate change of self.n_years_dom_frac = 10
+
     """
 
     def __init__(self, parent):
@@ -267,6 +269,9 @@ class HWP:
         Merge country statistics on domestic harvest and
         CBM output for n common years.
 
+        Check if available raw material is sufficient to produce the amount of
+        semi finished products reported by countries.
+
         param n: Number of years to keep from domestic harvest
 
         Example use using 3 or 4 years:
@@ -312,12 +317,28 @@ class HWP:
             "recycled_wood_prod",
         ]
 
-        """
-        # check if
-        # print df["sw_fraction"] value, if df["sw_fraction"] > 1 print message >>>> "Sawnwood can not be satisfied from sawlogs"
-        # print df["pp_fraction"] value, if df["pp_fraction"] > 1 >>>> "Paper can not be satisfied from pulpwood"
-        # print df["wp_fraction"] value, if df["wp_fraction"] > 1 >>>> "Panels can not be satisfied from available pulpwood and sawnood"
-        """
+        # Check if available raw material is sufficient to produce the amount
+        # of semi finished products reported by countries.
+        sw_selector = df["sw_fraction"] > 1
+        if any(sw_selector):
+            msg = "Reported sawnwood production can not be satisfied from "
+            msg += "sawlogs production from CBM for the following years:\n"
+            msg += f"{df.loc[sw_selector]}"
+            raise ValueError(msg)
+
+        pp_selector = df["pp_fraction"] > 1
+        if any(pp_selector):
+            msg = "Reported paper production can not be satisfied from "
+            msg += "pulpwood production from CBM for the following years:\n"
+            msg += f"{df.loc[pp_selector]}"
+            raise ValueError(msg)
+
+        wp_selector = df["wp_fraction"] > 1
+        if any(wp_selector):
+            msg = "Reported panel production can not be satisfied from "
+            msg += "pulpwood and sawnwood production from CBM for the following years:\n"
+            msg += f"{df.loc[wp_selector]}"
+            raise ValueError(msg)
 
         mean_frac = df[cols].mean()
         return mean_frac
