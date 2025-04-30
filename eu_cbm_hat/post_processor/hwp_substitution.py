@@ -1,6 +1,6 @@
 """Compare substitution scenarios
 
-Note: see the distinction between a scenario combo and a hwp_scenario in the
+Note: see the distinction between a scenario combo and a subst_scenario in the
 documentation further down below.
 """
 
@@ -8,7 +8,7 @@ import re
 from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
 
 
-def compute_substitution(runner, hwp_scenario):
+def compute_substitution(runner, subst_scenario):
     """Substitution scenarios with a reference and a comparison point
 
      Merge with the data from steel, cement and other materials.
@@ -37,7 +37,7 @@ def compute_substitution(runner, hwp_scenario):
     df.rename(columns=lambda x: re.sub(r"inflow", "inflow_0", x), inplace=True)
     # Load substitution parameters
     subst_params = hwp_common_input.subst_params.copy()
-    selector = subst_params["scenario"] == hwp_scenario
+    selector = subst_params["subst_scenario"] == subst_scenario
     selector &= subst_params["country"] == runner.country.country_name
     subst_params_ref = subst_params.loc[selector]
     # Merge with substitution parameters
@@ -82,7 +82,7 @@ def compare_substitution(df_ref, df):
 
     There is a distinction between :
         - a scenario combination when running CBM here the combos are called "reference" and "other_combo"
-        - a HWP scenario here the hwp_scenario arguments are called "reference" and "substitution"
+        - a HWP scenario here the subst_scenario arguments are called "reference" and "substitution"
 
     Example compute the difference between two HWP scenarios called "reference"
     and "substitution" between two different scenario combinations called
@@ -93,8 +93,8 @@ def compare_substitution(df_ref, df):
         >>> from eu_cbm_hat.post_processor.hwp_substitution  import compute_substitution
         >>> runner_ref = continent.combos['reference'].runners['LU'][-1]
         >>> runner_other = continent.combos['other_combo'].runners['LU'][-1]
-        >>> df_ref = compute_substitution(runner_ref, hwp_scenario="reference")
-        >>> df_subst = compute_substitution(runner_other, hwp_scenario="substitution")
+        >>> df_ref = compute_substitution(runner_ref, subst_scenario="reference")
+        >>> df_subst = compute_substitution(runner_other, subst_scenario="substitution")
         >>> compare_substitution(subst_ref, subst_other)
 
     Example compute the difference between two HWP scenarios within the
@@ -104,8 +104,8 @@ def compare_substitution(df_ref, df):
         >>> from eu_cbm_hat.post_processor.hwp_substitution  import compare_substitution
         >>> from eu_cbm_hat.post_processor.hwp_substitution  import compute_substitution
         >>> runner = continent.combos['reference'].runners['LU'][-1]
-        >>> df_ref = compute_substitution(runner, hwp_scenario="reference")
-        >>> df_subst = compute_substitution(runner, hwp_scenario="substitution")
+        >>> df_ref = compute_substitution(runner, subst_scenario="reference")
+        >>> df_subst = compute_substitution(runner, subst_scenario="substitution")
         >>> # Comparison
         >>> compare_substitution(df_ref, df_subst)
 
