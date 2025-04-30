@@ -236,6 +236,14 @@ class HWPCommonInput:
         return df
 
     @cached_property
+    def hwp_fraction_semifinished_scenario(self):
+        """Scenario of fraction of semi finished products"""
+        df = pd.read_csv(
+            eu_cbm_data_pathlib / "common/hwp_fraction_semifinished_scenario.csv"
+        )
+        return df
+
+    @cached_property
     def split_wood_panels(self):
         """Split wood panels amount between particle board, fibre board and veneer.
 

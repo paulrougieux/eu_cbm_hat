@@ -21,7 +21,32 @@ class HWP:
         >>> runner.post_processor.hwp.fluxes_by_grade
         >>> runner.post_processor.hwp.build_hwp_stock
 
-    TODO: illustrate change of self.n_years_dom_frac = 10
+    Compute results for the default scenario and for another hwp scenario
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> hwp = runner.post_processor.hwp
+        >>> print("Fractions before modification, in the default scenario")
+        >>> print(hwp.fraction_semifinished_n_years_mean)
+        >>> print(hwp.fraction_semifinished)
+        >>> print(hwp.prod_from_dom_harv_sim)
+        >>> print(hwp.stock_sink_results)
+
+        >>> # Change the fraction semi finished
+        >>> runner.post_processor.hwp.hwp_frac_scenario = "more_sw"
+        >>> print("Fractions in the scenario")
+        >>> print(hwp.fraction_semifinished)
+        >>> # Display the effect on the production from domestic harvest
+        >>> print(hwp.prod_from_dom_harv_sim)
+        >>> # Display the effect on the final results
+        >>> print(hwp.stock_sink_results)
+
+
+    TODO:
+
+        - Illustrate a change of hwp_scenario
+        - Illustrate change of number of years used to compute domestic factors
+          self.n_years_dom_frac = 10
 
     """
 
@@ -35,6 +60,7 @@ class HWP:
         # Number of common years to be used to compute the
         # Fraction domestic semi finished products
         self.n_years_dom_frac = 10
+        self.hwp_frac_scenario = "default"
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -258,8 +284,9 @@ class HWP:
         return df
 
     @property  # Don't cache, in case we change the number of years
-    def fraction_semifinished(self) -> pandas.DataFrame:
-        """Compute the fraction of semi finished products
+    def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
+        """Compute the fraction of semi finished products as the average of the
+        n years defined as in the n_years_dom_frac property
 
         Also compute the average of the absolute amounts of recycled wood
         entering in wood panels and the amount of recycled paper entering in
@@ -279,9 +306,9 @@ class HWP:
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
             >>> runner.post_processor.hwp.n_years_dom_frac = 3
-            >>> df3 = runner.post_processor.hwp.fraction_semifinished
+            >>> print(runner.post_processor.hwp.fraction_semifinished_n_years_mean)
             >>> runner.post_processor.hwp.n_years_dom_frac = 4
-            >>> df4 = runner.post_processor.hwp.fraction_semifinished
+            >>> print(runner.post_processor.hwp.fraction_semifinished_n_years_mean)
 
         """
         # Country statistics on domestic harvest
@@ -309,13 +336,6 @@ class HWP:
         df["wp_fraction"] = df["wp_dom_tc"] / (
             (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
         )
-        cols = [
-            "sw_fraction",
-            "pp_fraction",
-            "wp_fraction",
-            "recycled_paper_prod",
-            "recycled_wood_prod",
-        ]
 
         # Check if available raw material is sufficient to produce the amount
         # of semi finished products reported by countries.
@@ -339,25 +359,88 @@ class HWP:
             msg += "pulpwood and sawnwood production from CBM for the following years:\n"
             msg += f"{df.loc[wp_selector]}"
             raise ValueError(msg)
-
-        mean_frac = df[cols].mean()
-        return mean_frac
-
-    @property  # Don"t cache, in case we change the number of years
-    def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
-        """Compute the fraction of semi finished products"""
-        df = self.fluxes_by_grade.copy()
-        cols = [
+        # Compute the average of the selected columns
+        selected_cols = [
             "sw_fraction",
             "pp_fraction",
             "wp_fraction",
             "recycled_paper_prod",
             "recycled_wood_prod",
         ]
-        mean_frac = self.fraction_semifinished
-        # Add the mean fraction to the CBM output data
-        for col in cols:
-            df[col] = mean_frac[col]
+        mean_frac = df[selected_cols].mean()
+        return mean_frac
+
+    @property  # Don't cache, in case we change the number of years
+    def fraction_semifinished(self) -> pandas.DataFrame:
+        """Fraction of semi finished products
+
+        Either default values or values from a scenario input files:
+
+        - The default values are from the fraction_semifinished_n_years_mean
+          method
+        - The input files values are from
+          hwp_common_input.hwp_fraction_semifinished_scenario
+        """
+        mean_frac = self.fraction_semifinished_n_years_mean
+        # Default scenario
+        if self.hwp_frac_scenario == "default":
+            max_year = self.runner.country.base_year + self.runner.num_timesteps
+            df =  pandas.DataFrame({"year" : range(1900, max_year+1)})
+            cols = [
+                "sw_fraction",
+                "pp_fraction",
+                "wp_fraction",
+                "recycled_paper_prod",
+                "recycled_wood_prod",
+            ]
+            for col in cols:
+                df[col] = mean_frac[col]
+            # Return
+            return df
+        # Other scenarios
+        df = hwp_common_input.hwp_fraction_semifinished_scenario.copy()
+        selector = df["country"] == self.runner.country.country_name
+        selector &= df["hwp_frac_scenario"] == self.hwp_frac_scenario
+        df.drop(columns=["country", "hwp_frac_scenario"], inplace=True)
+        # Add recycled values from the mean table
+        df["recycled_paper_prod"] = mean_frac["recycled_paper_prod"]
+        df["recycled_wood_prod"] = mean_frac["recycled_wood_prod"]
+        return df
+
+
+
+
+
+    @property  # Don"t cache, in case we change the number of years
+    def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
+        """Compute the production of sanwood, panels and paper from domestic
+        harvest as an output of the CBM simulated amounts of sawlogs and
+        pulpwood.
+
+        Illustrate a change of the sw, wp, pp fractions:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> hwp = runner.post_processor.hwp
+            >>> print("Fractions before modification, in the default scenario")
+            >>> print(hwp.fraction_semifinished_n_years_mean)
+            >>> print(hwp.fraction_semifinished)
+            >>> print(hwp.prod_from_dom_harv_sim)
+            >>> print(hwp.stock_sink_results)
+
+            >>> # Change the fraction semi finished
+            >>> runner.post_processor.hwp.hwp_frac_scenario = "more_sw"
+            >>> print("Fractions in the scenario")
+            >>> print(hwp.fraction_semifinished)
+            >>> # Display the effect on the production from domestic harvest
+            >>> print(hwp.prod_from_dom_harv_sim)
+            >>> # Display the effect on the final results
+            >>> print(hwp.stock_sink_results)
+
+        """
+        df = self.fluxes_by_grade.copy()
+        # Add the fractions to the CBM output data
+        df = df.merge(self.fraction_semifinished, on="year")
         # Compute production from domestic harvest for the future
         df["sw_dom_tc"] = df["sawlogs"] * df["sw_fraction"]
         df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
@@ -711,7 +794,7 @@ class HWP:
         return df
 
 
-    @cached_property
+    @property
     def stock_sink_results(self) -> pandas.DataFrame:
         """Comparison table for HWP calibration
 
@@ -756,11 +839,13 @@ class HWP:
         
         # Merge
         df = df_ctf.merge(df_1900, on="year", how="outer")
-        df = df.merge(df_1900, on="year", how="outer")
         df = df.merge(df_1990, on="year", how="outer")
         df = df.merge(df_fw, on="year", how="outer")
-        df = df.merge(df_waste, on="year", how="outer")        
-
-        
-        return df
+        df = df.merge(df_waste, on="year", how="outer")
+        # Add a scenario column
+        df["hwp_frac_scenario"] = self.hwp_frac_scenario
+        # Place the last column first
+        cols = df.columns.to_list()
+        cols = cols[-1:] + cols[:-1]
+        return df[cols]
 
