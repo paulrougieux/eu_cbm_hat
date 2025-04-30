@@ -30,7 +30,7 @@ def generate_dbh_intervals():
 DBH_CLASSES = generate_dbh_intervals()
 
 
-def backfill_avg_first_n_year(df, var, n):
+def backfill_avg_first_n_years(df, var, n):
     """Backfill with the average of the first n years
 
     Example
@@ -41,8 +41,8 @@ def backfill_avg_first_n_year(df, var, n):
         ...     "sw_prod_m3": [np.nan, np.nan, 1000, np.nan, 2000, 3000]
         ... }
         >>> df = pd.DataFrame(data)
-        >>> df_filled2 = backfill_avg_first_n_year(df, var="sw_prod_m3", n=2)
-        >>> df_filled1 = backfill_avg_first_n_year(df, var="sw_prod_m3", n=1)
+        >>> df_filled2 = backfill_avg_first_n_years(df, var="sw_prod_m3", n=2)
+        >>> df_filled1 = backfill_avg_first_n_years(df, var="sw_prod_m3", n=1)
 
     """
     index = ["area", "year"]
@@ -61,7 +61,19 @@ def backfill_avg_first_n_year(df, var, n):
 
 
 class HWPCommonInput:
-    """Input data for Harvested Wood Product sink computation"""
+    """Input data for Harvested Wood Product sink computation
+
+    Test a change in n year back fill
+
+        >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+        >>> # Print the default value and keep it for this first display of the df
+        >>> print("Default value of n_years_for_backfill:", hwp_common_input.n_years_for_backfill)
+        >>> print(hwp_common_input.prod_from_dom_harv_stat)
+        >>> # Change the number of first years used for the average and backfill
+        >>> hwp_common_input.n_years_for_backfill = 10
+        >>> print(hwp_common_input.prod_from_dom_harv_stat)
+
+    """
 
     def __init__(self):
         self.common_dir = eu_cbm_data_pathlib / "common"
@@ -69,6 +81,9 @@ class HWPCommonInput:
         self.c_sw = 0.225
         self.c_wp = 0.294
         self.c_pp = 0.450
+        # N year parameter for the backfill_avg_first_n_years
+        self.n_years_for_backfill = 3
+        
 
     @cached_property
     def decay_params(self):
@@ -717,7 +732,7 @@ class HWPCommonInput:
         df = df.fillna(0)
         return df
 
-    @cached_property
+    @property  # Don't cache, in case we change the number of years
     def prod_from_dom_harv_stat(self):
         """Compute production from domestic harvest
         Use export correction factors to compute the sawnwood, panel and paper
@@ -750,22 +765,30 @@ class HWPCommonInput:
             msg += f"\n{country_with_no_data}"
             warnings.warn(msg)
         # Gap fill export correction factors
-        df = backfill_avg_first_n_year(df, var="fIRW_SW_WP", n=10)
-        df = backfill_avg_first_n_year(df, var="fPULP", n=10)
+        n_years = self.n_years_for_backfill
+        df = backfill_avg_first_n_years(df, var="fIRW_SW_WP", n=n_years)
+        df = backfill_avg_first_n_years(df, var="fPULP", n=n_years)
+        df = backfill_avg_first_n_years(df, var="recycled_paper_prod", n=n_years)
+        df = backfill_avg_first_n_years(df, var="recycled_wood_prod", n=n_years)
         # Compute production from domestic roundwood
         df["sw_dom_m3"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
-        df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]        
+        df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
         df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP"]
         # compute values in Tons of Carbon
         df["sw_dom_tc"] = self.c_sw * df["sw_dom_m3"]
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
 
-# for all countries timeseries for 'wp_dom_tc' for 1900-1960 is missing
+        # For all countries timeseries for 'wp_dom_tc' for 1900-1960 is missing
         
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
         # Correct for recycled wood panel and paper amounts
         df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp
         df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"] * self.c_pp
+        # In some countries the recycled paper production is higher than pp_dom_tc
+        # Then in that case set it to zero
+        selector = df["pp_dom_tc"] < 0
+        df.loc[selector, "pp_dom_tc"] = 0
+
         return df
 
     @cached_property
