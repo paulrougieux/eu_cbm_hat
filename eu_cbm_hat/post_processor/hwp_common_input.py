@@ -474,7 +474,7 @@ class HWPCommonInput:
 
     @cached_property
     def rw_export_correction_factor(self):
-        """data 1961-2021 is from Forestry_E_Europe.csv this function allows
+        """data 1961-LRY is from Forestry_E_Europe.csv this function allows
         the estimation of the factor "f" that represents the feedstock for the
         HWP of domestic origin, after the correction for the export of
         roundwood, to be applied to eu_cbm_hat simulated IRW. Even two types of
@@ -713,6 +713,8 @@ class HWPCommonInput:
         df = pd.concat([df, df_back])
         df.sort_values(index, inplace=True)
         df.reset_index(drop=True, inplace=True)
+        # fillna with 0, i.e., no production
+        df = df.fillna(0)
         return df
 
     @cached_property
@@ -752,11 +754,14 @@ class HWPCommonInput:
         df = backfill_avg_first_n_year(df, var="fPULP", n=10)
         # Compute production from domestic roundwood
         df["sw_dom_m3"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
-        df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
+        df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]        
         df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP"]
         # compute values in Tons of Carbon
         df["sw_dom_tc"] = self.c_sw * df["sw_dom_m3"]
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
+
+# for all countries timeseries for 'wp_dom_tc' for 1900-1960 is missing
+        
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
         # Correct for recycled wood panel and paper amounts
         df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp

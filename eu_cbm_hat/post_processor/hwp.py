@@ -32,7 +32,7 @@ class HWP:
         self.pools_fluxes = self.runner.output.pool_flux
         # Number of common years to be used to compute the
         # Fraction domestic semi finished products
-        self.n_years_dom_frac = 3
+        self.n_years_dom_frac = 10
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -313,20 +313,11 @@ class HWP:
         ]
 
         """
-        # include warnings + comment if 
-        if df["sw_dom_tc"] < df["sawlogs"]:
-            df["sw_fraction"] = df["sw_dom_tc"] / df["sawlogs"]
-        else
-            df["sw_fraction"] = df["sawlogs"] / df["sw_dom_tc"
-            # warnings with the ratio value {df["sw_dom_tc"]/df["sawlogs"]} and {f" "Sawnwood can not be satisfied from sawlogs"}
-
-
-
-        
-        # ratio of df["sw_dom_tc"]/df["sawlogs"] < 1 >>>> "Sawnwood can not be satisfied from sawlogs"
-        # ratio of df["pp_dom_tc"]/df["pulplogs"] < 1 >>>> "Paper can not be satisfied from pulpwood"
-        # ratio of df["wp_dom_tc"]/((df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"]) < 1 >>>> "Panels can not be satisfied from available pulpwood and sawnood"
-          """
+        # check if
+        # print df["sw_fraction"] value, if df["sw_fraction"] > 1 print message >>>> "Sawnwood can not be satisfied from sawlogs"
+        # print df["pp_fraction"] value, if df["pp_fraction"] > 1 >>>> "Paper can not be satisfied from pulpwood"
+        # print df["wp_fraction"] value, if df["wp_fraction"] > 1 >>>> "Panels can not be satisfied from available pulpwood and sawnood"
+        """
 
         mean_frac = df[cols].mean()
         return mean_frac
