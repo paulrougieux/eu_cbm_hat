@@ -808,7 +808,7 @@ class HWP:
         """
         # Load GHG emissions reported by country to UNFCCC for HWP pool
         cols =  ['member_state', 'year', 'crf_hwp_tco2']
-        df_ctf = self.ctf_unfccc[cols]
+        df_ctf = self.ctf_unfccc[cols].copy()
         df_ctf['year'] = df_ctf['year'].astype(int)
        
         # Load stock and sink
