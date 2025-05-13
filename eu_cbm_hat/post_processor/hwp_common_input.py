@@ -83,7 +83,6 @@ class HWPCommonInput:
         self.c_pp = 0.450
         # N year parameter for the backfill_avg_first_n_years
         self.n_years_for_backfill = 3
-        
 
     @cached_property
     def decay_params(self):
@@ -93,13 +92,15 @@ class HWPCommonInput:
         hl_wp = 25
         hl_pp = 2
         hl_sw_wp = 30
-        df = pd.DataFrame({
-            "log_2":[np.log(2)],
-            "hl_sw":[hl_sw],
-            "hl_wp":[hl_wp],
-            "hl_pp":[hl_pp],
-            "hl_sw_wp":[hl_sw_wp],
-        })
+        df = pd.DataFrame(
+            {
+                "log_2": [np.log(2)],
+                "hl_sw": [hl_sw],
+                "hl_wp": [hl_wp],
+                "hl_pp": [hl_pp],
+                "hl_sw_wp": [hl_sw_wp],
+            }
+        )
         # Prepare the params according the needs in HWP calcualtions
         # calculate **k_** the decay constant for each of SW, WP, PP
         df = df.assign(
@@ -151,8 +152,8 @@ class HWPCommonInput:
         df["Area"] = df["Area"].replace(area_dict)
         return df
 
-    #@cached_property
-    #def euwrb_stat(self):
+    # @cached_property
+    # def euwrb_stat(self):
     #    # input Sankey data
     #    EUwrb_stat = pd.read_csv(
     #        eu_cbm_data_pathlib / "common/forestry_sankey_data.csv"
@@ -170,10 +171,13 @@ class HWPCommonInput:
     @cached_property
     def crf_stat(self):
         """crf sumbissions"""
-        CRF_stat = pd.read_csv(eu_cbm_data_pathlib / "common/hwp_crf_submission.csv")
-        CRF_stat = CRF_stat.rename(columns={"country": "area"})
-        return CRF_stat
-
+        df = pd.read_csv(eu_cbm_data_pathlib / "common/hwp_crf_submission.csv")
+        df = df.rename(columns={"country": "area"})
+        # Convert other columns to numerical
+        cols = df.columns.to_list()
+        for col in cols[2:]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        return df
 
     @cached_property
     def ctf_unfccc(self):
@@ -184,18 +188,19 @@ class HWPCommonInput:
         new name is CTF for Common Table Format.
         """
         # Import data from CRF database, remove NaNs. Remove also the plots with 0 vol, but with agb
-        df_wide = pd.read_csv(eu_cbm_data_pathlib / 'common/crf_data.csv')
-        indicator = 'crf_hwp_tco2'
-        selector = df_wide['indicator'] == indicator
+        df_wide = pd.read_csv(eu_cbm_data_pathlib / "common/crf_data.csv")
+        indicator = "crf_hwp_tco2"
+        selector = df_wide["indicator"] == indicator
         df_wide = df_wide[selector].copy()
         # Reshape to long format
-        df = df_wide.melt(id_vars=["member_state", "indicator"], var_name="year", value_name=indicator)
+        df = df_wide.melt(
+            id_vars=["member_state", "indicator"], var_name="year", value_name=indicator
+        )
         # convert to numeric
         df[indicator] = pd.to_numeric(df[indicator], errors="coerce")
         # Convert kilo tons to tons
         df[indicator] = df[indicator] * 1000
         return df
-
 
     @cached_property
     def subst_params(self):
@@ -230,9 +235,7 @@ class HWPCommonInput:
 
         See report on HWP for more information.
         """
-        df = pd.read_csv(
-            eu_cbm_data_pathlib / "common/substitution_params.csv"
-        )
+        df = pd.read_csv(eu_cbm_data_pathlib / "common/substitution_params.csv")
         return df
 
     @cached_property
@@ -255,7 +258,7 @@ class HWPCommonInput:
             "wood_panels_prod",
             "fibboa_prod",
             "partboa_prod",
-            "veneer_prod",# reported by FAOSTAT as separate category, i.e., under sawnwood, but the life time is similar to partboa and fibboa
+            "veneer_prod",  # reported by FAOSTAT as separate category, i.e., under sawnwood, but the life time is similar to partboa and fibboa
         ]
         selector = df["year"] > df["year"].max() - 3
         df = df.loc[selector, ["area", "year"] + selected_cols]
@@ -264,13 +267,13 @@ class HWPCommonInput:
         # Compute the fraction
         df["fwp_fibboa"] = df["fibboa_prod"] / df["wood_panels_prod"]
         df["fwp_partboa"] = df["partboa_prod"] / df["wood_panels_prod"]
-        
+
         # Note Veneer is not part of particle board and OSB
         # df["fwp_pv"] = df["veneer_prod"] / df["wood_panels_prod"]
         # Assert that the ratio sums to one
         cols = ["fwp_fibboa", "fwp_partboa"]  # , "fwp_pv"]
         sum_frac = df[cols].sum(axis=1)
-        selector = np.isclose(sum_frac,1)
+        selector = np.isclose(sum_frac, 1)
         selector = (selector) | (sum_frac == 0)
         if not all(selector):
             msg = "The wood panels ratios do not sum to one. Check:\n"
@@ -326,7 +329,7 @@ class HWPCommonInput:
              'dbh_class_38': (92.6, 95.0),
              'dbh_class_39': (95.1, 97.5),
              'dbh_class_40': (97.6, 100.0)
-        
+
         """
         csv_path = eu_cbm_data_pathlib / "common" / "irw_allocation_by_dbh.csv"
         df = pd.read_csv(csv_path)
@@ -334,9 +337,7 @@ class HWPCommonInput:
         # Check that proportions sum to one over the forest type and age class
         index = ["country", "mgmt_type", "mgmt_strategy", "forest_type", "age_class"]
         df_agg = (
-            df.groupby(index)["fraction_theoretical_volume"]
-            .agg("sum")
-            .reset_index()
+            df.groupby(index)["fraction_theoretical_volume"].agg("sum").reset_index()
         )
         selector = ~np.isclose(df_agg["fraction_theoretical_volume"], 1)
         if any(selector):
@@ -390,8 +391,8 @@ class HWPCommonInput:
         Prepare the FAO correction factor data"""
         df_fao = self.faostat_bulk_data
         # remove rows which do not reffer to "quantity" from original data
-        filter = df_fao["Element"].str.contains("Value")
-        df_fao = df_fao[~filter].rename(
+        selector = df_fao["Element"].str.contains("Value")
+        df_fao = df_fao[~selector].rename(
             columns={"Item": "Item_orig", "Element": "Element_orig"}
         )
 
@@ -452,26 +453,23 @@ class HWPCommonInput:
 
         # rename
         fao_stat = fao_stat.rename(columns={"Area": "area"})
+        fao_stat["year"] = fao_stat["year"].astype(int)
 
-        # aggregate on labels
-        df_exp = (
-            fao_stat.groupby(["area", "Element", "year", "Item"])
-            .agg(value=("Value", "sum"))
-            .reset_index()
-        )
+        # Aggregate on labels
+        index = ["area", "Element", "year", "Item"]
+        # The min_count argument requires at least one value otherwise the sum will be NA
+        df_exp = fao_stat.groupby(index).sum(min_count=1).reset_index()
+        df_exp = df_exp.rename(columns={"Value": "value"})
+
         # create the input type
         df_exp["type"] = (
             df_exp["Item"].astype(str) + "_" + df_exp["Element"].astype(str)
         )
 
         # convert long to wide format
-        df_exp = df_exp.pivot(
-            index=["area", "year"], columns=["type"], values=["value"]
-        )
-        df_exp = df_exp.droplevel(None, axis=1).reset_index()
-
-        # replacing NA to 0, so possible to make aritmetic operations
-        df_exp = df_exp.fillna(0)
+        df = df_exp.pivot(index=["area", "year"], columns=["type"], values=["value"])
+        df = df.droplevel(None, axis=1).reset_index()
+        df["year"] = df["year"].astype(int)
 
         # Sum up Particle board values with OSB
         # Sum all 3 columns together for each variable
@@ -482,18 +480,18 @@ class HWPCommonInput:
             # "partboa_and_osb" when there is a value in partboa_original
             # column and in the osb column the sum of colvars value should be
             # one or 2 not 3
-            df_exp["check_" + var] = (df_exp[cols_var] > 0).sum(axis=1)
-            selector = df_exp["check_" + var] > 2
+            df["check_" + var] = (df[cols_var] > 0).sum(axis=1)
+            selector = df["check_" + var] > 2
             if any(selector):
                 msg = "Double counting for Particle Board and OSB. Check:\n"
-                msg += f"{df_exp.loc[selector, ['area', 'year'] + cols_var]}"
+                msg += f"{df.loc[selector, ['area', 'year'] + cols_var]}"
                 raise ValueError(msg)
             # Compute the sum
-            df_exp["partboa_" + var] = df_exp[cols_var].sum(axis=1)
+            df["partboa_" + var] = df[cols_var].sum(axis=1)
 
         # Convert year to an integer
-        df_exp["year"] = df_exp["year"].astype(int)
-        return df_exp
+        df["year"] = df["year"].astype(int)
+        return df
 
     @cached_property
     def rw_export_correction_factor(self):
@@ -522,38 +520,43 @@ class HWPCommonInput:
         df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
 
         # estimate the fractions of domestic in the country's feedstock on con and broad: IRW, WP, PULP on con and broad
-        df_exp['fIRW_SW_WP_con'] = (df_exp['irw_con_prod']-df_exp['irw_con_exp'] )/(df_exp['irw_con_prod']+
-                                                                                    df_exp['irw_con_imp'] -
-                                                                                    df_exp['irw_con_exp'] )
-        df_exp['fIRW_SW_WP_broad'] = (df_exp['irw_broad_prod']-df_exp['irw_broad_exp'] )/(df_exp['irw_broad_prod']+
-                                                                                          df_exp['irw_broad_imp'] -
-                                                                                          df_exp['irw_broad_exp'] )
-        
-        #average for a generic value
-        #df_exp['fIRW_SW_WP'] =(df_exp['fIRW_SW_WP_con'] + df_exp['fIRW_SW_WP_broad'])/2
+        df_exp["fIRW_SW_WP_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
+            df_exp["irw_con_prod"] + df_exp["irw_con_imp"] - df_exp["irw_con_exp"]
+        )
+        df_exp["fIRW_SW_WP_broad"] = (
+            df_exp["irw_broad_prod"] - df_exp["irw_broad_exp"]
+        ) / (
+            df_exp["irw_broad_prod"] + df_exp["irw_broad_imp"] - df_exp["irw_broad_exp"]
+        )
+
+        # average for a generic value
+        # df_exp['fIRW_SW_WP'] =(df_exp['fIRW_SW_WP_con'] + df_exp['fIRW_SW_WP_broad'])/2
         # ALTERNATIVELY, estimate the generic fraction of domestic feedstock, i.e., no con/broad split
-        
-        
-        df_exp["fIRW_SW_WP"] = (df_exp["irw_prod"] - df_exp["irw_exp"])/(df_exp["irw_prod"] + df_exp["irw_imp"] - df_exp["irw_exp"])
-        df_exp['fPULP'] = df_exp["fIRW_SW_WP"]*(df_exp['wood_pulp_prod']-df_exp['wood_pulp_exp'] )/(df_exp['wood_pulp_prod']+
-                                                                               df_exp['wood_pulp_imp'] -
-                                                                             df_exp['wood_pulp_exp'] )
+
+        df_exp["fIRW_SW_WP"] = (df_exp["irw_prod"] - df_exp["irw_exp"]) / (
+            df_exp["irw_prod"] + df_exp["irw_imp"] - df_exp["irw_exp"]
+        )
+        df_exp["fPULP"] = (
+            df_exp["fIRW_SW_WP"]
+            * (df_exp["wood_pulp_prod"] - df_exp["wood_pulp_exp"])
+            / (
+                df_exp["wood_pulp_prod"]
+                + df_exp["wood_pulp_imp"]
+                - df_exp["wood_pulp_exp"]
+            )
+        )
 
         # f values on con and broad
-        df_exp["fIRW_SW_WP_con"] = df_exp["fIRW_SW_WP_con"].mask(df_exp["fIRW_SW_WP_con"] < 0, 0)
-        df_exp["fIRW_SW_WP_broad"] = df_exp["fIRW_SW_WP_broad"].mask(df_exp["fIRW_SW_WP_broad"] < 0, 0)
+        df_exp["fIRW_SW_WP_con"] = df_exp["fIRW_SW_WP_con"].mask(
+            df_exp["fIRW_SW_WP_con"] < 0, 0
+        )
+        df_exp["fIRW_SW_WP_broad"] = df_exp["fIRW_SW_WP_broad"].mask(
+            df_exp["fIRW_SW_WP_broad"] < 0, 0
+        )
         df_exp["fPULP"] = df_exp["fPULP"].mask(df_exp["fPULP"] < 0, 0)
 
-        #allow arithmetic of #NA cells
-        df_exp["fIRW_SW_WP_con"] = df_exp["fIRW_SW_WP_con"].fillna(0)
-        df_exp["fIRW_SW_WP_broad"] = df_exp["fIRW_SW_WP_broad"].fillna(0)
-        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].fillna(0)
-        df_exp["fPULP"] = df_exp["fPULP"].fillna(0)
-
-        # f values on roundwood
-       
         # apply assumptions that fIRW_SW_WP = 0 when ratio <0
-        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].mask(df_exp["fIRW_SW_WP"] < 0, 0)        
+        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].mask(df_exp["fIRW_SW_WP"] < 0, 0)
 
         # fractions of recycled paper feedstock, exports and exports
         df_exp["fREC_PAPER"] = (
@@ -567,8 +570,6 @@ class HWPCommonInput:
         # apply assumptions that f = 0 when ratio < 0
         df_exp["fREC_PAPER"] = df_exp["fREC_PAPER"].mask(df_exp["fREC_PAPER"] < 0, 0)
 
-        # replacing NA to 0, so possible to make operations
-        df_exp["fREC_PAPER"] = df_exp["fREC_PAPER"].fillna(0)
         df_exp["year"] = df_exp["year"].astype(int)
         return df_exp
 
@@ -585,8 +586,8 @@ class HWPCommonInput:
         df_crf = df_crf.set_index(["area", "year"])
 
         # remove notation kew from CRF based data
-        df_crf = df_crf.replace(["NO", "NE", "NA", "NA,NE"], 0)
-        df_crf = df_crf.fillna(0).astype(float)
+        df_crf = df_crf.replace(["NO", "NE", "NA", "NA,NE"], np.nan)
+        # df_crf = df_crf.fillna(0).astype(float)
         df_crf = df_crf.filter(regex="_prod").reset_index()
         df_crf["year"] = df_crf["year"].astype(int)
         return df_crf
@@ -757,8 +758,6 @@ class HWPCommonInput:
             "recycled_wood_prod",
         ]
         exp_fact = self.rw_export_correction_factor[selected_cols].copy()
-        # Replace zero by NA
-        exp_fact.replace(np.nan, 0, inplace=True)
         # Merge production data with export factors data
         df = self.prod_backcast_to_1900.merge(exp_fact, on=index, how="left")
         # Warn about countries which don't have factors data at all
@@ -787,7 +786,7 @@ class HWPCommonInput:
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
 
         # For all countries timeseries for 'wp_dom_tc' for 1900-1960 is missing
-        
+
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
         # Correct for recycled wood panel and paper amounts
         df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp
@@ -806,27 +805,22 @@ class HWPCommonInput:
         All emissions factors are based on wet material, then we apply the
         humidity correction to convert to dry matter.
         """
-        df = pd.read_csv(
-            eu_cbm_data_pathlib / "common/eu_waste_treatment.csv"
-        )
+        df = pd.read_csv(eu_cbm_data_pathlib / "common/eu_waste_treatment.csv")
         # Sum the 3 waste types values per year and per country
         df = (
-            df.groupby(['geo','TIME_PERIOD'])
-            .agg(wood_landfill_tfm = ('OBS_VALUE', "sum"))
+            df.groupby(["geo", "TIME_PERIOD"])
+            .agg(wood_landfill_tfm=("OBS_VALUE", "sum"))
             .reset_index()
         )
-        df.rename(columns={"geo":"country_iso2",
-                           "TIME_PERIOD": "year"}, inplace=True)
+        df.rename(columns={"geo": "country_iso2", "TIME_PERIOD": "year"}, inplace=True)
         # In the resulting sum, replace zeros by NA values. So that the
         # interpolation in hwp.py will work only on available values.
         df["wood_landfill_tfm"] = df["wood_landfill_tfm"].replace(0, np.nan)
 
         # Apply humidity correction
         h_corr = 0.15
-        df['w_annual_wood_landfill_tdm'] =(1-h_corr) * df['wood_landfill_tfm']
+        df["w_annual_wood_landfill_tdm"] = (1 - h_corr) * df["wood_landfill_tfm"]
         return df
-
-
 
 
 # Initiate the class
@@ -1189,8 +1183,6 @@ def fao_pulp_to_irw():
     ).reset_index()
 
     return average_pulp_ms
-
-
 
 
 # %%

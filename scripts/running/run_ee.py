@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-A script to run Slovenia
+A script to run Estonia
 
 Typically you would run this file from a command line like this:
 
