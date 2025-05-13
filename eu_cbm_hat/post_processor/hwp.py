@@ -570,13 +570,13 @@ class HWP:
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
         cols += ["e_sw", "e_wp", "e_pp", "k_sw", "k_wp", "k_pp"]
         df = df[["year"] + cols]
-        # retain only the first five years including 1990
-        df = df[df["year"] >= 1990]
+        # Retain only the first five years including 1990
+        df_mean = df[df["year"] >= 1990].head(5)
         # Initiate stock values as average of 1990-1995 as the average of the
-        # first five years for each inflow type
-        df["sw_stock"] = (df["sw_inflow"].head(5).mean()) / (df["k_sw"].head(5).mean())
-        df["wp_stock"] = (df["wp_inflow"].head(5).mean()) / (df["k_wp"].head(5).mean())
-        df["pp_stock"] = (df["pp_inflow"].head(5).mean()) / (df["k_pp"].head(5).mean())
+        # First five years for each inflow type
+        df["sw_stock"] = (df_mean["sw_inflow"].mean()) / (df_mean["k_sw"].mean())
+        df["wp_stock"] = (df_mean["wp_inflow"].mean()) / (df_mean["k_wp"].mean())
+        df["pp_stock"] = (df_mean["pp_inflow"].mean()) / (df_mean["k_pp"].mean())
         # Compute the stock for each semi finite product for all subsequent years
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
@@ -590,7 +590,6 @@ class HWP:
                 df.loc[t - 1, "pp_stock"] * df.loc[t, "e_pp"] + df.loc[t, "pp_inflow"]
             )
         df.reset_index(inplace=True)
-        df.fillna(0, inplace=True)
         # Compute the total stock
         df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
         # Do the difference between consecutive years
@@ -598,6 +597,8 @@ class HWP:
         # Stock diff shifted by one year
         # df['hwp_tot_diff_tc_m1'] = df['hwp_tot_stock_tc'].diff(periods=1).shift(-1)
         df["hwp_tot_sink_tco2"] = df["hwp_tot_diff_tc"] * (-44 / 12)
+        # Keep only after 1990
+        df = df[df["year"] >= 1990]
         return df
 
     @cached_property
