@@ -59,6 +59,8 @@ class HWP:
         # Fraction domestic semi finished products
         self.n_years_dom_frac = 10
         self.hwp_frac_scenario = "default"
+        # Add recycling information or not
+        self.add_recycling = True
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -443,9 +445,13 @@ class HWP:
         df["sw_dom_tc"] = df["sawlogs"] * df["sw_fraction"]
         df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
         df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
-        # Correct for recycling
-        df["wp_dom_tc"] += df["recycled_wood_prod"] * hwp_common_input.c_wp
-        df["pp_dom_tc"] += df["recycled_paper_prod"] * hwp_common_input.c_pp
+        # Add recycling amounts if required
+        if self.add_recycling:
+            msg = "Add recycling amounts "
+            msg += f"add_recycling = {self.add_recycling}"
+            print(msg)
+            df["wp_dom_tc"] += df["recycled_wood_prod"] * hwp_common_input.c_wp
+            df["pp_dom_tc"] += df["recycled_paper_prod"] * hwp_common_input.c_pp
         return df
 
     @property  # Don't cache, in case we change the number of years
