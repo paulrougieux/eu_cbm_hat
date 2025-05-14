@@ -356,7 +356,9 @@ class HWP:
         wp_selector = df["wp_fraction"] > 1
         if any(wp_selector):
             msg = "Reported panel production can not be satisfied from "
-            msg += "pulpwood and sawnwood production from CBM for the following years:\n"
+            msg += (
+                "pulpwood and sawnwood production from CBM for the following years:\n"
+            )
             msg += f"{df.loc[wp_selector]}"
             raise ValueError(msg)
         # Compute the average of the selected columns
@@ -371,6 +373,42 @@ class HWP:
         return mean_frac
 
     @property  # Don't cache, in case we change the number of years
+    def fraction_semifinished_default(self) -> pandas.DataFrame:
+        """Fraction of semi finished products in the default case"""
+        mean_frac = self.fraction_semifinished_n_years_mean
+        # Default scenario
+        if self.hwp_frac_scenario == "default":
+            max_year = self.runner.country.base_year + self.runner.num_timesteps
+            df = pandas.DataFrame({"year": range(1900, max_year + 1)})
+            cols = [
+                "sw_fraction",
+                "pp_fraction",
+                "wp_fraction",
+                "recycled_paper_prod",
+                "recycled_wood_prod",
+            ]
+            for col in cols:
+                df[col] = mean_frac[col]
+            # Default recycling values to one
+            df["recycled_wood_factor"] = 1
+            df["recycled_paper_factor"] = 1
+            # Return
+            return df
+
+    @property  # Don't cache, in case we change the number of years
+    def fraction_semifinished_scenario(self) -> pandas.DataFrame:
+        """Fraction of semi finished products scenario case"""
+        mean_frac = self.fraction_semifinished_n_years_mean
+        df = hwp_common_input.hwp_fraction_semifinished_scenario.copy()
+        selector = df["country"] == self.runner.country.country_name
+        selector &= df["hwp_frac_scenario"] == self.hwp_frac_scenario
+        df.drop(columns=["country", "hwp_frac_scenario"], inplace=True)
+        # Add recycled values from the mean table
+        df["recycled_paper_prod"] = mean_frac["recycled_paper_prod"]
+        df["recycled_wood_prod"] = mean_frac["recycled_wood_prod"]
+        return df
+
+    @property  # Don't cache, in case we change the number of years
     def fraction_semifinished(self) -> pandas.DataFrame:
         """Fraction of semi finished products
 
@@ -381,35 +419,11 @@ class HWP:
         - The input files values are from
           hwp_common_input.hwp_fraction_semifinished_scenario
         """
-        mean_frac = self.fraction_semifinished_n_years_mean
-        # Default scenario
         if self.hwp_frac_scenario == "default":
-            max_year = self.runner.country.base_year + self.runner.num_timesteps
-            df =  pandas.DataFrame({"year" : range(1900, max_year+1)})
-            cols = [
-                "sw_fraction",
-                "pp_fraction",
-                "wp_fraction",
-                "recycled_paper_prod",
-                "recycled_wood_prod",
-            ]
-            for col in cols:
-                df[col] = mean_frac[col]
-            # Return
-            return df
+            # Default scenario
+            return self.fraction_semifinished_default
         # Other scenarios
-        df = hwp_common_input.hwp_fraction_semifinished_scenario.copy()
-        selector = df["country"] == self.runner.country.country_name
-        selector &= df["hwp_frac_scenario"] == self.hwp_frac_scenario
-        df.drop(columns=["country", "hwp_frac_scenario"], inplace=True)
-        # Add recycled values from the mean table
-        df["recycled_paper_prod"] = mean_frac["recycled_paper_prod"]
-        df["recycled_wood_prod"] = mean_frac["recycled_wood_prod"]
-        return df
-
-
-
-
+        return self.fraction_semifinished_scenario
 
     @property  # Don"t cache, in case we change the number of years
     def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
@@ -437,6 +451,12 @@ class HWP:
             >>> # Display the effect on the final results
             >>> print(hwp.stock_sink_results)
 
+            >>> # Add recycling (default)
+            >>> df_with_recycling = hwp.prod_from_dom_harv_sim
+            >>> # Don't add recycling
+            >>> hwp.add_recycling = False
+            >>> df_without_recycling = hwp.prod_from_dom_harv_sim
+
         """
         df = self.fluxes_by_grade.copy()
         # Add the fractions to the CBM output data
@@ -445,13 +465,24 @@ class HWP:
         df["sw_dom_tc"] = df["sawlogs"] * df["sw_fraction"]
         df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
         df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
-        # Add recycling amounts if required
         if self.add_recycling:
-            msg = "Add recycling amounts "
+            msg = "Add recycling amounts because "
             msg += f"add_recycling = {self.add_recycling}"
             print(msg)
-            df["wp_dom_tc"] += df["recycled_wood_prod"] * hwp_common_input.c_wp
-            df["pp_dom_tc"] += df["recycled_paper_prod"] * hwp_common_input.c_pp
+            df["wp_dom_tc"] += (
+                df["recycled_wood_prod"]
+                * hwp_common_input.c_wp
+                * df["recycled_wood_factor"]
+            )
+            df["pp_dom_tc"] += (
+                df["recycled_paper_prod"]
+                * hwp_common_input.c_pp
+                * df["recycled_paper_factor"]
+            )
+        else:
+            msg = "No recycling amounts because "
+            msg += f"add_recycling = {self.add_recycling}"
+            print(msg)
         return df
 
     @property  # Don't cache, in case we change the number of years
@@ -798,7 +829,6 @@ class HWP:
         df = df.loc[selector].copy()
         return df
 
-
     @property
     def stock_sink_results(self) -> pandas.DataFrame:
         """Comparison table for HWP calibration
@@ -814,10 +844,10 @@ class HWP:
 
         """
         # Load GHG emissions reported by country to UNFCCC for HWP pool
-        cols =  ['member_state', 'year', 'crf_hwp_tco2']
+        cols = ["member_state", "year", "crf_hwp_tco2"]
         df_ctf = self.ctf_unfccc[cols].copy()
-        df_ctf['year'] = df_ctf['year'].astype(int)
-       
+        df_ctf["year"] = df_ctf["year"].astype(int)
+
         # Load stock and sink
         cols = ["year", "hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
         # Initial year 1900 (IPCC 2006/2018/2019)
@@ -827,21 +857,21 @@ class HWP:
         df_1900 = df_1900.rename(columns={col: f"{col}_1900" for col in cols_1900})
         selector = df_1900["year"] >= 1990
         df_1900 = df_1900.loc[selector]
-        
+
         # Initial year 1990 (IPCC 2013)
         df_1990 = self.build_hwp_stock_since_1990[cols]
         # Add '_1990' to the columns
         cols_1990 = ["hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
         df_1990 = df_1990.rename(columns={col: f"{col}_1990" for col in cols_1990})
-        
+
         # Load GHG emissions from burning wood for energy
         cols = ["year", "fw_ghg_co2_eq", "fw_co2_eq"]
         df_fw = self.ghg_emissions_fw[cols]
-        
+
         # Load GHG emissions from waste
         cols = ["year", "waste_co2_eq"]
         df_waste = self.ghg_emissions_waste[cols]
-        
+
         # Merge
         df = df_ctf.merge(df_1900, on="year", how="outer")
         df = df.merge(df_1990, on="year", how="outer")
@@ -853,4 +883,3 @@ class HWP:
         cols = df.columns.to_list()
         cols = cols[-1:] + cols[:-1]
         return df[cols]
-
