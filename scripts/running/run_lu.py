@@ -23,7 +23,7 @@ from eu_cbm_hat.core.continent import continent
 # Scenario combination defined in yaml files
 # `~/repos/eu_cbm_data/combos/harvest_test.yaml`
 runner = continent.combos['reference'].runners['LU'][-1]
-runner.num_timesteps = 25
+runner.num_timesteps = 2070 - runner.country.inventory_start_year
 # Run the model
 output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 

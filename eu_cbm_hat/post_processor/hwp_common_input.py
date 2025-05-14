@@ -749,6 +749,12 @@ class HWPCommonInput:
         These are the historical domestic feedstock (corrected for export)
         this merges the export with semifinished inputs to generate HWP of
         domestic origin, in original unit m3 or t for 1961-2021
+
+        Replace NA recycling values by zero if and only if they have NA in all
+        years. In other words NA values for the recycled_paper_prod and
+        recycled_wood_prod will be replaced by zeros if there are NA everywhere
+        for all  years of the series. Otherwise the latest values will be
+        backfilled.
         """
         index = ["area", "year"]
         selected_cols = index + [
@@ -760,17 +766,31 @@ class HWPCommonInput:
         exp_fact = self.rw_export_correction_factor[selected_cols].copy()
         # Merge production data with export factors data
         df = self.prod_backcast_to_1900.merge(exp_fact, on=index, how="left")
-        # Warn about countries which don't have factors data at all
         no_data = (
             df.groupby("area")
-            .agg(no_value=("fIRW_SW_WP", lambda x: all(x.isna())))
+            .agg(
+                no_value=("fIRW_SW_WP", lambda x: all(x.isna())),
+                recycled_paper_prod=("recycled_paper_prod", lambda x: all(x.isna())),
+                recycled_wood_prod=("recycled_wood_prod", lambda x: all(x.isna()))
+                )
             .reset_index()
         )
+        # Warn about countries which don't have factors data at all
         country_with_no_data = no_data.loc[no_data.no_value, "area"].to_list()
         if any(country_with_no_data):
             msg = "\nNo export correction factor data for these countries:"
             msg += f"\n{country_with_no_data}"
             warnings.warn(msg)
+
+        # Replace NA recycling values by zero if and only if they have NA in all years
+        for var in ["recycled_wood_prod", "recycled_wood_prod"]:
+            selector = no_data[var]
+            if any(selector):
+                df_replace_zero = no_data.loc[selector, ["area"]].copy()
+                df_replace_zero["replace"] = 0
+                df2 = df.merge(df_replace_zero, on="area", how="left")
+                df[var] = df[var].fillna(df2["replace"])
+
         # Gap fill export correction factors
         n_years = self.n_years_for_backfill
         df = backfill_avg_first_n_years(df, var="fIRW_SW_WP", n=n_years)
@@ -781,12 +801,9 @@ class HWPCommonInput:
         df["sw_dom_m3"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
         df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
         df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP"]
-        # compute values in Tons of Carbon
+        # Compute values in Tons of Carbon
         df["sw_dom_tc"] = self.c_sw * df["sw_dom_m3"]
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
-
-        # For all countries timeseries for 'wp_dom_tc' for 1900-1960 is missing
-
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
         # Correct for recycled wood panel and paper amounts
         df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp
