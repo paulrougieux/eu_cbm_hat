@@ -628,7 +628,7 @@ class HWPCommonInput:
                 "pp_prod_t": "pp_prod_eu",
             }
         )
-        # Calculate the ratio of change from the current year to the previous year
+        # Calculate the ratio of change from the current year to the previous year, i.e. 1999 vs. 2000
         # irw_eu for each row to the next row. It's a ratio that goes backward in time
         df["sw_ratio"] = df["sw_prod_eu"] / df["sw_prod_eu"].shift(-1)
         df["wp_ratio"] = df["wp_prod_eu"] / df["wp_prod_eu"].shift(-1)
@@ -672,13 +672,13 @@ class HWPCommonInput:
             # Back compute the production in the current year
             if pd.isnull(row["sw_prod_m3"]):
                 next_value = df.at[index + 1, "sw_prod_m3"]
-                df.at[index, "sw_prod_m3"] = next_value / row["sw_ratio"]
+                df.at[index, "sw_prod_m3"] = next_value * row["sw_ratio"]
             if pd.isnull(row["wp_prod_m3"]):
                 next_value = df.at[index + 1, "wp_prod_m3"]
-                df.at[index, "wp_prod_m3"] = next_value / row["wp_ratio"]
+                df.at[index, "wp_prod_m3"] = next_value * row["wp_ratio"]
             if pd.isnull(row["pp_prod_t"]):
                 next_value = df.at[index + 1, "pp_prod_t"]
-                df.at[index, "pp_prod_t"] = next_value / row["pp_ratio"]
+                df.at[index, "pp_prod_t"] = next_value * row["pp_ratio"]
         # Reverse the DataFrame back to the original order
         df = df.iloc[::-1]
         # Drop the temporary 'ratio' columns as they are no longer needed
