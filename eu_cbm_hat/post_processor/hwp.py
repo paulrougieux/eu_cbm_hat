@@ -882,4 +882,36 @@ class HWP:
         # Place the last column first
         cols = df.columns.to_list()
         cols = cols[-1:] + cols[:-1]
+
+        # Fill in the last simulated year with average of the previous two years
+        # Define the columns to keep
+        cols_to_keep = ['hwp_frac_scenario', 'member_state', 'year', 'crf_hwp_tco2', 
+                        'hwp_tot_stock_tc_1900', 'hwp_tot_sink_tco2_1900', 
+                        'hwp_tot_stock_tc_1990', 'hwp_tot_sink_tco2_1990', 
+                        'fw_ghg_co2_eq', 'fw_co2_eq', 'waste_co2_eq']
+        
+        # Define the columns to fill
+        cols_to_fill = ['hwp_tot_stock_tc_1900', 'hwp_tot_sink_tco2_1900', 
+                        'hwp_tot_stock_tc_1990', 'hwp_tot_sink_tco2_1990']
+        
+        # Get the max year
+        max_year = df['year'].max()
+        
+        # Get the two years before the max year
+        prev_years = df[df['year'] < max_year].nlargest(2, 'year')['year'].unique()
+        
+        # Loop through each column to fill
+        for col in cols_to_fill:
+            # Calculate the average of the previous two years
+            avg_value = df.loc[df['year'].isin(prev_years), col].mean()
+            
+            # Fill the missing value with the average
+            df.loc[df['year'] == max_year, col] = avg_value
+        
+        # Return the updated DataFrame with all required columns
+        df = df[cols_to_keep]
+
+        df['member_state'] = df['member_state'].ffill()
+
+       
         return df[cols]
