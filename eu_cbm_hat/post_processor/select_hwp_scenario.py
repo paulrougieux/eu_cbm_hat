@@ -35,6 +35,7 @@ def select_hwp_scenario(
         >>> print(hwp_more_sw.stock_sink_results)
 
     """
+
     if combo is None:
         combo="reference",
     if hwp_frac is None:
@@ -45,7 +46,7 @@ def select_hwp_scenario(
     hwp.hwp_frac_scenario = hwp_frac
     return hwp
 
-
+# This function does not yield the ouput yet
 def hwp_result(**kwargs):
     """Result data frame for the given scenario combination, HWP scenario,
     recycling and susbstitution scenario n and return a post_processor.hwp
@@ -60,6 +61,9 @@ def hwp_result(**kwargs):
         >>> # Intermediate tables
 
     """
+
+#TO DO: add the name of all scenarios, can be all concatenated in one single column, in the result file
+
     hwp = select_hwp_scenario(**kwargs)
     return hwp.stock_sink_results
 
