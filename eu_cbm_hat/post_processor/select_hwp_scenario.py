@@ -30,7 +30,7 @@ def select_hwp_scenario(
         >>> # Intermediate tables
         >>> print(hwp_refd.prod_from_dom_harv_sim)
         >>> print(hwp_more_sw.prod_from_dom_harv_sim)
-        >>> # Results
+        >>> # Print results
         >>> print(hwp_refd.stock_sink_results)
         >>> print(hwp_more_sw.stock_sink_results)
 
@@ -46,26 +46,28 @@ def select_hwp_scenario(
     hwp.hwp_frac_scenario = hwp_frac
     return hwp
 
-# This function does not yield the ouput yet
-def hwp_result(**kwargs):
-    """Result data frame for the given scenario combination, HWP scenario,
-    recycling and susbstitution scenario n and return a post_processor.hwp
-    object for further processing
 
-    For example compare results:
+def stock_sink_results(**kwargs):
+    """Result data frame for the given scenario combination and HWP scenario.
 
-        >>> from eu_cbm_hat.post_processor.select_hwp_scenario import select_hwp_scenario
-        >>> # Select scenarios
-        >>> hwp_refd = hwp_result(combo="reference", hwp="default")
-        >>> hwp_more_sw = hwp_result(combo="reference", hwp="more_sw")
-        >>> # Intermediate tables
+    Return the output data frame of the stock_sink_results method. Add the name
+    of all scenarios as a column name.
+
+    For example compare results tables:
+
+        >>> from eu_cbm_hat.post_processor.select_hwp_scenario import stock_sink_results
+        >>> hwp_refd = stock_sink_results(iso2_code="LU", combo="reference", hwp_frac="default")
+        >>> hwp_more_sw = stock_sink_results(iso2_code="LU", combo="reference", hwp_frac="more_sw")
 
     """
-
-#TO DO: add the name of all scenarios, can be all concatenated in one single column, in the result file
-
     hwp = select_hwp_scenario(**kwargs)
-    return hwp.stock_sink_results
+    df = hwp.stock_sink_results
+    df["combo"] = hwp.runner.combo.short_name
+    # Place the last column first
+    cols = df.columns.to_list()
+    cols = cols[-1:] + cols[:-1]
+    df = df[cols]
+    return df
 
 
 
