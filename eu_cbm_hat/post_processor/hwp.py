@@ -331,6 +331,8 @@ class HWP:
         # Merge country statistics with CBM output
         df = df_out.merge(dstat, on="year", how="right")
         # calculate the fractions for n years available
+        # in case, simulation is based on absolute amounts required in future, then df["sw_dom_tc"], df["pp_dom_tc"], df["wp_dom_tc"] 
+        # have to be generated from that input data just before the following aritmetics
         df["sw_fraction"] = df["sw_dom_tc"] / df["sawlogs"]
         df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
         df["wp_fraction"] = df["wp_dom_tc"] / (
