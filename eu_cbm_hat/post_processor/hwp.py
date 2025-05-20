@@ -331,7 +331,7 @@ class HWP:
         # Merge country statistics with CBM output
         df = df_out.merge(dstat, on="year", how="right")
         # calculate the fractions for n years available
-        # in case, simulation is based on absolute amounts required in future, then df["sw_dom_tc"], df["pp_dom_tc"], df["wp_dom_tc"] 
+        # in case, simulation is based on absolute amounts required in future, then df["sw_dom_tc"], df["pp_dom_tc"], df["wp_dom_tc"]
         # have to be generated from that input data just before the following aritmetics
         df["sw_fraction"] = df["sw_dom_tc"] / df["sawlogs"]
         df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
@@ -557,7 +557,7 @@ class HWP:
         """
         df = self.prepare_decay_and_inflow.copy()
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
-        cols += ["e_sw", "e_wp", "e_pp", "k_sw","k_wp","k_pp"]
+        cols += ["e_sw", "e_wp", "e_pp", "k_sw", "k_wp", "k_pp"]
         df = df[["year"] + cols]
         # Initiate stock values
         df["sw_stock"] = 0.0  # Keep it with a dot to create a floating point number
@@ -578,11 +578,11 @@ class HWP:
         df.reset_index(inplace=True)
         df.fillna(0, inplace=True)
 
-        # add annual loses by decay of historical stock, as the limit for recycling
-        df['sw_loss'] = df['sw_stock'] * df['k_sw']
-        df['wp_loss'] = df['wp_stock'] * df['k_wp']
-        df['pp_loss'] = df['pp_stock'] * df['k_pp']
-        df['hwp_loss'] = df['sw_loss'] +  df['wp_loss'] + df['pp_loss']
+        # Add annual loses by decay of historical stock, as the limit for recycling
+        df["sw_loss"] = df["sw_stock"] * df["k_sw"]
+        df["wp_loss"] = df["wp_stock"] * df["k_wp"]
+        df["pp_loss"] = df["pp_stock"] * df["k_pp"]
+        df["hwp_loss"] = df["sw_loss"] + df["wp_loss"] + df["pp_loss"]
 
         # Compute the total stock
         df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
@@ -613,6 +613,7 @@ class HWP:
 
         df = self.prepare_decay_and_inflow.copy()
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
+        cols += ["k_sw", "k_wp", "k_pp"]
         cols += ["e_sw", "e_wp", "e_pp"]
         df = df[["year"] + cols]
         # Retain only the first five years including 1990
@@ -635,6 +636,11 @@ class HWP:
                 df.loc[t - 1, "pp_stock"] * df.loc[t, "e_pp"] + df.loc[t, "pp_inflow"]
             )
         df.reset_index(inplace=True)
+        # Add annual loses by decay of historical stock, as the limit for recycling
+        df["sw_loss"] = df["sw_stock"] * df["k_sw"]
+        df["wp_loss"] = df["wp_stock"] * df["k_wp"]
+        df["pp_loss"] = df["pp_stock"] * df["k_pp"]
+        df["hwp_loss"] = df["sw_loss"] + df["wp_loss"] + df["pp_loss"]
         # Compute the total stock
         df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
         # Do the difference between consecutive years
@@ -857,20 +863,18 @@ class HWP:
         df_ctf["year"] = df_ctf["year"].astype(int)
 
         # Load stock and sink
-        cols = ["year", "hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
+        cols_stock = ["hwp_tot_stock_tc", "hwp_tot_sink_tco2", "hwp_loss"]
         # Initial year 1900 (IPCC 2006/2018/2019)
-        df_1900 = self.build_hwp_stock_since_1900[cols].copy()
+        df_1900 = self.build_hwp_stock_since_1900[["year"] + cols_stock].copy()
         # Add '_1900' to the columns
-        cols_1900 = ["hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
-        df_1900 = df_1900.rename(columns={col: f"{col}_1900" for col in cols_1900})
+        df_1900 = df_1900.rename(columns={col: f"{col}_1900" for col in cols_stock})
         selector = df_1900["year"] >= 1990
         df_1900 = df_1900.loc[selector]
 
         # Initial year 1990 (IPCC 2013)
-        df_1990 = self.build_hwp_stock_since_1990[cols]
+        df_1990 = self.build_hwp_stock_since_1990[["year"] + cols_stock]
         # Add '_1990' to the columns
-        cols_1990 = ["hwp_tot_stock_tc", "hwp_tot_sink_tco2"]
-        df_1990 = df_1990.rename(columns={col: f"{col}_1990" for col in cols_1990})
+        df_1990 = df_1990.rename(columns={col: f"{col}_1990" for col in cols_stock})
 
         # Load GHG emissions from burning wood for energy
         cols = ["year", "fw_ghg_co2_eq", "fw_co2_eq"]
@@ -892,34 +896,47 @@ class HWP:
         cols = cols[-1:] + cols[:-1]
 
         # Fill in the last simulated year with average of the previous two years
-        # Define the columns to keep
-        cols_to_keep = ['hwp_frac_scenario', 'member_state', 'year', 'crf_hwp_tco2', 
-                        'hwp_tot_stock_tc_1900', 'hwp_tot_sink_tco2_1900', 
-                        'hwp_tot_stock_tc_1990', 'hwp_tot_sink_tco2_1990', 
-                        'fw_ghg_co2_eq', 'fw_co2_eq', 'waste_co2_eq']
-        
         # Define the columns to fill
-        cols_to_fill = ['hwp_tot_stock_tc_1900', 'hwp_tot_sink_tco2_1900', 
-                        'hwp_tot_stock_tc_1990', 'hwp_tot_sink_tco2_1990']
-        
+        cols_to_fill = [
+            "hwp_tot_stock_tc_1900",
+            "hwp_tot_sink_tco2_1900",
+            "hwp_tot_stock_tc_1990",
+            "hwp_tot_sink_tco2_1990",
+        ]
+
         # Get the max year
-        max_year = df['year'].max()
-        
+        max_year = df["year"].max()
+
         # Get the two years before the max year
-        prev_years = df[df['year'] < max_year].nlargest(2, 'year')['year'].unique()
-        
+        prev_years = df[df["year"] < max_year].nlargest(2, "year")["year"].unique()
+
         # Loop through each column to fill
         for col in cols_to_fill:
             # Calculate the average of the previous two years
-            avg_value = df.loc[df['year'].isin(prev_years), col].mean()
-            
+            avg_value = df.loc[df["year"].isin(prev_years), col].mean()
+
             # Fill the missing value with the average
-            df.loc[df['year'] == max_year, col] = avg_value
-        
+            df.loc[df["year"] == max_year, col] = avg_value
+
+        # Define the columns to keep
+        cols_to_keep = [
+            "hwp_frac_scenario",
+            "member_state",
+            "year",
+            "crf_hwp_tco2",
+            "hwp_tot_stock_tc_1900",
+            "hwp_tot_sink_tco2_1900",
+            "hwp_tot_stock_tc_1990",
+            "hwp_tot_sink_tco2_1990",
+            "hwp_loss_1900",
+            "hwp_loss_1990",
+            "fw_ghg_co2_eq",
+            "fw_co2_eq",
+            "waste_co2_eq",
+        ]
         # Return the updated DataFrame with all required columns
         df = df[cols_to_keep]
 
-        df['member_state'] = df['member_state'].ffill()
+        df["member_state"] = df["member_state"].ffill()
 
-       
         return df[cols]
