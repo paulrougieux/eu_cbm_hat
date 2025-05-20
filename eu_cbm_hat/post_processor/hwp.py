@@ -341,7 +341,10 @@ class HWP:
 
         # Check if available raw material is sufficient to produce the amount
         # of semi finished products reported by countries.
-        sw_selector = df["sw_fraction"] > 1
+
+        # Roundwood can never be converted to sawnwood. Fraction always have to
+        # be below this value.
+        sw_selector = df["sw_fraction"] > 0.7
         if any(sw_selector):
             msg = "Reported sawnwood production can not be satisfied from "
             msg += "sawlogs production from CBM for the following years:\n"
@@ -432,6 +435,10 @@ class HWP:
         """Compute the production of sanwood, panels and paper from domestic
         harvest as an output of the CBM simulated amounts of sawlogs and
         pulpwood.
+
+        TODO: Enable scenarios of production from domestic harvest from an
+        external model. See issue 104.
+        https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/104#top
 
         Illustrate a change of the sw, wp, pp fractions:
 
