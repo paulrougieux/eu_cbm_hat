@@ -555,10 +555,9 @@ class HWP:
             >>> plt.show()
 
         """
-
         df = self.prepare_decay_and_inflow.copy()
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
-        cols += ["e_sw", "e_wp", "e_pp"]
+        cols += ["e_sw", "e_wp", "e_pp", "k_sw","k_wp","k_pp"]
         df = df[["year"] + cols]
         # Initiate stock values
         df["sw_stock"] = 0.0  # Keep it with a dot to create a floating point number
@@ -578,6 +577,13 @@ class HWP:
             )
         df.reset_index(inplace=True)
         df.fillna(0, inplace=True)
+
+        # add annual loses by decay of historical stock, as the limit for recycling
+        df['sw_loss'] = df['sw_stock'] * df['k_sw']
+        df['wp_loss'] = df['wp_stock'] * df['k_wp']
+        df['pp_loss'] = df['pp_stock'] * df['k_pp']
+        df['hwp_loss'] = df['sw_loss'] +  df['wp_loss'] + df['pp_loss']
+
         # Compute the total stock
         df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
 
@@ -607,7 +613,7 @@ class HWP:
 
         df = self.prepare_decay_and_inflow.copy()
         cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
-        cols += ["e_sw", "e_wp", "e_pp", "k_sw", "k_wp", "k_pp"]
+        cols += ["e_sw", "e_wp", "e_pp"]
         df = df[["year"] + cols]
         # Retain only the first five years including 1990
         df_mean = df[df["year"] >= 1990].head(5)
