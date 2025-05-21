@@ -24,6 +24,7 @@ from libcbm.model.cbm.cbm_variables import CBMVariables
 from eu_cbm_hat.cbm.simulation import Simulation
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
+from eu_cbm_hat.cbm.climate_growth_modifier import Growth_Modifier
 # Constants #
 
 def cbm_vars_to_df(cbmvariables: CBMVariables, df_name:str) -> pandas.DataFrame:
@@ -111,6 +112,9 @@ class DynamicSimulation(Simulation):
 
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
+
+        # Update the growth modifier if needed
+        cbm_vars = self.growth_modifier.update_state(timestep=timestep, cbm_vars=cbm_vars)
 
         # Check if we are still in the historical period #
         # If we are still in the historical period HAT doesn't apply
@@ -650,6 +654,11 @@ class DynamicSimulation(Simulation):
 
         # Return #
         return cbm_vars
+
+    @property
+    def growth_modifier(self):
+        """Growth modifier"""
+        return Growth_Modifier(self)
 
     #--------------------------- Other Methods -------------------------------#
     def conv_dists(self, df):
