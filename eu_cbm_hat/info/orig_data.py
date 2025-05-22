@@ -85,6 +85,7 @@ class OrigData(object):
     /silv/irw_frac_by_dist.csv             # Has scenario column
     /silv/vol_to_mass_coefs.csv            # Has scenario column
     /silv/events_templates.csv             # Has scenario column
+    /silv/growth_multiplier.csv            # Has scenario column
     /silv/harvest_factors.csv              # Has scenario column
     /silv/disturbance_matrix_value.csv     # Has scenario column
     /activities/                           # Dynamic

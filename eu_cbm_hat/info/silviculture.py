@@ -132,6 +132,10 @@ class Silviculture:
         return EventsTemplates(self)
 
     @property_cached
+    def growth_multiplier(self):
+        return GrowthMultiplier(self)
+
+    @property_cached
     def harvest(self):
         return HarvestFactors(self)
 
@@ -349,6 +353,20 @@ class VolToMassCoefs(BaseSilvInfo):
         df = self.conv_clfrs(df)
         # Return #
         return df
+
+class GrowthMultiplier(BaseSilvInfo):
+    """
+    Gives access to the growth multiplier values.
+    """
+
+    @property
+    def choices(self):
+        """Choices made for the events templates in the current combo."""
+        return self.combo.config["growth_multiplier"]
+
+    @property
+    def csv_path(self):
+        return self.country.orig_data.paths.growth_multiplier
 
 
 ###############################################################################

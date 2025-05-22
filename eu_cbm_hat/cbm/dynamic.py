@@ -22,19 +22,10 @@ from libcbm.model.cbm.cbm_variables import CBMVariables
 
 # Internal modules #
 from eu_cbm_hat.cbm.simulation import Simulation
+from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
 from eu_cbm_hat.cbm.climate_growth_modifier import Growth_Modifier
-# Constants #
-
-def cbm_vars_to_df(cbmvariables: CBMVariables, df_name:str) -> pandas.DataFrame:
-    """Extract a data frame from cbm_vars and rename columns if it's the inventory"""
-    df = getattr(cbmvariables, df_name).to_pandas()
-    # The age and land_class columns appears twice, rename those in the inventory
-    if df_name == "inventory":
-        df.rename(columns = {'age':        'inv_start_age',
-                             'land_class': 'inv_start_land_class'}, inplace=True)
-    return df
 
 
 class DynamicRunner(Runner):
@@ -100,6 +91,14 @@ class DynamicSimulation(Simulation):
 
             https://github.com/cat-cfs/libcbm_py/blob/master/examples/
             disturbance_iterations.ipynb
+
+        The `stands` data frame used in `dynamics_func` is a
+        concatenation of the classifiers, parameters, inventory, state, flux
+        and pools data frames from end vars which is the result of a simulation
+        of the stand state at the **end** of the time step. Thanks to
+        `end_vars = copy.deepcopy(cbm_vars)` followed by
+        `end_vars = self.cbm.step(end_vars)`.
+
         """
         # Check if we want to switch the growth period classifier #
         if timestep == 1: cbm_vars = self.switch_period(cbm_vars)
@@ -113,7 +112,7 @@ class DynamicSimulation(Simulation):
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
-        # Update the growth modifier if needed
+        # Update the growth multiplier column in the CBM state table if needed
         cbm_vars = self.growth_modifier.update_state(timestep=timestep, cbm_vars=cbm_vars)
 
         # Check if we are still in the historical period #
