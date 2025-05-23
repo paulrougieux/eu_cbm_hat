@@ -357,17 +357,42 @@ class VolToMassCoefs(BaseSilvInfo):
 class GrowthMultiplier(BaseSilvInfo):
     """
     Gives access to the growth multiplier values.
+
+    TODO: check that the input data has consecutive years. There should be no
+    gap in years.
+
+        - incorrect input: 2024, 2025, 2030
+        - correct input: 2024, 2025, 2026, 2027, 2028, 2029, 2030
+
+    This is important otherwise the growth multiplier is staying at the last
+    value that was set i.e. it doesn't return to a value of one.
     """
 
     @property
     def choices(self):
         """Choices made for the events templates in the current combo."""
+        # TODO: check if the growth_multiplier is not defined in combo then 
+        # Don't call the climate growth modifier in cbm/dynamic.py
+        # if "growth_multiplier" in self.combo.config:
         return self.combo.config["growth_multiplier"]
 
     @property
     def csv_path(self):
         return self.country.orig_data.paths.growth_multiplier
 
+    @property_cached
+    def df(self):
+        """Growth multiplier values"""
+        df = self.raw.copy()
+        df = df.loc[df["scenario"] == self.choices].copy()
+        df.drop(columns="scenario", inplace=True)
+        # Convert the classifier IDs to the real internal IDs #
+        df = self.conv_clfrs(df)
+        return df
+
+    def check(self):
+        """Check all years are consecutive """
+        check_df = self.df
 
 ###############################################################################
 class EventsTemplates(BaseSilvInfo):

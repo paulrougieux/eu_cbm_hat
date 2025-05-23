@@ -10,14 +10,16 @@ TODO:
 Example usage: run LU
 
     >>> from eu_cbm_hat.core.continent import continent
-    >>> runner = continent.combos['rcp6'].runners['LU'][-1]
+    >>> runner = continent.combos['reference_rcp6'].runners['LU'][-1]
     >>> runner.num_timesteps = 2070 - runner.country.inventory_start_year
     >>> # Check availability of the raw growth multiplier table
     >>> runner.silv.growth_multiplier.raw
     >>> output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-    
 
-
+    >>> from eu_cbm_hat.core.continent import continent
+    >>> runner = continent.combos['reference'].runners['LU'][-1]
+    >>> runner.num_timesteps = 2070 - runner.country.inventory_start_year
+    >>> output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 Inside libcbm's C++ code from the `libcbm_c` repository, we can see where the
 growth multiplier is applied inside `src/cbm/cbmbiomassdynamics.cpp`.
@@ -58,8 +60,17 @@ broad environmental conditions affecting all growth such as Climate conditions
 represents the Total growth adjustment combining both disturbance effects AND
 environmental conditions.
 
+Source of the growth modifier inside libcbm_c/src/cbm/cbmdefaultparameters.cpp
+
+            int disturbanceType = t.GetValue(row, "disturbance_type_id");
+            int forest_type_id = t.GetValue(row, "forest_type_id");
+            int time_step = t.GetValue(row, "time_step");
+
 """
+
+import pandas
 from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
+from libcbm.storage import dataframe
 
 class Growth_Modifier:
     """Modify the growth multiplier for the purses of taking climate
@@ -78,7 +89,7 @@ class Growth_Modifier:
         """
         df = self.runner.silv.growth_multiplier.df
 
-    def update_state(self, timestep, cbm_vars):
+    def update_state(self, year, cbm_vars):
         """Update the cbm_vars.state with new growth multiplier values
 
         This method updates the state data frame of cbm vars at the **beginning
@@ -91,14 +102,26 @@ class Growth_Modifier:
         and pools data frames from `end_vars` which is a simulated result
         of the stand state at the **end of the time step**.
         """
-        # TODO: check if there are growth multipliers value for this time step
+        # Get growth multiplier input data
+        grow_mult_input = self.runner.silv.growth_multiplier.df
+        # Check if there are growth multipliers values for this time step
         # If not skip and return cbm_vars as is.
+        if str(year) not in grow_mult_input.columns:
+            return cbm_vars
         cbm_vars_classif_df = cbm_vars_to_df(cbm_vars,"classifiers")
         cbm_vars_state_df = cbm_vars_to_df(cbm_vars,"state")
         state = pandas.concat([cbm_vars_classif_df, cbm_vars_state_df], axis=1)
-        breakpoint()
-        # state_df["growth_multiplier"] = update_state_growth_multiplier(cbm_vars, timestep)
-        # Keep only the columns in state df
-        cbm_vars.state =  dataframe.from_pandas(state_df)
+        # Keep only the current year
+        index = ['region', 'climate', 'con_broad']
+        year_col = str(self.parent.year)
+        cols = index + [year_col]
+        grow_mult = grow_mult_input[cols].copy()
+        grow_mult.rename(columns={year_col:"growth_multiplier"}, inplace=True)
+        # Merge with state keep old columns as "old" and new column as growth_multiplier
+        state = state.merge(grow_mult, on=index, suffixes=('_old', ''))
+        # Keep only the columns in cbm_vars_state_df
+        cols_to_keep = cbm_vars_state_df.columns.to_list()
+        state_updated = state[cols_to_keep].copy()
+        cbm_vars.state =  dataframe.from_pandas(state_updated)
         return cbm_vars
 

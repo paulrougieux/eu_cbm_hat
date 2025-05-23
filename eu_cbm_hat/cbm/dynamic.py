@@ -113,7 +113,7 @@ class DynamicSimulation(Simulation):
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
         # Update the growth multiplier column in the CBM state table if needed
-        cbm_vars = self.growth_modifier.update_state(timestep=timestep, cbm_vars=cbm_vars)
+        cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
 
         # Check if we are still in the historical period #
         # If we are still in the historical period HAT doesn't apply
