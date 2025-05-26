@@ -112,8 +112,10 @@ class DynamicSimulation(Simulation):
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
+        # TODO: reactivate once the input file structure has been defined
+        # Issue #86
         # Update the growth multiplier column in the CBM state table if needed
-        cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
+        # cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
 
         # Check if we are still in the historical period #
         # If we are still in the historical period HAT doesn't apply
@@ -126,6 +128,18 @@ class DynamicSimulation(Simulation):
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)
         end_vars = self.cbm.step(end_vars)
+
+        # Check that the number of lines at the beginning and end of the time
+        # step are the same. Important in case we change the state data frame to
+        # ensure they are the same data frame. (we should also check the key order)
+        n_begin = len(cbm_vars_to_df(cbm_vars, "state"))
+        n_end = len(cbm_vars_to_df(end_vars, "state"))
+        if not n_begin == n_end:
+            msg = "The number of lines at the beginning of the time step"
+            msg += f"{n_begin}."
+            msg += "Doesn't match the number of lines at the end of the time step"
+            msg += "{n_end}."
+            raise ValueError(msg)
 
         # Check that all data frames in cbm_vars have the same size #
         get_num_rows = lambda name: getattr(end_vars, name).n_rows
