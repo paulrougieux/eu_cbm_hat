@@ -26,6 +26,7 @@ from eu_cbm_hat.info.output_data    import OutputData
 from eu_cbm_hat.info.silviculture   import Silviculture
 from eu_cbm_hat.launch.create_json  import CreateJSON
 from eu_cbm_hat.post_processor import PostProcessor
+from eu_cbm_hat.info.clim_adjust import ClimAdjust
 from eu_cbm_hat.pump.pre_processor  import PreProcessor
 from eu_cbm_hat.qaqc                import Qaqc
 import eu_cbm_hat
@@ -107,6 +108,11 @@ class Runner(object):
     def post_processor(self):
         """Update or convert the output data to this run using some rules."""
         return PostProcessor(self)
+
+    @property_cached
+    def clim_adjust(self):
+        """Update or convert the output data to this run using some rules."""
+        return ClimAdjust(self)
 
     @property_cached
     def input_data(self):
