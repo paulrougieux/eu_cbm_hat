@@ -17,14 +17,20 @@ def mean_npp_by_model_country_clu_con_broad(selected_year):
     """
     csv_filename = "mean_npp_by_model_country_clu_con_broad.csv"
     df = pd.read_csv(eu_cbm_data_pathlib / "common" / csv_filename)
-    df.rename(
-        columns={
-            "npp (kg/ha/yr)": "npp",
-            "forest_type": "con_broad",
-            "climatic_unit": "climate",
-        },
-        inplace=True,
-    )
+    col_rename = {
+           "npp (tC/ha/yr)": "npp",
+           "forest_type": "con_broad",
+           "climatic_unit": "climate",
+       }
+    # Check for missing columns before renaming
+    missing_col = set(col_rename.keys()) - set(df.columns)
+    if missing_col: 
+        msg = "The following columns are supposed to be renamed "
+        msg += f"but they are missing: {missing_col}"
+        msg += "\nData frame columns:\n"
+        msg += f"{df.columns}"
+        raise ValueError(msg)
+    df.rename(columns=col_rename, inplace=True)
     # Group the data by 'model', 'country', 'forest_type', and 'climatic_unit'
     # and calculate the first year's 'npp' value for each group
     index = ["model", "country", "con_broad", "climate"]
