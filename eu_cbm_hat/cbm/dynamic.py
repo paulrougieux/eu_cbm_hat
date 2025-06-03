@@ -112,18 +112,16 @@ class DynamicSimulation(Simulation):
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
-        # TODO: reactivate once the input file structure has been defined
-        # Issue #86
         # Update the growth multiplier column in the CBM state table if needed
-        # cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
+        cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
+
+        msg = f"Time step {timestep} (year {self.year})."
+        self.parent.log.info(msg)
 
         # Check if we are still in the historical period #
         # If we are still in the historical period HAT doesn't apply
         if self.year < self.country.base_year:
             return cbm_vars
-
-        msg = f"Time step {timestep} (year {self.year})."
-        self.parent.log.info(msg)
 
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)

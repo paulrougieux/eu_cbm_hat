@@ -31,6 +31,8 @@ def mean_npp_by_model_country_clu_con_broad(selected_year):
         msg += f"{df.columns}"
         raise ValueError(msg)
     df.rename(columns=col_rename, inplace=True)
+    # Convert climate to a character variable for compatibility with CBM classifiers
+    df["climate"] = df["climate"].astype(str)
     # Group the data by 'model', 'country', 'forest_type', and 'climatic_unit'
     # and calculate the first year's 'npp' value for each group
     index = ["model", "country", "con_broad", "climate"]

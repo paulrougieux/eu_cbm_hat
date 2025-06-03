@@ -1,19 +1,12 @@
 """Modify the growth multiplier for the purses of taking climate differences into account
 
-TODO:
-
-    - load the input file in a dedicated place of the runner similar to what's
-    done for the events_template in info/silviculture.py
-
-    - 
-
-Example usage: run LU
+Example usage:
 
     >>> from eu_cbm_hat.core.continent import continent
-    >>> runner = continent.combos['reference_rcp6'].runners['LU'][-1]
+    >>> runner = continent.combos['reference_cable_pop'].runners['EE'][-1]
     >>> runner.num_timesteps = 2070 - runner.country.inventory_start_year
     >>> # Check availability of the raw growth multiplier table
-    >>> runner.silv.growth_multiplier.raw
+    >>> runner.clim_adjust.df
     >>> output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
     >>> from eu_cbm_hat.core.continent import continent
@@ -68,26 +61,21 @@ Source of the growth modifier inside libcbm_c/src/cbm/cbmdefaultparameters.cpp
 
 """
 
+import warnings
 import pandas
 from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
 from libcbm.storage import dataframe
+
 
 class Growth_Modifier:
     """Modify the growth multiplier for the purses of taking climate
     differences into account.
     """
 
-
     def __init__(self, parent):
         self.parent = parent
         self.runner = parent.runner
         self.combo_name = self.runner.combo.short_name
-
-    def growth_multiplier_table(self):
-        """Growth multiplier table scenario defined in the combo field
-        growth_multiplier
-        """
-        df = self.runner.silv.growth_multiplier.df
 
     def update_state(self, year, cbm_vars):
         """Update the cbm_vars.state with new growth multiplier values
@@ -103,25 +91,43 @@ class Growth_Modifier:
         of the stand state at the **end of the time step**.
         """
         # Get growth multiplier input data
-        grow_mult_input = self.runner.silv.growth_multiplier.df
-        # Check if there are growth multipliers values for this time step
+        clim_adjust_df = self.runner.clim_adjust.df
+        # Check if there are growth multipliers values for this year.
         # If not skip and return cbm_vars as is.
-        if str(year) not in grow_mult_input.columns:
+        if year not in clim_adjust_df["year"].unique():
             return cbm_vars
-        cbm_vars_classif_df = cbm_vars_to_df(cbm_vars,"classifiers")
-        cbm_vars_state_df = cbm_vars_to_df(cbm_vars,"state")
+        cbm_vars_classif_df = cbm_vars_to_df(cbm_vars, "classifiers")
+        cbm_vars_state_df = cbm_vars_to_df(cbm_vars, "state")
         state = pandas.concat([cbm_vars_classif_df, cbm_vars_state_df], axis=1)
         # Keep only the current year
-        index = ['region', 'climate', 'con_broad']
-        year_col = str(self.parent.year)
-        cols = index + [year_col]
-        grow_mult = grow_mult_input[cols].copy()
-        grow_mult.rename(columns={year_col:"growth_multiplier"}, inplace=True)
-        # Merge with state keep old columns as "old" and new column as growth_multiplier
-        state = state.merge(grow_mult, on=index, suffixes=('_old', ''))
+        index = ["climate", "con_broad"]
+        selector = clim_adjust_df["year"] == year
+        df = clim_adjust_df.loc[selector, index + ["ratio"]].copy()
+        # Rename ratio to growth_multiplier
+        df.rename(columns={"ratio": "growth_multiplier"}, inplace=True)
+        # Convert classifiers IDs from the SIT standard to the user standard
+        state = self.parent.conv_clfrs(state)
+
+        # Merge climate adjustment with state keep old columns as "old" and new
+        # column as growth_multiplier
+        state = state.merge(df, on=index, suffixes=("_old", ""))
+
+        # Check that the combination of Climate units and con_broad present in
+        # CBM are alsoe present in the NPP input file. If not raise a warning
+        # and keep growth_multiplier unchanged.
+        selector = state["growth_multiplier"].isna()
+        if any(selector):
+            df_missing = state.loc[
+                selector, index + ["growth_multiplier"]
+            ].value_counts()
+            msg = "Some combinations of climate units and con_broad "
+            msg += "are note present int he NPP climate modification "
+            msg += "input file:\n"
+            msg += f"{df_missing}"
+            warnings.warn(msg)
+
         # Keep only the columns in cbm_vars_state_df
         cols_to_keep = cbm_vars_state_df.columns.to_list()
         state_updated = state[cols_to_keep].copy()
-        cbm_vars.state =  dataframe.from_pandas(state_updated)
+        cbm_vars.state = dataframe.from_pandas(state_updated)
         return cbm_vars
-

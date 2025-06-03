@@ -1,4 +1,24 @@
 """Climate adjustment variables based on modelled NPP values
+
+
+The growth multiplier can have different meanings:
+
+combined_multiplier = growth_multiplier_disturbance  X  climate_adjustement
+
+| combined_multiplier | growth_multiplier_disturbance | climate_adjustement |
+|-------------------  |-------------------------------|---------------------|
+| =1.1 x 0.6          | 1.1                           | 0.6                 |
+| =1.05 x 0.7         | 1.05                          | 0.7                 |
+| =1.1 x 0.8          | 1.1                           | 0.8                 |
+| =1 x 0.9            | 1                             | 0.9                 |
+| =1 x 0.95           | 1                             | 0.95                |
+
+
+According to libcbm_c source code's internal processing what is called
+climate_adjustement is the growth_multiplier below:
+
+    sw_multiplier = growthMult.SoftwoodMultiplier * growth_multiplier
+
 """
 
 from functools import cached_property
@@ -14,8 +34,12 @@ class ClimAdjust:
         >>> # All model inputs for the given country
         >>> runner.clim_adjust.df_all
 
-        >>> # Model input for the selected scenario and model
+        >>> # Model input for the selected scenario and model as defined in the
+        >>> # combo yaml file
         >>> runner.clim_adjust.df
+
+        This data frame is used by cbm/climate_growth_modifier.py to feed
+        growth multiplier to cbm within the time step.
 
     """
 
@@ -42,6 +66,7 @@ class ClimAdjust:
         df = self.df_all
         # Select the model, ignore the case
         selector = df["model"].str.lower() == self.model.lower()
+        # Keep only those column
         cols = ["model", "country", "con_broad", "climate", "year", "npp", "ratio"]
         return df.loc[selector, cols].copy()
 
