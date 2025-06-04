@@ -2,7 +2,6 @@
 """
 
 import pandas as pd
-
 from eu_cbm_hat import eu_cbm_data_pathlib
 
 
@@ -48,4 +47,11 @@ def mean_npp_by_model_country_clu_con_broad(selected_year):
     df["con_broad"] = df["con_broad"].replace({"BL": "broad", "NL": "con"})
     # Remove columns
     df.drop(columns=["npp_selected_year"], inplace=True)
+    # "default" is a reserved value for the case where there is no climate adjustment
+    selector = df["model"] == "default"
+    if any(selector):
+        msg = "'default' is not allowed as a model name. "
+        msg += "It is reserved for the case where no climate model is used\n"
+        msg += f"{df.loc[selector]}"
+        raise ValueError(msg)
     return df

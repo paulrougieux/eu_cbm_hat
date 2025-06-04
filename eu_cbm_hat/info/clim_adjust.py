@@ -46,8 +46,15 @@ class ClimAdjust:
     def __init__(self, parent):
         self.runner = parent
         self.combo_name = self.runner.combo.short_name
-        self.selected_year = self.runner.combo.config["climate_adjustment_selected_year"]
-        self.model = self.runner.combo.config["climate_adjustment_model"]
+        self.combo_config = self.runner.combo.config
+        if "climate_adjustment_selected_year" not in self.combo_config.keys():
+            self.selected_year = None
+        else:
+            self.selected_year = self.combo_config["climate_adjustment_selected_year"]
+        if "climate_adjustment_model" not in self.combo_config.keys():
+            self.model = "default"
+        else:
+            self.model = self.combo_config["climate_adjustment_model"]
 
     @cached_property
     def df_all(self):

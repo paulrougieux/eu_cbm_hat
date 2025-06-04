@@ -112,8 +112,14 @@ class DynamicSimulation(Simulation):
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
-        # Update the growth multiplier column in the CBM state table if needed
-        cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
+        # Climate adjustment consists in updating the growth multiplier column
+        # in the CBM state table. Perform the update only if
+        # runner.combo.config["climate_adjustment_model"] is not 'default'
+        msg = "Climate adjustment model: "
+        msg += f"{self.runner.clim_adjust.model}"
+        self.parent.log.debug(msg)
+        if not self.runner.clim_adjust.model == "default":
+            cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
 
         msg = f"Time step {timestep} (year {self.year})."
         self.parent.log.info(msg)
