@@ -143,7 +143,9 @@ class Growth_Modifier:
         state_updated_check = state_updated.copy()
         state_updated_check["growth_multiplier"] = state['growth_multiplier_old']
         if not cbm_vars_state_df.equals(state_updated_check):
-            msg = "State and state updated do not have the same values"
+            msg = "State and state updated do not have the same values. Differences:\n"
+            diff = state_updated_check - state_updated
+            msg += f"{diff}"
             raise ValueError(msg)
 
         # Write the state back into cbm_vars
