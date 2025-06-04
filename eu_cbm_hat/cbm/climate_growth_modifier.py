@@ -110,7 +110,15 @@ class Growth_Modifier:
 
         # Merge climate adjustment with state keep old columns as "old" and new
         # column as growth_multiplier
-        state = state.merge(df, on=index, suffixes=("_old", ""))
+        state = state.merge(df, on=index, suffixes=("_old", ""), how="left")
+
+        # Debug message with the new and old values
+        msg = "Old growth multiplier values from CBM"
+        msg += f"{state['growth_multiplier_old'].unique()}"
+        self.runner.log.debug(msg)
+        msg = "New growth multiplier values from runner.clim_adjust.df"
+        msg += f"{state['growth_multiplier'].unique()}"
+        self.runner.log.debug(msg)
 
         # Check that the combination of Climate units and con_broad present in
         # CBM are alsoe present in the NPP input file. If not raise a warning
@@ -129,5 +137,15 @@ class Growth_Modifier:
         # Keep only the columns in cbm_vars_state_df
         cols_to_keep = cbm_vars_state_df.columns.to_list()
         state_updated = state[cols_to_keep].copy()
+
+        # Check state_updated and original cbm_vars_state_df are the same
+        # except for the change in growth multiplier i.e. no reordering of rows.
+        state_updated_check = state_updated.copy()
+        state_updated_check["growth_multiplier"] = state['growth_multiplier_old']
+        if not cbm_vars_state_df.equals(state_updated_check):
+            msg = "State and state updated do not have the same values"
+            raise ValueError(msg)
+
+        # Write the state back into cbm_vars
         cbm_vars.state = dataframe.from_pandas(state_updated)
         return cbm_vars
