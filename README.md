@@ -287,8 +287,11 @@ and natural disturbances within the growth curve.
 
 ## Units
 
-See post_processor/convert.py
-for some information on the units
+The main unit used inside CBM are in tons of carbon. But input yield curves are in m3 of
+merchantable biomass per hectare. The harvest data is in m3 of biomass under bark.
+
+See some of the unit conversion functions inside post_processor/convert.py for more
+information on the units.
 
 
 # Extra documentation
