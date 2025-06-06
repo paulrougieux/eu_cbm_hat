@@ -23,7 +23,7 @@ See also
   https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html
 
 
-## Licence
+# Licence
 
 This program is free software: you can redistribute it and/or modify it under the terms
 of the European Union Public Licence, either version 1.2 of the License, or (at your
@@ -31,7 +31,7 @@ option) any later version. See [LICENCE.txt](LICENCE.txt) and [NOTICE.txt](NOTIC
 for more information on the licence of components.
 
 
-## Dependencies
+# Dependencies
 
 * `libcbm` is a C++ library with python binding developed by the Canadian Forest
   Service. It is bundled into the libcbm_py python package available at
@@ -45,7 +45,7 @@ for more information on the licence of components.
   at https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb
 
 
-## Installation
+# Installation
 
 If you have never used python before and if you are on Windows, you might want to
 [install Anaconda](https://www.anaconda.com/) on your system, it will help you with
@@ -103,7 +103,7 @@ Before running the model, you need to create AIDB symlinks at a python prompt:
     >>> for country in continent: country.aidb.symlink_all_aidb()
 
 
-### Upgrade
+## Upgrade
 
 Over time it's important to regularly upgrade the 2 packages with:
 
@@ -120,7 +120,7 @@ the `--no-dependencies` argument avoids reinstalling all dependencies as well:
     python -m pip install --upgrade --force-reinstall --no-dependencies https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/archive/main/eu_cbm_hat-main.tar.gz
 
 
-### Installation for development purposes
+## Installation for development purposes
 
 Skip this section if you do not intend to change the code of the model. For development
 purposes, these instruction leave the capability to modify the code of the model and
@@ -131,7 +131,7 @@ instructions are available for two different platforms:
 * [Installation on Windows](docs/setup_on_windows.md)
 
 
-## Running the model
+# Running the model
 
 Run the test country ZZ at a python prompt:
 
@@ -143,7 +143,7 @@ Run the test country ZZ at a python prompt:
 See example of how to run the model for different countries in the `scripts/running`
 directory.
 
-### Run a scenario combination
+## Run a scenario combination
 
 Run a scenario combination for all EU countries at once (see the [documentation on
 combos](https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat/combos.html)
@@ -162,7 +162,7 @@ in an aggregated way:
     ipython -i process_scenario_combo.py -- --combo_names reference pikssp2 pikfair
 
 
-### Read the model output
+## Read the model output
 
 Inspect the output of the model
 
@@ -194,7 +194,7 @@ Inspect the output of the model
                  )
 
 
-### Further process the output
+## Further process the output
 
 Instantiate a runner object. Note: this can be done after a model run, once the model
 has been run, no need to re-run the model at this point, since the output has been
@@ -236,7 +236,7 @@ Further checks for information:
         )
 
 
-### Testing
+## Testing
 
 All dependencies are clearly stated in `.gitlab-ci.yml` and the `setup.py` files at the
 root of the repository. In fact those 2 files are used to automatically install and test
@@ -245,7 +245,7 @@ well as running a mock country called "ZZ". You can see the output of these runs
 (successful or not) in the CI-CD jobs page on gitlab.
 
 
-### Model runs used in publications
+## Model runs used in publications
 
 - The model run used in the technical report
 
@@ -258,9 +258,17 @@ well as running a mock country called "ZZ". You can see the output of these runs
       branch run-ssp2-fair-v2023
 
 
-## Input data
 
-### Growth period
+# Definitions and specification
+
+- A specification for an Harvest Allocation Tool (HAT) is available at
+  [docs/harvest_allocation_specification.md](docs/harvest_allocation_specification.md)
+
+- Input files (disturbances, yield, inventory) defined in `eu_cbm_data` contain scenarios for the activities (afforestation, deforestation, reforestation, disturbances in forest remaining forest, wood use specified in the silviculture and product_types.csv tables)
+
+
+
+## Growth period
 
 For the purpose of initializing the soil carbon pool, we use a different growth curve
 called the "Init" growth curve. That growth curve takes into account previous harvest
@@ -277,16 +285,13 @@ and natural disturbances within the growth curve.
   the inventory start year is specified in `runner.country.inventory_start_year`.
 
 
-## Definitions and specification
+## Units
 
-- A specification for an Harvest Allocation Tool (HAT) is available at
-  [docs/harvest_allocation_specification.md](docs/harvest_allocation_specification.md)
-
-- Input files (disturbances, yield, inventory) defined in `eu_cbm_data` contain scenarios for the activities (afforestation, deforestation, reforestation, disturbances in forest remaining forest, wood use specified in the silviculture and product_types.csv tables)
+See post_processor/convert.py
+for some information on the units
 
 
-
-## Extra documentation
+# Extra documentation
 
 More documentation is available at:
 https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html
