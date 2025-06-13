@@ -370,9 +370,9 @@ class EventsTemplates(BaseSilvInfo):
     @property
     def dup_cols(self):
         return (
-        self.cols 
-            + ["sw_start", "sw_end", "hw_start", "hw_end"]
-            + ["last_dist_id", "scenario"]
+        list(self.country.orig_data.classif_names.values())
+            + ["scenario", "sw_start", "sw_end", "hw_start", "hw_end"]
+            + ["last_dist_id"]
         )
 
     def extra_checks(self):
