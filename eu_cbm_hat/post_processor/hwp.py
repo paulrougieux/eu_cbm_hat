@@ -381,24 +381,22 @@ class HWP:
     def fraction_semifinished_default(self) -> pandas.DataFrame:
         """Fraction of semi finished products in the default case"""
         mean_frac = self.fraction_semifinished_n_years_mean
-        # Default scenario
-        if self.hwp_frac_scenario == "default":
-            max_year = self.runner.country.base_year + self.runner.num_timesteps
-            df = pandas.DataFrame({"year": range(1900, max_year + 1)})
-            cols = [
-                "sw_fraction",
-                "pp_fraction",
-                "wp_fraction",
-                "recycled_paper_prod",
-                "recycled_wood_prod",
-            ]
-            for col in cols:
-                df[col] = mean_frac[col]
-            # Default recycling values to one
-            df["recycled_wood_factor"] = 1
-            df["recycled_paper_factor"] = 1
-            # Return
-            return df
+        max_year = self.runner.country.base_year + self.runner.num_timesteps
+        df = pandas.DataFrame({"year": range(1900, max_year + 1)})
+        cols = [
+            "sw_fraction",
+            "pp_fraction",
+            "wp_fraction",
+            "recycled_paper_prod",
+            "recycled_wood_prod",
+        ]
+        for col in cols:
+            df[col] = mean_frac[col]
+        # Default recycling values to one
+        df["recycled_wood_factor"] = 1
+        df["recycled_paper_factor"] = 1
+        # Return
+        return df
 
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_scenario(self) -> pandas.DataFrame:
