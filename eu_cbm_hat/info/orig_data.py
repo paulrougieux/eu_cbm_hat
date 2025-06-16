@@ -140,6 +140,14 @@ class OrigData(object):
         """
         Loads one of the dataframes in the orig data and adds information
         to it.
+
+        Example:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> country = continent.countries["LU"]
+            >>> country.orig_data.load(['mgmt', 'inventory'])
+            >>> country.orig_data.load(['mgmt', 'events'])
+            >>> country.orig_data.load(['mgmt', 'events'], to_long=True)
         """
         # Load from CSV #
         df = self[name]
