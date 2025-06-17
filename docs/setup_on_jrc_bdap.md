@@ -22,6 +22,7 @@ Some of the commands we used to configure the EU-CBM-HAT model on BDAP JEO-Desk:
 ```
 cd /eos/jeodpp/home/users/$USER
 mkdir eu_cbm
+cd eu_cbm
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore
@@ -49,7 +50,9 @@ ln -s /eos/jeodpp/home/users/$USER/eu_cbm eu_cbm
    Add this line of code at the end of the file and then save it (more details above).
    This will load the conda environment for jeo desk.
 
-    source /storage/SUSBIOM-TRADE/env_var/.env
+```
+source /storage/SUSBIOM-TRADE/env_var/.env
+```
 
 - Add the parent directory of the use case environment susbiom_trade_env. Click on
   “Terminal Emulator” type
