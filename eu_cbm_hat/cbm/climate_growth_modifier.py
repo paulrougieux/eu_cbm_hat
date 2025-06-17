@@ -67,7 +67,7 @@ from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
 from libcbm.storage import dataframe
 
 
-class Growth_Modifier:
+class GrowthModifier:
     """Modify the growth multiplier for the purses of taking climate
     differences into account.
     """
