@@ -358,7 +358,14 @@ class HWPCommonInput:
     def nb_grading(self):
         """Grading Nicolas Bozzolan
 
-        Keep only sawlogs and pulpwood from that grading table."""
+        Keep only sawlogs and pulpwood from that grading table.
+
+            >>> 
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> df = hwp_common_input.nb_grading
+
+
+        """
         df_wide = pd.read_csv(self.common_dir / "nb_grading.csv")
         selector = df_wide["grade"].isin(["sawlogs", "pulpwood"])
         df_wide = df_wide.loc[selector]
@@ -755,6 +762,19 @@ class HWPCommonInput:
         recycled_wood_prod will be replaced by zeros if there are NA everywhere
         for all  years of the series. Otherwise the latest values will be
         backfilled.
+
+        Example use:
+
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> hwp_common_input.prod_from_dom_harv_stat
+
+        Plot wood panel production in a selected country:
+
+            >>> import matplotlib.pyplot as plt
+            >>> df = hwp_common_input.prod_from_dom_harv_stat
+            >>> df.query("area =='Austria'").set_index("year")["wp_prod_m3"].plot()
+            >>> plt.show()
+
         """
         index = ["area", "year"]
         selected_cols = index + [

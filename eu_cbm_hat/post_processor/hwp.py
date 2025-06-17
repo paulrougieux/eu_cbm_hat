@@ -554,7 +554,7 @@ class HWP:
             >>> import matplotlib.pyplot as plt
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
-            >>> df = runner.post_processor.hwp.build_hwp_stock
+            >>> df = runner.post_processor.hwp.build_hwp_stock_since_1900
             >>> cols = ['sw_stock', 'wp_stock', 'pp_stock']
             >>> df.set_index("year")[cols].plot()
             >>> plt.show()
