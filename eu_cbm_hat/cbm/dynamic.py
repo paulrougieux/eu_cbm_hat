@@ -25,7 +25,7 @@ from eu_cbm_hat.cbm.simulation import Simulation
 from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
-from eu_cbm_hat.cbm.climate_growth_modifier import Growth_Modifier
+from eu_cbm_hat.cbm.climate_growth_modifier import GrowthModifier
 
 
 class DynamicRunner(Runner):
@@ -675,7 +675,7 @@ class DynamicSimulation(Simulation):
     @property
     def growth_modifier(self):
         """Growth modifier"""
-        return Growth_Modifier(self)
+        return GrowthModifier(self)
 
     #--------------------------- Other Methods -------------------------------#
     def conv_dists(self, df):
