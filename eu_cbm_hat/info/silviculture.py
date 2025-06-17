@@ -373,8 +373,6 @@ class EventsTemplates(BaseSilvInfo):
         list(self.country.orig_data.classif_names.values())
             + ["scenario", "sw_start", "sw_end", "hw_start", "hw_end"]
             + ["last_dist_id"]
-            + ["disturbance_type"]
-            
         )
 
     def extra_checks(self):

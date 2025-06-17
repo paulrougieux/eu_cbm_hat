@@ -22,18 +22,10 @@ from libcbm.model.cbm.cbm_variables import CBMVariables
 
 # Internal modules #
 from eu_cbm_hat.cbm.simulation import Simulation
+from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
-# Constants #
-
-def cbm_vars_to_df(cbmvariables: CBMVariables, df_name:str) -> pandas.DataFrame:
-    """Extract a data frame from cbm_vars and rename columns if it's the inventory"""
-    df = getattr(cbmvariables, df_name).to_pandas()
-    # The age and land_class columns appears twice, rename those in the inventory
-    if df_name == "inventory":
-        df.rename(columns = {'age':        'inv_start_age',
-                             'land_class': 'inv_start_land_class'}, inplace=True)
-    return df
+from eu_cbm_hat.cbm.climate_growth_modifier import Growth_Modifier
 
 
 class DynamicRunner(Runner):
@@ -99,6 +91,14 @@ class DynamicSimulation(Simulation):
 
             https://github.com/cat-cfs/libcbm_py/blob/master/examples/
             disturbance_iterations.ipynb
+
+        The `stands` data frame used in `dynamics_func` is a
+        concatenation of the classifiers, parameters, inventory, state, flux
+        and pools data frames from end vars which is the result of a simulation
+        of the stand state at the **end** of the time step. Thanks to
+        `end_vars = copy.deepcopy(cbm_vars)` followed by
+        `end_vars = self.cbm.step(end_vars)`.
+
         """
         # Check if we want to switch the growth period classifier #
         if timestep == 1: cbm_vars = self.switch_period(cbm_vars)
@@ -112,17 +112,38 @@ class DynamicSimulation(Simulation):
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
 
+        # Climate adjustment consists in updating the growth multiplier column
+        # in the CBM state table. Perform the update only if
+        # runner.combo.config["climate_adjustment_model"] is not 'default'
+        msg = "Climate adjustment model: "
+        msg += f"{self.runner.clim_adjust.model}"
+        self.parent.log.debug(msg)
+        if not self.runner.clim_adjust.model == "default":
+            cbm_vars = self.growth_modifier.update_state(year=self.year, cbm_vars=cbm_vars)
+
+        msg = f"Time step {timestep} (year {self.year})."
+        self.parent.log.info(msg)
+
         # Check if we are still in the historical period #
         # If we are still in the historical period HAT doesn't apply
         if self.year < self.country.base_year:
             return cbm_vars
 
-        msg = f"Time step {timestep} (year {self.year})."
-        self.parent.log.info(msg)
-
         # Copy cbm_vars and hypothetically end the timestep here #
         end_vars = copy.deepcopy(cbm_vars)
         end_vars = self.cbm.step(end_vars)
+
+        # Check that the number of lines at the beginning and end of the time
+        # step are the same. Important in case we change the state data frame to
+        # ensure they are the same data frame. (we should also check the key order)
+        n_begin = len(cbm_vars_to_df(cbm_vars, "state"))
+        n_end = len(cbm_vars_to_df(end_vars, "state"))
+        if not n_begin == n_end:
+            msg = "The number of lines at the beginning of the time step"
+            msg += f"{n_begin}."
+            msg += "Doesn't match the number of lines at the end of the time step"
+            msg += "{n_end}."
+            raise ValueError(msg)
 
         # Check that all data frames in cbm_vars have the same size #
         get_num_rows = lambda name: getattr(end_vars, name).n_rows
@@ -650,6 +671,11 @@ class DynamicSimulation(Simulation):
 
         # Return #
         return cbm_vars
+
+    @property
+    def growth_modifier(self):
+        """Growth modifier"""
+        return Growth_Modifier(self)
 
     #--------------------------- Other Methods -------------------------------#
     def conv_dists(self, df):
