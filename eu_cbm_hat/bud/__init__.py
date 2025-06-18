@@ -25,15 +25,23 @@ class Bud:
     directory can be in an arbitrary location, it doesn't need to be in the
     eu_cbm_data path.
 
-    Create a bud object to run the input data of a particular scenario sc1
+    Create a bud object to run the input data of a particular scenario sc1,
+    with the given aidb path.
+
+    bash
+
+        mkdir /tmp/sc1
+
+    python
 
         >>> from eu_cbm_hat.bud import Bud
-        >>> sc1 = Bud("/tmp/sc1")
+        >>> sc1 = Bud("/tmp/sc1", "~/rp/eu_cbm/eu_cbm_aidb/countries/IE/aidb.db")
 
     """
 
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, aidb_path):
         self.data_dir = pathlib.Path(data_dir)
+        self.aidb_path = pathlib.Path(aidb_path)
 
     @property
     def num_timesteps(self):
@@ -52,10 +60,9 @@ class Bud:
         The interaction with `libcbm_py` is decomposed in several calls to pass
         a `.json` config, a default database (also called aidb) and csv files.
         """
-        db_path = pathlib.Path.home() / "eu_cbm/eu_cbm_aidb/countries/IE/aidb.db"
         # Create a SIT object #
         json_path = self.data_dir / "input/json/config.json"
-        self.sit = sit_cbm_factory.load_sit(json_path, str(db_path))
+        self.sit = sit_cbm_factory.load_sit(json_path, str(self.aidb_path))
         # Initialization #
         init_inv = sit_cbm_factory.initialize_inventory
         self.clfrs, self.inv = init_inv(self.sit)
@@ -69,11 +76,11 @@ class Bud:
             # Run #
             cbm_simulator.simulate(
                 self.cbm,
-                n_steps = self.num_timesteps,
-                classifiers = self.clfrs,
-                inventory = self.inv,
-                pre_dynamics_func = self.dynamics_func,
-                reporting_func = self.cbm_output.append_simulation_result,
+                n_steps=self.num_timesteps,
+                classifiers=self.clfrs,
+                inventory=self.inv,
+                pre_dynamics_func=self.dynamics_func,
+                reporting_func=self.cbm_output.append_simulation_result,
             )
         return self.cbm_output
 
@@ -85,11 +92,13 @@ class Bud:
         classifier value of each inventory record.
         """
         # Print message #
-        msg = "Carbon pool initialization period is finished." \
-              " Now starting the `current` period.\n"
+        msg = (
+            "Carbon pool initialization period is finished."
+            " Now starting the `current` period.\n"
+        )
         print(msg)
         # The name of our extra classifier #
-        key = 'growth_period'
+        key = "growth_period"
         # The value that the classifier should take for all timesteps #
         val = "Cur"
         # Get the corresponding ID in the libcbm simulation #
@@ -99,7 +108,7 @@ class Bud:
         # Return #
         return cbm_vars
 
-    def dynamics_func(self, timestep:int, cbm_vars: CBMVariables) -> CBMVariables:
+    def dynamics_func(self, timestep: int, cbm_vars: CBMVariables) -> CBMVariables:
         """
         See the simulate method of the `libcbm_py` simulator:
 
@@ -107,13 +116,11 @@ class Bud:
             model/cbm/cbm_simulator.py#L148
         """
         # Check if we want to switch growth period #
-        if timestep == 1: cbm_vars = self.switch_period(cbm_vars)
+        if timestep == 1:
+            cbm_vars = self.switch_period(cbm_vars)
         # Print a message #
         print(f"Time step {timestep} is about to run.")
         # Run the usual rule based processor #
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
         # Return #
         return cbm_vars
-
-
-
