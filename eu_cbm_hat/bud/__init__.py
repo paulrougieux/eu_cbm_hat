@@ -57,15 +57,26 @@ class Bud:
         """Input data"""
         return BudInputData(self)
 
+    @property
+    def sit(self):
+        """Standard import tool object
+
+        Examples
+        --------
+        >>> from eu_cbm_hat.bud import Bud
+        >>> ref = Bud(scenarios_dir, aidb_path)
+        >>> ref.sit.classifier_value_ids.items()
+
+        """
+        json_path = self.data_dir / "input/json/config.json"
+        return sit_cbm_factory.load_sit(json_path, str(self.aidb_path))
+
     def run(self):
         """
         Call `libcbm_py` to run the CBM simulation.
         The interaction with `libcbm_py` is decomposed in several calls to pass
         a `.json` config, a default database (also called aidb) and csv files.
         """
-        # Create a SIT object #
-        json_path = self.data_dir / "input/json/config.json"
-        self.sit = sit_cbm_factory.load_sit(json_path, str(self.aidb_path))
         # Initialization #
         init_inv = sit_cbm_factory.initialize_inventory
         self.clfrs, self.inv = init_inv(self.sit)

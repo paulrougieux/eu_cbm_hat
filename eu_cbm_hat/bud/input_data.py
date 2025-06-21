@@ -5,7 +5,7 @@ from typing import Union, Dict
 
 class BudInputData:
     """
-    Load CSV files from a scenario "input/csv" directory as pandas data frames.
+    CSV files from a scenario "input/csv" directory used as input to CBM
 
     Examples
     --------
