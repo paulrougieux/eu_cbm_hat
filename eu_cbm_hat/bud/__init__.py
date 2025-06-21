@@ -9,13 +9,16 @@ TODO :
 
 """
 
-import pathlib
+from typing import Union, Dict
+from pathlib import Path
 
 from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm.cbm_output import CBMOutput
 from libcbm.storage.backends import BackendType
 from libcbm.model.cbm import cbm_simulator
 from libcbm.model.cbm.cbm_variables import CBMVariables
+
+from eu_cbm_hat.bud.input_data import BudInputData
 
 
 class Bud:
@@ -36,23 +39,25 @@ class Bud:
 
         >>> from eu_cbm_hat.bud import Bud
         >>> sc1 = Bud("/tmp/sc1", "~/rp/eu_cbm/eu_cbm_aidb/countries/IE/aidb.db")
+        >>> sc1.num_timesteps = 50
 
     """
 
-    def __init__(self, data_dir, aidb_path):
-        self.data_dir = pathlib.Path(data_dir)
-        self.aidb_path = pathlib.Path(aidb_path)
-
-    @property
-    def num_timesteps(self):
-        """The number of time steps defaults to the last disturbance events.
-
-        It can be overwritten by setting this value.
-        """
-        return 20
+    def __init__(self, 
+                 data_dir: Union[str, Path],
+                 aidb_path: Union[str, Path]):
+        self.data_dir = Path(data_dir)
+        self.aidb_path = Path(aidb_path)
+        # Default number of simulation time steps.
+        self.num_timesteps = 20
 
     def __repr__(self):
         return '%s object on "%s"' % (self.__class__, self.data_dir)
+
+    @property
+    def input_data(self):
+        """Input data"""
+        return BudInputData(self)
 
     def run(self):
         """
