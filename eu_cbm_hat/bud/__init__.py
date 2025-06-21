@@ -43,9 +43,7 @@ class Bud:
 
     """
 
-    def __init__(self, 
-                 data_dir: Union[str, Path],
-                 aidb_path: Union[str, Path]):
+    def __init__(self, data_dir: Union[str, Path], aidb_path: Union[str, Path]):
         self.data_dir = Path(data_dir)
         self.aidb_path = Path(aidb_path)
         # Default number of simulation time steps.
