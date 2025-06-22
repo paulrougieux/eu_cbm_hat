@@ -1,5 +1,5 @@
 default:
-  image: python:3.11-bullseye
+  image: python:3.11-bookworm
   cache:                      # Pip's cache doesn't store the python packages
     paths:                    # https://pip.pypa.io/en/stable/topics/caching/
       - .cache/pip
