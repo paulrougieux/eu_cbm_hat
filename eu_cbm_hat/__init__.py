@@ -37,6 +37,7 @@ CARBON_FRACTION_OF_BIOMASS = 0.49
 # Get paths to module #
 self       = sys.modules[__name__]
 module_dir = Path(os.path.dirname(self.__file__))
+module_dir_pathlib = pathlib.Path(os.path.dirname(self.__file__))
 
 # The repository directory #
 repos_dir = module_dir.directory

@@ -1,7 +1,6 @@
+"""Input data for a small self contained runner-type of object called a bud.
+"""
 import pandas as pd
-from pathlib import Path
-from typing import Union, Dict
-
 
 class BudInputData:
     """

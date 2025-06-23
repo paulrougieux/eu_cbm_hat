@@ -38,8 +38,13 @@ class Bud:
     python
 
         >>> from eu_cbm_hat.bud import Bud
-        >>> sc1 = Bud("/tmp/sc1", "~/rp/eu_cbm/eu_cbm_aidb/countries/IE/aidb.db")
-        >>> sc1.num_timesteps = 50
+        >>> from eu_cbm_hat import module_dir_pathlib
+        >>> data_dir = module_dir_pathlib / "tests/bud_data"
+        >>> bzz = Bud(
+        ...     data_dir=module_dir_pathlib / "tests/bud_data",
+        ...     aidb_path=eu_cbm_data_pathlib.parent / "eu_cbm_aidb/countries/ZZ/aidb.db"
+        ... )
+        >>> bzz.run()
 
     """
 
