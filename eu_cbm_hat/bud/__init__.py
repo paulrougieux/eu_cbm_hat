@@ -1,7 +1,9 @@
 """
-Workflow pipeline object to run libcbm by pointing it to a data directory. It
-is a small self contained object that makes it possible to run test without
-the need for the eu_cbm_data directory.
+Small self contain runner-type object to run libcbm by pointing it to an input
+data directory and an AIDB. It is a small self contained object that makes it
+possible to run the libcbm model and the EU-CBM-HAT post processor (to compute
+sink output for example) without the need for the EU-wide
+eu_cbm_data directory.
 
 TODO :
 
@@ -11,6 +13,7 @@ TODO :
 
 from typing import Union, Dict
 from pathlib import Path
+from functools import cached_property
 
 from libcbm.input.sit import sit_cbm_factory
 from libcbm.model.cbm.cbm_output import CBMOutput
@@ -19,6 +22,9 @@ from libcbm.model.cbm import cbm_simulator
 from libcbm.model.cbm.cbm_variables import CBMVariables
 
 from eu_cbm_hat.bud.input_data import BudInputData
+from eu_cbm_hat.bud.post_processor import BudPostProcessor
+from eu_cbm_hat.bud.output import BudOutput
+from eu_cbm_hat.bud.output import BudSim
 
 
 class Bud:
@@ -39,6 +45,7 @@ class Bud:
 
         >>> from eu_cbm_hat.bud import Bud
         >>> from eu_cbm_hat import module_dir_pathlib
+        >>> from eu_cbm_hat import eu_cbm_data_pathlib
         >>> data_dir = module_dir_pathlib / "tests/bud_data"
         >>> bzz = Bud(
         ...     data_dir=module_dir_pathlib / "tests/bud_data",
@@ -143,3 +150,18 @@ class Bud:
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
         # Return #
         return cbm_vars
+
+    @cached_property
+    def output(self):
+        """Save libcbm output or reload libcbm output"""
+        return BudOutput(self)
+
+    @cached_property
+    def sim(self):
+        """Attach simulation sit output at a sub-level"""
+        return BudSim(self)
+
+    @cached_property
+    def post_processor(self):
+        """Convert and summarize output data."""
+        return BudPostProcessor(self)
