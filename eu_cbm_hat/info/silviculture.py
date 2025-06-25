@@ -58,16 +58,22 @@ def keep_clfrs_without_question_marks(df, classifiers):
     # TODO: The error raised when there are a mixture of other values and
     # question marks should be raised in the BaseSilvInfo.conv_clfrs() method.
     # Why is this not the case for irw_frac and the events_template?
+    # Answer: because they are converted to NA values
     output_classifiers = []
     for classif_name in classifiers:
-        values = df[classif_name].unique().tolist()
-        if len(values) > 1 and "?" in values:
-            msg = "Mixture of question marks and other values"
+        values = df[classif_name].unique()
+        has_question_mark = "?" in values
+        has_nan = pandas.isna(values).any()
+        if len(values) > 1 and (has_question_mark or has_nan):
+            # TODO: move this check to a method of base silv info
+            # so that we can display self.csv_path in the error message
+            # to facilitate locating the file
+            msg = "Mixture of question marks (i.e. NA values) and other values"
             msg += f"not allowed in, column {classif_name}.\n"
             msg += f"The data frame contains the following columns:\n{df.columns}."
             raise ValueError(msg)
-        # Remove classifiers that contain question marks only
-        if "?" in values:
+        # Remove classifiers that contain question marks or NA values only
+        if has_question_mark or has_nan:
             continue
         # Add classifiers that don't contain question marks
         output_classifiers.append(classif_name)
@@ -191,6 +197,24 @@ class BaseSilvInfo:
     def df(self):
         """Data frame with disturbance IDs and classifiers IDs converted to the
         internal IDs
+
+        Notes:
+
+        - The use of `self.conv_dists` here is where the question marks "?" are
+          converted to NAN values.
+
+        - Classifier and disturbance values are different between user ids in
+          the `raw` data frame and internal simulation ids in the `df` data
+          frame. For example for industrial roundwood fractions:
+        
+        >>> runner.silv.irw_frac.raw["climate"].unique()
+        >>> # array(['?', '35'], dtype=object)
+        >>> runner.silv.irw_frac.df["climate"].unique()
+        >>> # array([nan, 25.])
+        >>> runner.silv.irw_frac.raw["forest_type"].unique()
+        >>> # array(['DF', 'FS', 'OB', 'OC', 'PA', 'QR'], dtype=object)
+        >>> runner.silv.irw_frac.df["forest_type"].unique()
+        >>> # array([ 5,  6,  7,  8,  9, 10])
         """
         self.check()
         # Load #
@@ -319,6 +343,14 @@ class IRWFractions(BaseSilvInfo):
     def csv_path(self):
         return self.country.orig_data.paths.irw_csv
 
+    @property
+    def merge_index(self):
+        """Dynamic merge index to be used when merging with irw_frac
+
+        Classifier columns can be fully empty, and therefore unused, they will
+        be removed from the merge index.
+        """
+        self.raw 
 
 ###############################################################################
 class VolToMassCoefs(BaseSilvInfo):
