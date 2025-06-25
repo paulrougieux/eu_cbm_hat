@@ -190,9 +190,12 @@ class DynamicSimulation(Simulation):
         has_flux_to_prod =  fluxes[cols_to_product].sum(axis=1)>1
         selector = missing_irw_frac & has_flux_to_prod
         if any(selector):
+            # Convert internal classifiers to user classifiers
+            fluxes2 = self.conv_clfrs(fluxes.copy())
+            irw_frac2 = self.conv_clfrs(irw_frac.copy())
             msg = "Industrial roundwood fractions defined in irw_frac_by_dist.csv "
             msg += "do not have irw fractions for the following classifiers:\n"
-            msg += f"{fluxes[selector]}"
+            msg += f"{fluxes2[selector]}"
             raise ValueError(msg)
 
         # Join the wood density and bark fraction parameters also #
