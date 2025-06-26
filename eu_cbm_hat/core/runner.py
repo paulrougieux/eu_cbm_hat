@@ -205,7 +205,7 @@ class Runner(object):
         return period_max
 
     #------------------------------- Methods ---------------------------------#
-    def run(self, keep_in_ram=False, verbose=True, interrupt_on_error=False):
+    def run(self, keep_in_ram=False, verbose=True, interrupt_on_error=True):
         """
         Run the full modelling pipeline for a given country, a given combo
         and a given step.
