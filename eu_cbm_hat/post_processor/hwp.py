@@ -131,7 +131,7 @@ class HWP:
         selector = df[fluxes_cols].sum(axis=1) > 0
         df = df.loc[selector].reset_index(drop=True)
         # Merge with IRW fractions
-        coi = [
+        index = [
             "status",
             "region",
             "forest_type",
@@ -140,7 +140,7 @@ class HWP:
             "con_broad",
             "disturbance_type",
         ]
-        df = df.merge(self.irw_frac, on=coi, how="left")
+        df = df.merge(self.irw_frac, on=index, how="left")
         return df
 
     @cached_property

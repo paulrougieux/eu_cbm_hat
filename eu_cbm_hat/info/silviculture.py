@@ -165,6 +165,7 @@ class BaseSilvInfo:
         self.country = self.silv.country
         self.combo = self.runner.combo
         self.code = self.country.iso2_code
+        self.classifiers_list = list(self.country.orig_data.classif_names.values())
 
     # ----------------------------- Properties --------------------------------#
     @property_cached
@@ -174,9 +175,20 @@ class BaseSilvInfo:
 
     @property_cached
     def cols(self):
-        return list(self.country.orig_data.classif_names.values()) + [
-            "disturbance_type"
-        ]
+        return self.classifiers_list + ["disturbance_type"]
+
+    @property
+    def index(self, year):
+        """Dynamic merge index of non-empty columns to be used when merging
+
+        Classifier columns can be fully empty either `?` or `NA` values. These
+        unused columns should be removed from the merge index.
+        """
+        clfrs = list(self.country.orig_data.classif_names.values())
+        # Keep only this scenario
+        df = self.get_year(year)
+        # Get classifiers columns that are not empty
+        return keep_clfrs_without_question_marks(df, clfrs)
 
     @property_cached
     def dup_cols(self):
@@ -334,6 +346,19 @@ class IRWFractions(BaseSilvInfo):
     for the current simulation run.
     """
 
+    # TODO: add a property that provides the merge index to be used with
+    # irw_frac depending on which columns are returned by Note that
+    # self.runner.silv.irw_frac.raw has a scenario column And that we want to
+    # perform the check for one scenario only. As different scenarios might
+    # heve different ways to deal with the classifiers. We could use
+    # runner.silv.irw_frac.df for the check but it then would not be available
+    # for the post_processor which also requires irw_frac.
+    #
+    # For lack of a better way, We can add a scenario specific
+    # irw_frac.raw_df_scenario Which can then be used to return the merge index
+    # to be used with irw_frac for that particular scenario and that mere_index
+    # would be available both for users of irw_frac.df and irw_frac.raw
+
     @property
     def choices(self):
         """Choices made for `irw` fraction in the current combo."""
@@ -343,14 +368,6 @@ class IRWFractions(BaseSilvInfo):
     def csv_path(self):
         return self.country.orig_data.paths.irw_csv
 
-    @property
-    def merge_index(self):
-        """Dynamic merge index to be used when merging with irw_frac
-
-        Classifier columns can be fully empty, and therefore unused, they will
-        be removed from the merge index.
-        """
-        self.raw 
 
 ###############################################################################
 class VolToMassCoefs(BaseSilvInfo):

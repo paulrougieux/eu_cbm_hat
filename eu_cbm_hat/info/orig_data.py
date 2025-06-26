@@ -125,6 +125,7 @@ class OrigData(object):
 
     @property_cached
     def classif_names(self):
+        """Dictionnary of classifiers names"""
         # Load #
         result = self['classifiers']
         # Query #
@@ -135,6 +136,11 @@ class OrigData(object):
         result = {'_' + str(k): v for k,v in result.items()}
         # Return #
         return result
+
+    @property_cached
+    def classif_list(self):
+        """List of classifier names"""
+        return (self.classif_names.values())
 
     #------------------------------- Methods ---------------------------------#
     def load(self, name, clfrs_names=False, to_long=False):

@@ -271,6 +271,7 @@ class PostProcessor(object):
     @cached_property
     def irw_frac(self):
         """load irw_frac for converting output to IRW and FW, ready to join"""
+        # TODO: what about the scenario column?
         df = self.runner.silv.irw_frac.raw
         df['disturbance_type']=df['disturbance_type'].astype(int)
         
@@ -283,7 +284,8 @@ class PostProcessor(object):
         # Apply the renaming
         df.rename(columns=new_column_names, inplace=True)
         
-        # Drop the 'climate' column
+        # Keep only classifier columns that are suitable as index columns
+        # According to self.merge_index
         df.drop(columns=['climate'], inplace=True)
 
         # Remove duplicate rows based on the remaining columns
