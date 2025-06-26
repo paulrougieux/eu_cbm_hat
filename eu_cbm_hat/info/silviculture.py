@@ -175,20 +175,7 @@ class BaseSilvInfo:
 
     @property_cached
     def cols(self):
-        return self.classifiers_list + ["disturbance_type"]
-
-    @property
-    def index(self, year):
-        """Dynamic merge index of non-empty columns to be used when merging
-
-        Classifier columns can be fully empty either `?` or `NA` values. These
-        unused columns should be removed from the merge index.
-        """
-        clfrs = list(self.country.orig_data.classif_list)
-        # Keep only this scenario
-        df = self.get_year(year)
-        # Get classifiers columns that are not empty
-        return keep_clfrs_without_question_marks(df, clfrs)
+        return self.classif_list + ["disturbance_type"]
 
     @property_cached
     def dup_cols(self):
