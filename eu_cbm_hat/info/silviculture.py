@@ -27,13 +27,13 @@ from plumbing.cache import property_cached
 # Internal modules #
 
 
-def keep_clfrs_without_question_marks(df, classifiers):
+def keep_clfrs_without_question_marks(df, classif_list):
     """Check if there are questions mark in a classifier column
     and return a list of index columns that:
 
     :param (df) data frame of silviculture data
-    :param (classifiers) list of classifier columns to check
-    :output (list) list of classifiers that don't contain "?"
+    :param (classif_list) list of classifier columns to check
+    :output (list) list of classif_list that don't contain "?"
 
     The function performs the following:
 
@@ -59,8 +59,8 @@ def keep_clfrs_without_question_marks(df, classifiers):
     # question marks should be raised in the BaseSilvInfo.conv_clfrs() method.
     # Why is this not the case for irw_frac and the events_template?
     # Answer: because they are converted to NA values
-    output_classifiers = []
-    for classif_name in classifiers:
+    output_classif_list = []
+    for classif_name in classif_list:
         values = df[classif_name].unique()
         has_question_mark = "?" in values
         has_nan = pandas.isna(values).any()
@@ -69,15 +69,50 @@ def keep_clfrs_without_question_marks(df, classifiers):
             # so that we can display self.csv_path in the error message
             # to facilitate locating the file
             msg = "Mixture of question marks (i.e. NA values) and other values"
-            msg += f"not allowed in, column {classif_name}.\n"
+            msg += f"not allowed in the `{classif_name}` column.\n"
+            msg += f"Values: {values} (might be libcbm internal values or user values)"
             msg += f"The data frame contains the following columns:\n{df.columns}."
             raise ValueError(msg)
         # Remove classifiers that contain question marks or NA values only
         if has_question_mark or has_nan:
             continue
         # Add classifiers that don't contain question marks
-        output_classifiers.append(classif_name)
-    return output_classifiers
+        output_classif_list.append(classif_name)
+    return output_classif_list
+
+def keep_clfrs_without_question_marks_by_dist(df, classif_list):
+    """Check if there are questions mark in a classifier column
+
+    This is to by applied on an events table which has a disturbance_type
+    column, in particular the events template.
+
+    Similar to keep_clfrs_without_question_marks except that this also adds the
+    disturance types in the index and that it returns a data frame. Mixture of
+    ? and values in classifier columns is not allowed within the same group of
+    rows belonging to the same disturbance.
+    """
+    # Reshape to long format
+    df_long = df.melt(id_vars="disturbance_type",
+                             value_vars=classif_list,
+                             var_name="classifier",
+                             value_name='value')
+    # Aggregate unique classifier values, count and presence of NA
+    df_agg = (
+        df_long.groupby(["disturbance_type", "classifier"])
+        .agg(
+            unique_values=("value", lambda x: ', '.join(map(str, x.unique()))),
+            count=("value", lambda x: len(x.unique())),
+            has_na=("value", lambda x:  any(x.isna()))
+        )
+    )
+    # Raise an error if there are a mix of classifier and NA values
+    selector = (df_agg["count"] > 1) & df_agg["has_na"]
+    if any(selector):
+        msg = "Mix of NA (or `?`) and values in the following"
+        msg += "classifier columns:\n"
+        msg += f"{df_agg.loc[selector]}"
+        raise ValueError(msg)
+    return df_agg.reset_index()
 
 
 ###############################################################################

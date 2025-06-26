@@ -25,6 +25,7 @@ from eu_cbm_hat.cbm.simulation import Simulation
 from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
+from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks_by_dist
 from eu_cbm_hat.cbm.climate_growth_modifier import GrowthModifier
 
 
@@ -261,10 +262,41 @@ class DynamicSimulation(Simulation):
         # Rename the pools to their snake case equivalent #
         stands = stands.rename(columns = dict(zip(self.sources_cbm,
                                                   self.sources)))
+
         # We will merge the current stands with the events templates #
-        clfrs_noq = keep_clfrs_without_question_marks(events, self.classif_list)
-        df = pandas.merge(stands, events, how='inner', on=clfrs_noq,
-                          suffixes=('_stands', ''))
+        # - filter events for that disturbance only in a df called events_one_dist
+        # - check the classifiers without questionn marks inside events_one_dist 
+        # - merge stands with events_one_dist stands =
+        #   stands.merge(events_one_dist, on=classif_no_qu). Note now we **cannot
+        #   do an inner merge** because this would keep only values from the
+        #   first disturance in the list. We do a left merge instead.
+        # - filter out rows which have NA values in disturbance_type, that
+        #   means there are no defined envents template for these rows
+        def display_time():
+            from datetime import datetime
+            now = datetime.now()
+            return f"{now:%H:%M:%S}.{now.microsecond // 1000:03d}"
+        self.parent.log.debug(f"Before stands merge with dist template: {display_time()}")
+        classif_agg = keep_clfrs_without_question_marks_by_dist(events, self.classif_list)
+        df = pandas.DataFrame()
+
+        # Merge events and stands on a disturbance specific basis. Because some
+        # classifier might be present or not depending on the disturbance.
+        for dist in events["disturbance_type"].unique():
+            # Events template for one disturbance
+            events_one_dist = events.loc[events["disturbance_type"] == dist].copy()
+            selector = classif_agg["disturbance_type"] == dist
+            selector &= ~classif_agg["has_na"]
+            clfrs_noq = classif_agg.loc[selector]["classifier"].to_list()
+            # Remove the unused classifier columns from events template
+            unused_classif = list(set(self.classif_list) - set(clfrs_noq))
+            events_one_dist.drop(columns=unused_classif, inplace=True)
+            # Keep only the stands which have this unique combination of
+            # Classifiers through an inner merge
+            stands_one_dist_merged = stands.merge(events_one_dist, on=clfrs_noq, how="inner")
+            df = pandas.concat([df, stands_one_dist_merged])
+        df = df.reset_index(drop=True)
+        self.parent.log.debug(f"Stands merge with dist template finished: {display_time()}")
 
         # Convert last_disturbance_type from the libcbm stands to the id used in events_templates input
         dist_map = self.runner.simulation.sit.disturbance_id_map
