@@ -29,7 +29,7 @@ class ExpectedProvided:
 
     Example with all classifiers as grouping variables:
 
-        >>> clfrs = list(runner.country.orig_data.classif_names.values())
+        >>> clfrs = list(runner.country.orig_data.classif_list)
         >>> runner.qaqc.expected_provided.by(index = clfrs + ["disturbance_type"])
     """
 
@@ -86,7 +86,7 @@ class ExpectedProvided:
 
         Use all classifiers as grouping variables:
 
-            >>> clfrs = list(runner.country.orig_data.classif_names.values())
+            >>> clfrs = list(runner.country.orig_data.classif_list)
             >>> runner.qaqc.expected_provided.by(index = clfrs + ["disturbance_type"])
 
         """

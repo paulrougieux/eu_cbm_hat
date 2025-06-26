@@ -166,7 +166,7 @@ class DynamicSimulation(Simulation):
 #        stands[cols] = stands[cols].multiply(1000, axis="index")
 
         # Get the classifier columns #
-        clfrs = list(self.country.orig_data.classif_names.values())
+        clfrs = list(self.country.orig_data.classif_list)
 
         # Get the classifier columns along with `disturbance_type` #
         cols = clfrs + ["disturbance_type"]

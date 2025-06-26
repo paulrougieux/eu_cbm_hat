@@ -51,7 +51,7 @@ def keep_clfrs_without_question_marks(df, classifiers):
         >>> from eu_cbm_hat.core.continent import continent
         >>> runner  = continent.combos['hat'].runners['ZZ'][-1]
         >>> irw_frac = runner.silv.irw_frac.get_year(2016)
-        >>> clfrs = list(runner.country.orig_data.classif_names.values())
+        >>> clfrs = list(runner.country.orig_data.classif_list)
         >>> keep_clfrs_without_question_marks(irw_frac, clfrs)
 
     """
@@ -165,7 +165,7 @@ class BaseSilvInfo:
         self.country = self.silv.country
         self.combo = self.runner.combo
         self.code = self.country.iso2_code
-        self.classifiers_list = list(self.country.orig_data.classif_names.values())
+        self.classif_list = self.country.orig_data.classif_list
 
     # ----------------------------- Properties --------------------------------#
     @property_cached
@@ -184,7 +184,7 @@ class BaseSilvInfo:
         Classifier columns can be fully empty either `?` or `NA` values. These
         unused columns should be removed from the merge index.
         """
-        clfrs = list(self.country.orig_data.classif_names.values())
+        clfrs = list(self.country.orig_data.classif_list)
         # Keep only this scenario
         df = self.get_year(year)
         # Get classifiers columns that are not empty
@@ -419,7 +419,7 @@ class EventsTemplates(BaseSilvInfo):
     @property
     def dup_cols(self):
         return (
-        list(self.country.orig_data.classif_names.values())
+        list(self.country.orig_data.classif_list)
             + ["scenario", "sw_start", "sw_end", "hw_start", "hw_end"]
             + ["last_dist_id"]
         )

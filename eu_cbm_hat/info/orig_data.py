@@ -140,7 +140,7 @@ class OrigData(object):
     @property_cached
     def classif_list(self):
         """List of classifier names"""
-        return (self.classif_names.values())
+        return list(self.classif_names.values())
 
     #------------------------------- Methods ---------------------------------#
     def load(self, name, clfrs_names=False, to_long=False):
