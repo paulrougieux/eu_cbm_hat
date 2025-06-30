@@ -352,9 +352,6 @@ class DynamicSimulation(Simulation):
 
         # Rename 'climate_x' to 'climate' i
         #df = df_merged.rename(columns={'climate_x': 'climate'})
-        
-        
-        merged_df.to_csv('C:/CBM/df.csv')
 
         # Join the wood density and bark fraction parameters also #
         df = merged_df.merge(coefs, how='left', on=['forest_type'])
