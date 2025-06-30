@@ -327,22 +327,37 @@ class DynamicSimulation(Simulation):
         irw_frac = irw_frac.rename(columns = mapping)
         cols     = self.classif_list + ["disturbance_type"]
         
+        #VB's 2nd add 30/06/: exclude climate and region from merge to irw
+        # Identify the columns for merging, excluding 'climate' and 'region'
+        common_columns = list(set(df.columns).intersection(set(irw_frac.columns)))
+        columns_to_merge_on = [col for col in common_columns if col not in ['climate', 'region']]
+        
+        # Perform the merge
+        merged_df = df.merge(irw_frac, on=columns_to_merge_on)
+        
+        # Keep 'region' and 'climate' from df1
+        merged_df['region'] = df['region']
+        merged_df['climate'] = df['climate']
+        merged_df = merged_df.drop(columns=['climate_y', 'climate_x', 'region_x', 'region_y'])
+        
         # VB's add 30/06/: Exclude 'climate' from the list
-        merge_cols = [col for col in cols if col != 'climate']
+        #merge_cols = [col for col in cols if col != 'climate']
         
         # VB's add 30/06/: modified 'on = merge_cols' in original:
         #df       = df.merge(irw_frac, how='left', on=cols)
-        df       = df.merge(irw_frac, how='left', on=merge_cols)
+        #df       = df.merge(irw_frac, how='left', on=merge_cols)
         
         # Drop the 'climate_y' column to retain only the 'climate' from the initial df
-        df_merged = df.drop(columns=['climate_y'])
+        #df_merged = df.drop(columns=['climate_y'])
 
         # Rename 'climate_x' to 'climate' i
-        df = df_merged.rename(columns={'climate_x': 'climate'})
-
+        #df = df_merged.rename(columns={'climate_x': 'climate'})
+        
+        
+        merged_df.to_csv('C:/CBM/df.csv')
 
         # Join the wood density and bark fraction parameters also #
-        df = df.merge(coefs, how='left', on=['forest_type'])
+        df = merged_df.merge(coefs, how='left', on=['forest_type'])
 
         # Calculate the two volumes that would be produced by the events #
         def vol_by_source(row, source, irw):
