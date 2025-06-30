@@ -326,7 +326,20 @@ class DynamicSimulation(Simulation):
         mapping  = {pool: pool + '_irw_frac' for pool in self.sources}
         irw_frac = irw_frac.rename(columns = mapping)
         cols     = self.classif_list + ["disturbance_type"]
-        df       = df.merge(irw_frac, how='left', on=cols)
+        
+        # VB's add 30/06/: Exclude 'climate' from the list
+        merge_cols = [col for col in cols if col != 'climate']
+        
+        # VB's add 30/06/: modified 'on = merge_cols' in original:
+        #df       = df.merge(irw_frac, how='left', on=cols)
+        df       = df.merge(irw_frac, how='left', on=merge_cols)
+        
+        # Drop the 'climate_y' column to retain only the 'climate' from the initial df
+        df_merged = df.drop(columns=['climate_y'])
+
+        # Rename 'climate_x' to 'climate' i
+        df = df_merged.rename(columns={'climate_x': 'climate'})
+
 
         # Join the wood density and bark fraction parameters also #
         df = df.merge(coefs, how='left', on=['forest_type'])
