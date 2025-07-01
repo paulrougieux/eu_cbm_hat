@@ -187,11 +187,12 @@ class DynamicSimulation(Simulation):
                               on=clfrs_noq + ["disturbance_type"],
                               suffixes=('', '_irw_frac_1'))
         assert sum_flux_before_merge == fluxes[cols_to_product].sum().sum()
+
+        # Check that irw frac is defined for all stands that have fluxes to products
         missing_irw_frac = fluxes[self.sources].isna().any(axis=1)
         has_flux_to_prod =  fluxes[cols_to_product].sum(axis=1)>1
         selector = missing_irw_frac & has_flux_to_prod
         if any(selector):
-            # Convert internal classifiers to user classifiers
             fluxes2 = self.conv_clfrs(fluxes.copy())
             irw_frac2 = self.conv_clfrs(irw_frac.copy())
             msg = "Industrial roundwood fractions defined in irw_frac_by_dist.csv "

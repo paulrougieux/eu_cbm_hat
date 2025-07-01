@@ -1,5 +1,5 @@
 """Methods to save and/or reload libcbm output"""
-from eu_cbm_info.output_data import OutputData
+from eu_cbm_hat.info.output_data import OutputData
 
 class BudSim:
     """Dummy class to attach sit at a sub level similar to runner.simulation.sit
