@@ -96,6 +96,9 @@ def keep_clfrs_without_question_marks_by_dist(df, classif_list):
                              value_vars=classif_list,
                              var_name="classifier",
                              value_name='value')
+    # Replace `?` by NA values
+    selector = df_long["value"] == "?"
+    df_long.loc[selector, "value"] = np.nan
     # Aggregate unique classifier values, count and presence of NA
     df_agg = (
         df_long.groupby(["disturbance_type", "classifier"])
