@@ -12,5 +12,12 @@ class BudPostProcessor():
 
     @cached_property
     def pools(self):
-        """Licbm output pools """
+        """Licbm output pools"""
+        return self.bud.cbm_output.pools.to_pandas()
+
+    @cached_property
+    def flux(self):
+        """Licbm output fluxes"""
+        return self.bud.cbm_output.flux.to_pandas()
+
 
