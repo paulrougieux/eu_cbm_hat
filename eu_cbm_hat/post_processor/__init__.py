@@ -43,7 +43,7 @@ class PostProcessor(object):
         self.classifiers_list = self.classifiers.columns.to_list()
         self.classifiers_list.remove("identifier")
         self.classifiers_list.remove("timestep")
-        self.classifiers["year"] = self.runner.country.timestep_to_year(
+        self.classifiers["year"] = self.runner.timestep_to_year(
             self.classifiers["timestep"]
         )
         # Index used for both self.pools_morf and self.fluxes_morf
@@ -76,6 +76,9 @@ class PostProcessor(object):
         # Lorem #
         pass
 
+    def get_dist_description(self, pattern):
+        """Get disturbance types which contain the given pattern in their name"""
+        return self.runner.country.orig_data.get_dist_description(pattern)
 
     @cached_property
     def pools(self):

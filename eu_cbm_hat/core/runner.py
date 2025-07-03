@@ -83,6 +83,9 @@ class Runner(object):
         self.data_dir = self.combo.output_dir + self.short_name + '/'
         # Automatically access paths based on a string of many subpaths #
         self.paths = AutoPaths(self.data_dir, self.all_paths)
+        # Method shortcut
+        self.timestep_to_year = self.country.timestep_to_year
+
 
     def __repr__(self):
         return '%s object on "%s"' % (self.__class__, self.data_dir)

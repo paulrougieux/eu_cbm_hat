@@ -146,7 +146,7 @@ class OutputData(InternalData):
         # Merge all pools and fluxes and save them to a parquet file
         result = self.runner.internal
         classifiers = self.classif_df
-        classifiers["year"] = self.runner.country.timestep_to_year(classifiers["timestep"])
+        classifiers["year"] = self.runner.timestep_to_year(classifiers["timestep"])
         index = ['identifier', 'timestep']
         df = (result['parameters']
               .merge(result['flux'], 'left', on = index)
