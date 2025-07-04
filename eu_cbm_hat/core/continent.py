@@ -32,6 +32,16 @@ class Continent(object):
 
     Aggregates countries together and enables access to a data frame containing
     concatenated data from all countries at once.
+
+    Create a runner:
+
+    >>> from eu_cbm_hat.core.continent import continent
+    >>> runner = continent.combos['reference'].runners['ZZ'][-1]
+
+    Create a runner using a shortcut:
+
+    >>> runner = continent[("reference", "ZZ", -1)]
+
     """
 
     all_paths = """
