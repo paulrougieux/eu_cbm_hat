@@ -34,8 +34,12 @@ from eu_cbm_hat.constants import (
     eu_cbm_aidb_pathlib,
 )
 
-# Now import classes (after constants are available)
-from eu_cbm_hat.bud import Bud
+# Lazy import mechanism - only imports when actually accessed
+def __getattr__(name):
+    if name == "Bud":
+        from eu_cbm_hat.bud import Bud
+        return Bud
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 # Use __all__ to let type checkers know what is part of the public API.
 __all__ = [

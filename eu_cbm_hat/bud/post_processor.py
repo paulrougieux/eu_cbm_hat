@@ -10,11 +10,12 @@ class BudPostProcessor(PostProcessor):
 
     Run the model:
 
-        >>> import eu_cbm_hat as hat
-        >>> data_dir = hat.module_dir_pathlib / "tests/bud_data"
-        >>> bzz = Bud(
-        ...     data_dir=hat.module_dir_pathlib / "tests/bud_data",
-        ...     aidb_path=eu_cbm_data_pathlib.parent / "eu_cbm_aidb/countries/ZZ/aidb.db"
+        >>> import eu_cbm_hat as ch
+        >>> from eu_cbm_hat.bud.test_data import copy_input_to_temp_dir
+        >>> data_dir = copy_input_to_temp_dir()
+        >>> bzz = ch.Bud(
+        ...     data_dir=data_dir,
+        ...     aidb_path=ch.eu_cbm_aidb_pathlib / "countries/ZZ/aidb.db"
         ... )
         >>> bzz.run()
         >>> bzz.post_processor.sink.df
