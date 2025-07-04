@@ -18,11 +18,11 @@ from autopaths.auto_paths import AutoPaths
 from plumbing.cache       import property_cached
 
 # Internal modules #
-from eu_cbm_hat import eu_cbm_data_dir
+from eu_cbm_hat.constants import eu_cbm_data_dir
 from eu_cbm_hat.core.country import Country
 from eu_cbm_hat.combos       import combo_classes_dict
 from eu_cbm_hat.combos.base_combo import Combination
-from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 
 ###############################################################################

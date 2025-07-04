@@ -15,8 +15,6 @@ from autopaths import Path
 from autopaths.dir_path import DirectoryPath
 from plumbing.git import GitRepo
 
-from eu_cbm_hat.bud import Bud
-
 # Constants #
 project_name = "eu_cbm_hat"
 project_url = "https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat"

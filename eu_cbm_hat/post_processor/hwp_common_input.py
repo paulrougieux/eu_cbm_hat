@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import itertools
 from functools import cached_property
-from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 
 def generate_dbh_intervals():

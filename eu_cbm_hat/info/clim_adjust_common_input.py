@@ -2,7 +2,7 @@
 """
 
 import pandas as pd
-from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 
 def mean_npp_by_model_country_clu_con_broad(selected_year):
