@@ -33,7 +33,7 @@ country = runner.country
 ## Classifier names
 
 ```python
-classif_names = list(country.orig_data.classif_names.values())
+classif_names = list(country.orig_data.classif_list)
 display(classif_names)
 ```
 

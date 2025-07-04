@@ -1,0 +1,22 @@
+dist_type_name,dist_desc_input,silv_practice
+2,Wild Fire,#NA
+4,Windstorm (for CP),sr
+5,Generic 60% (INSECTS widespread),nr
+7,Deforestation,d
+8,Afforestation,ar
+11,Generic 15%,th
+12,15% commercial thinning,th
+15,Generic 20%,th
+16,30% commercial thinning,th
+18,35% commercial thinning,th
+21,Clearcut  with slash burn (broad based on area),fc
+22,Generic 90 % mortality (clearcut conif on area),fc
+29,Salvage year 1 post-windstorm,sr
+30,Salvage year 2 post-windstorm,sr
+31,Salvage year 3  post-windstorm insects,sr
+42,Insects with salvage logging (within year),nr
+49,Windstorm (for projection),sr
+14,20% commercial thinning,th
+151,Step_1_conversion_25%_commercial thinning,th
+152,Step_2_conversion_20%_commercial thinning,th
+153,Post_conversion_15%_commercial thinnings,th

@@ -23,7 +23,7 @@ from autopaths import Path
 from plumbing.timer import Timer
 
 # Internal modules #
-from eu_cbm_hat import eu_cbm_data_dir
+from eu_cbm_hat.constants import eu_cbm_data_dir
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.cbm.dynamic import DynamicRunner
 

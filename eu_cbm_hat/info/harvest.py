@@ -44,7 +44,7 @@ import pandas
 from plumbing.cache import property_cached
 
 # Internal modules #
-from eu_cbm_hat import eu_cbm_data_dir
+from eu_cbm_hat.constants import eu_cbm_data_dir
 from eu_cbm_hat.core.country import all_country_codes
 
 # Constant directory for all the data #

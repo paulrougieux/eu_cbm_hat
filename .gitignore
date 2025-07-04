@@ -25,3 +25,7 @@ dist/*
 docs/*
 !docs/*.md
 public/*
+
+# Test output
+eu_cbm_hat/tests/bud_data/logs/
+eu_cbm_hat/tests/bud_data/output/

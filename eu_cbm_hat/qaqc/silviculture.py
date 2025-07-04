@@ -111,7 +111,7 @@ class SilvCheck:
 
     def check_classifier_with_question_marks(self):
         """Check the input tables for classifiers with question marks"""
-        clfrs = list(self.runner.country.orig_data.classif_names.values())
+        clfrs = list(self.runner.country.orig_data.classif_list)
         irw_frac = self.runner.country.orig_data.load("irw_frac")
         check_question_marks(irw_frac, "irw_frac", clfrs)
         # Do not check the input events
