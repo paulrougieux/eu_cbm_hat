@@ -53,14 +53,17 @@ class PostProcessor(object):
         # Define disturbance types
         self.afforestation_dist_type = 8
         self.deforestation_dist_type = 7
-        # Check the names correspond to the one given in disturbance_types.csv
-        dist_def = self.runner.country.orig_data.get_dist_description("deforestation")
+        # Check that the afforestation an deforestation disturbance type numbers
+        # correspond to the 'dist_type_name' given in disturbance_types.csv
+        dist_def = self.get_dist_description("deforestation")
         assert all(
-            dist_def["dist_type_name"].head(1) == str(self.deforestation_dist_type)
+            dist_def["dist_type_name"].astype(str).unique()
+            == str(self.deforestation_dist_type)
         )
-        dist_aff = self.runner.country.orig_data.get_dist_description("afforestation")
+        dist_aff = self.get_dist_description("afforestation")
         assert all(
-            dist_aff["dist_type_name"].head(1) == str(self.afforestation_dist_type)
+            dist_aff["dist_type_name"].astype(str).unique()
+            == str(self.afforestation_dist_type)
         )
 
     def __repr__(self):
@@ -96,7 +99,8 @@ class PostProcessor(object):
         # Data frame of pools content at the maximum disaggregated level by
         # identifier and timestep that will be sent to the other sink functions
         df = (
-            self.runner.output["pools"].merge(self.classifiers, "left", on=index)
+            self.runner.output["pools"]
+            .merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change' and 'time_since_last_disturbance'
             .merge(self.state, "left", on=index)
             .merge(self.params, "left", on=index)
@@ -125,7 +129,8 @@ class PostProcessor(object):
         # Data frame of fluxes at the maximum disaggregated level by
         # identifier and timestep that will be sent to the other functions
         df = (
-            self.runner.output["flux"].merge(self.classifiers, "left", on=index)
+            self.runner.output["flux"]
+            .merge(self.classifiers, "left", on=index)
             # Add 'time_since_land_class_change'
             .merge(self.state, "left", on=index)
             .merge(self.params, "left", on=index)
@@ -138,10 +143,14 @@ class PostProcessor(object):
         across classifiers"""
         df = self.pools.copy()
         column_dict = {
-            "merch": ['softwood_merch', 'hardwood_merch'],
+            "merch": ["softwood_merch", "hardwood_merch"],
             "other": ["softwood_other", "hardwood_other"],
-            "roots": ["softwood_fine_roots", "hardwood_fine_roots",
-                      "softwood_coarse_roots", "hardwood_coarse_roots"],
+            "roots": [
+                "softwood_fine_roots",
+                "hardwood_fine_roots",
+                "softwood_coarse_roots",
+                "hardwood_coarse_roots",
+            ],
             "foliage": ["softwood_foliage", "hardwood_foliage"],
         }
         for key, cols in column_dict.items():
@@ -156,7 +165,7 @@ class PostProcessor(object):
         """Fluxes columns summed for merchantable to products, natural turnover
         (from merch and OWC) disturbance litter input (from merch and OWC)"""
         df = self.fluxes.copy()
-        #check this df
+        # check this df
         column_dict = {
             "merch_prod": ["softwood_merch_to_product", "hardwood_merch_to_product"],
             # I add this flux to prod
@@ -165,14 +174,15 @@ class PostProcessor(object):
         for key, cols in column_dict.items():
             df[key] = df[cols].sum(axis=1)
         selected_columns = list(column_dict.keys())
-        selected_columns += ["turnover_merch_litter_input",
-                             'turnover_oth_litter_input',
-                             "disturbance_merch_litter_input",
-                             'disturbance_oth_litter_input',
-# I added two more flxues
-                             "disturbance_merch_to_air",
-                             "disturbance_oth_to_air"
-                             ]
+        selected_columns += [
+            "turnover_merch_litter_input",
+            "turnover_oth_litter_input",
+            "disturbance_merch_litter_input",
+            "disturbance_oth_litter_input",
+            # I added two more flxues
+            "disturbance_merch_to_air",
+            "disturbance_oth_to_air",
+        ]
         df_agg = df.groupby(self.index_morf)[selected_columns].agg("sum")
         df_agg = df_agg.reset_index()
         return df_agg
@@ -221,7 +231,7 @@ class PostProcessor(object):
     def sink(self):
         """Compute the forest carbon sink"""
         return Sink(self)
-    
+
     @cached_property
     def stock(self):
         """Compute standing stocks"""
@@ -270,14 +280,14 @@ class PostProcessor(object):
         """
         df = self.runner.silv.coefs.raw
         return df[["forest_type", "wood_density", "bark_frac"]].copy()
-    
+
     @cached_property
     def irw_frac(self):
         """load irw_frac for converting output to IRW and FW, ready to join"""
         # TODO: what about the scenario column?
         df = self.runner.silv.irw_frac.raw
-        df['disturbance_type']=df['disturbance_type'].astype(int)
-        
+        df["disturbance_type"] = df["disturbance_type"].astype(int)
+
         # Get the last three columns
         cols_to_rename = df.columns[-8:]
 
@@ -286,12 +296,11 @@ class PostProcessor(object):
 
         # Apply the renaming
         df.rename(columns=new_column_names, inplace=True)
-        
+
         # Keep only classifier columns that are suitable as index columns
         # According to self.merge_index
-        df.drop(columns=['climate'], inplace=True)
+        df.drop(columns=["climate"], inplace=True)
 
         # Remove duplicate rows based on the remaining columns
         df.drop_duplicates(inplace=True)
         return df
-
