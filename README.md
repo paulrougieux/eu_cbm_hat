@@ -31,6 +31,12 @@ option) any later version. See [LICENCE.txt](LICENCE.txt) and [NOTICE.txt](NOTIC
 for more information on the licence of components.
 
 
+# Funding
+
+This work was partially funded by DG Research and Innovation under the Administrative
+Agreement DG RTD N° 013 KCB (LC-01591551) JRC Reference N ° 35895 NFP.
+
+
 # Dependencies
 
 * `libcbm` is a C++ library with python binding developed by the Canadian Forest

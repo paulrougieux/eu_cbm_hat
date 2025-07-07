@@ -2,7 +2,7 @@
 
 Usage:
 
-    ipython -i ~/eu_cbm/eu_cbm_hat/scripts/setup/copy_zz_from_libcbm_data.py
+    ipython -i ~/eu_cbm/eu_cbm_hat/scripts/setup/copy_zz_from_eu_cbm_data_to_runner_test_dir.py
 
 It has to be run on a machine that has the eu_cbm_data repository. ZZ data is
 treated in an identical manner to any other country and remains under version

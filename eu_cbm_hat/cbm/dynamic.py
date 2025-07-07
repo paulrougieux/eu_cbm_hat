@@ -25,6 +25,7 @@ from eu_cbm_hat.cbm.simulation import Simulation
 from eu_cbm_hat.cbm.cbm_vars_to_df import cbm_vars_to_df
 from eu_cbm_hat.core.runner import Runner
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
+from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks_by_dist
 from eu_cbm_hat.cbm.climate_growth_modifier import GrowthModifier
 
 
@@ -165,11 +166,8 @@ class DynamicSimulation(Simulation):
         stands[cols] = stands[cols].multiply(stands['area'], axis="index")
 #        stands[cols] = stands[cols].multiply(1000, axis="index")
 
-        # Get the classifier columns #
-        clfrs = list(self.country.orig_data.classif_names.values())
-
         # Get the classifier columns along with `disturbance_type` #
-        cols = clfrs + ["disturbance_type"]
+        cols = self.classif_list + ["disturbance_type"]
 
         # Get only eight interesting fluxes, summed also by dist_type #
         fluxes = stands.query("disturbance_type != 0")
@@ -179,20 +177,27 @@ class DynamicSimulation(Simulation):
 
         # Join the `irw` fractions with the fluxes going to `products` #
         irw_frac = self.runner.silv.irw_frac.get_year(self.year)
-        clfrs_noq = keep_clfrs_without_question_marks(irw_frac, clfrs)
+        # Dynamic merge index of non-empty columns to be used when merging
+        # Classifier columns can be fully empty either `?` or `NA` values.
+        # These unused columns should be removed from the merge index.
+        clfrs_noq = keep_clfrs_without_question_marks(irw_frac, self.classif_list)
         cols_to_product = [s + "_to_product" for s in self.sources]
         sum_flux_before_merge = fluxes[cols_to_product].sum().sum()
         fluxes = fluxes.merge(irw_frac, how='left',
                               on=clfrs_noq + ["disturbance_type"],
-                              suffixes=('_fluxes', ''))
+                              suffixes=('', '_irw_frac_1'))
         assert sum_flux_before_merge == fluxes[cols_to_product].sum().sum()
+
+        # Check that irw frac is defined for all stands that have fluxes to products
         missing_irw_frac = fluxes[self.sources].isna().any(axis=1)
         has_flux_to_prod =  fluxes[cols_to_product].sum(axis=1)>1
         selector = missing_irw_frac & has_flux_to_prod
         if any(selector):
+            fluxes2 = self.conv_clfrs(fluxes.copy())
+            irw_frac2 = self.conv_clfrs(irw_frac.copy())
             msg = "Industrial roundwood fractions defined in irw_frac_by_dist.csv "
             msg += "do not have irw fractions for the following classifiers:\n"
-            msg += f"{fluxes[selector]}"
+            msg += f"{fluxes2[selector]}"
             raise ValueError(msg)
 
         # Join the wood density and bark fraction parameters also #
@@ -251,17 +256,48 @@ class DynamicSimulation(Simulation):
         stands = stands.drop(columns = 'disturbance_type')
 
         # Keep only columns of interest from our current stands #
-        interest = clfrs + ['time_since_last_disturbance',
+        interest = self.classif_list + ['time_since_last_disturbance',
                             'last_disturbance_type', 'age'] + self.sources_cbm
         stands = stands[interest]
 
         # Rename the pools to their snake case equivalent #
         stands = stands.rename(columns = dict(zip(self.sources_cbm,
                                                   self.sources)))
+
         # We will merge the current stands with the events templates #
-        clfrs_noq = keep_clfrs_without_question_marks(events, clfrs)
-        df = pandas.merge(stands, events, how='inner', on=clfrs_noq,
-                          suffixes=('_stands', ''))
+        # - filter events for that disturbance only in a df called events_one_dist
+        # - check the classifiers without questionn marks inside events_one_dist 
+        # - merge stands with events_one_dist stands =
+        #   stands.merge(events_one_dist, on=classif_no_qu). Note now we **cannot
+        #   do an inner merge** because this would keep only values from the
+        #   first disturance in the list. We do a left merge instead.
+        # - filter out rows which have NA values in disturbance_type, that
+        #   means there are no defined envents template for these rows
+        def display_time():
+            from datetime import datetime
+            now = datetime.now()
+            return f"{now:%H:%M:%S}.{now.microsecond // 1000:03d}"
+        self.parent.log.debug(f"Before stands merge with dist template: {display_time()}")
+        classif_agg = keep_clfrs_without_question_marks_by_dist(events, self.classif_list)
+        df = pandas.DataFrame()
+
+        # Merge events and stands on a disturbance specific basis. Because some
+        # classifier might be present or not depending on the disturbance.
+        for dist in events["disturbance_type"].unique():
+            # Events template for one disturbance
+            events_one_dist = events.loc[events["disturbance_type"] == dist].copy()
+            selector = classif_agg["disturbance_type"] == dist
+            selector &= ~classif_agg["has_na"]
+            clfrs_noq = classif_agg.loc[selector]["classifier"].to_list()
+            # Remove the unused classifier columns from events template
+            unused_classif = list(set(self.classif_list) - set(clfrs_noq))
+            events_one_dist.drop(columns=unused_classif, inplace=True)
+            # Keep only the stands which have this unique combination of
+            # Classifiers through an inner merge
+            stands_one_dist_merged = stands.merge(events_one_dist, on=clfrs_noq, how="inner")
+            df = pandas.concat([df, stands_one_dist_merged])
+        df = df.reset_index(drop=True)
+        self.parent.log.debug(f"Stands merge with dist template finished: {display_time()}")
 
         # Convert last_disturbance_type from the libcbm stands to the id used in events_templates input
         dist_map = self.runner.simulation.sit.disturbance_id_map
@@ -290,8 +326,13 @@ class DynamicSimulation(Simulation):
         # Add the fractions going to `irw` and `fw` #
         mapping  = {pool: pool + '_irw_frac' for pool in self.sources}
         irw_frac = irw_frac.rename(columns = mapping)
-        cols     = clfrs + ["disturbance_type"]
-        df       = df.merge(irw_frac, how='left', on=cols)
+        cols     = self.classif_list + ["disturbance_type"]
+        
+        # Merge with IRW fractions on classifiers that are not NA
+        clfrs_noq = keep_clfrs_without_question_marks(irw_frac, self.classif_list)
+        df = df.merge(irw_frac, how='left',
+                      on=clfrs_noq + ["disturbance_type"],
+                      suffixes=('', '_irw_frac_2'))
 
         # Join the wood density and bark fraction parameters also #
         df = df.merge(coefs, how='left', on=['forest_type'])
@@ -624,7 +665,7 @@ class DynamicSimulation(Simulation):
 
 
         df.insert(0, 'year', self.year)
-        cols = ['year'] +  clfrs
+        cols = ['year'] +  self.classif_list
 
         # Prepare the remaining missing columns for the events #
         df['measurement_type'] = 'M'

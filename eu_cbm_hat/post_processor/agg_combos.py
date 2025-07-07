@@ -103,7 +103,7 @@ from tqdm import tqdm
 from p_tqdm import p_umap
 from eu_cbm_hat.core.continent import continent
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
-from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 # Define where to store the data
 output_agg_dir = eu_cbm_data_pathlib / "output_agg"

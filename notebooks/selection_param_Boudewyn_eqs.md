@@ -229,7 +229,7 @@ def rmse_comp(x, y):
 
 ```python
 # Get unique combinations of classifiers in the data frame of yield curves
-clfrs = list(r.country.orig_data.classif_names.values())
+clfrs = list(r.country.orig_data.classif_list)
 clfrs = list(map(lambda x: x.replace("forest_type", "inv_forest_type"), clfrs))
 yc_unique_classif = yc[clfrs].drop_duplicates().reset_index(drop=True)
 

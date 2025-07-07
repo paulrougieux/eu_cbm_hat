@@ -71,7 +71,7 @@ change the source code of `eu_cbm_hat` in the following files:
 from eu_cbm_hat.combos.reference         import Reference
 from eu_cbm_hat.combos.ia_2040 import IA_2040
 
-from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 # Hard coded combo classes
 combo_classes = [Reference,

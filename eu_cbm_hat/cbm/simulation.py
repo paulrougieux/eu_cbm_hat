@@ -35,6 +35,7 @@ class Simulation(object):
         self.parent  = parent
         self.runner  = parent
         self.country = self.runner.country
+        self.classif_list = self.country.orig_data.classif_list
         # Record if we ended with an error or not #
         self.error = None
 

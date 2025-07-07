@@ -83,6 +83,9 @@ class Runner(object):
         self.data_dir = self.combo.output_dir + self.short_name + '/'
         # Automatically access paths based on a string of many subpaths #
         self.paths = AutoPaths(self.data_dir, self.all_paths)
+        # Method shortcut
+        self.timestep_to_year = self.country.timestep_to_year
+
 
     def __repr__(self):
         return '%s object on "%s"' % (self.__class__, self.data_dir)
@@ -205,7 +208,7 @@ class Runner(object):
         return period_max
 
     #------------------------------- Methods ---------------------------------#
-    def run(self, keep_in_ram=False, verbose=True, interrupt_on_error=False):
+    def run(self, keep_in_ram=False, verbose=True, interrupt_on_error=True):
         """
         Run the full modelling pipeline for a given country, a given combo
         and a given step.

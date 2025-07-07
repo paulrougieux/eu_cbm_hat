@@ -1,0 +1,43 @@
+classifier_number,classifier_value_id,name
+1,_CLASSIFIER,status
+1,ForAWS,ForAWSest area
+1,NF,Not forested area available to be reforested
+1,AR,Afforested area
+2,_CLASSIFIER,forest_type
+2,DF,DF_BL
+2,FS,FS_BL
+2,OB,OB_BL
+2,OC,OC_BL
+2,PA,PA_BL
+2,QR,QR_BL
+2,NF_PA,non-forest to PA
+2,NF_FS,non-forest to FS
+2,NF_DF,non-forest to DF
+2,NF_OB,non-forest to OB
+2,NF_OC,non-forest to OC
+2,NF_QR,non-forest to QR
+3,_CLASSIFIER,region
+3,LU00,Luxembourg
+4,_CLASSIFIER,mgmt_type
+4,H,High forest
+4,C,Coppice
+5,_CLASSIFIER,mgmt_strategy
+5,E,Even aged
+5,U,Uneven aged
+6,_CLASSIFIER,climate
+6,24,CLU24
+6,25,CLU25
+6,34,CLU34
+6,35,CLU35
+6,44,CLU44
+6,45,CLU45
+6,54,CLU54
+6,55,CLU55
+7,_CLASSIFIER,con_broad
+7,con,Conifers
+7,broad,Broadleaves
+8,_CLASSIFIER,site_index
+8,1,Default site
+9,_CLASSIFIER,growth_period
+9,Init,Initialization period
+9,Cur,Current period

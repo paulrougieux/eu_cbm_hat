@@ -27,13 +27,13 @@ from plumbing.cache import property_cached
 # Internal modules #
 
 
-def keep_clfrs_without_question_marks(df, classifiers):
+def keep_clfrs_without_question_marks(df, classif_list):
     """Check if there are questions mark in a classifier column
     and return a list of index columns that:
 
     :param (df) data frame of silviculture data
-    :param (classifiers) list of classifier columns to check
-    :output (list) list of classifiers that don't contain "?"
+    :param (classif_list) list of classifier columns to check
+    :output (list) list of classif_list that don't contain "?"
 
     The function performs the following:
 
@@ -51,27 +51,71 @@ def keep_clfrs_without_question_marks(df, classifiers):
         >>> from eu_cbm_hat.core.continent import continent
         >>> runner  = continent.combos['hat'].runners['ZZ'][-1]
         >>> irw_frac = runner.silv.irw_frac.get_year(2016)
-        >>> clfrs = list(runner.country.orig_data.classif_names.values())
+        >>> clfrs = list(runner.country.orig_data.classif_list)
         >>> keep_clfrs_without_question_marks(irw_frac, clfrs)
 
     """
     # TODO: The error raised when there are a mixture of other values and
     # question marks should be raised in the BaseSilvInfo.conv_clfrs() method.
     # Why is this not the case for irw_frac and the events_template?
-    output_classifiers = []
-    for classif_name in classifiers:
-        values = df[classif_name].unique().tolist()
-        if len(values) > 1 and "?" in values:
-            msg = "Mixture of question marks and other values"
-            msg += f"not allowed in, column {classif_name}.\n"
+    # Answer: because they are converted to NA values
+    output_classif_list = []
+    for classif_name in classif_list:
+        values = df[classif_name].unique()
+        has_question_mark = "?" in values
+        has_nan = pandas.isna(values).any()
+        if len(values) > 1 and (has_question_mark or has_nan):
+            # TODO: move this check to a method of base silv info
+            # so that we can display self.csv_path in the error message
+            # to facilitate locating the file
+            msg = "Mixture of question marks (i.e. NA values) and other values"
+            msg += f"not allowed in the `{classif_name}` column.\n"
+            msg += f"Values: {values} (might be libcbm internal values or user values)"
             msg += f"The data frame contains the following columns:\n{df.columns}."
             raise ValueError(msg)
-        # Remove classifiers that contain question marks only
-        if "?" in values:
+        # Remove classifiers that contain question marks or NA values only
+        if has_question_mark or has_nan:
             continue
         # Add classifiers that don't contain question marks
-        output_classifiers.append(classif_name)
-    return output_classifiers
+        output_classif_list.append(classif_name)
+    return output_classif_list
+
+def keep_clfrs_without_question_marks_by_dist(df, classif_list):
+    """Check if there are questions mark in a classifier column
+
+    This is to by applied on an events table which has a disturbance_type
+    column, in particular the events template.
+
+    Similar to keep_clfrs_without_question_marks except that this also adds the
+    disturance types in the index and that it returns a data frame. Mixture of
+    ? and values in classifier columns is not allowed within the same group of
+    rows belonging to the same disturbance.
+    """
+    # Reshape to long format
+    df_long = df.melt(id_vars="disturbance_type",
+                             value_vars=classif_list,
+                             var_name="classifier",
+                             value_name='value')
+    # Replace `?` by NA values
+    selector = df_long["value"] == "?"
+    df_long.loc[selector, "value"] = np.nan
+    # Aggregate unique classifier values, count and presence of NA
+    df_agg = (
+        df_long.groupby(["disturbance_type", "classifier"])
+        .agg(
+            unique_values=("value", lambda x: ', '.join(map(str, x.unique()))),
+            count=("value", lambda x: len(x.unique())),
+            has_na=("value", lambda x:  any(x.isna()))
+        )
+    )
+    # Raise an error if there are a mix of classifier and NA values
+    selector = (df_agg["count"] > 1) & df_agg["has_na"]
+    if any(selector):
+        msg = "Mix of NA (or `?`) and values in the following"
+        msg += "classifier columns:\n"
+        msg += f"{df_agg.loc[selector]}"
+        raise ValueError(msg)
+    return df_agg.reset_index()
 
 
 ###############################################################################
@@ -159,6 +203,7 @@ class BaseSilvInfo:
         self.country = self.silv.country
         self.combo = self.runner.combo
         self.code = self.country.iso2_code
+        self.classif_list = self.country.orig_data.classif_list
 
     # ----------------------------- Properties --------------------------------#
     @property_cached
@@ -168,9 +213,7 @@ class BaseSilvInfo:
 
     @property_cached
     def cols(self):
-        return list(self.country.orig_data.classif_names.values()) + [
-            "disturbance_type"
-        ]
+        return self.classif_list + ["disturbance_type"]
 
     @property_cached
     def dup_cols(self):
@@ -191,6 +234,24 @@ class BaseSilvInfo:
     def df(self):
         """Data frame with disturbance IDs and classifiers IDs converted to the
         internal IDs
+
+        Notes:
+
+        - The use of `self.conv_dists` here is where the question marks "?" are
+          converted to NAN values.
+
+        - Classifier and disturbance values are different between user ids in
+          the `raw` data frame and internal simulation ids in the `df` data
+          frame. For example for industrial roundwood fractions:
+        
+        >>> runner.silv.irw_frac.raw["climate"].unique()
+        >>> # array(['?', '35'], dtype=object)
+        >>> runner.silv.irw_frac.df["climate"].unique()
+        >>> # array([nan, 25.])
+        >>> runner.silv.irw_frac.raw["forest_type"].unique()
+        >>> # array(['DF', 'FS', 'OB', 'OC', 'PA', 'QR'], dtype=object)
+        >>> runner.silv.irw_frac.df["forest_type"].unique()
+        >>> # array([ 5,  6,  7,  8,  9, 10])
         """
         self.check()
         # Load #
@@ -310,6 +371,19 @@ class IRWFractions(BaseSilvInfo):
     for the current simulation run.
     """
 
+    # TODO: add a property that provides the merge index to be used with
+    # irw_frac depending on which columns are returned by Note that
+    # self.runner.silv.irw_frac.raw has a scenario column And that we want to
+    # perform the check for one scenario only. As different scenarios might
+    # heve different ways to deal with the classifiers. We could use
+    # runner.silv.irw_frac.df for the check but it then would not be available
+    # for the post_processor which also requires irw_frac.
+    #
+    # For lack of a better way, We can add a scenario specific
+    # irw_frac.raw_df_scenario Which can then be used to return the merge index
+    # to be used with irw_frac for that particular scenario and that mere_index
+    # would be available both for users of irw_frac.df and irw_frac.raw
+
     @property
     def choices(self):
         """Choices made for `irw` fraction in the current combo."""
@@ -370,7 +444,7 @@ class EventsTemplates(BaseSilvInfo):
     @property
     def dup_cols(self):
         return (
-        list(self.country.orig_data.classif_names.values())
+        list(self.country.orig_data.classif_list)
             + ["scenario", "sw_start", "sw_end", "hw_start", "hw_end"]
             + ["last_dist_id"]
         )

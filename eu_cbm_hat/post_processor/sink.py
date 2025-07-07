@@ -152,7 +152,6 @@ class Sink:
     def __init__(self, parent):
         self.parent = parent
         self.runner = parent.runner
-        self.combo_name = self.runner.combo.short_name
         self.pools = self.parent.pools
         self.fluxes = self.parent.fluxes
         # Pools and fluxes aggregation parameters

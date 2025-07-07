@@ -8,7 +8,7 @@ Usage:
 """
 import shutil
 from pathlib import Path
-from eu_cbm_hat import module_dir, eu_cbm_data_dir
+from eu_cbm_hat.constants import module_dir, eu_cbm_data_dir
 
 def copy_test_data():
     """Copy tests data from the package internal test folder
