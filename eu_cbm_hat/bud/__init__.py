@@ -59,11 +59,11 @@ class Bud:
         >>> import eu_cbm_hat as ch
         >>> from eu_cbm_hat.bud.test_data import copy_input_to_temp_dir
         >>> data_dir = copy_input_to_temp_dir()
-        >>> bzz = ch.Bud(
+        >>> bud = ch.Bud(
         ...     data_dir=data_dir,
         ...     aidb_path=ch.eu_cbm_aidb_pathlib / "countries/ZZ/aidb.db"
         ... )
-        >>> bzz.run()
+        >>> bud.run()
 
     """
 

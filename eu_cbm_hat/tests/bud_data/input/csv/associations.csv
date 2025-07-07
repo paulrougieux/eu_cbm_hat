@@ -46,8 +46,3 @@ MapSpecies,non-forest to DF,Average
 MapSpecies,non-forest to OB,Average
 MapSpecies,non-forest to OC,Average
 MapSpecies,non-forest to QR,Average
-MapDisturbanceType,Drought induced increased background mortality affecting 1% of standing stock,Drought induced increased background mortality affecting 1% of standing stock
-MapDisturbanceType,Drought induced increased background mortality affecting 2% of standing stock,Drought induced increased background mortality affecting 2% of standing stock
-MapDisturbanceType,Drought induced increased background mortality affecting 3% of standing stock,Drought induced increased background mortality affecting 3% of standing stock
-MapDisturbanceType,Drought induced increased background mortality affecting 4% of standing stock,Drought induced increased background mortality affecting 4% of standing stock
-MapDisturbanceType,Salvage after drought induced increased background mortality,Salvage after drought induced increased background mortality

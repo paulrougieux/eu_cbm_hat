@@ -50,6 +50,8 @@ libcbm_run:
     # The following test doesn't depend on the eu_cbm_data repository.
     # It uses ZZ data stored in the (public) eu_cbm_hat package.
     - python scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py
+    # Test the bud object
+    - python scripts/running/run_zz_from_a_bud_object.py
     # The post_processing documentation test need the output of the zz run
     # Doctest deactivated because we need to deal with the variation of CBM
     # output due to the random CBM disturbances first. See issue 101.
