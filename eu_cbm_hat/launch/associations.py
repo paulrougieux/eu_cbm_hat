@@ -24,6 +24,12 @@ class Associations(object):
     This class parses the file "associations.csv" and returns
     a dictionary useful to produce the JSON for consumption by
     libcbm.
+
+    Steps:
+        - Read associations.csv in a data frame (relic of CBMCFS3)
+        - Prepare a dictionary mapping 'AdminBoundary', 'EcoBoundary',
+          'Species', 'DisturbanceType' names with the names used in the Archive
+          Index Database (AIDB).
     """
 
     def __init__(self, parent):

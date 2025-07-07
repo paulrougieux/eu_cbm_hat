@@ -29,6 +29,7 @@ from libcbm.model.cbm.cbm_variables import CBMVariables
 
 # Runner imports
 from eu_cbm_hat.info.internal_data  import InternalData
+from eu_cbm_hat.bud.associations import BudAssociations
 
 # Bud imports
 from eu_cbm_hat.bud.input_data import BudInputData
@@ -68,6 +69,7 @@ class Bud:
     # See core/runner.py if more paths are needed
     all_paths = """
     /logs/runner.log
+    /input/json/config.json
     """
 
     def __init__(self, data_dir: Union[str, Path], aidb_path: Union[str, Path]):
@@ -97,6 +99,11 @@ class Bud:
         return BudInputData(self)
 
     @property
+    def associations(self):
+        """Input data"""
+        return BudAssociations(self)
+
+    @property
     def sit(self):
         """Standard import tool object
 
@@ -107,7 +114,8 @@ class Bud:
         >>> ref.sit.classifier_value_ids.items()
 
         """
-        json_path = self.data_dir / "input/json/config.json"
+        raise ValueError("Create the json file using launch/create_json.py and launch/associations.py")
+        json_path = self.data_dir / "output/config.json"
         return sit_cbm_factory.load_sit(json_path, str(self.aidb_path))
 
     def run(self):
