@@ -29,6 +29,7 @@ class BudAssociations(Associations):
         ... )
         >>> bzz.associations.df
         >>> bzz.associations.all_mappings
+        >>> bzz.create_json.content
 
     """
 

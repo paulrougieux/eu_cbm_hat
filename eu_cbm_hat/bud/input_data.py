@@ -1,6 +1,7 @@
 """Input data for a small self contained runner-type of object called a bud.
 """
 import pandas as pd
+from autopaths.auto_paths import AutoPaths
 
 class BudInputData:
     """
@@ -10,6 +11,16 @@ class BudInputData:
     --------
     >>> input_data = InputData("scenarios/reference/input/csv/")
     >>> df = input_data["inventory"]  # Loads inventory.csv as DataFrame
+    """
+    all_paths = """
+    /input/csv/
+    /input/csv/age_classes.csv         # Static
+    /input/csv/classifiers.csv         # Static
+    /input/csv/disturbance_types.csv   # Static
+    /input/csv/events.csv              # Dynamic based on scenarios picked
+    /input/csv/inventory.csv           # Dynamic based on scenarios picked
+    /input/csv/transitions.csv         # Dynamic based on scenarios picked
+    /input/csv/growth_curves.csv       # Dynamic based on scenarios picked
     """
 
     def __init__(self, parent):
@@ -21,10 +32,12 @@ class BudInputData:
         parent: bud object which has a parameter do the data directory,
             where a sub-path contains the directory containing CSV files.
         """
-        self.bud = parent
-        self.csv_directory = self.bud.data_dir / "input/csv"
-
-        # Verify directory exists
+        self.parent = parent
+        # pathlib.Path object (we would prefer to use pathlib)
+        self.csv_directory = self.parent.data_dir / "input/csv"
+        # AutoPaths object (for compatibility with runner.input_data)
+        self.paths = AutoPaths(str(self.parent.data_dir), self.all_paths)
+        # Verify the CSV directory exists
         if not self.csv_directory.exists():
             raise FileNotFoundError(f"Directory not found: {self.csv_directory}")
 
