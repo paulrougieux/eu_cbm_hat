@@ -54,3 +54,19 @@ full_storied,ForAWS,OC,LU00,H,E,?,con,1,Cur,5,Generic 60% (INSECTS widespread),0
 full_storied,NF,PA,LU00,H,E,?,con,1,Cur,7,Deforestation,0.5,0,0,0,0.5,0,0,0
 full_storied,AR,PA,LU00,H,E,?,con,1,Cur,7,Deforestation,0.5,0,0,0,0.5,0,0,0
 reference,ForAWS,QR,LU00,H,E,?,broad,1,Cur,21,Clearcut  with slash burn (broad based on area),0,0,0,0,0,0,0,0
+nature_driven,ForAWS,DF,LU00,H,E,?,con,1,Cur,12,15% commercial thinning,0,0,0,0,0,0,0,0
+nature_driven,ForAWS,DF,LU00,H,E,?,con,1,Cur,14,20% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,DF,LU00,H,E,?,con,1,Cur,22,Generic 90 % mortality (clearcut conif on area),0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,OB,LU00,H,E,?,broad,1,Cur,11,Generic 15%,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,OB,LU00,H,E,?,broad,1,Cur,18,35% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,OB,LU00,H,E,?,broad,1,Cur,21,Clearcut  with slash burn (broad based on area),0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,OC,LU00,H,E,?,con,1,Cur,12,15% commercial thinning,0,0,0,0,0,0,0,0
+nature_driven,ForAWS,OC,LU00,H,E,?,con,1,Cur,14,20% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,OC,LU00,H,E,?,con,1,Cur,22,Generic 90 % mortality (clearcut conif on area),0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,PA,LU00,H,E,?,con,1,Cur,12,15% commercial thinning,0,0,0,0,0,0,0,0
+nature_driven,ForAWS,PA,LU00,H,E,?,con,1,Cur,14,20% commercial thinning,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,PA,LU00,H,E,?,con,1,Cur,49,Windstorm (for projection),0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,PA,LU00,H,E,?,con,1,Cur,29,Salvage year 1 post-windstorm,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,PA,LU00,H,E,?,con,1,Cur,30,Salvage year 2 post-windstorm,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,QR,LU00,H,E,?,broad,1,Cur,11,Generic 15%,0.85,0,0.5,0,0.85,0,0.5,0
+nature_driven,ForAWS,QR,LU00,C,E,?,broad,1,Cur,21,Clearcut  with slash burn (broad based on area),0,0,0,0,0,0,0,0
