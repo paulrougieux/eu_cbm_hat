@@ -134,11 +134,13 @@ class HWPCommonInput:
 
     @cached_property
     def eu_member_states(self):
-        # list of EU MS
-        EU_member_states = pd.read_csv(
-            eu_cbm_data_pathlib / "common/eu_member_states.csv"
+        """Data frame of EU MS"""
+        df = pd.read_csv(
+            eu_cbm_data_pathlib / "common/country_codes.csv"
         )
-        return EU_member_states
+        df = df[["country"]]
+        df = df.rename(columns={"country":"Area"})
+        return df
 
     @cached_property
     def faostat_bulk_data(self):
@@ -395,7 +397,14 @@ class HWPCommonInput:
     @cached_property
     def fao_correction_factor(self):
         """Data 1961-2021 is from Forestry_E_Europe.csv this function
-        Prepare the FAO correction factor data"""
+        Prepare the FAO correction factor data
+
+        Usage:
+
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> hwp_common_input.fao_correction_factor
+
+        """
         df_fao = self.faostat_bulk_data
         # remove rows which do not reffer to "quantity" from original data
         selector = df_fao["Element"].str.contains("Value")
@@ -507,6 +516,14 @@ class HWPCommonInput:
         HWP of domestic origin, after the correction for the export of
         roundwood, to be applied to eu_cbm_hat simulated IRW. Even two types of
         fractions are calculated, fraction with string '_dom' is used further
+
+        The factor "fIRW_SW_WP_con" estimates how much production from total
+        production can be assumed to be from domestic roundwood production.
+        Excerpt from the code beow that estimates the fractions of domestic in
+        the country's roundwood feedstock
+
+            >>> df_exp["fIRW_SW_WP_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
+            >>> df_exp["irw_con_prod"] + df_exp["irw_con_imp"] - df_exp["irw_con_exp"])
 
         Plot export correction factors by country
 
@@ -766,6 +783,7 @@ class HWPCommonInput:
         Example use:
 
             >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> hwp_common_input.rw_export_correction_factor
             >>> hwp_common_input.prod_from_dom_harv_stat
 
         Plot wood panel production in a selected country:
