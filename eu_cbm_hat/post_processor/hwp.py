@@ -239,13 +239,18 @@ class HWP:
     @cached_property
     def fluxes_by_grade(self) -> pandas.DataFrame:
         """Aggregate previous data frame and reshape wide by feedstock"""
-        index = ["year", "grade"]
+        index = ["year", "grade", "con_broad"]
         df_long = (
             self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
         )
+        # Glue grade and con_broad columns together
+        df_long["grade2"] = df_long["grade"] + "_" + df_long["con_broad"]
         df = df_long.pivot(
-            columns="grade", index=["year"], values="tc_irw"
+            columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
+        # Sum back pulpwood con and broad together
+        df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
+        df.drop(columns=["pulpwood_con", "pulpwood_broad"], inplace=True)
         return df
 
     @property  # Don't cache, in case we change the number of years
