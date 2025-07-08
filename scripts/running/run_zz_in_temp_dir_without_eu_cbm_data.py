@@ -17,7 +17,7 @@ Typically you would run this file from a command line like this:
 
 On a development machine, you can update the ZZ dataset stored inside this repository with:
 
-    ipython3 -i -- ~/deploy/eu_cbm/eu_cbm_hat/scripts/setup/copy_zz_from_libcbm_data.py
+    ipython3 -i -- ~/deploy/eu_cbm/eu_cbm_hat/scripts/setup/copy_zz_from_eu_cbm_data_to_runner_test_dir.py
 
 """
 

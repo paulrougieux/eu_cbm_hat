@@ -294,7 +294,7 @@ class Sink:
 
     @cached_property
     def df(self):
-        """Compute the stock change and the sink
+        """Compute the stock change and the sink (in tons of CO2 eq.)
 
         Aggregate by the classifier for which it is possible to compute a
         difference in pools. During land use transition implementing afforestation

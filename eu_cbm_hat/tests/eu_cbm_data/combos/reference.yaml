@@ -3,7 +3,8 @@ description: |
     # Reference scenario, i.e. IRW and FW updated to latest FAO available, i.e., 2023 (as of Y2025),
     # Future demqands of IRW anf FW equal to average 2020-2023 (for CZ 2015-2017), 
     # share of IRW demands, i.e., harvest_factor, set to average 2020-2023 ('reference' instead of 'no market forcing')
-    
+
+runner_type: dynamic_runner
 
 inventory:
   afforestation: reference
@@ -33,7 +34,11 @@ transitions:
   nd_nsr:        reference
   nd_sr:         reference
 
+climate_adjustment_model : default
+climate_adjustment_selected_year : default
+
 events_templates:
+  2020: reference
   2021: reference
   2022: reference
   2023: reference
@@ -88,6 +93,7 @@ events_templates:
 
 
 irw_frac_by_dist:
+  2020: reference
   2021: reference
   2022: reference
   2023: reference
@@ -141,6 +147,7 @@ irw_frac_by_dist:
   2070: reference
 
 harvest_factors:
+  2020: reference
   2021: reference
   2022: reference
   2023: reference
@@ -192,6 +199,5 @@ harvest_factors:
   2068: reference
   2069: reference
   2070: reference
-
 
 harvest: reference

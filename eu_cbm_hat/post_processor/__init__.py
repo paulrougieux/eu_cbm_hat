@@ -10,6 +10,8 @@ Unit D1 Bioeconomy.
 
 from typing import Union, List
 from functools import cached_property
+import pandas as pd
+
 from eu_cbm_hat.post_processor.sink import Sink
 from eu_cbm_hat.post_processor.harvest import Harvest
 from eu_cbm_hat.post_processor.hwp import HWP
@@ -283,24 +285,51 @@ class PostProcessor(object):
 
     @cached_property
     def irw_frac(self):
-        """load irw_frac for converting output to IRW and FW, ready to join"""
-        # TODO: what about the scenario column?
-        df = self.runner.silv.irw_frac.raw
-        df["disturbance_type"] = df["disturbance_type"].astype(int)
+        """load irw_frac for converting output to IRW and FW, ready to join
 
-        # Get the last three columns
+        irw_frac is not defined by year. It is however possible to define many
+        values for the irw_frac in the combo.config["irw_frac_by_dist"].
+
+        - an irw_frac data frame is used by the cbm/dynamic.py within each time
+          step, where there is only one possible year and therefore one possible
+          scenario.
+
+        - in post processing however, we have many years. Therefore we need to
+          expand irw_frac for all years defined in
+          combo.config["irw_frac_by_dist"] so that the year column can
+          subsequently be used in the merge index, when we merge with fluxes to
+          products.
+        
+        """
+        # Choices made for `irw` fraction in the current combo.
+        # This can be defined differently for every year
+        irw_frac_dict = self.runner.combo.config["irw_frac_by_dist"].copy()
+        df_raw = self.runner.silv.irw_frac.raw
+        # Create a data frame with scenario and year
+        scenarios = pd.DataFrame(
+            {"year": irw_frac_dict.keys(), "scenario": irw_frac_dict.values()}
+        )
+        # Keep only scenarios defined for the given years through an inner
+        # merge
+        df = df_raw.merge(scenarios, on=["scenario"], how="inner")
+        # Put the year back in first place
+        cols = df.columns.to_list()
+        cols = cols[-1:] + cols[:-1]
+        df = df[cols]
+        # Rename flux columns to append "_irw_frac"
         cols_to_rename = df.columns[-8:]
-
         # Rename the columns by appending '_irw_frac'
         new_column_names = {col: f"{col}_irw_frac" for col in cols_to_rename}
-
         # Apply the renaming
         df.rename(columns=new_column_names, inplace=True)
-
-        # Keep only classifier columns that are suitable as index columns
-        # According to self.merge_index
-        df.drop(columns=["climate"], inplace=True)
-
         # Remove duplicate rows based on the remaining columns
         df.drop_duplicates(inplace=True)
+        # convert dist_ids string to values, as needed later
+        df["disturbance_type"] = df["disturbance_type"].astype(int)
+        # Check if df contains wildcards ?
+        contains_question_mark = df.apply(
+            lambda row: row.astype(str).str.contains("\?").any(), axis=1
+        ).unique()
+        if contains_question_mark:
+            raise ValueError(f"The irw_frac contains question marks {df}")
         return df

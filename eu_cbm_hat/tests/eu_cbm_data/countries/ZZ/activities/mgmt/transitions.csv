@@ -3,3 +3,7 @@ reference,ForAWS,DF,LU00,H,E,?,con,1,Cur,FALSE,71,90,71,90,22,ForAWS,DF,LU00,H,E
 reference,ForAWS,OB,LU00,H,E,?,broad,1,Cur,FALSE,80,210,80,210,21,ForAWS,OB,LU00,H,E,?,broad,1,Cur,0,0,100
 reference,ForAWS,OC,LU00,H,E,?,con,1,Cur,FALSE,60,80,60,80,22,ForAWS,OC,LU00,H,E,?,con,1,Cur,0,0,100
 reference,ForAWS,QR,LU00,C,E,?,broad,1,Cur,FALSE,20,210,20,210,21,ForAWS,QR,LU00,C,E,?,broad,1,Cur,0,0,100
+nature_driven,ForAWS,DF,LU00,H,E,?,con,1,Cur,FALSE,71,90,71,90,22,ForAWS,OB,LU00,H,E,?,con,1,Cur,0,0,95
+nature_driven,ForAWS,OC,LU00,H,E,?,con,1,Cur,FALSE,60,80,60,80,22,ForAWS,OB,LU00,H,E,?,con,1,Cur,0,0,95
+nature_driven,ForAWS,OB,LU00,H,E,?,broad,1,Cur,FALSE,80,210,80,210,21,ForAWS,QR,LU00,C,E,?,broad,1,Cur,0,0,95
+nature_driven,ForAWS,QR,LU00,C,E,?,broad,1,Cur,FALSE,20,210,20,210,21,ForAWS,QR,LU00,C,E,?,broad,1,Cur,0,0,95

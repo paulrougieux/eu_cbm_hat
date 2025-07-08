@@ -15,26 +15,28 @@ from typing import Union, Dict
 from pathlib import Path
 from functools import cached_property
 
-# Lucas dependencies
+# autopaths and plumbing dependencies from Lucas Sinclair
 from autopaths.auto_paths import AutoPaths
 from plumbing.logger import create_file_logger
 from plumbing.timer import LogTimer
 
 # libcbm imports
 from libcbm.input.sit import sit_cbm_factory
-from libcbm.model.cbm.cbm_output import CBMOutput
-from libcbm.storage.backends import BackendType
 from libcbm.model.cbm import cbm_simulator
+from libcbm.model.cbm.cbm_output import CBMOutput
 from libcbm.model.cbm.cbm_variables import CBMVariables
+from libcbm.storage.backends import BackendType
 
-# Runner imports
-from eu_cbm_hat.info.internal_data  import InternalData
+# EU CBM HAT Runner imports
+from eu_cbm_hat.info.internal_data import InternalData
+from eu_cbm_hat.launch.create_json import CreateJSON
 
-# Bud imports
+# EU CBM HAT Bud imports
+from eu_cbm_hat.bud.associations import BudAssociations
 from eu_cbm_hat.bud.input_data import BudInputData
-from eu_cbm_hat.bud.post_processor import BudPostProcessor
 from eu_cbm_hat.bud.output import BudOutput
 from eu_cbm_hat.bud.output import BudSim
+from eu_cbm_hat.bud.post_processor import BudPostProcessor
 
 
 class Bud:
@@ -57,17 +59,18 @@ class Bud:
         >>> import eu_cbm_hat as ch
         >>> from eu_cbm_hat.bud.test_data import copy_input_to_temp_dir
         >>> data_dir = copy_input_to_temp_dir()
-        >>> bzz = ch.Bud(
+        >>> bud = ch.Bud(
         ...     data_dir=data_dir,
         ...     aidb_path=ch.eu_cbm_aidb_pathlib / "countries/ZZ/aidb.db"
         ... )
-        >>> bzz.run()
+        >>> bud.run()
 
     """
 
     # See core/runner.py if more paths are needed
     all_paths = """
     /logs/runner.log
+    /input/json/config.json
     """
 
     def __init__(self, data_dir: Union[str, Path], aidb_path: Union[str, Path]):
@@ -97,6 +100,16 @@ class Bud:
         return BudInputData(self)
 
     @property
+    def associations(self):
+        """Input data"""
+        return BudAssociations(self)
+
+    @property
+    def create_json(self):
+        """Input data"""
+        return CreateJSON(self)
+
+    @cached_property
     def sit(self):
         """Standard import tool object
 
@@ -107,7 +120,9 @@ class Bud:
         >>> ref.sit.classifier_value_ids.items()
 
         """
-        json_path = self.data_dir / "input/json/config.json"
+        # Create the JSON configuration #
+        self.create_json()
+        json_path = str(self.paths.json)
         return sit_cbm_factory.load_sit(json_path, str(self.aidb_path))
 
     def run(self):
