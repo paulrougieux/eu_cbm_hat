@@ -248,8 +248,11 @@ class HWP:
         df = df_long.pivot(
             columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
+        # Sum sawlogs broad and con together
+        df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         # Sum back pulpwood con and broad together
         df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
+        # Remove pulpwood broad and con
         df.drop(columns=["pulpwood_con", "pulpwood_broad"], inplace=True)
         return df
 
