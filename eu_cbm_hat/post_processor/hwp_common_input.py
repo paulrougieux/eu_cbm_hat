@@ -135,11 +135,9 @@ class HWPCommonInput:
     @cached_property
     def eu_member_states(self):
         """Data frame of EU MS"""
-        df = pd.read_csv(
-            eu_cbm_data_pathlib / "common/country_codes.csv"
-        )
+        df = pd.read_csv(eu_cbm_data_pathlib / "common/country_codes.csv")
         df = df[["country"]]
-        df = df.rename(columns={"country":"Area"})
+        df = df.rename(columns={"country": "Area"})
         return df
 
     @cached_property
@@ -346,7 +344,7 @@ class HWPCommonInput:
 
         Keep only sawlogs and pulpwood from that grading table.
 
-            >>> 
+            >>>
             >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
             >>> df = hwp_common_input.nb_grading
 
@@ -582,6 +580,30 @@ class HWPCommonInput:
         return df_exp
 
     @cached_property
+    def sw_con_broad_share(self):
+        """Compute the share of con and broad in sawnwood production from the
+        FAOSTAT data to be applied to CRF data.
+
+        The reason is that the CRF data  crf_semifinished_data is not
+        distinguished by con broad. We keep it because it's a better data
+        source updated more frequently by the reporting countries compared to
+        FAOSTAT. To add con and broad in formation we can compute the share of
+        con and broad from FAOSTAT.
+        """
+        selected_cols = ["sawnwood_broad_prod", "sawnwood_con_prod", "sawnwood_prod"]
+        df = self.fao_correction_factor[["area", "year"] + selected_cols].copy()
+        # Check that the sum is correct
+        df_check = df.loc[~df["sawnwood_broad_prod"].isna()]
+        dontsum = (df_check["sawnwood_broad_prod"] +df_check["sawnwood_con_prod"]) != df_check["sawnwood_prod"]
+        if any(dontsum):
+            msg = "Some places don't sum to reported value"
+            msg += f"{df_check.loc[dontsum]}"
+            raise ValueError(msg)
+        # Compute the share of broad
+        df["sw_share_broad"] = df["sawnwood_broad_prod"] / df["sawnwood_prod"]
+        return df
+
+    @cached_property
     def crf_semifinished_data(self):
         """data 1961-2021 from common\hwp_crf_submission.csv
         input timeseries of quantities of semifinshed products reported under the CRF"""
@@ -597,6 +619,10 @@ class HWPCommonInput:
         df_crf = df_crf.replace(["NO", "NE", "NA", "NA,NE"], np.nan)
         # df_crf = df_crf.fillna(0).astype(float)
         df_crf = df_crf.filter(regex="_prod").reset_index()
+        # TODO Split the sw_prod_m3 column by con and broad before
+        # the gap filling using the fraction from the function
+        # sw_prod_m3. --> note the fraction might not be available for all years.
+        # So we have to do that before the gap fill.
         df_crf["year"] = df_crf["year"].astype(int)
         return df_crf
 
@@ -793,8 +819,8 @@ class HWPCommonInput:
             .agg(
                 no_value=("fIRW_SW_WP", lambda x: all(x.isna())),
                 recycled_paper_prod=("recycled_paper_prod", lambda x: all(x.isna())),
-                recycled_wood_prod=("recycled_wood_prod", lambda x: all(x.isna()))
-                )
+                recycled_wood_prod=("recycled_wood_prod", lambda x: all(x.isna())),
+            )
             .reset_index()
         )
         # Warn about countries which don't have factors data at all
