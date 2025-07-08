@@ -4,6 +4,7 @@ import re
 import warnings
 import pandas
 from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
 
 
 class HWP:
@@ -52,7 +53,9 @@ class HWP:
         self.parent = parent
         self.runner = parent.runner
         self.combo_name = self.runner.combo.short_name
-        self.classifiers_list = self.parent.classifiers_list
+        self.classif_list = self.parent.classifiers_list
+        # IRW fractions
+        self.irw_frac = self.parent.irw_frac
         # Use pool fluxes to get area and age class as well
         self.pools_fluxes = self.runner.output.pool_flux
         # Number of common years to be used to compute the
@@ -64,45 +67,6 @@ class HWP:
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
-
-    @cached_property
-    def irw_frac(self) -> pandas.DataFrame:
-        """Industrial Roundwood Fraction
-
-        import irw and fw fractions, keep all types of "status", inlcuding NF
-
-        """
-        df = self.parent.irw_frac
-        # convert dist_ids string to values, as needed later
-        df["disturbance_type"] = df["disturbance_type"].astype(int)
-
-        # keep only relevant columns
-        df = df[
-            [
-                "status",
-                "region",
-                "forest_type",
-                "mgmt_type",
-                "mgmt_strategy",
-                "con_broad",
-                "disturbance_type",
-                "softwood_merch_irw_frac",
-                "softwood_other_irw_frac",
-                "softwood_stem_snag_irw_frac",
-                "softwood_branch_snag_irw_frac",
-                "hardwood_merch_irw_frac",
-                "hardwood_other_irw_frac",
-                "hardwood_stem_snag_irw_frac",
-                "hardwood_branch_snag_irw_frac",
-            ]
-        ]
-        # Check if df contains wildcards ?
-        contains_question_mark = df.apply(
-            lambda row: row.astype(str).str.contains("\?").any(), axis=1
-        ).unique()
-        if contains_question_mark:
-            raise ValueError(f"The irw_frac contains question marks {df}")
-        return df
 
     @cached_property
     def fluxes_to_products(self) -> pandas.DataFrame:
@@ -125,22 +89,17 @@ class HWP:
             "hardwood_stem_snag_to_product",
             "hardwood_branch_snag_to_product",
         ]
-        cols_of_interest = self.classifiers_list + index_cols + fluxes_cols
+        cols_of_interest = self.classif_list + index_cols + fluxes_cols
         df = self.pools_fluxes[cols_of_interest]
         # Keep only lines where there are fluxes to products.
         selector = df[fluxes_cols].sum(axis=1) > 0
         df = df.loc[selector].reset_index(drop=True)
         # Merge with IRW fractions
-        index = [
-            "status",
-            "region",
-            "forest_type",
-            "mgmt_type",
-            "mgmt_strategy",
-            "con_broad",
-            "disturbance_type",
-        ]
-        df = df.merge(self.irw_frac, on=index, how="left")
+        clfrs_noq = keep_clfrs_without_question_marks(self.irw_frac, self.classif_list)
+        df = df.merge(self.irw_frac,
+                      how='left',
+                      on=clfrs_noq + ["disturbance_type", "year"],
+                      suffixes=('', '_irw_frac_1'))
         return df
 
     @cached_property
@@ -186,7 +145,10 @@ class HWP:
 
     @cached_property
     def fluxes_by_age_to_dbh(self) -> pandas.DataFrame:
-        """Allocate fluxes by age to a dbh_alloc distrubution"""
+        """Allocate fluxes by age to a dbh_alloc distrubution
+
+        dbh_allo is the allocation data frame. We merge it with the fluxes to irw.
+        """
         # Select data for one country only
         dbh_alloc = hwp_common_input.irw_allocation_by_dbh
         selector = dbh_alloc["country"] == self.runner.country.iso2_code
@@ -222,7 +184,10 @@ class HWP:
 
     @cached_property
     def fluxes_by_grade_dbh(self) -> pandas.DataFrame:
-        """Allocate fluxes by age to a dbh_alloc distrubution"""
+        """Allocate fluxes by age to a dbh_alloc distribution
+
+        Returns a proportion by species, grade and db_class and also tc_irw.
+        """
         # Select the country for nb grading
         nb_grading = hwp_common_input.nb_grading
         selector = nb_grading["country"] == self.runner.country.iso2_code
