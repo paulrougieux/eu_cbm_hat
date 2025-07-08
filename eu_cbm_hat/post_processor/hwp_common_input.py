@@ -154,22 +154,6 @@ class HWPCommonInput:
         df["Area"] = df["Area"].replace(area_dict)
         return df
 
-    # @cached_property
-    # def euwrb_stat(self):
-    #    # input Sankey data
-    #    EUwrb_stat = pd.read_csv(
-    #        eu_cbm_data_pathlib / "common/forestry_sankey_data.csv"
-    #    )
-    #    return EUwrb_stat
-
-    @cached_property
-    def fao_rw_prod_gapfilled(self):
-        ## import FAOSTAT on IRW production on con and broad, data in volume (m3), this is gapfilled for historical periods
-        FAO_rw_prod_gapfilled = pd.read_csv(
-            eu_cbm_data_pathlib / "common/irw_con_broad_faostat.csv"
-        )
-        return FAO_rw_prod_gapfilled
-
     @cached_property
     def crf_stat(self):
         """crf sumbissions"""
