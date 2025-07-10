@@ -17,6 +17,16 @@ import pandas
 from autopaths.auto_paths import AutoPaths
 
 # Internal modules #
+def test_input_inventory(df):
+    """Test input inventory for example area!=0
+    """
+    df["area"] = pandas.to_numeric(df["area"], errors="coerce")
+    selector = df["area"] == 0
+    if any(selector):
+        msg = "Area is equal to zero in the inventory for the following rows"
+        msg += f"{df.loc[selector]}"
+        raise ValueError(msg)
+
 
 ###############################################################################
 class InputData:
@@ -29,7 +39,7 @@ class InputData:
     Example use:
 
         >>> from eu_cbm_hat.core.continent import continent
-        >>> runner = continent.combos['special'].runners["ZZ"][-1]
+        >>> runner = continent.combos['reference'].runners["ZZ"][-1]
         >>> # Fetch the data from the country folder.
         >>> # Necessary in case the runner has not been run yet.
         >>> runner.input_data()
@@ -118,6 +128,9 @@ class InputData:
                 scenario = choices[activity]
                 # Filter rows to take only this scenario #
                 df = df.query("scenario == '%s'" % scenario)
+                # Tests
+                if input_file == "inventory":
+                    test_input_inventory(df)
                 # Optional debug message #
                 msg = "   * for activity '%s', scenario '%s': %i rows"
                 if debug: print(msg % (activity, scenario, len(df)))

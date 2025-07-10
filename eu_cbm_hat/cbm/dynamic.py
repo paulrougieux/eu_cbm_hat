@@ -427,22 +427,17 @@ class DynamicSimulation(Simulation):
             raise Exception(msg)
         assert all(salv | silv | fw_only)
         assert(len(df) == len(df_irw_salv) + len(df_irw_silv) + len(df_fw))
-
-        
-
-
-
         
         # Check `products_created` is correct and not lying #
-        #check_irw = df_irw_silv.query("fw_vol == 0.0")
-        #check_fw  = df_fw.query("irw_vol != 0.0")
-        #if not check_irw.empty:
-        #    cols = ["forest_type", "disturbance_type", "product_created"]
-        #    cols += ["irw_avail", "fw_avail"]
-        #    msg = "Some rows have zero values for the fuel wood column.\n"
-        #    msg += f"{check_irw[cols]}"
-        #    raise ValueError(msg)
-        #assert check_fw.empty
+        check_irw = df_irw_silv.query("fw_vol == 0.0")
+        check_fw = df_fw.query("irw_vol != 0.0")
+        if not check_irw.empty:
+            cols = ["forest_type", "disturbance_type", "product_created"]
+            cols += ["irw_avail", "fw_avail"]
+            msg = "Some rows have zero values for the fuel wood column.\n"
+            msg += f"{check_irw[cols]}"
+            raise ValueError(msg)
+        assert check_fw.empty
 
         # Process salvage logging disturbances in priority if they are present
         if any(salv):
