@@ -635,6 +635,8 @@ class HWPCommonInput:
         )
         df["sw_broad_prod_m3"] = df["sw_prod_m3"] * df["sw_share_broad"]
         df["sw_con_prod_m3"] = df["sw_prod_m3"] * (1 - df["sw_share_broad"])
+        # Remove the share
+        df.drop(columns="sw_share_broad", inplace=True)
         df["year"] = df["year"].astype(int)
         return df
 
@@ -699,19 +701,20 @@ class HWPCommonInput:
         year based on the value of the next year multiplied by the EU change
         rate from the next year to the current year.
         """
-        # Copy the original DataFrame to avoid modifying the original data for 1961-2021
-        ratio_columns = ["sw_ratio", "wp_ratio", "pp_ratio"]
-        selected_columns = ["year"] + ratio_columns
+        df_ratio = self.eu_semifinished_complete_series
+        ratio_cols = df_ratio.columns[df_ratio.columns.str.contains("ratio")].to_list()
         df = self.crf_semifinished_data.merge(
-            self.eu_semifinished_complete_series[selected_columns],
+            df_ratio[["year"] + ratio_cols],
             on="year",
             how="left",
         )
+        prod_cols = df.columns[df.columns.str.contains("prod")].to_list()
         df.replace(0, np.nan, inplace=True)
         # Arrange by country and year, reset index
         df = df.sort_values(["area", "year"]).reset_index(drop=True)
         # Reverse the DataFrame to fill missing values in reverse order
-        df = df.iloc[::-1]
+        df = df.iloc[::-1].copy()
+
         # Fill missing values using the ratio
         for index, row in df.iterrows():
             # Skip the highest index
@@ -721,19 +724,16 @@ class HWPCommonInput:
             if df.at[index, "area"] != df.at[index + 1, "area"]:
                 continue
             # Back compute the production in the current year
-            if pd.isnull(row["sw_prod_m3"]):
-                next_value = df.at[index + 1, "sw_prod_m3"]
-                df.at[index, "sw_prod_m3"] = next_value * row["sw_ratio"]
-            if pd.isnull(row["wp_prod_m3"]):
-                next_value = df.at[index + 1, "wp_prod_m3"]
-                df.at[index, "wp_prod_m3"] = next_value * row["wp_ratio"]
-            if pd.isnull(row["pp_prod_t"]):
-                next_value = df.at[index + 1, "pp_prod_t"]
-                df.at[index, "pp_prod_t"] = next_value * row["pp_ratio"]
+            for col in prod_cols:
+                ratio_col = re.sub("prod_m3|prod_t", "eu_ratio", col)
+                if pd.isnull(row[col]):
+                    next_value = df.at[index + 1, col]
+                    df.at[index, col] = next_value * row[ratio_col]
         # Reverse the DataFrame back to the original order
         df = df.iloc[::-1]
         # Drop the temporary 'ratio' columns as they are no longer needed
-        df.drop(columns=ratio_columns, inplace=True)
+        df.drop(columns=ratio_cols, inplace=True)
+
         return df
 
     @cached_property
