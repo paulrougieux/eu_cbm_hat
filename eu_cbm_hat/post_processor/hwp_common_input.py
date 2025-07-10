@@ -79,7 +79,8 @@ class HWPCommonInput:
     def __init__(self):
         self.common_dir = eu_cbm_data_pathlib / "common"
         # Constant Carbon Conversion Factors for semi finished products
-        self.c_sw = 0.225
+        self.c_sw_broad = 0.225
+        self.c_sw_con = 0.225
         self.c_wp = 0.294
         self.c_pp = 0.450
         # N year parameter for the backfill_avg_first_n_years
@@ -500,12 +501,12 @@ class HWPCommonInput:
         roundwood, to be applied to eu_cbm_hat simulated IRW. Even two types of
         fractions are calculated, fraction with string '_dom' is used further
 
-        The factor "fIRW_SW_WP_con" estimates how much production from total
+        The factor "fIRW_SW_con" estimates how much production from total
         production can be assumed to be from domestic roundwood production.
         Excerpt from the code beow that estimates the fractions of domestic in
         the country's roundwood feedstock
 
-            >>> df_exp["fIRW_SW_WP_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
+            >>> df_exp["fIRW_SW_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
             >>> df_exp["irw_con_prod"] + df_exp["irw_con_imp"] - df_exp["irw_con_exp"])
 
         Plot export correction factors by country
@@ -514,7 +515,7 @@ class HWPCommonInput:
             >>> import matplotlib.pyplot as plt
             >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
             >>> df = hwp_common_input.rw_export_correction_factor
-            >>> g = seaborn.relplot( data=df, x="year", y="fIRW_SW_WP",
+            >>> g = seaborn.relplot( data=df, x="year", y="fIRW_WP",
             ...                     col="area", kind="line", col_wrap=4,
             ...                     height=3, facet_kws={'sharey': True,
             ...                                          'sharex': True})
@@ -527,24 +528,24 @@ class HWPCommonInput:
         df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
 
         # estimate the fractions of domestic in the country's feedstock on con and broad: IRW, WP, PULP on con and broad
-        df_exp["fIRW_SW_WP_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
+        df_exp["fIRW_SW_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
             df_exp["irw_con_prod"] + df_exp["irw_con_imp"] - df_exp["irw_con_exp"]
         )
-        df_exp["fIRW_SW_WP_broad"] = (
+        df_exp["fIRW_SW_broad"] = (
             df_exp["irw_broad_prod"] - df_exp["irw_broad_exp"]
         ) / (
             df_exp["irw_broad_prod"] + df_exp["irw_broad_imp"] - df_exp["irw_broad_exp"]
         )
 
         # average for a generic value
-        # df_exp['fIRW_SW_WP'] =(df_exp['fIRW_SW_WP_con'] + df_exp['fIRW_SW_WP_broad'])/2
+        # df_exp['fIRW_WP'] =(df_exp['fIRW_SW_con'] + df_exp['fIRW_SW_broad'])/2
         # ALTERNATIVELY, estimate the generic fraction of domestic feedstock, i.e., no con/broad split
 
-        df_exp["fIRW_SW_WP"] = (df_exp["irw_prod"] - df_exp["irw_exp"]) / (
+        df_exp["fIRW_WP"] = (df_exp["irw_prod"] - df_exp["irw_exp"]) / (
             df_exp["irw_prod"] + df_exp["irw_imp"] - df_exp["irw_exp"]
         )
         df_exp["fPULP"] = (
-            df_exp["fIRW_SW_WP"]
+            df_exp["fIRW_WP"]
             * (df_exp["wood_pulp_prod"] - df_exp["wood_pulp_exp"])
             / (
                 df_exp["wood_pulp_prod"]
@@ -554,16 +555,16 @@ class HWPCommonInput:
         )
 
         # f values on con and broad
-        df_exp["fIRW_SW_WP_con"] = df_exp["fIRW_SW_WP_con"].mask(
-            df_exp["fIRW_SW_WP_con"] < 0, 0
+        df_exp["fIRW_SW_con"] = df_exp["fIRW_SW_con"].mask(
+            df_exp["fIRW_SW_con"] < 0, 0
         )
-        df_exp["fIRW_SW_WP_broad"] = df_exp["fIRW_SW_WP_broad"].mask(
-            df_exp["fIRW_SW_WP_broad"] < 0, 0
+        df_exp["fIRW_SW_broad"] = df_exp["fIRW_SW_broad"].mask(
+            df_exp["fIRW_SW_broad"] < 0, 0
         )
         df_exp["fPULP"] = df_exp["fPULP"].mask(df_exp["fPULP"] < 0, 0)
 
-        # apply assumptions that fIRW_SW_WP = 0 when ratio <0
-        df_exp["fIRW_SW_WP"] = df_exp["fIRW_SW_WP"].mask(df_exp["fIRW_SW_WP"] < 0, 0)
+        # apply assumptions that fIRW_WP = 0 when ratio <0
+        df_exp["fIRW_WP"] = df_exp["fIRW_WP"].mask(df_exp["fIRW_WP"] < 0, 0)
 
         # fractions of recycled paper feedstock, exports and exports
         df_exp["fREC_PAPER"] = (
@@ -852,19 +853,24 @@ class HWPCommonInput:
 
         """
         index = ["area", "year"]
-        selected_cols = index + [
+        factor_cols = [
             "fPULP",
-            "fIRW_SW_WP",
+            "fIRW_WP",
+            'fIRW_SW_con',
+            'fIRW_SW_broad',
+        ]
+        recycle_cols = [
             "recycled_paper_prod",
             "recycled_wood_prod",
         ]
+        selected_cols = index + factor_cols + recycle_cols
         exp_fact = self.rw_export_correction_factor[selected_cols].copy()
         # Merge production data with export factors data
         df = self.prod_backcast_to_1900.merge(exp_fact, on=index, how="left")
         no_data = (
             df.groupby("area")
             .agg(
-                no_value=("fIRW_SW_WP", lambda x: all(x.isna())),
+                no_value=("fIRW_WP", lambda x: all(x.isna())),
                 recycled_paper_prod=("recycled_paper_prod", lambda x: all(x.isna())),
                 recycled_wood_prod=("recycled_wood_prod", lambda x: all(x.isna())),
             )
@@ -888,16 +894,19 @@ class HWPCommonInput:
 
         # Gap fill export correction factors
         n_years = self.n_years_for_backfill
-        df = backfill_avg_first_n_years(df, var="fIRW_SW_WP", n=n_years)
-        df = backfill_avg_first_n_years(df, var="fPULP", n=n_years)
-        df = backfill_avg_first_n_years(df, var="recycled_paper_prod", n=n_years)
-        df = backfill_avg_first_n_years(df, var="recycled_wood_prod", n=n_years)
+        for col in factor_cols + recycle_cols:
+            df = backfill_avg_first_n_years(df, var=col, n=n_years)
         # Compute production from domestic roundwood
-        df["sw_dom_m3"] = df["sw_prod_m3"] * df["fIRW_SW_WP"]
-        df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_SW_WP"]
+        df["sw_broad_dom_m3"] = df["sw_broad_prod_m3"] * df["fIRW_SW_broad"]
+        df["sw_con_dom_m3"] = df["sw_con_prod_m3"] * df["fIRW_SW_con"]
+        df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_WP"]
         df["pp_dom_t"] = df["pp_prod_t"] * df["fPULP"]
         # Compute values in Tons of Carbon
-        df["sw_dom_tc"] = self.c_sw * df["sw_dom_m3"]
+        # Note: the carbon fraction of biomass should be adapted to the species
+        # mix in the inventory in each country. It should be a country specific
+        # value.
+        df["sw_broad_dom_tc"] = self.c_sw_broad * df["sw_broad_dom_m3"]
+        df["sw_con_dom_tc"] = self.c_sw_con * df["sw_con_dom_m3"]
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
         # Correct for recycled wood panel and paper amounts
@@ -907,7 +916,6 @@ class HWPCommonInput:
         # Then in that case set it to zero
         selector = df["pp_dom_tc"] < 0
         df.loc[selector, "pp_dom_tc"] = 0
-
         return df
 
     @cached_property
