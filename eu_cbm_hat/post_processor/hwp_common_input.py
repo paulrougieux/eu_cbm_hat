@@ -12,6 +12,7 @@ Usage:
 """
 
 import math
+import re
 import warnings
 import numpy as np
 import pandas as pd
@@ -594,7 +595,9 @@ class HWPCommonInput:
         df = self.fao_correction_factor[["area", "year"] + selected_cols].copy()
         # Check that the sum is correct
         df_check = df.loc[~df["sawnwood_broad_prod"].isna()]
-        dontsum = (df_check["sawnwood_broad_prod"] +df_check["sawnwood_con_prod"]) != df_check["sawnwood_prod"]
+        dontsum = (
+            df_check["sawnwood_broad_prod"] + df_check["sawnwood_con_prod"]
+        ) != df_check["sawnwood_prod"]
         if any(dontsum):
             msg = "Some places don't sum to reported value"
             msg += f"{df_check.loc[dontsum]}"
@@ -606,25 +609,34 @@ class HWPCommonInput:
     @cached_property
     def crf_semifinished_data(self):
         """data 1961-2021 from common\hwp_crf_submission.csv
-        input timeseries of quantities of semifinshed products reported under the CRF"""
-        df_crf = self.crf_stat.set_index(["area", "year"])
+        input timeseries of quantities of semifinshed products reported under the CRF
+
+        Split the sw_prod_m3 column by con and broad before the gap filling
+        using the fraction from the function sw_prod_m3. --> note the fraction
+        might not be available for all years. So we have to do that before the
+        gap fill. We area here in crf_semifinished_data before the gap fill.
+
+        """
+        df = self.crf_stat.set_index(["area", "year"])
         selector = "_crf"
-        df_crf = df_crf.filter(regex=selector).reset_index()
-
+        df = df.filter(regex=selector).reset_index()
         # remove strings in names
-        df_crf.columns = df_crf.columns.str.replace(selector, "")
-        df_crf = df_crf.set_index(["area", "year"])
-
+        df.columns = df.columns.str.replace(selector, "")
+        df = df.set_index(["area", "year"])
         # remove notation kew from CRF based data
-        df_crf = df_crf.replace(["NO", "NE", "NA", "NA,NE"], np.nan)
-        # df_crf = df_crf.fillna(0).astype(float)
-        df_crf = df_crf.filter(regex="_prod").reset_index()
-        # TODO Split the sw_prod_m3 column by con and broad before
-        # the gap filling using the fraction from the function
-        # sw_prod_m3. --> note the fraction might not be available for all years.
-        # So we have to do that before the gap fill.
-        df_crf["year"] = df_crf["year"].astype(int)
-        return df_crf
+        df = df.replace(["NO", "NE", "NA", "NA,NE"], np.nan)
+        # df = df.fillna(0).astype(float)
+        df = df.filter(regex="_prod").reset_index()
+        # Split the sw_prod_m3 column by con and broad
+        df = df.merge(
+            self.sw_con_broad_share[["area", "year", "sw_share_broad"]],
+            on=["area", "year"],
+            how="left",
+        )
+        df["sw_broad_prod_m3"] = df["sw_prod_m3"] * df["sw_share_broad"]
+        df["sw_con_prod_m3"] = df["sw_prod_m3"] * (1 - df["sw_share_broad"])
+        df["year"] = df["year"].astype(int)
+        return df
 
     @cached_property
     def eu_semifinished_complete_series(self):
@@ -632,15 +644,32 @@ class HWPCommonInput:
         values and compute the backward rate of change from the current year to
         the previous year.
 
-            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
-            >>> df = hwp_common_input.eu_complete_series_totals
-            >>> df.set_index("year").plot()
-
         Add a EU total excluding the countries with incomplete time series. To
         be used as proxy for gap filling of missing data by ms in original unit
-        m3 or t for 1961-2021"""
+        m3 or t for 1961-2021
+
+        Plot ratio columns:
+
+            >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+            >>> import matplotlib.pyplot as plt
+            >>> df = hwp_common_input.eu_semifinished_complete_series
+            >>> ratio_cols = df.columns[df.columns.str.contains("ratio")]
+            >>> df.set_index("year")[ratio_cols].plot()
+            >>> plt.show()
+            >>> sw_cols = ['sw_eu_ratio', 'sw_broad_eu_ratio', 'sw_con_eu_ratio']
+            >>> df.set_index("year")[sw_cols].query("year>1962").plot()
+            >>> plt.show()
+
+        """
+        selected_cols = [
+            "sw_prod_m3",
+            "wp_prod_m3",
+            "pp_prod_t",
+            "sw_broad_prod_m3",
+            "sw_con_prod_m3",
+        ]
         df_ms = self.crf_semifinished_data
-        df_ms = df_ms[["year", "area", "sw_prod_m3", "wp_prod_m3", "pp_prod_t"]]
+        df_ms = df_ms[["year", "area"] + selected_cols]
         # Keep only countries which have the complete time series for all products
         complete_groups = df_ms.groupby(["area"]).filter(
             lambda x: not (
@@ -650,27 +679,15 @@ class HWPCommonInput:
             )
         )
         # Aggregate, sum for the whole EU countries which have data
-        df = (
-            complete_groups.groupby(["year"])[["sw_prod_m3", "wp_prod_m3", "pp_prod_t"]]
-            .sum()
-            .reset_index()
-        )
-        df = df.rename(
-            columns={
-                "sw_prod_m3": "sw_prod_eu",
-                "wp_prod_m3": "wp_prod_eu",
-                "pp_prod_t": "pp_prod_eu",
-            }
-        )
-        # Calculate the ratio of change from the current year to the previous year, i.e. 1999 vs. 2000
-        # irw_eu for each row to the next row. It's a ratio that goes backward in time
-        df["sw_ratio"] = df["sw_prod_eu"] / df["sw_prod_eu"].shift(-1)
-        df["wp_ratio"] = df["wp_prod_eu"] / df["wp_prod_eu"].shift(-1)
-        df["pp_ratio"] = df["pp_prod_eu"] / df["pp_prod_eu"].shift(-1)
-        # TODO: delete this experiment on cumsum
-        # Cumulative product and sum from first yeazr
-        # df["sw_ratio_cum"] = df["sw_ratio"].cumprod()
-        # df["check_sw_prod"]
+        df = complete_groups.groupby(["year"])[selected_cols].sum().reset_index()
+        # Calculate the ratio of change from the current year to the previous
+        # year, i.e. 1999 vs. 2000 irw_eu for each row to the next row. It's a
+        # ratio that goes backward in time
+        for col in selected_cols:
+            ratio_col = re.sub("prod_m3|prod_t", "eu_ratio", col)
+            df[ratio_col] = df[col] / df[col].shift(-1)
+        # Rename quantities columns to indicate eu wide trend aggregates
+        df.rename(columns=lambda x: re.sub(r"prod_m3$|prod_t$", "eu_prod", x), inplace=True)
         return df
 
     @cached_property
