@@ -604,11 +604,19 @@ class HWPCommonInput:
             raise ValueError(msg)
         # Compute the share of broad
         df["sw_share_broad"] = df["sawnwood_broad_prod"] / df["sawnwood_prod"]
+        # Share in 1960 is equal to 1961
+        df_1960 = df.loc[df["year"] == 1961].copy()
+        df_1960["year"] = 1960
+        df = (
+            pd.concat([df_1960, df])
+            .sort_values(["area", "year"])
+            .reset_index(drop=True)
+        )
         return df
 
     @cached_property
     def crf_semifinished_data(self):
-        """data 1961-2021 from common\hwp_crf_submission.csv
+        """data 1961-2021 from common/hwp_crf_submission.csv
         input timeseries of quantities of semifinshed products reported under the CRF
 
         Split the sw_prod_m3 column by con and broad before the gap filling
@@ -689,7 +697,9 @@ class HWPCommonInput:
             ratio_col = re.sub("prod_m3|prod_t", "eu_ratio", col)
             df[ratio_col] = df[col] / df[col].shift(-1)
         # Rename quantities columns to indicate eu wide trend aggregates
-        df.rename(columns=lambda x: re.sub(r"prod_m3$|prod_t$", "eu_prod", x), inplace=True)
+        df.rename(
+            columns=lambda x: re.sub(r"prod_m3$|prod_t$", "eu_prod", x), inplace=True
+        )
         return df
 
     @cached_property
@@ -700,6 +710,17 @@ class HWPCommonInput:
         change rate from EU totals. It computes back the production in the current
         year based on the value of the next year multiplied by the EU change
         rate from the next year to the current year.
+
+        Show which countries have been gap filled:
+
+        >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+        >>> # Before
+        >>> crf = hwp_common_input.crf_semifinished_data
+        >>> crf.loc[crf["sw_broad_prod_m3"].isna()]
+        >>> # After
+        >>> df = hwp_common_input.prod_gap_filled
+        >>> df.loc[df["sw_broad_prod_m3"].isna()]
+
         """
         df_ratio = self.eu_semifinished_complete_series
         ratio_cols = df_ratio.columns[df_ratio.columns.str.contains("ratio")].to_list()
@@ -757,6 +778,14 @@ class HWPCommonInput:
             ...                                          'sharex': True})
             >>> plt.show()
 
+        Check divergence between estimated sawnwood con and broad production
+        compared to total sawnwood for early years
+
+            >>> df = self.prod_backcast_to_1900
+            >>> df["sw_prod_check"] = df[['sw_broad_prod_m3', 'sw_con_prod_m3']].sum(axis=1)
+            >>> df.query("area=='Slovenia'")
+            >>> df.query("area=='Austria'")
+
         """
         df = self.prod_gap_filled.copy()
         # Get the value for the first year
@@ -765,7 +794,8 @@ class HWPCommonInput:
         # Extract the first value to be used to initiate the backcast to 1900
         selector = df["year"] == first_year
         df1 = df.loc[selector].copy()
-        cols = ["sw_prod_m3", "wp_prod_m3", "pp_prod_t"]
+        # Production columns
+        cols = df.columns[df.columns.str.contains("prod")].to_list()
         cols_1 = [c + "_1" for c in cols]
         col_dict = dict(zip(cols, cols_1))
         df1.rename(columns=col_dict, inplace=True)
