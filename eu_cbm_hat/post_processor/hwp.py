@@ -96,10 +96,12 @@ class HWP:
         df = df.loc[selector].reset_index(drop=True)
         # Merge with IRW fractions
         clfrs_noq = keep_clfrs_without_question_marks(self.irw_frac, self.classif_list)
-        df = df.merge(self.irw_frac,
-                      how='left',
-                      on=clfrs_noq + ["disturbance_type", "year"],
-                      suffixes=('', '_irw_frac_1'))
+        df = df.merge(
+            self.irw_frac,
+            how="left",
+            on=clfrs_noq + ["disturbance_type", "year"],
+            suffixes=("", "_irw_frac_1"),
+        )
         return df
 
     @cached_property
@@ -290,7 +292,8 @@ class HWP:
         df_out = self.fluxes_by_grade
         index = ["area", "year"]
         cols = [
-            "sw_dom_tc",
+            "sw_broad_dom_tc",
+            "sw_con_dom_tc",
             "wp_dom_tc",
             "pp_dom_tc",
             "recycled_paper_prod",
@@ -300,14 +303,15 @@ class HWP:
         selector = dstat["year"] > dstat["year"].max() - self.n_years_dom_frac
         selector &= dstat["area"] == self.runner.country.country_name
         dstat = dstat.loc[selector, index + cols]
-        dstat = dstat.fillna(0)
         # Merge country statistics with CBM output
         df = df_out.merge(dstat, on="year", how="right")
         # calculate the fractions for n years available
         # in case, simulation is based on absolute amounts required in future, then df["sw_dom_tc"], df["pp_dom_tc"], df["wp_dom_tc"]
         # have to be generated from that input data just before the following aritmetics
-        df["sw_fraction"] = df["sw_dom_tc"] / df["sawlogs"]
+        df["sw_broad_fraction"] = df["sw_broad_dom_tc"] / df["sawlogs_broad"]
+        df["sw_con_fraction"] = df["sw_con_dom_tc"] / df["sawlogs_con"]
         df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
+        df["sw_dom_tc"] = df["sw_broad_dom_tc"] + df["sw_con_dom_tc"]
         df["wp_fraction"] = df["wp_dom_tc"] / (
             (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
         )
@@ -317,7 +321,16 @@ class HWP:
 
         # Roundwood can never be converted to sawnwood. Fraction always have to
         # be below this value.
-        sw_selector = df["sw_fraction"] > 0.7
+        sw_selector = df["sw_broad_fraction"] > 0.7
+        if any(sw_selector):
+            msg = "Reported sawnwood production can not be satisfied from "
+            msg += "sawlogs production from CBM for the following years:\n"
+            msg += f"{df.loc[sw_selector]}"
+            raise ValueError(msg)
+
+        # Roundwood can never be converted to sawnwood. Fraction always have to
+        # be below this value.
+        sw_selector = df["sw_con_fraction"] > 0.6
         if any(sw_selector):
             msg = "Reported sawnwood production can not be satisfied from "
             msg += "sawlogs production from CBM for the following years:\n"
