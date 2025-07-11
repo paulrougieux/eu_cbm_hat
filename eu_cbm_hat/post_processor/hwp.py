@@ -460,7 +460,8 @@ class HWP:
         # Add the fractions to the CBM output data
         df = df.merge(self.fraction_semifinished, on="year")
         # Compute production from domestic harvest for the future
-        df["sw_dom_tc"] = df["sawlogs"] * df["sw_fraction"]
+        df["sw_broad_dom_tc"] = df["sawlogs_broad"] * df["sw_broad_fraction"]
+        df["sw_con_dom_tc"] = df["sawlogs_con"] * df["sw_con_fraction"]
         df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
         df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
         if self.add_recycling:
@@ -506,7 +507,7 @@ class HWP:
         # Input data frames
         dstat = hwp_common_input.prod_from_dom_harv_stat.copy()
         df_out = self.prod_from_dom_harv_sim.copy()
-        cols = ["sw_dom_tc", "wp_dom_tc", "pp_dom_tc"]
+        cols = ['sw_broad_dom_tc', 'sw_con_dom_tc', "wp_dom_tc", "pp_dom_tc"]
         # Keep data for the selected country
         selector = dstat["area"] == self.runner.country.country_name
         dstat = dstat.loc[selector, ["year"] + cols]
@@ -529,7 +530,8 @@ class HWP:
         # Compute the corrected inflow according to decay elements in the square bracket
         # Estimate the annual inflows
         df = df.assign(
-            sw_inflow=(df.sw_dom_tc * df.k1_sw),
+            sw_broad_inflow=(df.sw_broad_dom_tc * df.k1_sw),
+            sw_con_inflow=(df.sw_con_dom_tc * df.k1_sw),
             wp_inflow=(df.wp_dom_tc * df.k1_wp),
             pp_inflow=(df.pp_dom_tc * df.k1_pp),
         )
@@ -552,18 +554,23 @@ class HWP:
 
         """
         df = self.prepare_decay_and_inflow.copy()
-        cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
+        cols = ["sw_broad_inflow","sw_con_inflow", "wp_inflow", "pp_inflow"]
         cols += ["e_sw", "e_wp", "e_pp", "k_sw", "k_wp", "k_pp"]
         df = df[["year"] + cols]
         # Initiate stock values
-        df["sw_stock"] = 0.0  # Keep it with a dot to create a floating point number
+        df["sw_broad_stock"] = 0.0  # Keep the dot to create a floating point number
+        df["sw_con_stock"] = 0.0
         df["wp_stock"] = 0.0
         df["pp_stock"] = 0.0
+
         # Compute the stock for each semi finite product for all subsequent years
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
-            df.loc[t, "sw_stock"] = (
-                df.loc[t - 1, "sw_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_inflow"]
+            df.loc[t, "sw_broad_stock"] = (
+                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_broad_inflow"]
+            )
+            df.loc[t, "sw_con_stock"] = (
+                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_con_inflow"]
             )
             df.loc[t, "wp_stock"] = (
                 df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
@@ -575,13 +582,14 @@ class HWP:
         df.fillna(0, inplace=True)
 
         # Add annual loses by decay of historical stock, as the limit for recycling
-        df["sw_loss"] = df["sw_stock"] * df["k_sw"]
+        df["sw_con_loss"] = df["sw_con_stock"] * df["k_sw"]
+        df["sw_broad_loss"] = df["sw_broad_stock"] * df["k_sw"]
         df["wp_loss"] = df["wp_stock"] * df["k_wp"]
         df["pp_loss"] = df["pp_stock"] * df["k_pp"]
-        df["hwp_loss"] = df["sw_loss"] + df["wp_loss"] + df["pp_loss"]
+        df["hwp_loss"] = df["sw_con_loss"] + df["sw_broad_loss"] + df["wp_loss"] + df["pp_loss"]
 
         # Compute the total stock
-        df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
+        df["hwp_tot_stock_tc"] = df["sw_broad_stock"] + df["sw_broad_stock"] + df["wp_stock"] + df["pp_stock"]
 
         # Do the difference between consecutive years
         df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
@@ -608,7 +616,7 @@ class HWP:
         """
 
         df = self.prepare_decay_and_inflow.copy()
-        cols = ["sw_inflow", "wp_inflow", "pp_inflow"]
+        cols = ["sw_broad_inflow", "sw_con_inflow", "wp_inflow", "pp_inflow"]
         cols += ["k_sw", "k_wp", "k_pp"]
         cols += ["e_sw", "e_wp", "e_pp"]
         df = df[["year"] + cols]
@@ -616,14 +624,19 @@ class HWP:
         df_mean = df[df["year"] >= 1990].head(5)
         # Initiate stock values as average of 1990-1995 as the average of the
         # First five years for each inflow type
-        df["sw_stock"] = (df_mean["sw_inflow"].mean()) / (df_mean["k_sw"].mean())
+        df["sw_con_stock"] = (df_mean["sw_con_inflow"].mean()) / (df_mean["k_sw"].mean())
+        df["sw_broad_stock"] = (df_mean["sw_broad_inflow"].mean()) / (df_mean["k_sw"].mean())
         df["wp_stock"] = (df_mean["wp_inflow"].mean()) / (df_mean["k_wp"].mean())
         df["pp_stock"] = (df_mean["pp_inflow"].mean()) / (df_mean["k_pp"].mean())
+
         # Compute the stock for each semi finite product for all subsequent years
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
-            df.loc[t, "sw_stock"] = (
-                df.loc[t - 1, "sw_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_inflow"]
+            df.loc[t, "sw_broad_stock"] = (
+                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_broad_inflow"]
+            )
+            df.loc[t, "sw_con_stock"] = (
+                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_con_inflow"]
             )
             df.loc[t, "wp_stock"] = (
                 df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
@@ -632,13 +645,15 @@ class HWP:
                 df.loc[t - 1, "pp_stock"] * df.loc[t, "e_pp"] + df.loc[t, "pp_inflow"]
             )
         df.reset_index(inplace=True)
+
         # Add annual loses by decay of historical stock, as the limit for recycling
-        df["sw_loss"] = df["sw_stock"] * df["k_sw"]
+        df["sw_con_loss"] = df["sw_con_stock"] * df["k_sw"]
+        df["sw_broad_loss"] = df["sw_broad_stock"] * df["k_sw"]
         df["wp_loss"] = df["wp_stock"] * df["k_wp"]
         df["pp_loss"] = df["pp_stock"] * df["k_pp"]
-        df["hwp_loss"] = df["sw_loss"] + df["wp_loss"] + df["pp_loss"]
+        df["hwp_loss"] = df["sw_broad_loss"] + df["sw_con_loss"] + df["wp_loss"] + df["pp_loss"]
         # Compute the total stock
-        df["hwp_tot_stock_tc"] = df["sw_stock"] + df["wp_stock"] + df["pp_stock"]
+        df["hwp_tot_stock_tc"] = df["sw_broad_stock"] + df["sw_con_stock"] + df["wp_stock"] + df["pp_stock"]
         # Do the difference between consecutive years
         df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
         # Stock diff shifted by one year
@@ -722,6 +737,7 @@ class HWP:
         df1 = self.fluxes_by_grade
         df1["hwp_eligible"] = df1[["pulpwood", "sawlogs"]].sum(axis=1)
         df2 = self.prod_from_dom_harv_sim
+        df2["sw_dom_tc"] = df2[["sw_broad_dom_tc", "sw_con_dom_tc"]].sum(axis=1)
         df2["hwp_allocated"] = df2[["sw_dom_tc", "wp_dom_tc", "pp_dom_tc"]].sum(axis=1)
         df = df1[["year", "hwp_eligible"]].merge(
             df2[["year", "hwp_allocated"]].merge(df[["year", "fw_irw_bark"]]), on="year"
