@@ -10,6 +10,7 @@ Unit D1 Bioeconomy.
 
 from typing import Union, List
 from functools import cached_property
+import numpy as np
 import pandas as pd
 
 from eu_cbm_hat.post_processor.sink import Sink
@@ -305,6 +306,15 @@ class PostProcessor(object):
         # This can be defined differently for every year
         irw_frac_dict = self.runner.combo.config["irw_frac_by_dist"].copy()
         df_raw = self.runner.silv.irw_frac.raw
+        # Replace spaces by NA values
+        # Necessary because there were spaces in some countries such as
+        # df_raw.climate.unique()
+        # # array([' '], dtype=object)
+        # df_raw.region.unique()
+        # # array([' '], dtype=object)
+        for col in self.classifiers_list:
+            df_raw[col] = df_raw[col].replace(r'^\s*$', np.nan, regex=True)
+
         # Create a data frame with scenario and year
         scenarios = pd.DataFrame(
             {"year": irw_frac_dict.keys(), "scenario": irw_frac_dict.values()}

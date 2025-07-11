@@ -305,9 +305,10 @@ class HWP:
         dstat = dstat.loc[selector, index + cols]
         # Merge country statistics with CBM output
         df = df_out.merge(dstat, on="year", how="right")
-        # calculate the fractions for n years available
-        # in case, simulation is based on absolute amounts required in future, then df["sw_dom_tc"], df["pp_dom_tc"], df["wp_dom_tc"]
-        # have to be generated from that input data just before the following aritmetics
+        # calculate the fractions for n years available in case, simulation is
+        # based on absolute amounts required in future, then df["sw_dom_tc"],
+        # df["pp_dom_tc"], df["wp_dom_tc"] have to be generated from that input
+        # data just before the following arithmetic's
         df["sw_broad_fraction"] = df["sw_broad_dom_tc"] / df["sawlogs_broad"]
         df["sw_con_fraction"] = df["sw_con_dom_tc"] / df["sawlogs_con"]
         df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
@@ -318,7 +319,6 @@ class HWP:
 
         # Check if available raw material is sufficient to produce the amount
         # of semi finished products reported by countries.
-
         # Roundwood can never be converted to sawnwood. Fraction always have to
         # be below this value.
         sw_selector = df["sw_broad_fraction"] > 0.7
@@ -326,7 +326,9 @@ class HWP:
             msg = "Reported sawnwood production can not be satisfied from "
             msg += "sawlogs production from CBM for the following years:\n"
             msg += f"{df.loc[sw_selector]}"
-            raise ValueError(msg)
+            msg += "\nThis temporary warning related to the sw_broad_fraction "
+            msg += "should be an error instead."
+            warnings.warn(msg)
 
         # Roundwood can never be converted to sawnwood. Fraction always have to
         # be below this value.
@@ -352,9 +354,11 @@ class HWP:
             )
             msg += f"{df.loc[wp_selector]}"
             raise ValueError(msg)
+
         # Compute the average of the selected columns
         selected_cols = [
-            "sw_fraction",
+            'sw_broad_fraction',
+            'sw_con_fraction',
             "pp_fraction",
             "wp_fraction",
             "recycled_paper_prod",
@@ -370,7 +374,8 @@ class HWP:
         max_year = self.runner.country.base_year + self.runner.num_timesteps
         df = pandas.DataFrame({"year": range(1900, max_year + 1)})
         cols = [
-            "sw_fraction",
+            'sw_broad_fraction',
+            'sw_con_fraction',
             "pp_fraction",
             "wp_fraction",
             "recycled_paper_prod",
