@@ -33,13 +33,27 @@ class HWP:
         >>> print(hwp.prod_from_dom_harv_sim)
         >>> print(hwp.stock_sink_results)
 
-        >>> # Change the fraction semi finished
+    Change the fraction semi finished products
+
         >>> runner.post_processor.hwp.hwp_frac_scenario = "more_sw"
         >>> print("Fractions in the scenario")
         >>> print(hwp.fraction_semifinished)
         >>> # Display the effect on the production from domestic harvest
         >>> print(hwp.prod_from_dom_harv_sim)
         >>> # Display the effect on the final results
+        >>> print(hwp.stock_sink_results)
+
+    Set export import factors to one. In other words, assume that all secondary
+    products production is made from domestic industrial roundwood harvest.
+        
+        >>> hwp = runner.post_processor.hwp
+        >>> print("no_export_no_import:", hwp.no_export_no_import)
+        >>> hwp.no_export_no_import = False
+        >>> print(hwp.prod_from_dom_harv_stat)
+        >>> print(hwp.stock_sink_results)
+        >>> # Change the export import factors to one
+        >>> hwp.no_export_no_import = True
+        >>> print(hwp.prod_from_dom_harv_stat)
         >>> print(hwp.stock_sink_results)
 
     TODO:
@@ -64,9 +78,17 @@ class HWP:
         self.hwp_frac_scenario = "default"
         # Add recycling information or not
         self.add_recycling = True
+        # Set export import factors to one
+        self.no_export_no_import = False
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
+
+    @property
+    def prod_from_dom_harv_stat(self) -> pandas.DataFrame:
+        """Production from domestica hravest statistiscs from hwp_common_input"""
+        hwp_common_input.no_export_no_import = self.no_export_no_import
+        return hwp_common_input.prod_from_dom_harv_stat
 
     @cached_property
     def fluxes_to_products(self) -> pandas.DataFrame:
@@ -287,7 +309,7 @@ class HWP:
 
         """
         # Country statistics on domestic harvest
-        dstat = hwp_common_input.prod_from_dom_harv_stat
+        dstat = self.prod_from_dom_harv_stat
         # CBM output
         df_out = self.fluxes_by_grade
         index = ["area", "year"]
@@ -505,7 +527,7 @@ class HWP:
 
         """
         # Input data frames
-        dstat = hwp_common_input.prod_from_dom_harv_stat.copy()
+        dstat = self.prod_from_dom_harv_stat.copy()
         df_out = self.prod_from_dom_harv_sim.copy()
         cols = ['sw_broad_dom_tc', 'sw_con_dom_tc', "wp_dom_tc", "pp_dom_tc"]
         # Keep data for the selected country

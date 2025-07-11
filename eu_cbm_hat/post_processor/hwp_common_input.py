@@ -74,6 +74,20 @@ class HWPCommonInput:
         >>> hwp_common_input.n_years_for_backfill = 10
         >>> print(hwp_common_input.prod_from_dom_harv_stat)
 
+    Set export import factors to one  equivalent to setting export and import
+    values to zero in the estimation of the production from domestic harvest.
+    In other words, assume that all secondary products production is made from
+    domestic industrial roundwood harvest.
+
+        >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
+        >>> print("no_export_no_import:", hwp_common_input.no_export_no_import)
+        >>> print(hwp_common_input.rw_export_correction_factor)
+        >>> print(hwp_common_input.prod_from_dom_harv_stat)
+        >>> # Change the export import factors to one
+        >>> hwp_common_input.no_export_no_import = True
+        >>> print(hwp_common_input.rw_export_correction_factor)
+        >>> print(hwp_common_input.prod_from_dom_harv_stat)
+
     """
 
     def __init__(self):
@@ -85,6 +99,8 @@ class HWPCommonInput:
         self.c_pp = 0.450
         # N year parameter for the backfill_avg_first_n_years
         self.n_years_for_backfill = 3
+        # Set export import factors to one
+        self.no_export_no_import = False
 
     @cached_property
     def decay_params(self):
@@ -586,11 +602,11 @@ class HWPCommonInput:
         """Compute the share of con and broad in sawnwood production from the
         FAOSTAT data to be applied to CRF data.
 
-        The reason is that the CRF data  crf_semifinished_data is not
-        distinguished by con broad. We keep it because it's a better data
-        source updated more frequently by the reporting countries compared to
-        FAOSTAT. To add con and broad in formation we can compute the share of
-        con and broad from FAOSTAT.
+        The reason is that the CRF data crf_semifinished_data is not
+        distinguished by con broad. We want to keep CRF data because it's a
+        better data source updated more frequently by the reporting countries
+        compared to FAOSTAT. To add con and broad in formation we can compute
+        the share of con and broad from FAOSTAT.
         """
         selected_cols = ["sawnwood_broad_prod", "sawnwood_con_prod", "sawnwood_prod"]
         df = self.fao_correction_factor[["area", "year"] + selected_cols].copy()
@@ -865,6 +881,14 @@ class HWPCommonInput:
         ]
         selected_cols = index + factor_cols + recycle_cols
         exp_fact = self.rw_export_correction_factor[selected_cols].copy()
+        # Set the export import factors to one i.e. equivalent to setting
+        # export and import values to zero in the estimation of the production
+        # from domestic harvest. In other words, assume that all secondary
+        # products production is made from domestic industrial roundwood
+        # harvest.
+        if self.no_export_no_import:
+            for col in factor_cols:
+                exp_fact[col] = 1
         # Merge production data with export factors data
         df = self.prod_backcast_to_1900.merge(exp_fact, on=index, how="left")
         no_data = (
