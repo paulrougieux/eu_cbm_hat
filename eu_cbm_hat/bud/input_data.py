@@ -3,6 +3,7 @@
 import pandas as pd
 from autopaths.auto_paths import AutoPaths
 
+
 class BudInputData:
     """
     CSV files from a scenario "input/csv" directory used as input to CBM
@@ -12,15 +13,16 @@ class BudInputData:
     >>> input_data = InputData("scenarios/reference/input/csv/")
     >>> df = input_data["inventory"]  # Loads inventory.csv as DataFrame
     """
+
     all_paths = """
     /input/csv/
-    /input/csv/age_classes.csv         # Static
-    /input/csv/classifiers.csv         # Static
-    /input/csv/disturbance_types.csv   # Static
-    /input/csv/events.csv              # Dynamic based on scenarios picked
-    /input/csv/inventory.csv           # Dynamic based on scenarios picked
-    /input/csv/transitions.csv         # Dynamic based on scenarios picked
-    /input/csv/growth_curves.csv       # Dynamic based on scenarios picked
+    /input/csv/age_classes.csv
+    /input/csv/classifiers.csv
+    /input/csv/disturbance_types.csv
+    /input/csv/events.csv
+    /input/csv/inventory.csv
+    /input/csv/transitions.csv
+    /input/csv/growth_curves.csv
     """
 
     def __init__(self, parent):
