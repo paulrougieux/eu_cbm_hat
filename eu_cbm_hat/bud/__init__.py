@@ -78,6 +78,11 @@ class Bud:
         self.aidb_path = Path(aidb_path)
         # Default number of simulation time steps.
         self.num_timesteps = 20
+        # Check if the scenario directory contains input/csv
+        if not (self.data_dir / "input/csv").exists():
+            msg = "The data directory doesn't contain an input/csv subdirectory."
+            msg += f"\ndata_dir: {data_dir}"
+            raise FileNotFoundError(msg)
         #########################################################
         # Properties defined to be able to reuse runner methods #
         #########################################################
