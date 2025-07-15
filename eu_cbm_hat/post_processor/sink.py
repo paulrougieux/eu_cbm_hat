@@ -445,11 +445,16 @@ class Sink:
     def df_long(self):
         """Sink and stock in long format for plotting
 
+
         This data frame contains a sink and a stock column that can be used for
         plotting faceted plots, using for example facets along classifiers and
         line colours for the different pools.
 
-        It also contains sink and stock per hectare values for comparison purposes.
+        Units:
+            - The sink is in tons of CO2 eq.
+            - The stock is in tons of carbon
+            - the data frame also contains sink and stock values per hectare
+              for comparison purposes.
         """
         df = self.df.copy()
         index = self.groupby_sink.copy()
