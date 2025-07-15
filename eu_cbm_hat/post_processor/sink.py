@@ -4,6 +4,7 @@ The purpose of this script is to compute the sink for one country
 
 from typing import List, Union
 from functools import cached_property
+import re
 import numpy as np
 import pandas
 
@@ -132,6 +133,7 @@ class Sink:
         >>> runner.post_processor.sink.deforestation_deduction
         >>> runner.post_processor.sink.df
         >>> runner.post_processor.sink.df_agg("year")
+        >>> runner.post_processor.sink.df_long
 
     Display the number of rows going through land class changes and disturbances
 
@@ -438,3 +440,41 @@ class Sink:
         # Aggregate selected columns by the final grouping variables
         df_agg = self.df.groupby(groupby)[selected_cols].agg("sum").reset_index()
         return df_agg
+
+    @cached_property
+    def df_long(self):
+        """Sink and stock in long format for plotting
+
+        This data frame contains a sink and a stock column that can be used for
+        plotting faceted plots, using for example facets along classifiers and
+        line colours for the different pools.
+
+        It also contains sink and stock per hectare values for comparison purposes.
+        """
+        df = self.df.copy()
+        index = self.groupby_sink.copy()
+        sink_cols = df.columns[df.columns.str.contains("sink")].to_list()
+        stock_cols = [re.sub("sink", "stock", x) for x in sink_cols]
+        combined_cols = sink_cols + stock_cols
+        # Melt sink and stock columns to long format
+        df_long = df.melt(
+            id_vars=index + ["area"],
+            value_vars=combined_cols,
+            var_name="variable",
+            value_name="value"
+        )
+        df_long["pool"] = df_long["variable"].str.replace("_sink|_stock", "", regex=True)
+        df_long["metric"] = df_long["variable"].str.extract("(sink|stock)")
+        # Pivot sink and stock as columns
+        result = df_long.pivot_table(
+            index=index + ["area", "pool"],
+            columns="metric",
+            values="value",
+            aggfunc="first"
+        ).reset_index()
+        result["sink_per_ha"] = result["sink"] / result["area"]
+        result["stock_per_ha"] = result["stock"] / result["area"]
+        # Remove the multi-level column index name
+        result.columns.name = None
+        return result
+
