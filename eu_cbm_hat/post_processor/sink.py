@@ -453,7 +453,7 @@ class Sink:
         Units:
             - The sink is in tons of CO2 eq.
             - The stock is in tons of carbon
-            - the data frame also contains sink and stock values per hectare
+            - The data frame also contains sink and stock values per hectare
               for comparison purposes.
         """
         df = self.df.copy()
