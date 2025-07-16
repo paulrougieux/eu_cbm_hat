@@ -33,6 +33,19 @@ There are 3 ways to run the Carbon Budget Model with eu_cbm_hat:
   [constants](eu_cbm_hat/constants.html). Other variables necessary for
   computations such as the carbon fraction of biomass are also defined there.
 
+- During the libcbm simulation time step, various modifications can be made to
+  the growth or disturbances:
+
+    - The Harvest Allocation Tool implemented in [cbm.dynamic](eu_cbm_hat/cbm/dynamic.html)
+      provides the capability for dynamic disturbance allocation depending on the
+      evolution of the stock. It also deals with salvage logging after natural
+      disturbances.
+
+    - [cbm.climate_growth_modifier](eu_cbm_hat/cbm/climate_growth_modifier.html)
+      can modify forest growth at each time step in order to simulate the impact
+      of climate variables such as draught on forest growth. The input data for
+      this is derived from NPP measures or simulations.
+
 - The [post_processor](eu_cbm_hat/post_processor.html) transforms CBM output
   fluxes and pools tables into final result tables.
 
@@ -46,6 +59,12 @@ There are 3 ways to run the Carbon Budget Model with eu_cbm_hat:
 
 
 # Runner methods
+
+- Scenario combinations are defined as `.yaml` files in `eu_cbm_data/combos`.
+  When initiating a runner, the content of its yaml file is loaded in
+  [eu_cbm_hat.combos](eu_cbm_hat/combos.html). It defines the scenario used for
+  all input files. Some input files can change scenario every year, other files
+  are defined for the entirety of the simulation length.
 
 - A runner processes data in several steps.
 
@@ -65,22 +84,6 @@ There are 3 ways to run the Carbon Budget Model with eu_cbm_hat:
     - The ouput data is then used by the
       [post_processor](eu_cbm_hat/post_processor.html) see below.
 
-- During the simulation time step, various modifications can be made to the growth or disturbances:
-
-    - The Harvest Allocation Tool implemented in [cbm.dynamic](eu_cbm_hat/cbm/dynamic.html)
-      provides the capability for dynamic disturbance allocation depending on the
-      evolution of the stock. It also deals with salvage logging after natural
-      disturbances.
-
-    - [cbm.climate_growth_modifier](eu_cbm_hat/cbm/climate_growth_modifier.html)
-      can modify forest growth at each time step in order to simulate the impact
-      of climate variables such as draught on forest growth. The input data for
-      this is derived from NPP measures or simulations.
-
-- Scenario combinations are loaded in
-  [eu_cbm_hat.combos](eu_cbm_hat/combos.html). They are defined as `.yaml` files
-  in `eu_cbm_data/combos`.
-
 
 # Bud methods
 
@@ -90,13 +93,13 @@ possible to run the libcbm model and the EU-CBM-HAT post processor (to compute
 sink output for example) without the need for the EU-wide
 eu_cbm_data directory.
 
-The data is processed in these steps:
+The data is processed by sub modules:
 
-- [input_data](eu_cbm_hat/bud/input_data.html)
+- [input_data](eu_cbm_hat/bud/input_data.html) prepares the input data for libcbm.
 
-- [output](eu_cbm_hat/bud/output.html)
+- [output](eu_cbm_hat/bud/output.html) handles the output data.
 
-- further processed in the [bud
+- The output data is further processed in the [bud
   post_processor](eu_cbm_hat/bud/post_processor.html) which inherits all methods
   from the main [post_processor](eu_cbm_hat/post_processor.html), for example
   methods to compute the stock, sink and hwp mentioned in the common methods
