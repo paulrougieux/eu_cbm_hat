@@ -1,4 +1,4 @@
-"""Modify the growth multiplier for the purses of taking climate differences into account
+"""Modify the growth multiplier for the purpose of taking climate differences into account
 
 Example usage:
 
