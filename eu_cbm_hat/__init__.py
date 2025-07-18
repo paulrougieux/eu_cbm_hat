@@ -157,7 +157,7 @@ In chronological order.
     - This paper used a previous version called CBM-CFS3. Figure 3 in the paper
       explains the need to switch from an init (historical) growth period to a
       current growth period. The
-      [Simulation.switch_period](/eu_cbm_hat/cbm/simulation.html#Simulation.switch_period)
+      [Simulation.switch_period](eu_cbm_hat/cbm/simulation.html#Simulation.switch_period)
       method changes the growth period from "Init" to "Cur". As a result all
       stands will have the value "Cur" for the growth_period classifier from
       inventory start year onwards. Note the inventory start year is stored in
