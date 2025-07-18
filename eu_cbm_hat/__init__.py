@@ -46,7 +46,7 @@ There are 3 ways to run the model:
   libcbm. It can use the same post-processor methods as the runner.
 
 3. Using another runner called crcf made for the simulations of Carbon Removal and
-  Carbon Farming.. Introduced in 2025, this is not documented yet. See the source
+  Carbon Farming. Introduced in 2025, this is not documented yet. See the source
   code in the crcf directory.
 
 
