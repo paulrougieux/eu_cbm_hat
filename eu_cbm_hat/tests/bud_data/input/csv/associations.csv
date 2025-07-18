@@ -27,8 +27,8 @@ MapDisturbanceType,Generic 60% (INSECTS widespread),generic 60% mortality
 MapDisturbanceType,Windstorm (for CP),Windstorm
 MapDisturbanceType,Windstorm (for projection),Windstorm
 MapDisturbanceType,Generic 90 % mortality (clearcut conif on area),generic 90% mortality
-MapDisturbanceType,Salvage year 1 post-windstorm,Salvage year 1 post-windstorm
-MapDisturbanceType,Salvage year 2 post-windstorm,Salvage year 2 post-windstorm
+MapDisturbanceType,Salvage year 1 post-windstorm,generic 25% mortality
+MapDisturbanceType,Salvage year 2 post-windstorm,generic 60% mortality
 MapDisturbanceType,Salvage year 3  post-windstorm insects,generic 90% mortality
 MapDisturbanceType,Clearcut  with slash burn (broad based on area),Clearcut with slash-burn
 MapDisturbanceType,10% commercial thinning,10% Commercial thinning
