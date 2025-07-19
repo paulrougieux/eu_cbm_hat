@@ -2,12 +2,14 @@
 
 from typing import Union, List
 from functools import cached_property
+from plumbing.cache import property_cached
 import numpy as np
 import pandas
 import yaml
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
+from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
 
 """
 This dictionary is addedd to allow splitting the outputs on silvicultural practices. 
@@ -191,6 +193,8 @@ class Harvest:
         self.combo_name = self.runner.combo.short_name
         self.pools = self.parent.pools
         self.fluxes = self.parent.fluxes
+        self.country = self.runner.country
+        self.classif_list = self.country.orig_data.classif_list
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -332,6 +336,7 @@ class Harvest:
         # #################
         # add irw fractions from input file to convert to IRW and FW
         df_irw = self.parent.irw_frac
+        clfrs_noq = keep_clfrs_without_question_marks(df_irw, self.classif_list)
                 
         # define the scenario applicable for IRW from .yaml combo
         yaml_path = self.runner.combo.yaml_path
@@ -341,16 +346,9 @@ class Harvest:
         min_year = min(data['irw_frac_by_dist'].keys())
         mngm_scenario = data['irw_frac_by_dist'][min_year]
         df_irw = df_irw[df_irw['scenario'] == mngm_scenario]
-        #print(self.runner.country.iso2_code)      
-        
-        # exclude climate which is often "?"
-        # dropna to get rid of events which may not apply (e.g., deforestation)
-        df= df.merge(df_irw, on = ["status","forest_type", "region",
-                                    "mgmt_type","mgmt_strategy",
-                                    "disturbance_type", "con_broad", 
-                                    "site_index", "growth_period"], how='inner')
+        df = df.merge(df_irw, how='left',
+                      on=clfrs_noq + ["year", "disturbance_type"])
 
-        
         #convert roundwood output to IRW and FW
         # add adintional split on con and broad
         df["irw_to_product_soft"] = (
