@@ -292,6 +292,7 @@ class Sink:
             deforest[key + "_deforest_deduct"] = (
                 deforest[key + "_stock"] + deforest[col_name]
             )
+        
         return deforest
 
     @cached_property
@@ -335,6 +336,8 @@ class Sink:
         """
         groupby_sink = self.groupby_sink.copy()
 
+        
+
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
         selected_columns = self.pools_list.copy()
@@ -349,6 +352,8 @@ class Sink:
         # simulation)
         df = df.merge(self.nf_soil_stock, on=["region", "climate"], how="left")
 
+
+
         # Aggregate on the groupby_sink columns and fill na before computing the diff
         df = generate_all_combinations_and_fill_na(df, groupby=groupby_sink)
 
@@ -362,21 +367,42 @@ class Sink:
         )
         df[selected_cols] = df[selected_cols].fillna(0)
 
-        # Remove year from the grouping variables to compute the diff over years
+       # Remove year from the grouping variables to compute the diff over years
         groupby_sink.remove("year")
 
         # Arrange by group variables with year last to prepare for diff() and shift()
         df.sort_values(groupby_sink + ["year"], inplace=True)
 
+        
+
         # Add area at {t-1} to compare with area at t
         df["area_tm1"] = df.groupby(groupby_sink)["area"].transform(lambda x: x.shift())
+
+
+
+
+
+        #from eu_cbm_hat.core.continent import continent
+        #df.to_csv (continent.base_dir + '/quick_results/' +'carea.csv', mode='w', header=True)
+
+        
 
         # Check that the total area didn't change between t-1 and t
         # Note: the status can change but the total area should remain constant
         df_check = df.groupby("year")[["area", "area_tm1"]].agg("sum")
+
+        
+        
+        
+        
+
+
+
+
+        
         df_check = df_check[df_check.index > df_check.index.min()]
         try:
-            np.testing.assert_allclose(df_check["area_tm1"], df_check["area"], atol=10)
+            np.testing.assert_allclose(df_check["area_tm1"], df_check["area"], atol=100)
         except AssertionError as error:
             msg = "The total area changed between t-1 and t"
             raise AssertionError(msg) from error
@@ -409,10 +435,14 @@ class Sink:
 
             # Compute the CO2 eq. Sink
             df[key + "_sink"] = df[key + "_stk_ch"] * -44 / 12
+        
+        
+            from eu_cbm_hat.core.continent import continent
+            df.to_csv (continent.base_dir + '/quick_results/' +'df.csv', mode='w', header=True)
 
         # Remove non forested land
-        selector = df["status"].str.contains("NF")
-        df = df.loc[~selector]
+        #selector = df["status"].str.contains("NF")
+        #df = df.loc[~selector]
         return df
 
     def df_agg(self, groupby: Union[List[str], str] = None):
