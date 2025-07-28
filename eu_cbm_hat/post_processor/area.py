@@ -178,6 +178,8 @@ class Area:
         df_agg["area_tm1"] = df_agg.groupby(index)["area"].transform(
             lambda x: x.shift()
         )
+        # remove NF which is tyhe land in the inventory.csv available for afforestation
+        df_agg.loc[df_agg['status'] == 'NF', ['area', 'area_tm1']] = 0
         return df_agg
 
     def afforestation_deforestation(self, check=True, rtol=1e-3):

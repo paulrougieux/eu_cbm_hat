@@ -335,9 +335,6 @@ class Sink:
 
         """
         groupby_sink = self.groupby_sink.copy()
-
-        
-
         # Aggregate by the classifier for which it is possible to compute a
         # difference in pools.
         selected_columns = self.pools_list.copy()
@@ -347,13 +344,9 @@ class Sink:
             "area_deforested_current_year",
         ]
         df = self.pools.groupby(groupby_sink)[selected_columns].sum().reset_index()
-
         # Add the soil stock in NF stands (that have not been deforested in the
         # simulation)
         df = df.merge(self.nf_soil_stock, on=["region", "climate"], how="left")
-
-
-
         # Aggregate on the groupby_sink columns and fill na before computing the diff
         df = generate_all_combinations_and_fill_na(df, groupby=groupby_sink)
 
@@ -372,34 +365,11 @@ class Sink:
 
         # Arrange by group variables with year last to prepare for diff() and shift()
         df.sort_values(groupby_sink + ["year"], inplace=True)
-
-        
-
         # Add area at {t-1} to compare with area at t
         df["area_tm1"] = df.groupby(groupby_sink)["area"].transform(lambda x: x.shift())
-
-
-
-
-
-        #from eu_cbm_hat.core.continent import continent
-        #df.to_csv (continent.base_dir + '/quick_results/' +'carea.csv', mode='w', header=True)
-
-        
-
         # Check that the total area didn't change between t-1 and t
         # Note: the status can change but the total area should remain constant
         df_check = df.groupby("year")[["area", "area_tm1"]].agg("sum")
-
-        
-        
-        
-        
-
-
-
-
-        
         df_check = df_check[df_check.index > df_check.index.min()]
         try:
             np.testing.assert_allclose(df_check["area_tm1"], df_check["area"], atol=100)
@@ -435,10 +405,8 @@ class Sink:
 
             # Compute the CO2 eq. Sink
             df[key + "_sink"] = df[key + "_stk_ch"] * -44 / 12
-        
-        
-            from eu_cbm_hat.core.continent import continent
-            df.to_csv (continent.base_dir + '/quick_results/' +'df.csv', mode='w', header=True)
+            # remove NF which is the land in the inventory.csv available for afforestation,but keep deforested land which is also NF
+            df.loc[df['status'] == 'NF', ['area', 'area_tm1']] = 0
 
         # Remove non forested land
         #selector = df["status"].str.contains("NF")
