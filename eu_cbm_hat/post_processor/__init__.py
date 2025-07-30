@@ -21,6 +21,7 @@ from eu_cbm_hat.post_processor.stock import Stock
 from eu_cbm_hat.post_processor.nai import NAI
 from eu_cbm_hat.post_processor.growth_curve import GrowthCurve
 from eu_cbm_hat.post_processor.diagnostic import Diagnostic
+from eu_cbm_hat.post_processor.npp import NPP
 
 
 class PostProcessor(object):
@@ -229,6 +230,11 @@ class PostProcessor(object):
     def nai(self):
         """Net Annual Increment"""
         return NAI(self)
+
+    @cached_property
+    def npp(self):
+        """Net Primary Productivity"""
+        return NPP(self)
 
     @cached_property
     def sink(self):
