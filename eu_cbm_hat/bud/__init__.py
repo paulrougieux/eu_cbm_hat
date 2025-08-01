@@ -169,7 +169,7 @@ class Bud:
         msg = (
             "Carbon pool initialization period is finished."
             " Now starting the `current` period.\n"
-            f"{self.num_timesteps} time steps:"
+            f"Simulating {self.num_timesteps} time steps:"
         )
         print(msg)
         # The name of our extra classifier #
