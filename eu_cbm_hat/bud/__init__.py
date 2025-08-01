@@ -166,10 +166,10 @@ class Bud:
         change the growth curves, and this can be done by switching the
         classifier value of each inventory record.
         """
-        # Print message #
         msg = (
             "Carbon pool initialization period is finished."
             " Now starting the `current` period.\n"
+            f"{self.num_timesteps} time steps:"
         )
         print(msg)
         # The name of our extra classifier #
@@ -190,14 +190,12 @@ class Bud:
             https://github.com/cat-cfs/libcbm_py/blob/master/libcbm/
             model/cbm/cbm_simulator.py#L148
         """
-        # Check if we want to switch growth period #
+        # Check if we want to switch growth period
         if timestep == 1:
             cbm_vars = self.switch_period(cbm_vars)
-        # Print a message #
-        print(f"Time step {timestep} is about to run.")
-        # Run the usual rule based processor #
+        print(f"{timestep} ", end="", flush=True)
+        # Run the rule based processor
         cbm_vars = self.rule_based_proc.pre_dynamics_func(timestep, cbm_vars)
-        # Return #
         return cbm_vars
 
     @cached_property
