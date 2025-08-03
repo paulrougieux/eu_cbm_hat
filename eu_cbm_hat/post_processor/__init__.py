@@ -19,6 +19,7 @@ from eu_cbm_hat.post_processor.hwp import HWP
 from eu_cbm_hat.post_processor.area import Area
 from eu_cbm_hat.post_processor.stock import Stock
 from eu_cbm_hat.post_processor.nai import NAI
+from eu_cbm_hat.post_processor.npp import NPP
 from eu_cbm_hat.post_processor.growth_curve import GrowthCurve
 from eu_cbm_hat.post_processor.diagnostic import Diagnostic
 
@@ -178,14 +179,27 @@ class PostProcessor(object):
             df[key] = df[cols].sum(axis=1)
         selected_columns = list(column_dict.keys())
         selected_columns += [
+            # fluxes for NAI
             "turnover_merch_litter_input",
             "turnover_oth_litter_input",
             "disturbance_merch_litter_input",
             "disturbance_oth_litter_input",
-            # I added two more flxues
+            # fluxes for NAI
             "disturbance_merch_to_air",
             "disturbance_oth_to_air",
-        ]
+            # fluxes for NPP only
+            # transfers to non living pools through disturbances
+            'disturbance_fol_litter_input',
+            'disturbance_coarse_litter_input',
+            'disturbance_fine_litter_input',        
+            'disturbance_fol_to_air',
+            'disturbance_coarse_to_air',
+            'disturbance_fine_to_air',
+            # transfers to non living pools through natural decay
+            'turnover_fol_litter_input',
+            'turnover_coarse_litter_input',
+            'turnover_fine_litter_input'            
+            ]
         df_agg = df.groupby(self.index_morf)[selected_columns].agg("sum")
         df_agg = df_agg.reset_index()
         return df_agg
@@ -229,6 +243,11 @@ class PostProcessor(object):
     def nai(self):
         """Net Annual Increment"""
         return NAI(self)
+    
+    @cached_property
+    def npp(self):
+        """Net primary productivity"""
+        return NPP(self)
 
     @cached_property
     def sink(self):
