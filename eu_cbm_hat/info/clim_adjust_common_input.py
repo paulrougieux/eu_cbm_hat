@@ -16,20 +16,32 @@ def mean_npp_by_model_country_clu_con_broad(selected_year):
     """
     csv_filename = "mean_npp_by_model_country_clu_con_broad.csv"
     df = pd.read_csv(eu_cbm_data_pathlib / "common" / csv_filename)
-    col_rename = {
-           "npp (tC/ha/yr)": "npp",
-           "forest_type": "con_broad",
-           "climatic_unit": "climate",
-       }
+
+    
+
+
+    # REMOVE renaming dut to change of column names in the input file. Workflow from TRENDY inputs is a csv chnaged to
+    # 'mean_npp_by_model_country_clu_con_broad_original.csv'. The preprocesing with explore/users_tools/npp_input_processing.py adds
+    # a 'mix-models' scenario,  a kind of average of all-models
+    #col_rename = {
+    #       "npp (tC/ha/yr)": "npp",
+    #       "forest_type": "con_broad",
+    #       "climatic_unit": "climate",
+    #   }
     # Check for missing columns before renaming
-    missing_col = set(col_rename.keys()) - set(df.columns)
-    if missing_col: 
-        msg = "The following columns are supposed to be renamed "
-        msg += f"but they are missing: {missing_col}"
-        msg += "\nData frame columns:\n"
-        msg += f"{df.columns}"
-        raise ValueError(msg)
-    df.rename(columns=col_rename, inplace=True)
+    #missing_col = set(col_rename.keys()) - set(df.columns)
+    #if missing_col: 
+    #    msg = "The following columns are supposed to be renamed "
+    #    msg += f"but they are missing: {missing_col}"
+    #    msg += "\nData frame columns:\n"
+    #    msg += f"{df.columns}"
+    #    raise ValueError(msg)
+    #df.rename(columns=col_rename, inplace=True)
+
+
+
+
+    
     # Convert climate to a character variable for compatibility with CBM classifiers
     df["climate"] = df["climate"].astype(str)
     # Group the data by 'model', 'country', 'forest_type', and 'climatic_unit'
