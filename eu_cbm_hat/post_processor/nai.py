@@ -256,6 +256,8 @@ class NAI:
             df.groupby(["year"] + groupby)[NAI_AGG_COLS].agg("sum").reset_index()
         )
 
+        print(df_agg.columns)
+        
         # Add NF movements to products back to ForAWS
         # Note this is a problem when we use grouping variables other than
         # "status" alone For example if groupby = ["status", "forest_type"]
@@ -313,4 +315,43 @@ class NAI:
         # Compute NAI and GAI
         df_out_con_broad = compute_nai_gai(df_agg, groupby=groupby)
         df_out_con_broad = df_out_con_broad[df_out_con_broad["status"] != "NF"]
+        return df_out_con_broad
+
+    def df_agg_con_broad_climate(self, groupby: Union[List[str], str]):
+        """Net Annual Increment aggregated by status and con_broad. It WILL NOT work properly when there are transitions from con to broad and viceversa.
+        Usage:
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['ZZ'][-1]
+            >>> # Net Annual Increment of the merchantable pool (nai_merch) and of
+            >>> # all the above ground biomass (nai_agb) by status
+            >>> nai_st = runner.post_processor.nai.df_agg_con_broad(["status", "con_broad", "climate"])
+       
+        """
+        if isinstance(groupby, str):
+            groupby = [groupby]
+        if groupby != ["status", "con_broad", "climate"]:
+            warnings.warn("This method was written for a group by status.")
+        df = self.pools_fluxes_vol
+
+        # Aggregate the sum of selected columns
+        df_agg = (
+            df.groupby(["year"] + groupby)[NAI_AGG_COLS].agg("sum").reset_index()
+        )
+        # Add NF movements to products back to ForAWS
+        # Note this is a problem when we use grouping variables other than
+        # "status" alone For example if groupby = ["status", "forest_type"]
+        # the merge below generates the KeyError: 'forest_type'
+        selector = df_agg["status"] == "NF"
+        df_agg_nf = df_agg.loc[selector, ["year", "status", "con_broad", "climate"] + FLUXES_COLS].copy()
+        df_agg_nf["status"] = "ForAWS"
+        df_agg_nf.columns = df_agg_nf.columns.str.replace("_vol", "_vol_nf")
+        df_agg = df_agg.merge(df_agg_nf, on=["year", "con_broad", "climate"] + groupby, how="left")
+        fluxes_cols_nf = [x + "_nf" for x in FLUXES_COLS]
+        df_agg[fluxes_cols_nf] = df_agg[fluxes_cols_nf].fillna(0)
+        # Add the nf fluxes to the fluxes in ForAWS
+        for col1, col2 in zip(FLUXES_COLS, fluxes_cols_nf):
+            df_agg[col1] += df_agg[col2]
+        # Compute NAI and GAI
+        df_out_con_broad = compute_nai_gai(df_agg, groupby=groupby)
+        df_out_con_broad = df_out_con_broad[(df_out_con_broad["status"] != "NF")&(df_out_con_broad["status"] != "AR")]
         return df_out_con_broad
