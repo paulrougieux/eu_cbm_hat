@@ -74,7 +74,7 @@ class HWP:
         self.pools_fluxes = self.runner.output.pool_flux
         # Number of common years to be used to compute the
         # Fraction domestic semi finished products
-        self.n_years_dom_frac = 10
+        self.n_years_dom_frac = 3
         self.hwp_frac_scenario = "default"
         # Add recycling information or not
         self.add_recycling = True
@@ -341,39 +341,37 @@ class HWP:
 
         # Check if available raw material is sufficient to produce the amount
         # of semi finished products reported by countries.
-        # Roundwood can never be converted to sawnwood. Fraction always have to
+        # Roundwood can never be converted totally to sawnwood. Fraction always have to
         # be below this value.
         sw_selector = df["sw_broad_fraction"] > 0.7
         if any(sw_selector):
-            msg = "Reported sawnwood production can not be satisfied from "
-            msg += "sawlogs production from CBM for the following years:\n"
+            msg = "Check broad sawnwood production from "
+            msg += "sawlogs production for the following years:\n"
             msg += f"{df.loc[sw_selector]}"
             msg += "\nThis temporary warning related to the sw_broad_fraction "
             msg += "should be an error instead."
             warnings.warn(msg)
 
-        # Roundwood can never be converted to sawnwood. Fraction always have to
+        # Roundwood can never be converted totally to sawnwood. Fraction always have to
         # be below this value.
         sw_selector = df["sw_con_fraction"] > 0.6
         if any(sw_selector):
-            msg = "Reported sawnwood production can not be satisfied from "
-            msg += "sawlogs production from CBM for the following years:\n"
+            msg = "Check con sawnwood production from"
+            msg += "sawlogs production for the following years:\n"
             msg += f"{df.loc[sw_selector]}"
             raise ValueError(msg)
 
         pp_selector = df["pp_fraction"] > 1
         if any(pp_selector):
-            msg = "Reported paper production can not be satisfied from "
-            msg += "pulpwood production from CBM for the following years:\n"
+            msg = "Check paper production from"
+            msg += "pulpwood/pulplogs production for the following years:\n"
             msg += f"{df.loc[pp_selector]}"
             raise ValueError(msg)
 
         wp_selector = df["wp_fraction"] > 1
         if any(wp_selector):
-            msg = "Reported panel production can not be satisfied from "
-            msg += (
-                "pulpwood and sawnwood production from CBM for the following years:\n"
-            )
+            msg = "Check wood panels production from"
+            msg += ("pulpwood and sawnwood production for the following years:\n")
             msg += f"{df.loc[wp_selector]}"
             raise ValueError(msg)
 
@@ -500,6 +498,18 @@ class HWP:
                 * hwp_common_input.c_pp
                 * df["recycled_paper_factor"]
             )
+
+##########
+        #### NEED to check if 
+            df["recycled_wood_prod"] 
+            * hwp_common_input.c_wp
+            * df["recycled_wood_factor"] +
+                    df["recycled_paper_prod"]
+                    * hwp_common_input.c_pp
+                    * df["recycled_paper_factor"] < df['hwp_loss']
+
+##########
+        
         else:
             msg = "No recycling amounts because "
             msg += f"add_recycling = {self.add_recycling}"
@@ -792,14 +802,26 @@ class HWP:
         df["ncv_x_ef_ch4_x_gwp"] = ncv * ef_ch4 * gwp_ch4
         df["ncv_x_ef_n2o_x_gwp"] = ef_n2o * gwp_n2o
         # convert to dry mass
-        df["fw_dm"] = df["tc_fw"] / 0.5
+        #df["fw_dm"] = df["tc_fw"] / 0.5
+        df["fw_primary_dm"] = df["tc_primary_fw"] / 0.5
+        df["fw_secondary_dm"] = df["tc_secondary_fw"] / 0.5
+
         # Estimate the CO2 equivalent emissions for non CO2 gases
-        df["fw_ghg_co2_eq"] = (
-            df["fw_dm"] * df["ncv_x_ef_ch4_x_gwp"]
-            + df["fw_dm"] * df["ncv_x_ef_n2o_x_gwp"]
+        df["fw_primary_ghg_co2_eq"] = (
+            df["fw_primary_dm"] * df["ncv_x_ef_ch4_x_gwp"]
+            + df["fw_primary_dm"] * df["ncv_x_ef_n2o_x_gwp"]
         )
-        # Estimate the Total Green House Gas Emissions as CO2 Equivalent
-        df["fw_co2_eq"] = df["fw_ghg_co2_eq"] + df["tc_fw"] * 44 / 12
+
+        df["fw_secondary_ghg_co2_eq"] = (
+            df["fw_secondary_dm"] * df["ncv_x_ef_ch4_x_gwp"]
+            + df["fw_secondary_dm"] * df["ncv_x_ef_n2o_x_gwp"]
+        )   
+        df["fw_primary_co2"] = df["tc_primary_fw"] * 44 / 12
+        df["fw_secondary_co2"] = df["tc_secondary_fw"] * 44 / 12
+        # Estimate the Green House Gas Emissions as CO2 Equivalent
+        df["fw_ghg_co2_eq"] =df["fw_primary_ghg_co2_eq"] + df["fw_secondary_ghg_co2_eq"]
+        df["fw_co2"] = df["fw_primary_co2"] + df["fw_secondary_co2"]
+        
         return df
 
     @cached_property
@@ -911,7 +933,8 @@ class HWP:
         df_1990 = df_1990.rename(columns={col: f"{col}_1990" for col in cols_stock})
 
         # Load GHG emissions from burning wood for energy
-        cols = ["year", "fw_ghg_co2_eq", "fw_co2_eq"]
+        cols = ["year","fw_primary_ghg_co2_eq", "fw_secondary_ghg_co2_eq", "fw_primary_co2", "fw_secondary_co2"]
+        
         df_fw = self.ghg_emissions_fw[cols]
 
         # Load GHG emissions from waste
@@ -964,8 +987,10 @@ class HWP:
             "hwp_tot_sink_tco2_1990",
             "hwp_loss_1900",
             "hwp_loss_1990",
-            "fw_ghg_co2_eq",
-            "fw_co2_eq",
+            "fw_primary_ghg_co2_eq", 
+            "fw_secondary_ghg_co2_eq", 
+            "fw_primary_co2", 
+            "fw_secondary_co2",            
             "waste_co2_eq",
         ]
         # Return the updated DataFrame with all required columns
