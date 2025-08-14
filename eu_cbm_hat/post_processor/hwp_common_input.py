@@ -514,8 +514,7 @@ class HWPCommonInput:
         """data 1961-LRY is from Forestry_E_Europe.csv this function allows
         the estimation of the factor "f" that represents the feedstock for the
         HWP of domestic origin, after the correction for the export of
-        roundwood, to be applied to eu_cbm_hat simulated IRW. Even two types of
-        fractions are calculated, fraction with string '_dom' is used further
+        roundwood, to be applied to eu_cbm_hat simulated IRW.
 
         The factor "fIRW_SW_con" estimates how much production from total
         production can be assumed to be from domestic roundwood production.
@@ -538,10 +537,10 @@ class HWPCommonInput:
 
         """
         df_exp = self.fao_correction_factor
-        # add con and broad aggregates, for information purpose only as split on con and broad is mantained
-        df_exp["irw_prod"] = df_exp["irw_broad_prod"] + df_exp["irw_con_prod"]
-        df_exp["irw_exp"] = df_exp["irw_broad_exp"] + df_exp["irw_con_exp"]
-        df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
+        # average for a generic value
+        #df_exp["irw_prod"] = df_exp["irw_broad_prod"] + df_exp["irw_con_prod"]
+        #df_exp["irw_exp"] = df_exp["irw_broad_exp"] + df_exp["irw_con_exp"]
+        #df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
 
         # estimate the fractions of domestic in the country's feedstock on con and broad: IRW, WP, PULP on con and broad
         df_exp["fIRW_SW_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
@@ -966,6 +965,28 @@ class HWPCommonInput:
         df["w_annual_wood_landfill_tdm"] = (1 - h_corr) * df["wood_landfill_tfm"]
         return df
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###### OLD 
 
 # Initiate the class
 hwp_common_input = HWPCommonInput()
