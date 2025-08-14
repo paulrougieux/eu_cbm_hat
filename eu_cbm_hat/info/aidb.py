@@ -36,6 +36,45 @@ class AIDB(object):
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> for country in continent: country.aidb.symlink_all_aidb()
+
+    Display the name of available tables in the AIDB for a given country
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> continent.countries["LU"].aidb.db.tables
+
+    Display the length of each table in a given country as a data frame:
+
+        >>> import pandas as pd
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> country_code = "LU"
+        >>> for table in continent.countries[country_code].aidb.db.tables:
+        >>>     table = str(table).replace("b'","").replace("'","")
+        >>>     print(table, len(continent.countries[country_code].aidb.db.read_df(table)))
+
+    Display the number of available tables in all AIDBs in all countries:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> for code, country in continent.countries.items():
+        >>>     print(code, len(country.aidb.db.tables), "tables.")
+
+    Generate a table with the length of all tables in all AIDBs in all countries:
+
+        >>> import pandas as pd
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> df_all = pd.DataFrame()
+        >>> for country_code, country in continent.countries.items():
+        >>>    df = pd.DataFrame({"country":[country_code]})
+        >>>    for table in continent.countries[country_code].aidb.db.tables:
+        >>>        table = str(table).replace("b'","").replace("'","")
+        >>>        df[table] = len(continent.countries[country_code].aidb.db.read_df(table))
+        >>>    print(df)
+        >>>    df_all = pd.concat([df_all, df]).reset_index(drop=True)
+        >>> print(df_all)
+        >>> print("Unique values")
+        >>> for col in df_all.columns:
+        ...     print(col, df_all[col].unique())
+        >>> df_all.to_csv("/tmp/aidb_table_lengths.csv")
+
     """
 
     all_paths = """

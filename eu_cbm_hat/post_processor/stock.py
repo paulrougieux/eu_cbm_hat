@@ -12,8 +12,8 @@ class Stock:
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> runner = continent.combos['reference'].runners['LU'][-1]
-        >>> runner.post_processor.stock.dw_stock_ratio("year")
-        >>> runner.post_processor.stock.dw_stock_ratio(["year", "forest_type"])
+        >>> runner.post_processor.stock.volume_standing_stocks("year")
+        >>> runner.post_processor.stock.volume_standing_stocks(["year", "forest_type"])
 
     """
 
@@ -24,7 +24,7 @@ class Stock:
         self.pools = self.parent.pools
         self.fluxes = self.parent.fluxes
         
-    def volume_standing_stocks(self, groupby: Union[List[str], str] = None):
+    def volume_biomass_standing_stocks(self, groupby: Union[List[str], str] = None):
         """Estimate the mean ratio of standing stocks, ONLY merchantable"""
         if isinstance(groupby, str):
             groupby = [groupby]
@@ -39,24 +39,41 @@ class Stock:
         # Create a new column to identify the rows to be summed
         df_faws_ar = df[df['status'].isin(['AR', 'ForAWS'])]
         df_fnaws = df[df['status'].isin(['ForNAWS'])]
+
+        cols_hard = ['hardwood_merch', 'hardwood_foliage', 'hardwood_other']
+
+        cols_soft = ['softwood_merch', 'softwood_foliage','softwood_other']
       
-        # Group by the new column and the other columns
-        df_faws = df_faws_ar.groupby(groupby).agg(
+        df_faws = df_faws_ar.assign(
+                con_standing_biomass=df_faws_ar[cols_soft].sum(axis=1),
+                broad_standing_biomass=df_faws_ar[cols_hard].sum(axis=1)
+                ).groupby(groupby).agg(
+                    con_standing_for_biomass=('con_standing_biomass', 'sum'),
+                    broad_standing_for_biomass=("broad_standing_biomass", "sum"),
                     con_standing_for_volume=("con_standing_vol_ob", "sum"),
                     broad_standing_for_volume=("broad_standing_vol_ob", "sum"),
-                    area = ("area", "sum")
-                    ).reset_index()
+                    area=("area", "sum")
+                ).reset_index()
             
         # rename the sum of AR and ForAWS as ForAWS
         df_faws['status'] = 'ForAWS'
         # Group by the new column and the other columns
-        df_fnaws = df_fnaws.groupby(groupby).agg(
+        df_fnaws = df_fnaws.assign(
+                con_standing_biomass=df_fnaws[cols_soft].sum(axis=1),
+                broad_standing_biomass=df_fnaws[cols_hard].sum(axis=1)
+                ).groupby(groupby).agg(
+                    con_standing_for_biomass=('con_standing_biomass', 'sum'),
+                    broad_standing_for_biomass=("broad_standing_biomass", "sum"),
                     con_standing_for_volume=("con_standing_vol_ob", "sum"),
                     broad_standing_for_volume=("broad_standing_vol_ob", "sum"),
-                    area = ("area", "sum")
-                    ).reset_index()
+                    area=("area", "sum")
+                ).reset_index()
         df_fnaws['status'] = 'ForNAWS'
         df_for = pd.concat([df_faws, df_fnaws])
+        # biomass 
+        df_for['standing_stock_biomass'] = df_for['con_standing_for_biomass']+df_for['broad_standing_for_biomass']
+        df_for['standing_stock_biomass_ha'] = df_for['standing_stock_biomass']/df_for['area']
+        # volume
         df_for['standing_stock_volume'] = df_for['con_standing_for_volume']+df_for['broad_standing_for_volume']
         df_for['standing_stock_volume_ha'] = df_for['standing_stock_volume']/df_for['area']
         df_for["combo_name"] = self.combo_name
