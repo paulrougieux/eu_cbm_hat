@@ -500,13 +500,13 @@ class HWP:
             )
 
 ##########
-        #### NEED to check if 
-            df["recycled_wood_prod"] 
-            * hwp_common_input.c_wp
-            * df["recycled_wood_factor"] +
-                    df["recycled_paper_prod"]
-                    * hwp_common_input.c_pp
-                    * df["recycled_paper_factor"] < df['hwp_loss']
+        #### NEED to check if these are smaller than the corresponding 'loss' in the year
+            #df["recycled_wood_prod"] 
+            #* hwp_common_input.c_wp
+            #* df["recycled_wood_factor"] +
+            #        df["recycled_paper_prod"]
+            #        * hwp_common_input.c_pp
+            #        * df["recycled_paper_factor"] < df['hwp_loss']
 
 ##########
         
