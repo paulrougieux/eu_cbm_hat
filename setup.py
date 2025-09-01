@@ -20,7 +20,7 @@ with open(readme_path, encoding='utf-8') as handle: readme = handle.read()
 # Call setup #
 setup(
     name             = 'eu_cbm_hat',
-    version          = '2.0.2',
+    version          = '2.1.0',
     description      = 'eu_cbm_hat is a python package for running carbon'
                        ' budget simulations.',
     license          = 'EUPL',
