@@ -195,7 +195,7 @@ In chronological order.
 """
 
 # Special variables
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 # Import constants first (no circular dependency)
 from eu_cbm_hat.constants import (
