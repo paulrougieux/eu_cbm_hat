@@ -28,14 +28,14 @@ from plumbing.cache import property_cached
 
 
 def keep_clfrs_without_question_marks(df, classif_list):
-    """Check if there are questions mark in a classifier column
-    and return a list of index columns that:
+    """List of classifiers without question marks
 
     :param (df) data frame of silviculture data
     :param (classif_list) list of classifier columns to check
     :output (list) list of classif_list that don't contain "?"
 
-    The function performs the following:
+    Check if there are questions mark in a classifier column and return a list
+    of index columns that follows the following criteria:
 
     - keep a column if it contains no question marks
 
@@ -53,6 +53,23 @@ def keep_clfrs_without_question_marks(df, classif_list):
         >>> irw_frac = runner.silv.irw_frac.get_year(2016)
         >>> clfrs = list(runner.country.orig_data.classif_list)
         >>> keep_clfrs_without_question_marks(irw_frac, clfrs)
+
+    In Ireland and Austria, different definition of the site_index column in
+    irw_frac should not impact classifiers without question mark returned.
+
+        >>> from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> r_at = continent.combos['hat'].runners['AT'][-1]
+        >>> r_ie = continent.combos['hat'].runners['IE'][-1]
+        >>> irw_frac_at = r_at.post_processor.irw_frac
+        >>> classif_list = r_at.post_processor.classifiers_list
+        >>> print(irw_frac_at["site_index"])
+        >>> print(keep_clfrs_without_question_marks(irw_frac_at, classif_list))
+        >>> irw_frac_ie = r_ie.post_processor.irw_frac
+        >>> classif_list = r_ie.post_processor.classifiers_list
+        >>> print(irw_frac_ie["site_index"])
+        >>> print(keep_clfrs_without_question_marks(irw_frac_ie, classif_list))
+        >>> irw_frac_at = r_at.post_processor.irw_frac
 
     """
     # TODO: The error raised when there are a mixture of other values and
