@@ -55,7 +55,8 @@ def keep_clfrs_without_question_marks(df, classif_list):
         >>> keep_clfrs_without_question_marks(irw_frac, clfrs)
 
     In Ireland and Austria, different definition of the site_index column in
-    irw_frac should not impact classifiers without question mark returned.
+    irw_frac means that different classifiers without question mark will be
+    returned.
 
         >>> from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
         >>> from eu_cbm_hat.core.continent import continent
@@ -69,7 +70,6 @@ def keep_clfrs_without_question_marks(df, classif_list):
         >>> classif_list = r_ie.post_processor.classifiers_list
         >>> print(irw_frac_ie["site_index"])
         >>> print(keep_clfrs_without_question_marks(irw_frac_ie, classif_list))
-        >>> irw_frac_at = r_at.post_processor.irw_frac
 
     """
     # TODO: The error raised when there are a mixture of other values and
