@@ -355,10 +355,4 @@ class PostProcessor(object):
         df.drop_duplicates(inplace=True)
         # convert dist_ids string to values, as needed later
         df["disturbance_type"] = df["disturbance_type"].astype(int)
-        # Check if df contains wildcards ?
-        contains_question_mark = df.apply(
-            lambda row: row.astype(str).str.contains("\?").any(), axis=1
-        ).unique()
-        if contains_question_mark:
-            raise ValueError(f"The irw_frac contains question marks {df}")
         return df
