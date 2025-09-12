@@ -1,4 +1,14 @@
 """ Common input file used for climate adjustment of growth based on modelled NPP values
+
+- See also plots of NPP in `eu_cbm_hat.plot.npp`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from eu_cbm_hat.plot.npp import plot_npp_facet
+    >>> from eu_cbm_hat.info.clim_adjust_common_input import mean_npp_by_model_country_clu_con_broad
+    >>> df = mean_npp_by_model_country_clu_con_broad(hist_start_year=2010, hist_end_year=2020)
+    >>> plot_npp_facet(df, 'Austria')
+    >>> plt.show()
+
 """
 
 import pandas as pd
@@ -25,7 +35,7 @@ def mean_npp_by_model_country_clu_con_broad(hist_start_year, hist_end_year):
     Usage:
 
         >>> from eu_cbm_hat.info.clim_adjust_common_input import mean_npp_by_model_country_clu_con_broad
-        >>> df = mean_npp_by_model_country_clu_con_broad(selected_year=2001)
+        >>> df = mean_npp_by_model_country_clu_con_broad(hist_start_year=2010, hist_end_year=2020)
 
     """
     csv_filename = "mean_npp_by_model_country_clu_con_broad.csv"
