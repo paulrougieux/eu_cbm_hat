@@ -113,10 +113,11 @@ class GrowthModifier:
         state = state.merge(df, on=index, suffixes=("_old", ""), how="left")
 
         # Debug message with the new and old values
-        msg = "Old growth multiplier values from CBM"
+        msg = "Growth multiplier values from the previous period in CBM state "
         msg += f"{state['growth_multiplier_old'].unique()}"
         self.runner.log.debug(msg)
-        msg = "New growth multiplier values from runner.clim_adjust.df"
+        msg = "Growth multiplier values adjusted for climate, "
+        msg = "computed in runner.clim_adjust.df "
         msg += f"{state['growth_multiplier'].unique()}"
         self.runner.log.debug(msg)
 
