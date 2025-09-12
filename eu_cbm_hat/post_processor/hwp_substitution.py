@@ -15,10 +15,18 @@ def compute_substitution(runner, subst_scenario):
 
      See the documentation of the compare_substitution function for how to
      compute the difference between the two substitution data frames.
-    """
 
+     Example use:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> from eu_cbm_hat.post_processor.hwp_substitution  import compute_substitution
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> df = compute_substitution(runner, subst_scenario="reference")
+
+    """
     # Load inflows
     df = runner.post_processor.hwp.build_hwp_stock_since_1990.copy()
+    df["sw_inflow"] = df[["sw_con_inflow", "sw_broad_inflow"]].sum(axis=1)
     selected_cols = ["year", "sw_inflow", "wp_inflow", "pp_inflow"]
     df = df[selected_cols]
     # Load split data
