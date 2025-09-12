@@ -1,5 +1,9 @@
 """ Common input file used for climate adjustment of growth based on modelled NPP values
 
+Written by Viorel Blujdea and Paul Rougieux.
+
+JRC Biomass Project. Unit D1 Bioeconomy.
+
 - See also plots of NPP in `eu_cbm_hat.plot.npp`:
 
     >>> import matplotlib.pyplot as plt

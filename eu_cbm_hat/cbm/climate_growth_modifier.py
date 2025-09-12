@@ -1,5 +1,10 @@
 """Modify the growth multiplier for the purpose of taking climate differences into account
 
+Written by Viorel Blujdea and Paul Rougieux.
+
+JRC Biomass Project. Unit D1 Bioeconomy.
+
+
 Example usage:
 
     >>> from eu_cbm_hat.core.continent import continent
