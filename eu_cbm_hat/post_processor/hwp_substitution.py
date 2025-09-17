@@ -15,10 +15,18 @@ def compute_substitution(runner, subst_scenario):
 
      See the documentation of the compare_substitution function for how to
      compute the difference between the two substitution data frames.
-    """
 
+     Example use:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> from eu_cbm_hat.post_processor.hwp_substitution  import compute_substitution
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> df = compute_substitution(runner, subst_scenario="reference")
+
+    """
     # Load inflows
     df = runner.post_processor.hwp.build_hwp_stock_since_1990.copy()
+    df["sw_inflow"] = df[["sw_con_inflow", "sw_broad_inflow"]].sum(axis=1)
     selected_cols = ["year", "sw_inflow", "wp_inflow", "pp_inflow"]
     df = df[selected_cols]
     # Load split data
@@ -80,25 +88,17 @@ def compare_substitution(df_ref, df):
     1. Compute the difference between the substitution scenario  and the reference
     2. Aggregate and sUm up values
 
-    There is a distinction between :
-        - a scenario combination when running CBM here the combos are called "reference" and "other_combo"
-        - a HWP scenario here the subst_scenario arguments are called "reference" and "substitution"
+    There is a distinction between forest management and HWP scenarios:
+
+        - a forest management scenario is also called a scenario combination when
+          running CBM. There is a combo called "reference".
+
+        - a HWP scenario for example below the subst_scenario arguments are called
+          "reference" and "substitution"
 
     Example compute the difference between two HWP scenarios called "reference"
-    and "substitution" between two different scenario combinations called
-    "reference" and "other_combo" :
-
-        >>> from eu_cbm_hat.core.continent import continent
-        >>> from eu_cbm_hat.post_processor.hwp_substitution  import compare_substitution
-        >>> from eu_cbm_hat.post_processor.hwp_substitution  import compute_substitution
-        >>> runner_ref = continent.combos['reference'].runners['LU'][-1]
-        >>> runner_other = continent.combos['other_combo'].runners['LU'][-1]
-        >>> df_ref = compute_substitution(runner_ref, subst_scenario="reference")
-        >>> df_subst = compute_substitution(runner_other, subst_scenario="substitution")
-        >>> compare_substitution(subst_ref, subst_other)
-
-    Example compute the difference between two HWP scenarios within the
-    same reference combo:
+    and "substitution"within the forest management scenario (i.e. same
+    reference combo):
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> from eu_cbm_hat.post_processor.hwp_substitution  import compare_substitution

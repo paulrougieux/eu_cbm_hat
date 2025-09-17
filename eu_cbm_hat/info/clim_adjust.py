@@ -1,5 +1,8 @@
 """Climate adjustment variables based on modelled NPP values
 
+Written by Viorel Blujdea and Paul Rougieux.
+
+JRC Biomass Project. Unit D1 Bioeconomy.
 
 The growth multiplier can have different meanings:
 

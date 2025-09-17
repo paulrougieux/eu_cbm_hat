@@ -24,6 +24,14 @@ from eu_cbm_hat.post_processor.growth_curve import GrowthCurve
 from eu_cbm_hat.post_processor.diagnostic import Diagnostic
 
 
+# Opt in to future behaviour to remove pandas FutureWarning: Downcasting
+# behavior in `replace` is deprecated and will be removed in a future version.
+try:
+    pd.set_option('future.no_silent_downcasting', True)
+except (AttributeError, pd.errors.OptionError):
+    # If the option doesn't exist in this pandas version, skip it
+    pass
+
 class PostProcessor(object):
     """
     Compute aggregates based on the pools and sink table output from the model

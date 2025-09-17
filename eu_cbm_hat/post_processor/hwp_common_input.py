@@ -56,7 +56,7 @@ def backfill_avg_first_n_years(df, var, n):
     df2 = df2.groupby("area").agg(mean=(var, "mean")).reset_index()
     df = df.merge(df2, on="area", how="left")
     # Use this to fill the remaining NA values at the beginning of the series
-    df[var].fillna(df["mean"], inplace=True)
+    df[var] = df[var].fillna(df["mean"])
     df.drop(columns="mean", inplace=True)
     return df
 
