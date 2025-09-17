@@ -409,8 +409,8 @@ class Sink:
             df.loc[df['status'] == 'NF', ['area', 'area_tm1']] = 0
 
         # Remove non forested land
-        #selector = df["status"].str.contains("NF")
-        #df = df.loc[~selector]
+        selector = df["status"].str.contains("NF")
+        df = df.loc[~selector]
         return df
 
     def df_agg(self, groupby: Union[List[str], str] = None):
