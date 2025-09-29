@@ -21,7 +21,7 @@ with open(readme_path, encoding="utf-8") as handle:
 # Call setup #
 setup(
     name="eu_cbm_hat",
-    version="2.1.1",
+    version="2.1.2",
     description="eu_cbm_hat is a python package for running carbon"
     " budget simulations.",
     license="EUPL",
