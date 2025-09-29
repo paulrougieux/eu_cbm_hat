@@ -6,7 +6,6 @@ from plumbing.cache import property_cached
 import numpy as np
 import pandas
 import yaml
-from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
@@ -205,6 +204,13 @@ class Harvest:
 
         Convert demand volumes from 1000m3 ub to m3 ub.
         """
+        try:
+            from eu_cbm_hat.info.harvest import combined
+        except FileNotFoundError as e:
+            raise ImportError(
+                "Harvest demand data requires eu_cbm_data repository. "
+                "This feature is not available in your configuration."
+            ) from e
         harvest_scenario_name = self.runner.combo.config["harvest"]
         irw = combined["irw"]
         irw["product"] = "irw_demand"
