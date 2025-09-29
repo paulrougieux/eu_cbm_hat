@@ -273,7 +273,7 @@ class Sink:
             groupby=self.groupby_sink, fluxes_dict=FLUXES_DICT, current_year_only=True
         )
         deforest = df7_agg.merge(def_em, on=self.groupby_sink, how="outer")
-        if deforest.status.unique() != "NF":
+        if any(deforest.status.unique() != "NF"):
             msg = "After deforestation the status should be NF only. "
             msg += f"but it is {deforest.status.unique()}"
             raise ValueError(msg)
