@@ -80,6 +80,19 @@ vim .profile
 export PYTHONPATH='/eos/jeodpp/home/users/USER_NAME/eu_cbm/eu_cbm_hat/':$PYTHONPATH
 ```
 
+
+# Setup Jupyter Lab
+
+Make the python program from the `susbiom_trade_env` available as an ipython kernel for
+processing with jupyter lab:
+
+    /storage/SUSBIOM-TRADE/conda/susbiom_trade_env/bin/python -m ipykernel install --user --name=susbiom_trade_kernel
+
+Check that it is now available:
+
+    jupyter kernelspec list
+
+
 # Create AIDB symlinks
 
 
