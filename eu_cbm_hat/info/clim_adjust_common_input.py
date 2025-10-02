@@ -68,6 +68,19 @@ def mean_npp_by_model_country_clu_con_broad(hist_start_year, hist_end_year):
     # Group the data by 'model', 'country', 'forest_type', and 'climatic_unit'
     # and calculate the first year's 'npp' value for each group
     index = ["model", "country", "con_broad", "climate"]
+
+    ######################################
+    ## To be tested, as alternative method.
+    ## Input increment is a value representing average conditions at national scale. Having NPPs on CLUs within the country, 
+    ## we break down the increment/growth on CLUs for each year. This would be applied for each model. To implement following steps:
+    ## RE-calculation of growth in the YEAR (NEW)
+    ## 1. For each year, estimate the average NPP at country scale (average across all CLUs), and estimate the proportion of CLU's NPP to average value
+    ## 2. Apply the proportion to increment based on CLUs and con_broad
+    ## Calculation of the TIMESERIES (keep the OLD one)
+    ## 3. Estimate the average-NPP for each CLU and CON_BROAD for the calibration period, 
+    ## 4. Multiply annual increment on CLUs from above with the relative ratio of respective year-NPP to average-NPP  
+    ######################################
+   
     # Compute the average over the historical period
     selector = df["year"] >= hist_start_year
     selector &= df["year"] <= hist_end_year
