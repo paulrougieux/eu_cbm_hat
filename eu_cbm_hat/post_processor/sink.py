@@ -273,7 +273,7 @@ class Sink:
             groupby=self.groupby_sink, fluxes_dict=FLUXES_DICT, current_year_only=True
         )
         deforest = df7_agg.merge(def_em, on=self.groupby_sink, how="outer")
-        if deforest.status.unique() != "NF":
+        if any(deforest.status.unique() != "NF"):
             msg = "After deforestation the status should be NF only. "
             msg += f"but it is {deforest.status.unique()}"
             raise ValueError(msg)
@@ -409,8 +409,8 @@ class Sink:
             df.loc[df['status'] == 'NF', ['area', 'area_tm1']] = 0
 
         # Remove non forested land
-        #selector = df["status"].str.contains("NF")
-        #df = df.loc[~selector]
+        selector = df["status"].str.contains("NF")
+        df = df.loc[~selector]
         return df
 
     def df_agg(self, groupby: Union[List[str], str] = None):

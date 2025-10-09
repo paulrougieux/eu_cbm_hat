@@ -1,5 +1,8 @@
 """Climate adjustment variables based on modelled NPP values
 
+Written by Viorel Blujdea and Paul Rougieux.
+
+JRC Biomass Project. Unit D1 Bioeconomy.
 
 The growth multiplier can have different meanings:
 
@@ -22,24 +25,25 @@ climate_adjustement is the growth_multiplier below:
 """
 
 from functools import cached_property
-from eu_cbm_hat.info.clim_adjust_common_input import mean_npp_by_model_country_clu_con_broad
-
+from eu_cbm_hat.info.clim_adjust_common_input import (
+    mean_npp_by_model_country_clu_con_broad,
+)
 
 
 class ClimAdjust:
     """Climate adjustment variables based on modelled NPP values
 
-        >>> from eu_cbm_hat.core.continent import continent
-        >>> runner = continent.combos['reference_cable_pop'].runners['EE'][-1]
-        >>> # All model inputs for the given country
-        >>> runner.clim_adjust.df_all
+    >>> from eu_cbm_hat.core.continent import continent
+    >>> runner = continent.combos['reference_cable_pop'].runners['EE'][-1]
+    >>> # All model inputs for the given country
+    >>> runner.clim_adjust.df_all
 
-        >>> # Model input for the selected scenario and model as defined in the
-        >>> # combo yaml file
-        >>> runner.clim_adjust.df
+    >>> # Model input for the selected scenario and model as defined in the
+    >>> # combo yaml file
+    >>> runner.clim_adjust.df
 
-        This data frame is used by cbm/climate_growth_modifier.py to feed
-        growth multiplier to cbm within the time step.
+    This data frame is used by cbm/climate_growth_modifier.py to feed
+    growth multiplier to cbm within the time step.
 
     """
 
@@ -47,20 +51,28 @@ class ClimAdjust:
         self.runner = parent
         self.combo_name = self.runner.combo.short_name
         self.combo_config = self.runner.combo.config
-        if "climate_adjustment_selected_year" not in self.combo_config.keys():
-            self.selected_year = None
-        else:
-            self.selected_year = self.combo_config["climate_adjustment_selected_year"]
         if "climate_adjustment_model" not in self.combo_config.keys():
             self.model = "default"
         else:
             self.model = self.combo_config["climate_adjustment_model"]
+        if "climate_adjustment_hist_start_year" not in self.combo_config.keys():
+            self.hist_start_year = None
+        else:
+            self.hist_start_year = self.combo_config[
+                "climate_adjustment_hist_start_year"
+            ]
+        if "climate_adjustment_hist_end_year" not in self.combo_config.keys():
+            self.hist_end_year = None
+        else:
+            self.hist_end_year = self.combo_config["climate_adjustment_hist_end_year"]
 
     @cached_property
     def df_all(self):
         """NPP values in all climate models for the given country"""
         country_name = self.runner.country.country_name
-        df = mean_npp_by_model_country_clu_con_broad(selected_year=self.selected_year)
+        df = mean_npp_by_model_country_clu_con_broad(
+            hist_start_year=self.hist_start_year, hist_end_year=self.hist_end_year
+        )
         selector = df["country"] == country_name
         return df.loc[selector].copy()
 
@@ -76,4 +88,3 @@ class ClimAdjust:
         # Keep only those column
         cols = ["model", "country", "con_broad", "climate", "year", "npp", "ratio"]
         return df.loc[selector, cols].copy()
-

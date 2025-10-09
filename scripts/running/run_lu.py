@@ -13,6 +13,23 @@ Typically you would run this file from a command line like this:
 
      ipython3 -i -- ~/eu_cbm/eu_cbm_hat/scripts/running/run_lu.py
 
+Run with a profiler from a python interpreter:
+
+    >>> import cProfile
+    >>> import pstats
+    >>> from eu_cbm_hat.core.continent import continent
+    >>> runner = continent.combos['reference'].runners['LU'][-1]
+    >>> runner.num_timesteps = 2040 - runner.country.inventory_start_year
+    >>> with cProfile.Profile() as profiler:
+    >>>     runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
+    >>> # Print all stats
+    >>> profiler.print_stats()
+    >>> # Print longest cumulative runs
+    >>> stats = pstats.Stats(profiler)
+    >>> stats.strip_dirs()
+    >>> stats.sort_stats(pstats.SortKey.CUMULATIVE)
+    >>> stats.print_stats(20)
+
 """
 
 from eu_cbm_hat.core.continent import continent

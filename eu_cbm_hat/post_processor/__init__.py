@@ -24,6 +24,14 @@ from eu_cbm_hat.post_processor.growth_curve import GrowthCurve
 from eu_cbm_hat.post_processor.diagnostic import Diagnostic
 
 
+# Opt in to future behaviour to remove pandas FutureWarning: Downcasting
+# behavior in `replace` is deprecated and will be removed in a future version.
+try:
+    pd.set_option('future.no_silent_downcasting', True)
+except (AttributeError, pd.errors.OptionError):
+    # If the option doesn't exist in this pandas version, skip it
+    pass
+
 class PostProcessor(object):
     """
     Compute aggregates based on the pools and sink table output from the model
@@ -355,10 +363,4 @@ class PostProcessor(object):
         df.drop_duplicates(inplace=True)
         # convert dist_ids string to values, as needed later
         df["disturbance_type"] = df["disturbance_type"].astype(int)
-        # Check if df contains wildcards ?
-        contains_question_mark = df.apply(
-            lambda row: row.astype(str).str.contains("\?").any(), axis=1
-        ).unique()
-        if contains_question_mark:
-            raise ValueError(f"The irw_frac contains question marks {df}")
         return df

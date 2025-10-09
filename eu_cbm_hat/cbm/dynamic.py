@@ -153,6 +153,8 @@ class DynamicSimulation(Simulation):
         # Concatenate dataframes together by columns into one big df #
         stands = pandas.concat([cbm_vars_to_df(end_vars,name)
                                 for name in self.df_names], axis=1)
+        msg = f"Number of rows in the stands data frame: {len(stands)}."
+        self.parent.log.info(msg)
 
         # Check that the 'Input' column is always one and remove #
         assert all(stands['Input'] == 1.0)

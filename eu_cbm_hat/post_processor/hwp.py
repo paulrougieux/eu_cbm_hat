@@ -439,7 +439,9 @@ class HWP:
         # Other scenarios
         return self.fraction_semifinished_scenario
 
-    @property  # Don"t cache, in case we change the number of years
+    # Don"t cache, in case we change the number of years or the self.add_recycling
+    # property
+    @property
     def prod_from_dom_harv_sim(self) -> pandas.DataFrame:
         """Compute the production of sanwood, panels and paper from domestic
         harvest as an output of the CBM simulated amounts of sawlogs and
