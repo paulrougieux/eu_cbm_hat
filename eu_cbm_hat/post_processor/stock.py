@@ -222,6 +222,13 @@ class Stock:
             )
         cols = ["area"] + list(column_dict.keys()) + ["dom"]
         df_agg = df.groupby(groupby)[cols].agg("sum").reset_index()
+
+        # agregate over con and broad
+        df_agg["merch_ha"] = df_agg["merch"] / df_agg["area"]
+        df_agg["abg_woody_ha"] = (df_agg["merch"] + df_agg["other"]) / df_agg["area"]
+        df_agg["dead_wood_ha"] = df_agg["dead_wood"] / df_agg["area"]
+        df_agg["litter_ha"] = df_agg["litter"] / df_agg["area"]
+        df_agg["soil"] = df_agg["soil"] / df_agg["area"]     
         return df_agg
 
     def dw_merch_stock_age_class(self, groupby: Union[List[str], str] = None):
