@@ -76,6 +76,7 @@ conda config --append envs_dirs /storage/SUSBIOM-TRADE/conda/
 cd $HOME/eu_cbm
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 # Edit .profile with a text editor and enter your actual user name
+cd $HOME
 vim .profile
 export PYTHONPATH='/eos/jeodpp/home/users/USER_NAME/eu_cbm/eu_cbm_hat/':$PYTHONPATH
 ```
