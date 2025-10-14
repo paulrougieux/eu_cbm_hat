@@ -41,6 +41,8 @@ def local_db_copy(db_path: str):
             # Temporary copy is automatically cleaned up
     """
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
+        # Convert db_path to a string to avoid issues when db_path is an
+        # autopath object on windows.
         tmpdb = os.path.join(tmpdir, os.path.basename(str(db_path)))
         shutil.copy2(db_path, tmpdb)
         yield tmpdb
