@@ -20,6 +20,7 @@ from libcbm.storage.backends import BackendType
 
 
 # First party modules #
+from eu_cbm_hat.info.aidb import local_db_copy
 
 # Internal modules #
 
@@ -120,29 +121,30 @@ class Simulation(object):
         if not db_path:
             msg = "The database file at '%s' was not found."
             raise FileNotFoundError(msg % self.runner.country.aidb.paths.db)
-        # Create a SIT object #
-        json_path = str(self.runner.paths.json)
-        self.sit = sit_cbm_factory.load_sit(json_path, str(db_path))
-        # Do some initialization #
-        init_inv = sit_cbm_factory.initialize_inventory
-        self.clfrs, self.inv = init_inv(self.sit)
-        # This will contain results #
-        self.cbm_output = CBMOutput(backend_type=BackendType.numpy)
-        # Create a CBM object #
-        with sit_cbm_factory.initialize_cbm(self.sit) as self.cbm:
-            # Create a function to apply rule based events #
-            self.rule_based_proc = create_proc(self.sit, self.cbm)
-            # Message #
-            self.runner.log.info("Calling the cbm_simulator.")
-            # Run #
-            cbm_simulator.simulate(
-                self.cbm,
-                n_steps           = self.runner.num_timesteps,
-                classifiers       = self.clfrs,
-                inventory         = self.inv,
-                pre_dynamics_func = self.dynamics_func,
-                reporting_func    = self.cbm_output.append_simulation_result,
-            )
+        with local_db_copy(db_path) as tmpdb:
+            # Create a SIT object #
+            json_path = str(self.runner.paths.json)
+            self.sit = sit_cbm_factory.load_sit(json_path, str(tmpdb))
+            # Do some initialization #
+            init_inv = sit_cbm_factory.initialize_inventory
+            self.clfrs, self.inv = init_inv(self.sit)
+            # This will contain results #
+            self.cbm_output = CBMOutput(backend_type=BackendType.numpy)
+            # Create a CBM object #
+            with sit_cbm_factory.initialize_cbm(self.sit) as self.cbm:
+                # Create a function to apply rule based events #
+                self.rule_based_proc = create_proc(self.sit, self.cbm)
+                # Message #
+                self.runner.log.info("Calling the cbm_simulator.")
+                # Run #
+                cbm_simulator.simulate(
+                    self.cbm,
+                    n_steps           = self.runner.num_timesteps,
+                    classifiers       = self.clfrs,
+                    inventory         = self.inv,
+                    pre_dynamics_func = self.dynamics_func,
+                    reporting_func    = self.cbm_output.append_simulation_result,
+                )
         # If we got here then we did not encounter any simulation error #
         self.error = False
         # Return for convenience #

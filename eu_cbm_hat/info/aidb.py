@@ -9,7 +9,10 @@ Unit D1 Bioeconomy.
 """
 
 # Built-in modules #
+from contextlib import contextmanager
+import os
 import shutil
+import tempfile
 
 # First party modules #
 from autopaths.dir_path   import DirectoryPath
@@ -19,8 +22,30 @@ from plumbing.cache       import property_cached
 # Internal modules #
 from eu_cbm_hat.constants import eu_cbm_aidb_dir
 
+@contextmanager
+def local_db_copy(db_path: str):
+    """
+    Creates a temporary, local copy of a database file. The temporary copy is
+    automatically cleaned up when the 'with' block exits. Cleanup errors are
+    ignored to prevent simulation failures due to temporary file system issues.
+    
+    Args:
+        db_path (str): Path to the original database file
+        
+    Yields:
+        str: Path to the temporary database copy
+        
+    Example:
+        with local_db_copy('/path/to/original.db') as tmpdb:
+            # Use tmpdb for read operations
+            # Temporary copy is automatically cleaned up
+    """
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
+        tmpdb = os.path.join(tmpdir, os.path.basename(db_path))
+        shutil.copy2(db_path, tmpdb)
+        yield tmpdb
 
-###############################################################################
+
 class AIDB(object):
     """
     This class will provide access to the archive index database
