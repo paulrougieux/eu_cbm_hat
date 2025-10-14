@@ -1,32 +1,99 @@
-# AGENTS.md
+
+# Development Workflow
+
+- Follow NumPy docstrings, type hints, line length 88.
+- Comments should explain scientific rationale. Include references to relevant
+  literature and standards where applicable
+- Use pandas for data manipulation, ensure reproducible code.
+- External data repos: eu_cbm_data and eu_cbm_aidb need to be kept in sync.
+- Use GitLab CI/CD for automated testing.
 
 
-## Project Overview
+# Project Architecture
 
-This package models carbon fluxes in European forests using pandas data frames. The
-project focuses on biophysical modelling of forest ecosystems. This is a **data science
-project** focused on economic and biophysical modeling applications.
+## Overall Structure
 
-## Code Style and Standards
+- **Root Directory**: Contains configuration files (.flake8, .gitlab-ci.yml),
+  documentation (docs/), scripts for running and setup, and the main package
+  `eu_cbm_hat/`.
+- **Package Structure**:
+  - `eu_cbm_hat/`: Main package directory.
+    - `bud/`: Simplified runner for libcbm simulations.
+    - `cbm/`: Core CBM logic, including dynamic modifications and simulation.
+    - `core/`: Full runner implementation with continent, country, and runner classes.
+    - `crcf/`: Runner for Carbon Removal and Carbon Farming simulations.
+    - `post_processor/`: Modules for post-processing outputs (sink, stock, harvest, HWP,
+      etc.).
+    - Other submodules: combos (scenario definitions), info (data handling), launch,
+      plot, pump, qaqc (quality assurance), tests.
+- **Scripts Directory**: Contains scripts for running simulations, post-processing,
+  setup, and conversion tools.
+- **Notebooks**: Jupyter notebooks for specific analyses.
+- **Docs**: Documentation files.
 
-- Limit lines to 88 characters
-- **Primary format**: NumPy Style docstrings
-- **Type hints**: Required for all functions and methods
-- **Comments**: Explain the scientific rationale, not just the implementation
-- Include references to relevant literature and standards where applicable
+## Key Components
 
-## Communication Style
+1. **Runners**: Three types of runners for different use cases:
+   - `core/runner.py`: Full-featured runner requiring comprehensive EU data structure.
+   - `bud/`: Lightweight runner for simple simulations.
+   - `crcf/`: Specialized for carbon removal scenarios.
 
-When generating code or documentation:
+2. **Post-Processor**: Transforms libcbm outputs into usable indicators like carbon
+   sink, stock, harvest allocation.
 
-1. **Explain rationale**: Why this approach over alternatives?
-2. **Provide context**: How does this fit in forest carbon cycle science?
-3. **Reference standards**: Link to established methods and conventions
-4. **Balance theory and practice**: Scientific rigor with computational efficiency
-5. **Think reproducibly**: Code should be self-documenting and verifiable
+3. **CBM Module**: Interfaces with libcbm for simulations, includes dynamic features
+   like harvest allocation tool (HAT) and climate growth modifiers.
 
-**Version**: 0.0.1
-**Last Updated**: 2025-10-13
-**Contact**: Paul Rougieux
+4. **Combos**: YAML-defined scenario combinations for inputs.
 
+
+## Dependencies
+
+- **Internal**: autopaths, plumbing, pymarktex, pandas, pyyaml, tqdm, p_tqdm, pyarrow,
+  numexpr, simplejson.
+
+- **External**: libcbm_py (from GitHub), eu_cbm_data (private repo), eu_cbm_aidb
+  (private repo).
+
+- **Python Version**: >=3.8
+
+# Setup and Installation
+
+Refer to README.md for detailed instructions. Key points for all runner types (runner,
+bud and crcf):
+
+- Install via pip: `pip install eu_cbm_hat`
+- Install libcbm: `pip install
+  https://github.com/cat-cfs/libcbm_py/archive/refs/heads/main.tar.gz`
+
+
+Additional EU data structure required for the core/runner.py runner type
+
+- Clone eu_cbm_data (private repository) and eu_cbm_aidb (public repository)
+- Set up data directories: eu_cbm_data and eu_cbm_aidb in ~/eu_cbm/ or via environment
+  variables.
+- Ensure AIDB symlinks are created after data setup.
+- For development: Clone repos, use git for data repos.
+- Run tests: Unit tests and ZZ country mock runs.
+
+
+
+
+# Running the Model
+
+- For test: Run ZZ country.
+- For full scenarios: Use scripts/running/run_scenario_combo.py for combo simulations.
+
+
+# Known Issues and TODOs
+
+- CRCF module not fully documented.
+- For the core/runner.py runner type, dependency on private repos (eu_cbm_data,
+  eu_cbm_aidb) complicates open-source development .
+- Performance: Large datasets may require optimization in post-processing.
+
+
+**Version**: 2.1.2
+**Last Updated**: 2025-10-14
+**Contact**: Write issues in the GitLab repository.
 
