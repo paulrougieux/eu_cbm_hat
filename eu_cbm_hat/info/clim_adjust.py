@@ -25,10 +25,7 @@ climate_adjustement is the growth_multiplier below:
 """
 
 from functools import cached_property
-from eu_cbm_hat.info.clim_adjust_common_input import (
-    mean_npp_by_model_country_clu_con_broad,
-)
-
+from eu_cbm_hat.info.clim_adjust_common_input import ClimAdjustCommonInput
 
 class ClimAdjust:
     """Climate adjustment variables based on modelled NPP values
@@ -38,8 +35,7 @@ class ClimAdjust:
     >>> # All model inputs for the given country
     >>> runner.clim_adjust.df_all
 
-    Show some of the attributes define in the scenario combination combo
-    yaml file
+    Scenario attributes define in the combo yaml file
 
     >>> print(runner.clim_adjust.model)
     >>> print(runner.clim_adjust.clu_spatial_growth)
@@ -68,14 +64,18 @@ class ClimAdjust:
             setattr(self,
                     attr_name,
                     self.combo_config["climate_adjustment"].get(conf_key, default))
+        # NPP input data
+        self.common_input = ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
 
     @cached_property
     def df_all(self):
         """NPP values in all climate models for the given country"""
         country_name = self.runner.country.country_name
-        df = mean_npp_by_model_country_clu_con_broad(
-            hist_start_year=self.hist_start_year, hist_end_year=self.hist_end_year
-        )
+        temporal_df = self.common_input.clu_temporal_npp_ratio_to_period_mean
+        spatial_df = self.common_input.clu_spatial_npp_ratio_to_country_mean.copy()
+        spatial_df = spatial_df.drop(columns="hist_mean_npp")
+        index = ["model", "country", "con_broad", "climate"]
+        df = temporal_df.merge(spatial_df, on=index, how="left")
         selector = df["country"] == country_name
         return df.loc[selector].copy()
 
@@ -84,8 +84,16 @@ class ClimAdjust:
         """Climate model NPP inputs for the selected model in the given country
 
         Ignore the upper-case or lower-case in the model name selection.
+        Depending on how the clu_spatial_growth scenario argument is defined,
+        provide the ratio to the temporal mean only, or the ration to both
+        temporal and spatial mean.
         """
         df = self.df_all
+        # Implement the scenario with or without spatial variation
+        if self.clu_spatial_growth:
+            df["ratio"] = df["temporal_ratio"] * df["spatial_ratio"]
+        else:
+            df["ratio"] = df["temporal_ratio"]
         # Select the model, ignore the case
         selector = df["model"].str.lower() == self.model.lower()
         # Keep only those column

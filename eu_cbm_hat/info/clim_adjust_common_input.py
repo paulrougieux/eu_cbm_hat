@@ -4,6 +4,9 @@ Written by Viorel Blujdea and Paul Rougieux.
 
 JRC Biomass Project. Unit D1 Bioeconomy.
 
+- See below for examples of how to load data and compute spatial and temporal
+  averages.
+
 - See also plots of NPP in `eu_cbm_hat.plot.npp`:
 
     >>> import matplotlib.pyplot as plt
@@ -68,11 +71,11 @@ class ClimAdjustCommonInput:
     Example use:
 
         >>> from eu_cbm_hat.info.clim_adjust_common_input import ClimAdjustCommonInput
-        >>> climinput= ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
+        >>> climinput = ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
         >>> df = climinput.mean_npp_by_model_country_clu_con_broad
 
-        >>> spatial_df = climinput.clu_spatial_variation_to_country_mean
-        >>> temporal_df = climinput.clu_temporal_variation_to_period_mean
+        >>> spatial_df = climinput.clu_spatial_npp_ratio_to_country_mean
+        >>> temporal_df = climinput.clu_temporal_npp_ratio_to_period_mean
     """
 
     def __init__(self, hist_start_year, hist_end_year):
@@ -81,13 +84,13 @@ class ClimAdjustCommonInput:
 
     @cached_property
     def mean_npp_by_model_country_clu_con_broad(self):
-        """Cached DataFrame from mean_npp_by_model_country_clu_con_broad with
-        default historical period."""
+        """NPP by model country CLU and con broad loaded from the csv input
+        file with some modifications.
+        """
         return mean_npp_by_model_country_clu_con_broad()
 
     def mean_npp(self, index, variable):
-        """NPP mean by index variables        TODO: make index and variable an argument, such that
-        variable="hist_mean_npp"
+        """Average Net Primary Productivity (NPP) grouped by index variables
 
         >>> from eu_cbm_hat.info.clim_adjust_common_input import ClimAdjustCommonInput
         >>> climinput= ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
@@ -114,45 +117,32 @@ class ClimAdjustCommonInput:
         return df_mean
 
     @cached_property
-    def clu_spatial_variation_to_country_mean(self):
-        """DataFrame describing spatial NPP variations in climatic units
-        relative to country mean.
+    def clu_spatial_npp_ratio_to_country_mean(self):
+        """Spatial NPP variations in climatic units relative to the country mean.
 
         For each model, country, con_broad, and climate, provides the ratio of
         the climatic unit's average NPP over the historical period to the
-        country's average NPP over the same period."""
-        df = self.mean_npp_by_model_country_clu_con_broad
-        selector = df["year"] >= self.hist_start_year
-        selector &= df["year"] <= self.hist_end_year
-        index = ["model", "country", "con_broad"]
-        df = self.mean_npp_by_model_country_clu_con_broad
-        self.hist_mean_by_clu
-        country_mean = (
-            df.loc[selector]
-            .groupby(index)
-            .agg(country_mean_npp=("hist_mean_npp", "mean"))
-            .reset_index()
-        )
-
-        df = df.merge(country_mean, on=["model", "country", "con_broad"])
+        country's average NPP over the same period.
+        """
+        index_t = ["model", "country", "con_broad", "climate"]
+        df_mean_temporal = self.mean_npp(index=index_t, variable="hist_mean_npp")
+        index_s = ["model", "country", "con_broad"]
+        df_mean_spatial = self.mean_npp(index=index_s, variable="country_mean_npp")
+        df = df_mean_temporal.merge(df_mean_spatial, on=index_s)
         df["spatial_ratio"] = df["hist_mean_npp"] / df["country_mean_npp"]
-        return df[["model", "country", "con_broad", "climate", "spatial_ratio"]]
+        return df
 
     @cached_property
-    def clu_temporal_variation_to_period_mean(self):
-        """DataFrame describing temporal NPP variations in climatic units
-        relative to period mean.
+    def clu_temporal_npp_ratio_to_period_mean(self):
+        """Temporal NPP variations relative to the selected period mean.
 
         For each model, country, con_broad, climate, and year, provides the
         ratio of the yearly NPP to the historical mean NPP for that climatic
-        unit.
-
-        2. Merge with the original DataFrame
-        3. Calculate the ratio of each year's 'npp' value to historical mean npp
-
+        unit over the period self.hist_start_year to self.hist_end_year.
         """
         df = self.mean_npp_by_model_country_clu_con_broad
         index = ["model", "country", "con_broad", "climate"]
-        df = df.merge(self.hist_mean_by_clu, on=index)
+        df_mean_temporal = self.mean_npp(index=index, variable="hist_mean_npp")
+        df = df.merge(df_mean_temporal, on=index, how="left")
         df["temporal_ratio"] = df["npp"] / df["hist_mean_npp"]
         return df
