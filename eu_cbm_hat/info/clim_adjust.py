@@ -38,6 +38,12 @@ class ClimAdjust:
     >>> # All model inputs for the given country
     >>> runner.clim_adjust.df_all
 
+    Show some of the attributes define in the scenario combination combo
+    yaml file
+
+    >>> print(runner.clim_adjust.model)
+    >>> print(runner.clim_adjust.clu_spatial_growth)
+
     >>> # Model input for the selected scenario and model as defined in the
     >>> # combo yaml file
     >>> runner.clim_adjust.df
@@ -51,20 +57,17 @@ class ClimAdjust:
         self.runner = parent
         self.combo_name = self.runner.combo.short_name
         self.combo_config = self.runner.combo.config
-        if "climate_adjustment_model" not in self.combo_config.keys():
-            self.model = "default"
-        else:
-            self.model = self.combo_config["climate_adjustment_model"]
-        if "climate_adjustment_hist_start_year" not in self.combo_config.keys():
-            self.hist_start_year = None
-        else:
-            self.hist_start_year = self.combo_config[
-                "climate_adjustment_hist_start_year"
-            ]
-        if "climate_adjustment_hist_end_year" not in self.combo_config.keys():
-            self.hist_end_year = None
-        else:
-            self.hist_end_year = self.combo_config["climate_adjustment_hist_end_year"]
+        # Default values for the climate modification
+        config_map = {
+            "model": ("model", "default"),
+            "hist_start_year": ("hist_start_year", None),
+            "hist_end_year": ("hist_end_year", None),
+            "clu_spatial_growth": ("clu_spatial_growth", False)
+        }
+        for conf_key, (attr_name, default) in config_map.items():
+            setattr(self,
+                    attr_name,
+                    self.combo_config["climate_adjustment"].get(conf_key, default))
 
     @cached_property
     def df_all(self):
