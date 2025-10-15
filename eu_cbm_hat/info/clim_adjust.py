@@ -54,16 +54,16 @@ class ClimAdjust:
         self.combo_name = self.runner.combo.short_name
         self.combo_config = self.runner.combo.config
         # Default values for the climate modification
-        config_map = {
-            "model": ("model", "default"),
-            "hist_start_year": ("hist_start_year", None),
-            "hist_end_year": ("hist_end_year", None),
-            "clu_spatial_growth": ("clu_spatial_growth", False)
+        self.default_config = {
+            "model": "default",
+            "hist_start_year": None,
+            "hist_end_year": None,
+            "clu_spatial_growth": False
         }
-        for conf_key, (attr_name, default) in config_map.items():
+        for attr_name, default in self.default_config.items():
             setattr(self,
                     attr_name,
-                    self.combo_config["climate_adjustment"].get(conf_key, default))
+                    self.combo_config.get("climate_adjustment", {}).get(attr_name, default))
         # NPP input data
         self.common_input = ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
 
