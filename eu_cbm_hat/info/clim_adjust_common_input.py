@@ -21,6 +21,7 @@ JRC Biomass Project. Unit D1 Bioeconomy.
 from functools import cached_property
 import pandas as pd
 from eu_cbm_hat.constants import eu_cbm_data_pathlib
+from eu_cbm_hat.info.input_data     import InputData
 
 
 def mean_npp_by_model_country_clu_con_broad():
@@ -81,6 +82,7 @@ class ClimAdjustCommonInput:
     def __init__(self, hist_start_year, hist_end_year):
         self.hist_start_year = hist_start_year
         self.hist_end_year = hist_end_year
+        self.input_data = InputData()
 
     @cached_property
     def mean_npp_by_model_country_clu_con_broad(self):
@@ -89,7 +91,7 @@ class ClimAdjustCommonInput:
         """
         return mean_npp_by_model_country_clu_con_broad()
 
-    def mean_npp(self, index, variable):
+    def mean_npp_per_ha(self, index, variable):
         """Average Net Primary Productivity (NPP) grouped by index variables
 
         >>> from eu_cbm_hat.info.clim_adjust_common_input import ClimAdjustCommonInput
@@ -106,7 +108,30 @@ class ClimAdjustCommonInput:
         >>> mean_npp_country = climinput.mean_npp(index=index, variable="country_mean_npp")
 
         """
-        df = self.mean_npp_by_model_country_clu_con_broad
+        df= self.mean_npp_by_model_country_clu_con_broad
+        selector = df["year"] >= self.hist_start_year
+        selector &= df["year"] <= self.hist_end_year
+        df_mean = (
+            (df.loc[selector].groupby(index)["npp"].agg("mean"))
+            .reset_index()
+            .rename(columns={"npp": variable})
+        )
+        return df_mean
+    
+    def npp_per_clu(self, index, variable):
+        """
+        This would allow for forest area weighted share of increment.
+        
+        Total Net Primary Productivity (NPP) per clus in the country grouped by index variables
+        estimates as 'area' on clus and con_broad from input inventory multiplied with npp_per_ha
+
+        Applied to all models independent of year
+
+        """
+        df_npp = self.mean_npp_by_model_country_clu_con_broad
+        df_area = self.input_data.inventory  # Access inventory through input_data instance
+        df_area = df_area.groupby(['climate', 'con_broad'])['area'].sum().reset_index()
+        df = df_npp.merge(df_area, on=['con_broad', 'climate'])
         selector = df["year"] >= self.hist_start_year
         selector &= df["year"] <= self.hist_end_year
         df_mean = (
@@ -125,11 +150,12 @@ class ClimAdjustCommonInput:
         country's average NPP over the same period.
         """
         index_t = ["model", "country", "con_broad", "climate"]
-        df_mean_temporal = self.mean_npp(index=index_t, variable="hist_mean_npp")
+        df_mean_temporal = self.npp_per_clu(index=index_t, variable="hist_mean_npp")
         index_s = ["model", "country", "con_broad"]
-        df_mean_spatial = self.mean_npp(index=index_s, variable="country_mean_npp")
+        df_mean_spatial = self.npp_per_clu(index=index_s, variable="country_mean_npp")
         df = df_mean_temporal.merge(df_mean_spatial, on=index_s)
         df["spatial_ratio"] = df["hist_mean_npp"] / df["country_mean_npp"]
+        print(df.head())
         return df
 
     @cached_property
@@ -142,7 +168,7 @@ class ClimAdjustCommonInput:
         """
         df = self.mean_npp_by_model_country_clu_con_broad
         index = ["model", "country", "con_broad", "climate"]
-        df_mean_temporal = self.mean_npp(index=index, variable="hist_mean_npp")
+        df_mean_temporal = self.mean_npp_per_ha(index=index, variable="hist_mean_npp")
         df = df.merge(df_mean_temporal, on=index, how="left")
         df["temporal_ratio"] = df["npp"] / df["hist_mean_npp"]
         return df
