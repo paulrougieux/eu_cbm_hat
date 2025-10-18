@@ -151,6 +151,8 @@ def apply_to_all_countries(data_func, combo_name, **kwargs):
             print(e_file)
         except ValueError as e_value:
             print(key, e_value)
+        except KeyError as e_key:
+            print(key, e_key)
     df_all.reset_index(inplace=True, drop=True)
     return df_all
 
