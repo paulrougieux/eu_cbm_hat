@@ -914,6 +914,13 @@ class HWP:
               energy
             - Load GHG emissions from waste
 
+        Example use: 
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> hwp = runner.post_processor.hwp
+            >>> print(hwp.stock_sink_results)
+
         """
         # Load GHG emissions reported by country to UNFCCC for HWP pool
         cols = ["member_state", "year", "crf_hwp_tco2"]
