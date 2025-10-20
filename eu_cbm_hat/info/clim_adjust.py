@@ -25,10 +25,7 @@ climate_adjustement is the growth_multiplier below:
 """
 
 from functools import cached_property
-from eu_cbm_hat.info.clim_adjust_common_input import (
-    mean_npp_by_model_country_clu_con_broad,
-)
-
+from eu_cbm_hat.info.clim_adjust_common_input import ClimAdjustCommonInput
 
 class ClimAdjust:
     """Climate adjustment variables based on modelled NPP values
@@ -37,6 +34,11 @@ class ClimAdjust:
     >>> runner = continent.combos['reference_cable_pop'].runners['EE'][-1]
     >>> # All model inputs for the given country
     >>> runner.clim_adjust.df_all
+
+    Scenario attributes define in the combo yaml file
+
+    >>> print(runner.clim_adjust.model)
+    >>> print(runner.clim_adjust.clu_spatial_growth)
 
     >>> # Model input for the selected scenario and model as defined in the
     >>> # combo yaml file
@@ -51,28 +53,29 @@ class ClimAdjust:
         self.runner = parent
         self.combo_name = self.runner.combo.short_name
         self.combo_config = self.runner.combo.config
-        if "climate_adjustment_model" not in self.combo_config.keys():
-            self.model = "default"
-        else:
-            self.model = self.combo_config["climate_adjustment_model"]
-        if "climate_adjustment_hist_start_year" not in self.combo_config.keys():
-            self.hist_start_year = None
-        else:
-            self.hist_start_year = self.combo_config[
-                "climate_adjustment_hist_start_year"
-            ]
-        if "climate_adjustment_hist_end_year" not in self.combo_config.keys():
-            self.hist_end_year = None
-        else:
-            self.hist_end_year = self.combo_config["climate_adjustment_hist_end_year"]
+        # Default values for the climate modification
+        self.default_config = {
+            "model": "default",
+            "hist_start_year": None,
+            "hist_end_year": None,
+            "clu_spatial_growth": False
+        }
+        for attr_name, default in self.default_config.items():
+            setattr(self,
+                    attr_name,
+                    self.combo_config.get("climate_adjustment", {}).get(attr_name, default))
+        # NPP input data
+        self.common_input = ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
 
     @cached_property
     def df_all(self):
         """NPP values in all climate models for the given country"""
         country_name = self.runner.country.country_name
-        df = mean_npp_by_model_country_clu_con_broad(
-            hist_start_year=self.hist_start_year, hist_end_year=self.hist_end_year
-        )
+        temporal_df = self.common_input.clu_temporal_npp_ratio_to_period_mean
+        spatial_df = self.common_input.clu_spatial_npp_ratio_to_country_mean.copy()
+        spatial_df = spatial_df.drop(columns="hist_mean_npp")
+        index = ["model", "country", "con_broad", "climate"]
+        df = temporal_df.merge(spatial_df, on=index, how="left")
         selector = df["country"] == country_name
         return df.loc[selector].copy()
 
@@ -81,8 +84,17 @@ class ClimAdjust:
         """Climate model NPP inputs for the selected model in the given country
 
         Ignore the upper-case or lower-case in the model name selection.
+        Depending on how the clu_spatial_growth scenario argument is defined,
+        provide the ratio to the temporal mean only, or the ration to both
+        temporal and spatial mean.
         """
         df = self.df_all
+        # Special behaviour implement the scenario with or without spatial variation
+        if self.clu_spatial_growth:
+            df["ratio"] = df["temporal_ratio"] * df["spatial_ratio"]
+        # Default behaviour
+        else:
+            df["ratio"] = df["temporal_ratio"]
         # Select the model, ignore the case
         selector = df["model"].str.lower() == self.model.lower()
         # Keep only those column

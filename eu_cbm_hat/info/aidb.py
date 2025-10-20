@@ -157,9 +157,9 @@ class AIDB(object):
 
         Example:
 
-            >>>> from eu_cbm_hat.core.continent import continent
-            >>>> r = continent.combos['hat'].runners['ZZ'][-1]
-            >>>> r.country.aidb.vol_conv_to_biomass
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> r = continent.combos['hat'].runners['ZZ'][-1]
+            >>> r.country.aidb.vol_conv_to_biomass
 
         """
         #load table with factors

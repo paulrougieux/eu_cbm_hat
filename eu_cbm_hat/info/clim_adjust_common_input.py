@@ -1,27 +1,30 @@
-""" Common input file used for climate adjustment of growth based on modelled NPP values
+"""Common input file used for climate adjustment of growth based on modelled NPP values
 
 Written by Viorel Blujdea and Paul Rougieux.
 
 JRC Biomass Project. Unit D1 Bioeconomy.
+
+- See below for examples of how to load data and compute spatial and temporal
+  averages.
 
 - See also plots of NPP in `eu_cbm_hat.plot.npp`:
 
     >>> import matplotlib.pyplot as plt
     >>> from eu_cbm_hat.plot.npp import plot_npp_facet
     >>> from eu_cbm_hat.info.clim_adjust_common_input import mean_npp_by_model_country_clu_con_broad
-    >>> df = mean_npp_by_model_country_clu_con_broad(hist_start_year=2010, hist_end_year=2020)
+    >>> df = mean_npp_by_model_country_clu_con_broad()
     >>> plot_npp_facet(df, 'Austria')
     >>> plt.show()
 
 """
 
+from functools import cached_property
 import pandas as pd
 from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 
-def mean_npp_by_model_country_clu_con_broad(hist_start_year, hist_end_year):
+def mean_npp_by_model_country_clu_con_broad():
     """Read common input file mean NPP by model country CLU and con_broad
-
 
     The growth curves is based on a NAI value from the NFI which already
     includes the impact of droughts or other events so we cannot modify it too
@@ -39,56 +42,13 @@ def mean_npp_by_model_country_clu_con_broad(hist_start_year, hist_end_year):
     Usage:
 
         >>> from eu_cbm_hat.info.clim_adjust_common_input import mean_npp_by_model_country_clu_con_broad
-        >>> df = mean_npp_by_model_country_clu_con_broad(hist_start_year=2010, hist_end_year=2020)
+        >>> df = mean_npp_by_model_country_clu_con_broad()
 
     """
     csv_filename = "mean_npp_by_model_country_clu_con_broad.csv"
     df = pd.read_csv(eu_cbm_data_pathlib / "common" / csv_filename)
-
-    # REMOVE renaming dut to change of column names in the input file. Workflow from TRENDY inputs is a csv chnaged to
-    # 'mean_npp_by_model_country_clu_con_broad_original.csv'. The preprocesing with explore/users_tools/npp_input_processing.py adds
-    # a 'mix-models' scenario,  a kind of average of all-models
-    #col_rename = {
-    #       "npp (tC/ha/yr)": "npp",
-    #       "forest_type": "con_broad",
-    #       "climatic_unit": "climate",
-    #   }
-    # Check for missing columns before renaming
-    #missing_col = set(col_rename.keys()) - set(df.columns)
-    #if missing_col: 
-    #    msg = "The following columns are supposed to be renamed "
-    #    msg += f"but they are missing: {missing_col}"
-    #    msg += "\nData frame columns:\n"
-    #    msg += f"{df.columns}"
-    #    raise ValueError(msg)
-    #df.rename(columns=col_rename, inplace=True)
-    
     # Convert climate to a character variable for compatibility with CBM classifiers
     df["climate"] = df["climate"].astype(str)
-    # Group the data by 'model', 'country', 'forest_type', and 'climatic_unit'
-    # and calculate the first year's 'npp' value for each group
-    index = ["model", "country", "con_broad", "climate"]
-
-    ######################################
-    ## To be tested, as alternative method.
-    ## Input increment is a value representing average conditions at national scale. Having NPPs on CLUs within the country, 
-    ## we break down the increment/growth on CLUs for each year. This would be applied for each model. To implement following steps:
-    ## RE-calculation of growth in the YEAR (NEW)
-    ## 1. For each year, estimate the average NPP at country scale (average across all CLUs), and estimate the proportion of CLU's NPP to average value
-    ## 2. Apply the proportion to increment based on CLUs and con_broad
-    ## Calculation of the TIMESERIES (keep the OLD one)
-    ## 3. Estimate the average-NPP for each CLU and CON_BROAD for the calibration period, 
-    ## 4. Multiply annual increment on CLUs from above with the relative ratio of respective year-NPP to average-NPP  
-    ######################################
-   
-    # Compute the average over the historical period
-    selector = df["year"] >= hist_start_year
-    selector &= df["year"] <= hist_end_year
-    df_hist_mean = (df.loc[selector].groupby(index).agg(hist_mean_npp = ("npp", "mean"))).reset_index()
-    # Merge the first year's 'npp' values with the original DataFrame
-    df = df.merge(df_hist_mean, on=index)
-    # Calculate the ratio of each year's 'npp' value to historical mean npp
-    df["ratio"] = df["npp"] / df["hist_mean_npp"]
     # Rename con broad
     df["con_broad"] = df["con_broad"].replace({"BL": "broad", "NL": "con"})
     # "default" is a reserved value for the case where there is no climate adjustment
@@ -99,3 +59,90 @@ def mean_npp_by_model_country_clu_con_broad(hist_start_year, hist_end_year):
         msg += f"{df.loc[selector]}"
         raise ValueError(msg)
     return df
+
+
+class ClimAdjustCommonInput:
+    """Input data for climate adjustment
+
+    Input increment is a value representing average conditions at national scale.
+    Having NPPs on CLUs within the country, we break down the increment/growth
+    on CLUs. This would be applied for each model.
+
+    Example use:
+
+        >>> from eu_cbm_hat.info.clim_adjust_common_input import ClimAdjustCommonInput
+        >>> climinput = ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
+        >>> df = climinput.mean_npp_by_model_country_clu_con_broad
+
+        >>> spatial_df = climinput.clu_spatial_npp_ratio_to_country_mean
+        >>> temporal_df = climinput.clu_temporal_npp_ratio_to_period_mean
+    """
+
+    def __init__(self, hist_start_year, hist_end_year):
+        self.hist_start_year = hist_start_year
+        self.hist_end_year = hist_end_year
+
+    @cached_property
+    def mean_npp_by_model_country_clu_con_broad(self):
+        """NPP by model country CLU and con broad loaded from the csv input
+        file with some modifications.
+        """
+        return mean_npp_by_model_country_clu_con_broad()
+
+    def mean_npp(self, index, variable):
+        """Average Net Primary Productivity (NPP) grouped by index variables
+
+        >>> from eu_cbm_hat.info.clim_adjust_common_input import ClimAdjustCommonInput
+        >>> climinput= ClimAdjustCommonInput(hist_start_year=2010, hist_end_year=2020)
+
+        Temporal mean by Climatic unit:
+
+        >>> index = ["model", "country", "con_broad", "climate"]
+        >>> mean_npp_time = climinput.mean_npp(index=index, variable="hist_mean_npp")
+
+        Spatial mean at country level:
+
+        >>> index = ["model", "country", "con_broad"]
+        >>> mean_npp_country = climinput.mean_npp(index=index, variable="country_mean_npp")
+
+        """
+        df = self.mean_npp_by_model_country_clu_con_broad
+        selector = df["year"] >= self.hist_start_year
+        selector &= df["year"] <= self.hist_end_year
+        df_mean = (
+            (df.loc[selector].groupby(index)["npp"].agg("mean"))
+            .reset_index()
+            .rename(columns={"npp": variable})
+        )
+        return df_mean
+
+    @cached_property
+    def clu_spatial_npp_ratio_to_country_mean(self):
+        """Spatial NPP variations in climatic units relative to the country mean.
+
+        For each model, country, con_broad, and climate, provides the ratio of
+        the climatic unit's average NPP over the historical period to the
+        country's average NPP over the same period.
+        """
+        index_t = ["model", "country", "con_broad", "climate"]
+        df_mean_temporal = self.mean_npp(index=index_t, variable="hist_mean_npp")
+        index_s = ["model", "country", "con_broad"]
+        df_mean_spatial = self.mean_npp(index=index_s, variable="country_mean_npp")
+        df = df_mean_temporal.merge(df_mean_spatial, on=index_s)
+        df["spatial_ratio"] = df["hist_mean_npp"] / df["country_mean_npp"]
+        return df
+
+    @cached_property
+    def clu_temporal_npp_ratio_to_period_mean(self):
+        """Temporal NPP variations relative to the selected period mean.
+
+        For each model, country, con_broad, climate, and year, provides the
+        ratio of the yearly NPP to the historical mean NPP for that climatic
+        unit over the period self.hist_start_year to self.hist_end_year.
+        """
+        df = self.mean_npp_by_model_country_clu_con_broad
+        index = ["model", "country", "con_broad", "climate"]
+        df_mean_temporal = self.mean_npp(index=index, variable="hist_mean_npp")
+        df = df.merge(df_mean_temporal, on=index, how="left")
+        df["temporal_ratio"] = df["npp"] / df["hist_mean_npp"]
+        return df
