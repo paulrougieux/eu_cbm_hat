@@ -1,8 +1,11 @@
 """
 Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
 
-For example, aggregate the output of the "reference" scenario combination and
-save all post processing output tables for all countries to parquet files.
+For example, gather only one output table (the sink output) for the "reference"
+scenario combination for all countries and save it to a CSV file.
+
+For example, gather many output tables for the "reference" scenario combination
+for all countries and save all combined output tables to parquet files.
 
     >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
     >>> save_agg_combo_output("reference")
@@ -203,6 +206,14 @@ def save_df_all_countries_to_csv(combo_name, runner_method_name):
     The last element of the runner method name will be used as the CSV file
     name. CSV files for the "reference" scenario will be written to the
     `eu_cbm_data/output_agg/reference` directory.
+
+    Note: 
+
+        - This method can only be used for post processor output methods that
+          don't have any arguments. If you need to pass an argument, such as
+          `groupby` (an argument of `post_processor.stock.df_agg` for example),
+          then your need to use the underlying function get_df_all_countries
+          and define your own CSV output file name.
 
     For example :
 
