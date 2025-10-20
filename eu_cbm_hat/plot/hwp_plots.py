@@ -8,33 +8,14 @@ Two main sections below:
     - Generate plots for one country
 
 
-#################################
-# Gather data for all countries #
-#################################
+###########################################################
+# Gather HWP data for all countries in the given scenario #
+###########################################################
 
-from eu_cbm_hat import eu_cbm_data_pathlib
-from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
-# "ils" means inflow, loss and stock 
-ils1900 = get_df_all_countries(
-    combo_name="reference",
-    runner_method_name="post_processor.hwp.build_hwp_stock_since_1900"
-)
-# Write to a csv file in output_agg
-ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
-ref_agg_dir.mkdir(exist_ok=True)
-ils1900.to_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv", index = False)
-
-from eu_cbm_hat import eu_cbm_data_pathlib
-from eu_cbm_hat.post_processor.agg_combos import get_df_all_countries
-ils1990 = get_df_all_countries(
-    combo_name="reference",
-    runner_method_name="post_processor.hwp.build_hwp_stock_since_1990"
-)
-# Write to a csv file in output_agg
-ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
-ref_agg_dir.mkdir(exist_ok=True)
-ils1990.to_csv(ref_agg_dir / "build_hwp_stock_since_1990.csv", index = False)
-
+>>> from eu_cbm_hat.post_processor.agg_combos import save_df_all_countries_to_csv
+>>> save_df_all_countries_to_csv(reference", "post_processor.hwp.stock_sink_results")
+>>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1900")
+>>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1990")
 
 
 ##########################################

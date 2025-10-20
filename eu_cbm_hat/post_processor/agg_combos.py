@@ -195,6 +195,33 @@ def get_df_all_countries(combo_name, runner_method_name, **kwargs):
     )
     return df_all
 
+
+def save_df_all_countries_to_csv(combo_name, runner_method_name):
+    """Gather the given data frame for the given scenario combination in all
+    countries, then save it to a CSV file.
+
+    The last element of the runner method name will be used as the CSV file
+    name. CSV files for the "reference" scenario will be written to the
+    `eu_cbm_data/output_agg/reference` directory.
+
+    For example :
+
+        >>> from eu_cbm_hat.post_processor.agg_combos import save_df_all_countries_to_csv
+        >>> save_df_all_countries_to_csv(combo_name="reference", runner_method_name="post_processor.hwp.stock_sink_results")
+        >>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1900")
+        >>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1990")
+
+    """
+    combo_agg_dir = eu_cbm_data_pathlib / "output_agg" / combo_name
+    combo_agg_dir.mkdir(exist_ok=True)
+    df = get_df_all_countries(
+        combo_name=combo_name,
+        runner_method_name=runner_method_name
+    )
+    csv_filename = runner_method_name.split(".")[-1] + ".csv"
+    df.to_csv(combo_agg_dir / csv_filename, index=False)
+
+
 def apply_to_all_countries_and_save(args):
     """Get data for all countries and save it to a parquet file
 
@@ -1199,3 +1226,4 @@ def fw_source_provided_eu(combo_name: str, groupby: Union[List[str], str]):
     df_all = pandas.concat([df_all, df_eu], ignore_index=True)
     
     return df_all
+
