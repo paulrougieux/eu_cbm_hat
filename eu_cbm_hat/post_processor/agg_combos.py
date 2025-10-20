@@ -1,13 +1,15 @@
 """
 Aggregate scenario combination output and store them in the `eu_cbm_data/output_agg` directory.
 
-For example, gather only one output table (the sink output) for the "reference"
+For example, gather only one output table (the yearly sink output) for the "reference"
 scenario combination for all countries and save it to a CSV file.
 
-    >>> from eu_cbm_hat.post
+    >>> from eu_cbm_hat.post_processor.agg_combos import save_df_all_countries_to_csv
+    >>> save_df_all_countries_to_csv(combo_name="reference", runner_method_name="post_processor.sink.df_agg_by_year")
 
-For example, gather many output tables for the "reference" scenario combination
-for all countries and save all combined output tables to parquet files.
+Another example that gathers many output tables for the "reference" scenario
+combination for all countries and save all combined output tables to different
+parquet files.
 
     >>> from eu_cbm_hat.post_processor.agg_combos import save_agg_combo_output
     >>> save_agg_combo_output("reference")
