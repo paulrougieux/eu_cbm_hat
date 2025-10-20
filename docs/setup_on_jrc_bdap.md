@@ -7,6 +7,29 @@ This setup is for the Joint Research Centre JRC compute cluster called
 - See also the bdap guide inside obs3df_documents/tools/bdap/bdap_guide.md
 
 
+# Create a gitlab token
+
+- Login to  your gitlab account.
+
+- Click on your user name, then "preferences", then "personal access tokens".
+
+- Click on add a new token.
+
+    - Give it a name "jrc_bdap" for example.
+
+    - Give it an expiration date of a few months so that you don't have to renew it so
+      frequently.
+
+    - Click on the scope button "read_repository" to give it read permissions only. That
+      should be enough to read only.
+
+    - Click on "create token"
+
+- Save the displayed token in your password manager.
+
+You can now use the gitlab authentication token to clone private repositories in the next step.
+
+
 # Create eu_cbm and load data
 
 Some of the commands we used to configure the EU-CBM-HAT model on BDAP JEO-Desk:
@@ -16,8 +39,11 @@ Some of the commands we used to configure the EU-CBM-HAT model on BDAP JEO-Desk:
 - Start a bash terminal within Jupyter lab
 
 - Move to the `/eos` user directory and create a `eu_cbm` directory there, then clone
-  the repositories one by one. Use your gitlab user name and personal authentication
-  token on the first clone (git will remember the token after that)
+  the repositories one by one.
+
+    - For private repositories `eu_cbm_data` and `eu_cbm_explore`, use your gitlab user
+      name and personal authentication token on the first clone (git will remember the
+      token after that).
 
 ```
 cd /eos/jeodpp/home/users/$USER
