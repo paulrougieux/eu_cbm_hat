@@ -4,6 +4,8 @@ Aggregate scenario combination output and store them in the `eu_cbm_data/output_
 For example, gather only one output table (the sink output) for the "reference"
 scenario combination for all countries and save it to a CSV file.
 
+    >>> from eu_cbm_hat.post
+
 For example, gather many output tables for the "reference" scenario combination
 for all countries and save all combined output tables to parquet files.
 
@@ -49,9 +51,14 @@ and not have to wait to update all output tables for all scenarios.
 - Save a specific data frame for all countries and only one scenario
   combination to parquet files
 
+    >>> from eu_cbm_hat.post_processor.agg_combos import apply_to_all_countries
+    >>> from eu_cbm_hat.post_processor.agg_combos import output_agg_dir
+    >>> from eu_cbm_hat.post_processor.agg_combos import sink_one_country
     >>> combo_name = "reference"
     >>> combo_dir = output_agg_dir / combo_name
-    >>> sink = sink_all_countries(combo_name, "year")
+    >>> sink = apply_to_all_countries(
+    >>>     sink_one_country, combo_name=combo_name, groupby="year"
+    >>> )
     >>> sink.to_parquet(combo_dir / "sink_by_year_test_to_delete.parquet")
     >>> nai_st = apply_to_all_countries(nai_one_country, combo_name=combo_name, groupby=["status"])
     >>> nai_st.to_parquet(combo_dir / "nai_by_year_st_test_to_delete.parquet")
@@ -218,6 +225,7 @@ def save_df_all_countries_to_csv(combo_name, runner_method_name):
     For example :
 
         >>> from eu_cbm_hat.post_processor.agg_combos import save_df_all_countries_to_csv
+        >>> save_df_all_countries_to_csv(combo_name="reference", runner_method_name="post_processor.sink.df_agg_by_year")
         >>> save_df_all_countries_to_csv(combo_name="reference", runner_method_name="post_processor.hwp.stock_sink_results")
         >>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1900")
         >>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1990")
@@ -229,7 +237,7 @@ def save_df_all_countries_to_csv(combo_name, runner_method_name):
         combo_name=combo_name,
         runner_method_name=runner_method_name
     )
-    csv_filename = runner_method_name.split(".")[-1] + ".csv"
+    csv_filename = runner_method_name.replace(".", "_") + ".csv"
     df.to_csv(combo_agg_dir / csv_filename, index=False)
 
 
