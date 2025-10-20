@@ -440,6 +440,11 @@ class Sink:
         return df_agg
 
     @cached_property
+    def df_agg_by_year(self):
+        """Aggregated sink data frame by year only"""
+        return self.df_agg(groupby="year")
+
+    @cached_property
     def df_long(self):
         """Sink and stock in long format for plotting
 
