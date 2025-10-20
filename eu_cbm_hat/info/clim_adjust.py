@@ -89,9 +89,10 @@ class ClimAdjust:
         temporal and spatial mean.
         """
         df = self.df_all
-        # Implement the scenario with or without spatial variation
+        # Special behaviour implement the scenario with or without spatial variation
         if self.clu_spatial_growth:
             df["ratio"] = df["temporal_ratio"] * df["spatial_ratio"]
+        # Default behaviour
         else:
             df["ratio"] = df["temporal_ratio"]
         # Select the model, ignore the case
