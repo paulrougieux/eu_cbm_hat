@@ -30,17 +30,17 @@ import pandas as pd
 from eu_cbm_hat import eu_cbm_data_pathlib
 import pandas as pd
 from eu_cbm_hat import eu_cbm_data_pathlib
-from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_scatter
+from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_by_products
 
 ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
 ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
 ils1990 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1990.csv")
 
-hwp_facet_plot_scatter(ils1900, "inflow", "hwp_inflow_by_country.png", 
+hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png", 
                        title="Harvested Wood Products inflow amounts per year")
-hwp_facet_plot_scatter(ils1900, "loss", "hwp_loss_by_country.png", 
+hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png", 
                        title="Harvested Wood Products loss amounts per year")
-hwp_facet_plot_scatter(ils1900, "stock", "hwp_stock_by_country.png", 
+hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png", 
                        title="Harvested Wood Products stock amounts per year")
 
 
@@ -181,7 +181,7 @@ def plot_stacked_bars_one_country(
     print(df_sampled)
 
 
-def hwp_facet_plot_scatter(df, variable, filename, title=None):
+def hwp_facet_plot_by_products(df, variable, filename, title=None):
     """
     Creates a Seaborn facet scatter plot with one facet per country.
 
@@ -194,14 +194,14 @@ def hwp_facet_plot_scatter(df, variable, filename, title=None):
 
     import pandas as pd
     from eu_cbm_hat import eu_cbm_data_pathlib
-    from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_scatter
+    from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_by_products
     ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
     ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
-    hwp_facet_plot_scatter(ils1900, "inflow", "hwp_inflow_by_country.png", 
+    hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png", 
                            title="Harvested Wood Products inflow amounts per year")
-    hwp_facet_plot_scatter(ils1900, "loss", "hwp_loss_by_country.png", 
+    hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png", 
                            title="Harvested Wood Products loss amounts per year")
-    hwp_facet_plot_scatter(ils1900, "stock", "hwp_stock_by_country.png", 
+    hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png", 
                            title="Harvested Wood Products stock amounts per year")
 
     """
@@ -241,3 +241,59 @@ def hwp_facet_plot_scatter(df, variable, filename, title=None):
     # Adjust the plot to ensure labels don't overlap
     # plt.tight_layout(rect=[0, 0, 1, 0.98])
     g.savefig(PLOT_DIR / filename)
+
+
+def facet_plot_total_sink(df_sink, df_hwp_sink):
+    """Total sink including Harvested Wood Products
+
+    Example use:
+
+        >>> import pandas as pd
+        >>> from eu_cbm_hat import eu_cbm_data_pathlib
+        >>> from eu_cbm_hat.plot.hwp_plots import facet_plot_total_sink
+        >>> ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
+        >>> df_hwp_sink = pd.read_csv(ref_agg_dir / "post_processor_hwp_stock_sink_results.csv")
+        >>> df_sink = pd.read_csv(ref_agg_dir / "post_processor_sink_df_agg_by_year.csv")
+        >>> facet_plot_total_sink(df_sink, df_hwp_sink)
+
+    """
+
+    hwp_sink_cols = ['hwp_tot_sink_tco2_1900', 'hwp_tot_sink_tco2_1990']
+    sink_cols = ['living_biomass_sink', 'litter_sink', 'dead_wood_sink', 'soil_sink']
+    # Merge left with the HWP sink data frame first, to keep only results
+    # available in the HWP sink data frame
+    index = ["combo_name", "country", "year"]
+    # Keep only HWP years available in the main sink data frame
+    selector = df_hwp_sink["year"] > df_sink["year"].min()
+    df = (df_hwp_sink.loc[selector,index + hwp_sink_cols]
+          .merge(df_sink[index + sink_cols], on=index, how="left")
+          )
+    cols = hwp_sink_cols + sink_cols
+    # Reshape to long format
+    df_long = df.melt(
+        id_vars=['country', 'year'],
+        value_vars=cols,
+        var_name='sink_type',
+        value_name='value'
+    )
+    sink_colors = {
+        'hwp_tot_sink_tco2_1900': 'darkred',
+        'hwp_tot_sink_tco2_1990': 'red',
+        'living_biomass_sink': 'forestgreen',
+        'litter_sink': 'lightgreen',
+        'dead_wood_sink': 'saddlebrown',
+        'soil_sink': 'peru'
+    }
+    g = sns.relplot(
+        data=df_long,
+        x='year',
+        y='value',
+        hue='sink_type',
+        col='country',
+        palette=sink_colors,
+        facet_kws={'sharey': False, 'sharex': False},
+    )
+    g.set_axis_labels("Year", "Sink (tCO2)")
+    g.fig.suptitle("Total Sink Including Harvested Wood Products", y=1.03)
+    g.savefig(PLOT_DIR / "total_sink_including_hwp.png")
+
