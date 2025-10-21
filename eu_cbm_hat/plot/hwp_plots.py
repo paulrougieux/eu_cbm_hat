@@ -28,19 +28,20 @@ Two main sections below:
 # the output_agg directory.
 import pandas as pd
 from eu_cbm_hat import eu_cbm_data_pathlib
+import pandas as pd
+from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_scatter
+
 ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
 ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
 ils1990 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1990.csv")
 
-# Country facet plot of inflows as a scatter plot one color per column
-inflow_cols = ['sw_broad_inflow', 'sw_con_inflow', 'wp_inflow', 'pp_inflow']
-ils1900[["country", "year"] + inflow_cols]
-
-# Country facet plot of loss as a scatter plot one color per column
-loss_cols = ['sw_con_loss', 'sw_broad_loss', 'wp_loss', 'pp_loss', 'hwp_loss']
-
-# Country facet plot of stocks as a stacked bar chart one color  per column
-stock_cols = ['sw_con_stock', 'sw_broad_stock', 'wp_stock', 'pp_stock']
+hwp_facet_plot_scatter(ils1900, "inflow", "hwp_inflow_by_country.png", 
+                       title="Harvested Wood Products inflow amounts per year")
+hwp_facet_plot_scatter(ils1900, "loss", "hwp_loss_by_country.png", 
+                       title="Harvested Wood Products loss amounts per year")
+hwp_facet_plot_scatter(ils1900, "stock", "hwp_stock_by_country.png", 
+                       title="Harvested Wood Products stock amounts per year")
 
 
 ###########################################
