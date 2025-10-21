@@ -79,7 +79,7 @@ def keep_clfrs_without_question_marks(df, classif_list):
     output_classif_list = []
     for classif_name in classif_list:
         values = df[classif_name].unique()
-        has_question_mark = "?" in values
+        has_question_mark = any(values == "?")
         has_nan = pandas.isna(values).any()
         if len(values) > 1 and (has_question_mark or has_nan):
             # TODO: move this check to a method of base silv info
