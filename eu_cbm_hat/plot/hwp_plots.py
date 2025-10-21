@@ -1,6 +1,6 @@
 """Generate plots of Harvested Wood Products output
 
-Two main sections below: 
+Two main sections below:
 
     - Aggregate HWP output data for all countries within a given scenario and
       generate plots for all countries
@@ -26,20 +26,20 @@ on another computer, after a transfer of the output_agg directory.
 >>> import pandas as pd
 >>> from eu_cbm_hat import eu_cbm_data_pathlib
 >>> from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_by_products
->>> 
+>>>
 >>> ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
 >>> ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
 >>> ils1990 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1990.csv")
->>> 
->>> hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png", 
+>>>
+>>> hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png",
 ...                        title="Harvested Wood Products inflow amounts per year")
->>> hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png", 
+>>> hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png",
 ...                        title="Harvested Wood Products loss amounts per year")
->>> hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png", 
+>>> hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png",
 ...                        title="Harvested Wood Products stock amounts per year")
 
 
-Generate plots for individual countries. For example Austria: 
+Generate plots for individual countries. For example Austria:
 
 >>> from eu_cbm_hat.core.continent import continent
 >>> runner_at = continent.combos['reference'].runners['AT'][-1]
@@ -84,17 +84,17 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from eu_cbm_hat import eu_cbm_data_pathlib
-import matplotlib
+import matplotlib.pyplot as plt
 
-# Prevent tcl error when creating plots in a terminal without GUI
-matplotlib.use('Agg')
 
 PLOT_DIR = eu_cbm_data_pathlib / "plot" / "hwp"
 PLOT_DIR.mkdir(parents=True, exist_ok=True)
-COLOR_LABELS_MAP = {'sw_con':("sawnwood coniferous", "chocolate"),
-                    'sw_broad':("sawnwood broadleaves", "saddlebrown"),
-                    'wp':("Wood panels", "moccasin"),
-                    'pp':("Paper", "lightskyblue")}
+COLOR_LABELS_MAP = {
+    "sw_con": ("sawnwood coniferous", "chocolate"),
+    "sw_broad": ("sawnwood broadleaves", "saddlebrown"),
+    "wp": ("Wood panels", "moccasin"),
+    "pp": ("Paper", "lightskyblue"),
+}
 
 
 def plot_stacked_bars_one_country(
@@ -102,7 +102,7 @@ def plot_stacked_bars_one_country(
     stock_cols: list[str],
     sample_interval: int = 10,
     year_col: str = "year",
-    title: str = "Stock Inventory Composition Over Time (Stacked Bar Plot)"
+    title: str = "Stock Inventory Composition Over Time (Stacked Bar Plot)",
 ):
     """
     Generates and displays a stacked bar plot for time series stock data.
@@ -116,7 +116,7 @@ def plot_stacked_bars_one_country(
         title: The title of the plot.
 
 
-    Example use: 
+    Example use:
 
     from eu_cbm_hat.plot.hwp_plots import plot_stacked_bars_one_country
     from eu_cbm_hat.core.continent import continent
@@ -134,7 +134,9 @@ def plot_stacked_bars_one_country(
     try:
         data_to_plot = df[[year_col] + stock_cols].set_index(year_col)
     except KeyError:
-        print(f"Error: DataFrame must contain '{year_col}' and all columns in {stock_cols}")
+        print(
+            f"Error: DataFrame must contain '{year_col}' and all columns in {stock_cols}"
+        )
         return
 
     # 2. Sample the data for readability in the bar plot
@@ -146,33 +148,36 @@ def plot_stacked_bars_one_country(
     selector &= df["year"].min() < df_sampled["year"]
     df_sampled = df_sampled.loc[selector].copy()
 
-
     # Extract labels and colors for the columns in stock_cols
-    legend_labels = [COLOR_LABELS_MAP[col][0] for col in stock_cols if col in color_labels_map]
-    plot_colors = [COLOR_LABELS_MAP[col][1] for col in stock_cols if col in color_labels_map]
+    legend_labels = [
+        COLOR_LABELS_MAP[col][0] for col in stock_cols if col in color_labels_map
+    ]
+    plot_colors = [
+        COLOR_LABELS_MAP[col][1] for col in stock_cols if col in color_labels_map
+    ]
 
     # 4. Generate the Stacked Bar Plot
     plt.figure(figsize=(12, 6))
 
     df_sampled.plot(
-        kind='bar',
+        kind="bar",
         stacked=True,
-        ax=plt.gca(), # Use the current figure/axes
-        color=plot_colors # Set the colors
+        ax=plt.gca(),  # Use the current figure/axes
+        color=plot_colors,  # Set the colors
     )
 
     # 5. Customize the plot appearance
     plt.title(title, fontsize=16)
-    plt.ylabel('Stock Value (Units)', fontsize=12)
-    plt.xlabel('Year', fontsize=12)
-    plt.xticks(rotation=45, ha='right') # Rotate x-labels for better fit
+    plt.ylabel("Stock Value (Units)", fontsize=12)
+    plt.xlabel("Year", fontsize=12)
+    plt.xticks(rotation=45, ha="right")  # Rotate x-labels for better fit
     # Set the labels using the extracted legend_labels
-    plt.legend(title='Stock Type', labels=legend_labels)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.legend(title="Stock Type", labels=legend_labels)
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
-    plt.show()
-
-    print(f"--- Sampled Data Used for Stacked Bar Plot (Every {sample_interval} Years) ---")
+    print(
+        f"--- Sampled Data Used for Stacked Bar Plot (Every {sample_interval} Years) ---"
+    )
     print(df_sampled)
 
 
@@ -182,47 +187,46 @@ def hwp_facet_plot_by_products(df, variable, filename, title=None):
 
     Args:
         df (pd.DataFrame): The input DataFrame containing 'country', 'year',
-                           
+
         filename (str): The name of the file to save the plot to.
 
     Example:
 
-    import pandas as pd
-    from eu_cbm_hat import eu_cbm_data_pathlib
-    from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_by_products
-    ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
-    ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
-    hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png", 
-                           title="Harvested Wood Products inflow amounts per year")
-    hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png", 
-                           title="Harvested Wood Products loss amounts per year")
-    hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png", 
-                           title="Harvested Wood Products stock amounts per year")
+    >>> import pandas as pd
+    >>> from eu_cbm_hat import eu_cbm_data_pathlib
+    >>> from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_by_products
+    >>> ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
+    >>> ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
+    >>> hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png",
+    ...                            title="Harvested Wood Products inflow amounts per year")
+    >>> hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png",
+    ...                            title="Harvested Wood Products loss amounts per year")
+    >>> hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png",
+    ...                            title="Harvested Wood Products stock amounts per year")
 
     """
 
-    products = ['sw_broad', 'sw_con', 'wp', 'pp']
+    products = ["sw_broad", "sw_con", "wp", "pp"]
     cols = [x + "_" + variable for x in products]
 
     # Reshape to long format
     df_long = df.melt(
-        id_vars=['country', 'year'],
+        id_vars=["country", "year"],
         value_vars=cols,
-        var_name='variable',
-        value_name='value'
+        var_name="variable",
+        value_name="value",
     )
     palette = {
-        col: COLOR_LABELS_MAP.get(col.replace("_" + variable, ''))[1] 
-        for col in cols
+        col: COLOR_LABELS_MAP.get(col.replace("_" + variable, ""))[1] for col in cols
     }
     g = sns.relplot(
         data=df_long,
-        x='year',
-        y='value',
-        hue='variable',
-        col='country',
+        x="year",
+        y="value",
+        hue="variable",
+        col="country",
         palette=palette,
-        facet_kws={'sharey': False, 'sharex': False},
+        facet_kws={"sharey": False, "sharex": False},
         # kind='scatter',
         # col_wrap=2,  # Wrap facets to 2 columns for a compact display
         # height=4,    # Height of each subplot
@@ -253,42 +257,41 @@ def facet_plot_total_sink(df_sink, df_hwp_sink):
 
     """
 
-    hwp_sink_cols = ['hwp_tot_sink_tco2_1900', 'hwp_tot_sink_tco2_1990']
-    sink_cols = ['living_biomass_sink', 'litter_sink', 'dead_wood_sink', 'soil_sink']
+    hwp_sink_cols = ["hwp_tot_sink_tco2_1900", "hwp_tot_sink_tco2_1990"]
+    sink_cols = ["living_biomass_sink", "litter_sink", "dead_wood_sink", "soil_sink"]
     # Merge left with the HWP sink data frame first, to keep only results
     # available in the HWP sink data frame
     index = ["combo_name", "country", "year"]
     # Keep only HWP years available in the main sink data frame
     selector = df_hwp_sink["year"] > df_sink["year"].min()
-    df = (df_hwp_sink.loc[selector,index + hwp_sink_cols]
-          .merge(df_sink[index + sink_cols], on=index, how="left")
-          )
+    df = df_hwp_sink.loc[selector, index + hwp_sink_cols].merge(
+        df_sink[index + sink_cols], on=index, how="left"
+    )
     cols = hwp_sink_cols + sink_cols
     # Reshape to long format
     df_long = df.melt(
-        id_vars=['country', 'year'],
+        id_vars=["country", "year"],
         value_vars=cols,
-        var_name='sink_type',
-        value_name='value'
+        var_name="sink_type",
+        value_name="value",
     )
     sink_colors = {
-        'hwp_tot_sink_tco2_1900': 'darkred',
-        'hwp_tot_sink_tco2_1990': 'red',
-        'living_biomass_sink': 'forestgreen',
-        'litter_sink': 'lightgreen',
-        'dead_wood_sink': 'saddlebrown',
-        'soil_sink': 'peru'
+        "hwp_tot_sink_tco2_1900": "darkred",
+        "hwp_tot_sink_tco2_1990": "red",
+        "living_biomass_sink": "forestgreen",
+        "litter_sink": "lightgreen",
+        "dead_wood_sink": "saddlebrown",
+        "soil_sink": "peru",
     }
     g = sns.relplot(
         data=df_long,
-        x='year',
-        y='value',
-        hue='sink_type',
-        col='country',
+        x="year",
+        y="value",
+        hue="sink_type",
+        col="country",
         palette=sink_colors,
-        facet_kws={'sharey': False, 'sharex': False},
+        facet_kws={"sharey": False, "sharex": False},
     )
     g.set_axis_labels("Year", "Sink (tCO2)")
     g.fig.suptitle("Total Sink Including Harvested Wood Products", y=1.03)
     g.savefig(PLOT_DIR / "total_sink_including_hwp.png")
-
