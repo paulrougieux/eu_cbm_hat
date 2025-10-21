@@ -8,80 +8,75 @@ Two main sections below:
     - Generate plots for one country
 
 
-###########################################################
-# Gather HWP data for all countries in the given scenario #
-###########################################################
+Gather HWP data for all countries in the given scenario
 
 >>> from eu_cbm_hat.post_processor.agg_combos import save_df_all_countries_to_csv
->>> save_df_all_countries_to_csv(reference", "post_processor.hwp.stock_sink_results")
+>>> save_df_all_countries_to_csv("reference", "post_processor.hwp.stock_sink_results")
 >>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1900")
 >>> save_df_all_countries_to_csv("reference", "post_processor.hwp.build_hwp_stock_since_1990")
 
+Generate facet plots for all countries
 
-##########################################
-# Generate facet plots for all countries #
-##########################################
-# In all cases get inflow, loss and stock results from the 2 functions build
-# stock from 1900 and build stock from 1990.
+In all cases get inflow, loss and stock results from the 2 functions build
+stock from 1900 and build stock from 1990. Load Aggregate output from csv files
+on another computer, after a transfer of the output_agg directory.
 
-# Load Aggregate output from csv files on another computer, after a transfer of
-# the output_agg directory.
-import pandas as pd
-from eu_cbm_hat import eu_cbm_data_pathlib
-import pandas as pd
-from eu_cbm_hat import eu_cbm_data_pathlib
-from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_by_products
-
-ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
-ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
-ils1990 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1990.csv")
-
-hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png", 
-                       title="Harvested Wood Products inflow amounts per year")
-hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png", 
-                       title="Harvested Wood Products loss amounts per year")
-hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png", 
-                       title="Harvested Wood Products stock amounts per year")
+>>> import pandas as pd
+>>> from eu_cbm_hat import eu_cbm_data_pathlib
+>>> import pandas as pd
+>>> from eu_cbm_hat import eu_cbm_data_pathlib
+>>> from eu_cbm_hat.plot.hwp_plots import hwp_facet_plot_by_products
+>>> 
+>>> ref_agg_dir = eu_cbm_data_pathlib / "output_agg" / "reference"
+>>> ils1900 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1900.csv")
+>>> ils1990 = pd.read_csv(ref_agg_dir / "build_hwp_stock_since_1990.csv")
+>>> 
+>>> hwp_facet_plot_by_products(ils1900, "inflow", "hwp_inflow_by_country.png", 
+...                        title="Harvested Wood Products inflow amounts per year")
+>>> hwp_facet_plot_by_products(ils1900, "loss", "hwp_loss_by_country.png", 
+...                        title="Harvested Wood Products loss amounts per year")
+>>> hwp_facet_plot_by_products(ils1900, "stock", "hwp_stock_by_country.png", 
+...                        title="Harvested Wood Products stock amounts per year")
 
 
-###########################################
-# Generate plots for individual countries #
-###########################################
-For example Austria: 
+Generate plots for individual countries. For example Austria: 
 
-from eu_cbm_hat.core.continent import continent
-runner_at = continent.combos['reference'].runners['AT'][-1]
-hwp = runner_at.post_processor.hwp
-sat = hwp.stock_sink_results
+>>> from eu_cbm_hat.core.continent import continent
+>>> runner_at = continent.combos['reference'].runners['AT'][-1]
+>>> hwp = runner_at.post_processor.hwp
+>>> sat = hwp.stock_sink_results
 
 For example Luxemburg:
 
-from eu_cbm_hat.core.continent import continent
-runner_lu = continent.combos['reference'].runners['LU'][-1]
-hwp = runner_lu.post_processor.hwp
-slu = hwp.stock_sink_results
-# Inflow, loss and stock ils
-ils1990 = hwp.build_hwp_stock_since_1990
-ils1900 = hwp.build_hwp_stock_since_1900
+>>> from eu_cbm_hat.core.continent import continent
+>>> runner_lu = continent.combos['reference'].runners['LU'][-1]
+>>> hwp = runner_lu.post_processor.hwp
+>>> slu = hwp.stock_sink_results
+>>> # Inflow, loss and stock ils
+>>> ils1990 = hwp.build_hwp_stock_since_1990
+>>> ils1900 = hwp.build_hwp_stock_since_1900
 
 
-# Plot inflow as a line plot with one color per column
-import matplotlib.pyplot as plt
-inflow_cols = ['sw_broad_inflow', 'sw_con_inflow', 'wp_inflow', 'pp_inflow']
-ils1900[["year"] + inflow_cols].set_index("year").plot()
-plt.show()
+Plot inflow as a line plot with one color per column
 
-# Plot loss as a line plot with one color per column
-loss_cols = ['sw_con_loss', 'sw_broad_loss', 'wp_loss', 'pp_loss', 'hwp_loss']
-selector = ils1900["year"] < 2070
-ils1900.loc[selector, ["year"] + loss_cols].set_index("year").plot()
-plt.show()
+>>> import matplotlib.pyplot as plt
+>>> inflow_cols = ['sw_broad_inflow', 'sw_con_inflow', 'wp_inflow', 'pp_inflow']
+>>> ils1900[["year"] + inflow_cols].set_index("year").plot()
+>>> plt.show()
 
-# Plot stock as a line plot
-stock_cols = ['sw_con_stock', 'sw_broad_stock', 'wp_stock', 'pp_stock']
-selector = ils1900["year"] < 2070
-ils1900.loc[selector, ["year"] + stock_cols].set_index("year").plot()
-plt.show()
+Plot loss as a line plot with one color per column
+
+>>> loss_cols = ['sw_con_loss', 'sw_broad_loss', 'wp_loss', 'pp_loss', 'hwp_loss']
+>>> selector = ils1900["year"] < 2070
+>>> ils1900.loc[selector, ["year"] + loss_cols].set_index("year").plot()
+>>> plt.show()
+
+Plot stock as a line plot
+
+>>> stock_cols = ['sw_con_stock', 'sw_broad_stock', 'wp_stock', 'pp_stock']
+>>> selector = ils1900["year"] < 2070
+>>> ils1900.loc[selector, ["year"] + stock_cols].set_index("year").plot()
+>>> plt.show()
 
 """
 
