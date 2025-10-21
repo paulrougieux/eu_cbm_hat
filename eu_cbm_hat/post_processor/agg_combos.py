@@ -1014,6 +1014,7 @@ def harvest_exp_prov_all_countries_eu(combo_name: str, groupby: Union[List[str],
    
     # Reset the index to create a new column for the year
     df_eu = df_eu.rename(columns={'index': 'year'})
+    df_eu ["combo_name"] = combo_name
     
     # Concatenate the original DataFrame with the new 'eu' DataFrame
     df_all = pandas.concat([df_all, df_eu], ignore_index=True)
