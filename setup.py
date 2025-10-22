@@ -42,7 +42,10 @@ setup(
         "pyarrow",
         "numexpr",
     ],
-    extras_require={"extras": ["pystache", "matplotlib"]},
+    extras_require={
+        "extras": ["pystache"],
+        "plot": ["matplotlib", "seaborn"],
+    },
     python_requires=">=3.8",
     scripts=["scripts/running/run_zz_in_temp_dir_without_eu_cbm_data.py"],
     long_description=readme,

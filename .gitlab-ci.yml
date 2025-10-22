@@ -8,7 +8,7 @@ default:
   - python -m venv .venv
   - source .venv/bin/activate
   - pip install --upgrade pip
-  - pip install -e .[extras]
+  - pip install -e .[extras,plot] # install plot dependencies, needed for pdoc to load plotting scripts
   - pip install pytest
   - pip install pdoc
   - pip install git+https://github.com/cat-cfs/libcbm_py.git@main
