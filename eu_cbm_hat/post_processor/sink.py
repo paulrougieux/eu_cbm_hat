@@ -114,6 +114,60 @@ def generate_all_combinations_and_fill_na(df, groupby):
     return df
 
 
+def sum_litter_and_dead_wood(df: pandas.DataFrame) -> pandas.DataFrame:
+    """Sum litter and dead wood columns to dead organic matter.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing stock and sink columns for litter and dead wood.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with additional 'dom_stock', 'dom_stock_tm1', 'dom_sink',
+        and 'dom_deforest_deduct' columns. The original 'litter_*' and 'dead_wood_*'
+        columns are removed.
+
+    Examples
+    --------
+
+    >>> import pandas
+    >>> from eu_cbm_hat.post_processor.sink import sum_litter_and_dead_wood
+    >>> df = pandas.DataFrame({
+    ...     'litter_stock': [1, 2, 3],
+    ...     'dead_wood_stock': [4, 5, 6],
+    ...     'litter_stock_tm1': [0, 1, 2],
+    ...     'dead_wood_stock_tm1': [3, 4, 5],
+    ...     'litter_sink': [0.1, 0.2, 0.3],
+    ...     'dead_wood_sink': [0.4, 0.5, 0.6],
+    ...     'litter_deforest_deduct': [0.01, 0.02, 0.03],
+    ...     'dead_wood_deforest_deduct': [0.04, 0.05, 0.06]
+    ... })
+    >>> result = sum_litter_and_dead_wood(df)
+    >>> result[['dom_stock', 'dom_stock_tm1', 'dom_sink', 'dom_deforest_deduct']]
+       dom_stock  dom_stock_tm1  dom_sink  dom_deforest_deduct
+    0          5              3      0.5                 0.05
+    1          7              5      0.7                 0.07
+    2          9              7      0.9                 0.09
+    """
+    df = df.copy()
+    df['dom_stock'] = df['litter_stock'] + df['dead_wood_stock']
+    df['dom_stock_tm1'] = df['litter_stock_tm1'] + df['dead_wood_stock_tm1']
+    df['dom_sink'] = df['litter_sink'] + df['dead_wood_sink']
+    df['dom_deforest_deduct'] = df['litter_deforest_deduct'] + df['dead_wood_deforest_deduct']
+    # Remove the original litter and dead wood columns
+    columns_to_remove = [
+        'litter_stock', 'dead_wood_stock',
+        'litter_stock_tm1', 'dead_wood_stock_tm1',
+        'litter_sink', 'dead_wood_sink',
+        'litter_deforest_deduct', 'dead_wood_deforest_deduct'
+    ]
+    df.drop(columns=columns_to_remove, inplace=True)
+    return df
+
+
+
 class Sink:
     """Compute the forest carbon sink in living biomass, dead organic matter
     and soil pools
