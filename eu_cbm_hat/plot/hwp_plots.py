@@ -80,12 +80,13 @@ Plot stock as a line plot
 
 """
 
+from typing import Optional
 import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from eu_cbm_hat import eu_cbm_data_pathlib
-import matplotlib.pyplot as plt
-from typing import Optional
+from eu_cbm_hat.post_processor.sink import sum_litter_and_dead_wood
 
 
 PLOT_DIR = eu_cbm_data_pathlib / "plot" / "hwp"
@@ -174,8 +175,10 @@ def plot_hwp_total_sink_facet_by_country(df_sink: pd.DataFrame, df_hwp_sink: pd.
         >>> plot_hwp_total_sink_facet_by_country(df_sink, df_hwp_sink)
 
     """
+    # Aggregate litter and dead wood into one column
+    df_sink = sum_litter_and_dead_wood(df_sink)
     hwp_sink_cols = ["hwp_tot_sink_tco2_1900", "hwp_tot_sink_tco2_1990"]
-    sink_cols = ["living_biomass_sink", "litter_sink", "dead_wood_sink", "soil_sink"]
+    sink_cols = ["living_biomass_sink", "dom_sink", "soil_sink"]
     # Merge left with the HWP sink data frame first, to keep only results
     # available in the HWP sink data frame
     index = ["combo_name", "country", "year"]
@@ -197,8 +200,7 @@ def plot_hwp_total_sink_facet_by_country(df_sink: pd.DataFrame, df_hwp_sink: pd.
         "hwp_tot_sink_tco2_1900": "darkred",
         "hwp_tot_sink_tco2_1990": "red",
         "living_biomass_sink": "forestgreen",
-        "litter_sink": "lightgreen",
-        "dead_wood_sink": "saddlebrown",
+        "dom_sink": "saddlebrown",
         "soil_sink": "peru",
     }
     df_long["value_m"] = df_long["value"] / 1e6
