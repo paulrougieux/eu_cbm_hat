@@ -92,9 +92,9 @@ from eu_cbm_hat.post_processor.sink import sum_litter_and_dead_wood
 PLOT_DIR = eu_cbm_data_pathlib / "plot" / "hwp"
 PLOT_DIR.mkdir(parents=True, exist_ok=True)
 PRODUCT_PALETTE = {
-    "sw_con": ("sawnwood coniferous", "chocolate"),
-    "sw_broad": ("sawnwood broadleaves", "saddlebrown"),
-    "wp": ("Wood panels", "moccasin"),
+    "sw_con": ("Sawnwood Coniferous", "chocolate"),
+    "sw_broad": ("Sawnwood Broadleaves", "saddlebrown"),
+    "wp": ("Wood Panels", "moccasin"),
     "pp": ("Paper", "lightskyblue"),
 }
 
@@ -137,15 +137,15 @@ def plot_hwp_ils_facet_by_country(df: pd.DataFrame, variable: str, filename: str
         var_name="variable",
         value_name="value",
     )
-    palette = {
-        col: PRODUCT_PALETTE.get(col.replace("_" + variable, ""))[1] for col in cols
-    }
+    df_long['product_short'] = df_long['variable'].str.replace('_' + variable, '')
+    df_long['product'] = df_long['product_short'].map(lambda p: PRODUCT_PALETTE[p][0])
+    palette = {PRODUCT_PALETTE[k][0]: PRODUCT_PALETTE[k][1] for k in PRODUCT_PALETTE}
     df_long["value_m"] = df_long["value"] / 1e6
     g = sns.relplot(
         data=df_long,
         x="year",
         y="value_m",
-        hue="variable",
+        hue="product",
         col="country",
         palette=palette,
         facet_kws={"sharey": False, "sharex": False},
