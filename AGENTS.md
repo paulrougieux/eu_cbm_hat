@@ -97,3 +97,11 @@ Additional EU data structure required for the core/runner.py runner type
 **Last Updated**: 2025-10-14
 **Contact**: Write issues in the GitLab repository.
 
+## Agent Operations
+
+### Task: Update HWP Plot Legend
+
+- Operation: Modified plot_hwp_ils_facet_by_country in eu_cbm_hat/plot/hwp_plots.py to use full product names in the legend
+- Details: Capitalized product names in PRODUCT_PALETTE, changed hue to display full names instead of abbreviated column names, updated palette accordingly
+- Commit hash: ec5e869
+
