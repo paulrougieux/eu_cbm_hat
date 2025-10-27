@@ -513,8 +513,8 @@ class HWPCommonInput:
     def rw_export_correction_factor(self):
         """data 1961-LRY is from Forestry_E_Europe.csv this function allows
         the estimation of the factor "f" that represents the feedstock for the
-        HWP of domestic origin, after the correction for the export of
-        roundwood, to be applied to eu_cbm_hat simulated IRW.
+        HWP generated from IRW production of domestic origin. The export-import correction is applied 
+        to HWP semifinished products only. 
 
         The factor "fIRW_SW_con" estimates how much production from total
         production can be assumed to be from domestic roundwood production.
@@ -964,6 +964,9 @@ class HWPCommonInput:
         h_corr = 0.15
         df["w_annual_wood_landfill_tdm"] = (1 - h_corr) * df["wood_landfill_tfm"]
         return df
+
+
+
 
 
 

@@ -161,10 +161,12 @@ class HWP:
         ]
         tc_cols = df.columns[df.columns.str.contains("tc_")]
         # Aggregate over the index
-        df_agg = df.groupby(index)[tc_cols].agg("sum")
+        df_agg = df.groupby(index)[tc_cols].agg("sum")*0.8
         # Sum fluxes columns together into one tc_irw column
         df_agg = df_agg[tc_cols].sum(axis=1).reset_index()
         df_agg.rename(columns={0: "tc_irw"}, inplace=True)
+
+        
         return df_agg
 
     @cached_property
@@ -260,26 +262,93 @@ class HWP:
             warnings.warn(msg)
         return df2
 
+        ####### OLD aritmetics
+        #@cached_property
+        #def fluxes_by_grade(self) -> pandas.DataFrame:
+        #    """Aggregate previous data frame and reshape wide by feedstock"""
+        #    index = ["year", "grade", "con_broad"]
+        #    df_long = (
+        #        self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
+        #    )
+        #    # Glue grade and con_broad columns together
+        #    df_long["grade2"] = df_long["grade"] + "_" + df_long["con_broad"]
+        #    df = df_long.pivot(
+        #        columns="grade2", index=["year"], values="tc_irw"
+        #    ).reset_index()
+        #    # Sum sawlogs broad and con together
+        #    df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
+        #    # Sum back pulpwood con and broad together
+        #    df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
+        #    # Remove pulpwood broad and con
+        #    df.drop(columns=["pulpwood_con", "pulpwood_broad"], inplace=True)
+        #    return df
+
+
+    # NEW aritmetics avoiding peaks caused by salvage logging in some years
     @cached_property
     def fluxes_by_grade(self) -> pandas.DataFrame:
-        """Aggregate previous data frame and reshape wide by feedstock"""
+        """Aggregate and reshape the data frame, replacing exceptional values with adjusted percentages starting from 2021."""
         index = ["year", "grade", "con_broad"]
         df_long = (
             self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
         )
+    
         # Glue grade and con_broad columns together
         df_long["grade2"] = df_long["grade"] + "_" + df_long["con_broad"]
         df = df_long.pivot(
             columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
-        # Sum sawlogs broad and con together
-        df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
+
         # Sum back pulpwood con and broad together
         df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
-        # Remove pulpwood broad and con
-        df.drop(columns=["pulpwood_con", "pulpwood_broad"], inplace=True)
+   
+        # Define columns to process
+        columns_to_process = ['sawlogs_broad', 'sawlogs_con', 'pulpwood']
+    
+        for column in columns_to_process:
+            # Create a copy of the original column to track adjustments
+            original_values = df[column].copy()
+    
+            # Process the column
+            for index, row in df.iterrows():
+                current_year = row['year']
+    
+                # Only process rows from 2021 onward
+                if current_year < 2021:
+                    continue
+    
+                if index == 0 or pandas.isna(row[column]):
+                    continue  # Skip first row and NaN values
+    
+                # Get the previous adjusted value (original if not yet adjusted)
+                previous_value = original_values.iloc[index - 1] if index >= 1 else row[column]
+    
+                # Get the current value
+                current_value = row[column]
+    
+                # Calculate percent change
+                percent_change = ((current_value - previous_value) / previous_value) * 100
+    
+                # Adjust value if deviation is greater than 10%, i.e., implementing rule that the country can not ptocess more than 10-20% more in the year affected by heavy disturbances
+                if percent_change > 10:
+                    new_value = 1.10 * previous_value
+                elif percent_change < -10:
+                    new_value = 0.90 * previous_value
+                else:
+                    new_value = current_value
+    
+                # Update the original_values with the adjusted value for future comparisons
+                original_values.iloc[index] = new_value
+    
+            # Apply the adjusted values to the dataframe
+            df[column] = original_values
+
+            # Sum sawlogs broad and con together
+            df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         return df
 
+
+    # NEW lines to ensure non inf due to denomintor zero sometimes
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products as the average of the
@@ -331,50 +400,86 @@ class HWP:
         # based on absolute amounts required in future, then df["sw_dom_tc"],
         # df["pp_dom_tc"], df["wp_dom_tc"] have to be generated from that input
         # data just before the following arithmetic's
-        df["sw_broad_fraction"] = df["sw_broad_dom_tc"] / df["sawlogs_broad"]
-        df["sw_con_fraction"] = df["sw_con_dom_tc"] / df["sawlogs_con"]
-        df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
-        df["sw_dom_tc"] = df["sw_broad_dom_tc"] + df["sw_con_dom_tc"]
-        df["wp_fraction"] = df["wp_dom_tc"] / (
-            (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
-        )
+        
+        
+        # HANDOINLING DENOIMINATOR ZERO AND INF
+        #df["sw_broad_fraction"] = df["sw_broad_dom_tc"] / df["sawlogs_broad"]
+        df["sw_broad_fraction"] = (df["sw_broad_dom_tc"] / df["sawlogs_broad"]).replace([np.inf, -np.inf], 0).fillna(0)
 
-        # Check if available raw material is sufficient to produce the amount
+        #df["sw_con_fraction"] = df["sw_con_dom_tc"] / df["sawlogs_con"]
+        df["sw_con_fraction"] = (df["sw_con_dom_tc"] / df["sawlogs_con"]).replace([np.inf, -np.inf], 0).fillna(0)
+
+        #df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
+        df["pp_fraction"] = (df["pp_dom_tc"] / df["pulpwood"]).replace([np.inf, -np.inf], 0).fillna(0)
+        
+        df["sw_dom_tc"] = df["sw_broad_dom_tc"] + df["sw_con_dom_tc"]
+        
+        #df["wp_fraction"] = df["wp_dom_tc"] / (
+        #    (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
+        #)
+        df["wp_fraction"] = (df["wp_dom_tc"] / (df["sawlogs"] - df["sw_dom_tc"] + df["pulpwood"] - df["pp_dom_tc"])).replace([np.inf, -np.inf], 0).fillna(0)       
+        
+        # WE NEED TO ADD THIS AS AN OUPUT for checking assumptions
+        from eu_cbm_hat.core.continent import continent
+        df.to_csv(continent.base_dir + '/quick_results/' + 'mean_n_years.csv', mode='a', header=True) # initial WP input as C
+
+        # Check if available raw material, sawlogs and pulplogs, is sufficient to produce the amount
         # of semi finished products reported by countries.
         # Roundwood can never be converted totally to sawnwood. Fraction always have to
         # be below this value.
-        sw_selector = df["sw_broad_fraction"] > 0.7
+        sw_selector = df["sw_broad_fraction"] > 0.55
         if any(sw_selector):
-            msg = "Check broad sawnwood production from "
-            msg += "sawlogs production for the following years:\n"
-            msg += f"{df.loc[sw_selector]}"
-            msg += "\nThis temporary warning related to the sw_broad_fraction "
-            msg += "should be an error instead."
+            msg = "Check broad sawnwood production from sawlogs production for the following years:\n"
+            msg += "\n".join(
+                f"Year {int(row['year'])} in {row['area']}: "
+                f"sw_broad_dom_tc = {row['sw_broad_dom_tc']:.2f}, "
+                f"sawlogs_broad = {row['sawlogs_broad']:.2f}, "
+                f"Fraction = {row['sw_broad_fraction']:.2f}"
+                for _, row in df[sw_selector].iterrows()
+            )
+            msg += "\nThis temporary warning related to the sw_broad_fraction should be an error instead."
             warnings.warn(msg)
-
+        
         # Roundwood can never be converted totally to sawnwood. Fraction always have to
         # be below this value.
-        sw_selector = df["sw_con_fraction"] > 0.6
+        sw_selector = df["sw_con_fraction"] > 0.65
         if any(sw_selector):
-            msg = "Check con sawnwood production from"
-            msg += "sawlogs production for the following years:\n"
-            msg += f"{df.loc[sw_selector]}"
-            raise ValueError(msg)
-
+            msg = "Check con sawnwood production from sawlogs production for the following years:\n"
+            msg += "\n".join(
+                f"Year {int(row['year'])} in {row['area']}: "
+                f"sw_con_dom_tc = {row['sw_con_dom_tc']:.2f}, "
+                f"sawlogs_con = {row['sawlogs_con']:.2f}, "
+                f"Fraction = {row['sw_con_fraction']:.2f}"
+                for _, row in df[sw_selector].iterrows()
+            )
+            msg += "\nThis temporary warning related to the sw_con_fraction should be an error instead."
+            warnings.warn(msg)
+ 
         pp_selector = df["pp_fraction"] > 1
-        if any(pp_selector):
-            msg = "Check paper production from"
-            msg += "pulpwood/pulplogs production for the following years:\n"
-            msg += f"{df.loc[pp_selector]}"
-            raise ValueError(msg)
+        if any(sw_selector):
+            msg = "Check pp production from pulplogs production for the following years:\n"
+            msg += "\n".join(
+                f"Year {int(row['year'])} in {row['area']}: "
+                f"pp_dom_tc = {row['pp_dom_tc']:.2f}, "
+                f"pulpwood = {row['pulpwood']:.2f}, "
+                for _, row in df[sw_selector].iterrows()
+            )
+            msg += "\nThis temporary warning related to the pulplogs should be an error instead."
+            warnings.warn(msg)
 
         wp_selector = df["wp_fraction"] > 1
         if any(wp_selector):
-            msg = "Check wood panels production from"
-            msg += ("pulpwood and sawnwood production for the following years:\n")
-            msg += f"{df.loc[wp_selector]}"
-            raise ValueError(msg)
-
+            msg = "Check wood panels production from sawlogs and pulplogs production for the following years:\n"
+            msg += "\n".join(
+                f"Year {int(row['year'])} in {row['area']}: "
+                f"wp_dom_tc = {row['wp_dom_tc']:.2f}, "
+                f"Available wood = {(row['sawlogs'] - row['sw_dom_tc'] + row['pulpwood'] - row['pp_dom_tc']):.2f}, "
+                f"Fraction = {row['wp_fraction']:.2f}"
+                for _, row in df[wp_selector].iterrows()
+            )
+            msg += "\nThis temporary warning related to the wp_fraction should be an error instead."
+            warnings.warn(msg)
+ 
         # Compute the average of the selected columns
         selected_cols = [
             'sw_broad_fraction',
@@ -406,6 +511,14 @@ class HWP:
         # Default recycling values to one
         df["recycled_wood_factor"] = 1
         df["recycled_paper_factor"] = 1
+
+
+        from eu_cbm_hat.core.continent import continent
+        df["country"] = self.runner.country.country_name
+        df.to_csv(continent.base_dir + '/quick_results/' + 'frac_semifinished.csv', mode='w', header=True) # initial WP input as 
+
+
+        
         # Return
         return df
 
@@ -484,8 +597,10 @@ class HWP:
         # Compute production from domestic harvest for the future
         df["sw_broad_dom_tc"] = df["sawlogs_broad"] * df["sw_broad_fraction"]
         df["sw_con_dom_tc"] = df["sawlogs_con"] * df["sw_con_fraction"]
-        df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
+        df["sw_dom_tc"] = df["sw_broad_dom_tc"] + df["sw_con_dom_tc"]
         df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
+        df["wp_dom_tc"] = df["wp_fraction"]* ((df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"]))
+   
         if self.add_recycling:
             msg = "Add recycling amounts because "
             msg += f"add_recycling = {self.add_recycling}"
