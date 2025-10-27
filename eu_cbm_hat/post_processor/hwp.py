@@ -7,6 +7,39 @@ from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
 
 
+def mean_without_peaks(x, n_peaks_to_remove):
+    """Compute the mean after removing the n values furthest from the mean.
+
+    Parameters
+    ----------
+    x : pandas.Series
+        The input series.
+    n_peaks_to_remove : int
+        Number of values to remove that are furthest from the mean.
+
+    Returns
+    -------
+    float
+        The mean of the series after removing the n most distant values.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> # [0,1,2,3,4] -> remove 0 and 4 -> mean of [1,2,3] = 2.0
+    >>> mean_without_peaks(pd.Series(range(5)), 2)
+    >>> # remove 100 and -100 -> mean of [1,2,3] = 2.0
+    >>> mean_without_peaks(pd.Series([-100,1,2,3,100]), 2)
+    >>> mean_without_peaks(pd.Series([-100,1,2,3,100]), 1)
+    """
+    if n_peaks_to_remove >= len(x):
+        raise ValueError(f"n_peaks_to_remove={n_peaks_to_remove} >= {len(x)}=len(x)")
+    mu = x.mean()
+    abs_dev = (x - mu).abs()
+    indices_to_remove = abs_dev.nlargest(n_peaks_to_remove).index
+    x_filtered = x.drop(indices_to_remove)
+    return x_filtered.mean()
+
+
 class HWP:
     """Compute the Harvested Wood Products Sink
 
@@ -80,6 +113,10 @@ class HWP:
         self.add_recycling = True
         # Set export import factors to one
         self.no_export_no_import = False
+        # Number of years for smoothing peaks in flux_by_grade
+        self.n_years_window_flux_by_grade = 5
+        self.n_peaks_to_remove_flux_by_grade = 2
+        self.year_start_smoothing_flux_by_grade = self.runner.country.base_year - 3
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -262,93 +299,98 @@ class HWP:
             warnings.warn(msg)
         return df2
 
-        ####### OLD aritmetics
-        #@cached_property
-        #def fluxes_by_grade(self) -> pandas.DataFrame:
-        #    """Aggregate previous data frame and reshape wide by feedstock"""
-        #    index = ["year", "grade", "con_broad"]
-        #    df_long = (
-        #        self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
-        #    )
-        #    # Glue grade and con_broad columns together
-        #    df_long["grade2"] = df_long["grade"] + "_" + df_long["con_broad"]
-        #    df = df_long.pivot(
-        #        columns="grade2", index=["year"], values="tc_irw"
-        #    ).reset_index()
-        #    # Sum sawlogs broad and con together
-        #    df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
-        #    # Sum back pulpwood con and broad together
-        #    df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
-        #    # Remove pulpwood broad and con
-        #    df.drop(columns=["pulpwood_con", "pulpwood_broad"], inplace=True)
-        #    return df
-
-
-    # NEW aritmetics avoiding peaks caused by salvage logging in some years
     @cached_property
-    def fluxes_by_grade(self) -> pandas.DataFrame:
-        """Aggregate and reshape the data frame, replacing exceptional values with adjusted percentages starting from 2021."""
+    def fluxes_by_grade_not_smoothed(self) -> pandas.DataFrame:
+        """Smoothed fluxes by grade Aggregate and reshape the data frame, replacing exceptional values
+        with adjusted percentages starting from 2021.
+        """
         index = ["year", "grade", "con_broad"]
         df_long = (
             self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
         )
-    
         # Glue grade and con_broad columns together
         df_long["grade2"] = df_long["grade"] + "_" + df_long["con_broad"]
         df = df_long.pivot(
             columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
-
-        # Sum back pulpwood con and broad together
-        df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
-   
-        # Define columns to process
-        columns_to_process = ['sawlogs_broad', 'sawlogs_con', 'pulpwood']
-    
-        for column in columns_to_process:
-            # Create a copy of the original column to track adjustments
-            original_values = df[column].copy()
-    
-            # Process the column
-            for index, row in df.iterrows():
-                current_year = row['year']
-    
-                # Only process rows from 2021 onward
-                if current_year < 2021:
-                    continue
-    
-                if index == 0 or pandas.isna(row[column]):
-                    continue  # Skip first row and NaN values
-    
-                # Get the previous adjusted value (original if not yet adjusted)
-                previous_value = original_values.iloc[index - 1] if index >= 1 else row[column]
-    
-                # Get the current value
-                current_value = row[column]
-    
-                # Calculate percent change
-                percent_change = ((current_value - previous_value) / previous_value) * 100
-    
-                # Adjust value if deviation is greater than 10%, i.e., implementing rule that the country can not ptocess more than 10-20% more in the year affected by heavy disturbances
-                if percent_change > 10:
-                    new_value = 1.10 * previous_value
-                elif percent_change < -10:
-                    new_value = 0.90 * previous_value
-                else:
-                    new_value = current_value
-    
-                # Update the original_values with the adjusted value for future comparisons
-                original_values.iloc[index] = new_value
-    
-            # Apply the adjusted values to the dataframe
-            df[column] = original_values
-
-            # Sum sawlogs broad and con together
-            df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         return df
 
 
-    # NEW lines to ensure non inf due to denomintor zero sometimes
+    @cached_property
+    def fluxes_by_grade(self) -> pandas.DataFrame:
+        """Smooth fluxes by grade according the length of the window and the
+        number of peaks removed. Smoothing starts only from a defined year.
+
+        Example:
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> import matplotlib.pyplot as plt
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+
+        Plot the original un smoothed data
+
+        >>> df0 = runner.post_processor.hwp.fluxes_by_grade_not_smoothed
+        >>> df0.set_index("year").plot()
+        >>> plt.show()
+
+        Smoothing with default window length and n peaks parameters
+
+        >>> dfd = runner.post_processor.hwp.fluxes_by_grade
+        >>> dfd.set_index("year").plot()
+        >>> plt.show()
+
+        Change smoothing window size and number of peaks for the whole data frame
+
+        >>> runner.post_processor.hwp.n_years_window_flux_by_grade = 11
+        >>> runner.post_processor.hwp.n_peaks_to_remove_flux_by_grade = 0
+        >>> # Invalidate the cache by deleting the property
+        >>> del runner.post_processor.hwp.fluxes_by_grade
+        >>> df11 = runner.post_processor.hwp.fluxes_by_grade
+
+        Other experiments on a single column
+
+        Change the length of the window
+
+        >>> # compare 3, 5, 7 years of smoothing, keep also start years
+        >>> df["pulpwood_con3"] = df["pulpwood_con"].rolling(3,min_periods=1, center=True).apply(lambda x: x.mean())
+        >>> df["pulpwood_con5"] = df["pulpwood_con"].rolling(5,min_periods=1, center=True).apply(lambda x: x.mean())
+        >>> df["pulpwood_con7"] = df["pulpwood_con"].rolling(7,min_periods=1, center=True).apply(lambda x: x.mean())
+        >>> df.set_index("year")[["pulpwood_con", "pulpwood_con3", "pulpwood_con5", "pulpwood_con7"]].plot()
+        >>> plt.show()
+
+        Remove 0, 1, 2 or 3 peaks
+
+        >>> from eu_cbm_hat.post_processor.hwp import mean_without_peaks
+        >>> df["pulpwood_broad0"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(0,))
+        >>> df["pulpwood_broad1"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(1,))
+        >>> df["pulpwood_broad2"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(2,))
+        >>> df["pulpwood_broad3"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(3,))
+        >>> df.set_index("year")[["pulpwood_broad", "pulpwood_broad0", "pulpwood_broad1", "pulpwood_broad2", "pulpwood_broad3"]].plot()
+        >>> plt.show()
+
+        """
+        df = self.fluxes_by_grade_not_smoothed.copy()
+        columns_to_process = [
+            "sawlogs_broad",
+            "sawlogs_con",
+            "pulpwood_con",
+            "pulpwood_broad",
+        ]
+        for column in columns_to_process:
+            df[column] = (
+                df[column]
+                # Keep minimum 3 values at the beginning
+                .rolling(window=self.n_years_window_flux_by_grade, min_periods=3)
+                .apply(mean_without_peaks, args=(self.n_peaks_to_remove_flux_by_grade,))
+            )
+            # Keep original values before the start year
+            selector = df["year"] < self.year_start_smoothing_flux_by_grade
+            df.loc[selector, column] = self.fluxes_by_grade_not_smoothed.loc[selector, column]
+        df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
+        df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
+        return df
+
+
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products as the average of the
