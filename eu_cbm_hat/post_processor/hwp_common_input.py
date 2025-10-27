@@ -962,3 +962,7 @@ class HWPCommonInput:
         h_corr = 0.15
         df["w_annual_wood_landfill_tdm"] = (1 - h_corr) * df["wood_landfill_tfm"]
         return df
+
+# Initiate the class
+hwp_common_input = HWPCommonInput()
+
