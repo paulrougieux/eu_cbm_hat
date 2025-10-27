@@ -332,7 +332,7 @@ class HWP:
         >>> df0.set_index("year").plot()
         >>> plt.show()
 
-        Smoothing with default window length and n peaks parameters
+        Plot the smoothed data with default window length and n peaks parameters
 
         >>> dfd = runner.post_processor.hwp.fluxes_by_grade
         >>> dfd.set_index("year").plot()
@@ -379,7 +379,7 @@ class HWP:
             df[column] = (
                 df[column]
                 # Keep minimum 3 values at the beginning
-                .rolling(window=self.n_years_window_flux_by_grade, min_periods=3)
+                .rolling(window=self.n_years_window_flux_by_grade, min_periods=3, center=True)
                 .apply(mean_without_peaks, args=(self.n_peaks_to_remove_flux_by_grade,))
             )
             # Keep original values before the start year
