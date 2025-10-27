@@ -4,7 +4,7 @@
 """Import FAO and CRF databases needed for HWP estimation. This will include all countries.
 
 
-Usage: 
+Usage:
 
     >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
     >>> hwp_common_input.crf_semifinished_data
@@ -513,8 +513,8 @@ class HWPCommonInput:
     def rw_export_correction_factor(self):
         """data 1961-LRY is from Forestry_E_Europe.csv this function allows
         the estimation of the factor "f" that represents the feedstock for the
-        HWP generated from IRW production of domestic origin. The export-import correction is applied 
-        to HWP semifinished products only. 
+        HWP generated from IRW production of domestic origin. The export-import correction is applied
+        to HWP semifinished products only.
 
         The factor "fIRW_SW_con" estimates how much production from total
         production can be assumed to be from domestic roundwood production.
@@ -538,9 +538,9 @@ class HWPCommonInput:
         """
         df_exp = self.fao_correction_factor
         # average for a generic value
-        #df_exp["irw_prod"] = df_exp["irw_broad_prod"] + df_exp["irw_con_prod"]
-        #df_exp["irw_exp"] = df_exp["irw_broad_exp"] + df_exp["irw_con_exp"]
-        #df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
+        # df_exp["irw_prod"] = df_exp["irw_broad_prod"] + df_exp["irw_con_prod"]
+        # df_exp["irw_exp"] = df_exp["irw_broad_exp"] + df_exp["irw_con_exp"]
+        # df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
 
         # estimate the fractions of domestic in the country's feedstock on con and broad: IRW, WP, PULP on con and broad
         df_exp["fIRW_SW_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
@@ -570,9 +570,7 @@ class HWPCommonInput:
         )
 
         # f values on con and broad
-        df_exp["fIRW_SW_con"] = df_exp["fIRW_SW_con"].mask(
-            df_exp["fIRW_SW_con"] < 0, 0
-        )
+        df_exp["fIRW_SW_con"] = df_exp["fIRW_SW_con"].mask(df_exp["fIRW_SW_con"] < 0, 0)
         df_exp["fIRW_SW_broad"] = df_exp["fIRW_SW_broad"].mask(
             df_exp["fIRW_SW_broad"] < 0, 0
         )
@@ -871,8 +869,8 @@ class HWPCommonInput:
         factor_cols = [
             "fPULP",
             "fIRW_WP",
-            'fIRW_SW_con',
-            'fIRW_SW_broad',
+            "fIRW_SW_con",
+            "fIRW_SW_broad",
         ]
         recycle_cols = [
             "recycled_paper_prod",
@@ -964,5 +962,3 @@ class HWPCommonInput:
         h_corr = 0.15
         df["w_annual_wood_landfill_tdm"] = (1 - h_corr) * df["wood_landfill_tfm"]
         return df
-
-
