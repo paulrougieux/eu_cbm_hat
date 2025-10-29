@@ -11,6 +11,7 @@ Unit D1 Bioeconomy.
 # Built-in modules #
 from contextlib import contextmanager
 import os
+from pathlib import Path
 import shutil
 import tempfile
 
@@ -117,10 +118,11 @@ class AIDB(object):
         # Keep the default paths in this argument
         self.default_aidb_path = self.paths.aidb
         # The AIDB path may be changed in some scenario combinations
-        # Path to the database in a separate repository #
+        # Path to the database in a separate repository
         self.repo_file = (
             eu_cbm_aidb_dir + "countries/" + self.parent.iso2_code + "/aidb.db"
         )
+        self.csv_dir_pathlib = Path(self.repo_file).parent / "csv"
 
     def __bool__(self):
         return bool(self.paths.aidb)
@@ -239,10 +241,30 @@ class AIDB(object):
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
 
     def write_all_tables_to_csv(self):
-        """Write all tables to CSV files in the country directory"""
+        """Write all tables to CSV files in the country directory
+        Example:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> aidb = continent.countries["ZZ"].aidb
+            >>> aidb.write_all_tables_to_csv()
+
+        """
+        if not self.csv_dir_pathlib.exists():
+            self.csv_dir_pathlib.mkdir()
+        for table in self.db.tables:
+            table_name = table.decode('utf-8')
+            print(f"Writing table {table_name} to CSV")
+            # Read the table from the db
+            df = self.db.read_df(table_name)
+            # Write to CSV in the csv subdirectory
+            csv_path = self.csv_dir_pathlib / f"{table_name}.csv"
+            df.to_csv(csv_path, index=False)
+        
+
 
     def read_all_tables_from_csv(self):
         """Read all tables from CSV files in the country directory"""
+
 
     def write_all_tables_to_excel(self):
         """Write all AIDB tables to an excel file in the AIDB repository
