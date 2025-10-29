@@ -5,6 +5,7 @@ import warnings
 import pandas
 from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
+from eu_cbm_hat import eu_cbm_data_pathlib 
 
 
 def mean_without_peaks(x, n_peaks_to_remove):
@@ -111,7 +112,7 @@ class HWP:
         self.hwp_frac_scenario = "default"
         # Add recycling information or not
         self.add_recycling = True
-        # Set export import factors to one
+        # Set export import factors to 1, namely FALSE (for which export-import is accounted, the default option). When set to TRUE, the export-import is not accounted.
         self.no_export_no_import = False
         # Number of years for smoothing peaks in flux_by_grade
         self.n_years_window_flux_by_grade = 5
@@ -384,7 +385,7 @@ class HWP:
             )
             # Keep original values before the start year
             selector = df["year"] < self.year_start_smoothing_flux_by_grade
-            df.loc[selector, column] = self.fluxes_by_grade_not_smoothed.loc[selector, column]
+            df.loc[selector, column] = self.fluxes_by_grade_not_smoothed.loc[selector, column]            
         df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
         df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         return df
@@ -487,7 +488,6 @@ class HWP:
             .replace([np.inf, -np.inf], 0)
             .fillna(0)
         )
-
         sw_selector = df["sw_broad_fraction"] > 0.55
         if any(sw_selector):
             msg = "Check broad sawnwood production from sawlogs production for the following years:\n"

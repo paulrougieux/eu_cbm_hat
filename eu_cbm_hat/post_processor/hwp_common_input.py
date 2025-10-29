@@ -88,6 +88,10 @@ class HWPCommonInput:
         >>> print(hwp_common_input.rw_export_correction_factor)
         >>> print(hwp_common_input.prod_from_dom_harv_stat)
 
+        Saving intermediary files
+        >>> output_path = eu_cbm_data_pathlib / "quick_results" / "file_name.csv"
+        >>> df.to_csv(output_path, mode="w", header=True)
+
     """
 
     def __init__(self):
@@ -97,10 +101,15 @@ class HWPCommonInput:
         self.c_sw_con = 0.225
         self.c_wp = 0.294
         self.c_pp = 0.450
+        # correct for humidity for recycled wood products, as the reported amounts are in t of fresh matter of collected material 
+        self.humid_corr_wood = 0.15 # correction from conversion from reported fresh to dry 
+        self.humid_corr_paper = 0.10 # correction from conversion from reported fresh to dry
+        self.c_rwp = (self.c_sw_broad+self.c_sw_con)/2 * 0.49 # as of dry matter
+        self.c_rpp = 0.7*0.5 # as of dry matter
         # N year parameter for the backfill_avg_first_n_years
         self.n_years_for_backfill = 3
-        # Set export import factors to one
-        self.no_export_no_import = False
+        # Set export import factors to 1, namely FALSE (export-import is accounted) or TRUE (export-import is not accounted).
+        #self.no_export_no_import = False
 
     @cached_property
     def decay_params(self):
@@ -930,9 +939,16 @@ class HWPCommonInput:
         df["sw_con_dom_tc"] = self.c_sw_con * df["sw_con_dom_m3"]
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
+
+        # update from tons of fresh matter to C dry matter
+        df["recycled_wood_prod"] =  df["recycled_wood_prod"] * (1 - self.humid_corr_wood)*self.c_rwp
+        df["recycled_paper_prod"] = df["recycled_paper_prod"] * (1 - self.humid_corr_paper)* self.c_rpp
+        
         # Correct for recycled wood panel and paper amounts
-        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp
-        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"] * self.c_pp
+        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"]
+        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"]
+
+        
         # In some countries the recycled paper production is higher than pp_dom_tc
         # Then in that case set it to zero
         selector = df["pp_dom_tc"] < 0
