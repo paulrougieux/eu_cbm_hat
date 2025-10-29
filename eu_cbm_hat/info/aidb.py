@@ -15,6 +15,9 @@ from pathlib import Path
 import shutil
 import tempfile
 
+# Third party modules #
+import pandas as pd
+
 # First party modules #
 from autopaths.dir_path import DirectoryPath
 from autopaths.auto_paths import AutoPaths
@@ -242,6 +245,10 @@ class AIDB(object):
 
     def write_all_tables_to_csv(self):
         """Write all tables to CSV files in the country directory
+
+        Read each table from the database and write it to a CSV in the csv
+        subdirectory.
+
         Example:
 
             >>> from eu_cbm_hat.core.continent import continent
@@ -254,13 +261,9 @@ class AIDB(object):
         for table in self.db.tables:
             table_name = table.decode('utf-8')
             print(f"Writing table {table_name} to CSV")
-            # Read the table from the db
             df = self.db.read_df(table_name)
-            # Write to CSV in the csv subdirectory
             csv_path = self.csv_dir_pathlib / f"{table_name}.csv"
             df.to_csv(csv_path, index=False)
-        
-
 
     def read_all_tables_from_csv(self):
         """Read all tables from CSV files in the country directory"""
@@ -269,6 +272,8 @@ class AIDB(object):
     def write_all_tables_to_excel(self):
         """Write all AIDB tables to an excel file in the AIDB repository
 
+        Write each table to a different sheet inside the Excel file.
+
         Example:
 
             >>> from eu_cbm_hat.core.continent import continent
@@ -276,3 +281,11 @@ class AIDB(object):
             >>> aidb.write_all_tables_to_excel()
 
         """
+        excel_file = Path(self.repo_file).parent / "aidb.xlsx"
+        with pd.ExcelWriter(excel_file) as writer:
+            for table in self.db.tables:
+                table_name = table.decode('utf-8')
+                print(f"Writing table {table_name} to Excel")
+                df = self.db.read_df(table_name)
+                df.to_excel(writer, sheet_name=table_name, index=False)
+
