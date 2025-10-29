@@ -108,8 +108,6 @@ class HWPCommonInput:
         self.c_rpp = 0.7*0.5 # as of dry matter
         # N year parameter for the backfill_avg_first_n_years
         self.n_years_for_backfill = 3
-        # Set export import factors to 1, namely FALSE (export-import is accounted) or TRUE (export-import is not accounted).
-        #self.no_export_no_import = False
 
     @cached_property
     def decay_params(self):

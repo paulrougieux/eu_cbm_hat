@@ -112,7 +112,9 @@ class HWP:
         self.hwp_frac_scenario = "default"
         # Add recycling information or not
         self.add_recycling = True
-        # Set export import factors to 1, namely FALSE (for which export-import is accounted, the default option). When set to TRUE, the export-import is not accounted.
+        # Set export import factors to 1, namely FALSE (for which export-import
+        # is accounted, the default option). When set to TRUE, 
+        # the export-import is not accounted.
         self.no_export_no_import = False
         # Number of years for smoothing peaks in flux_by_grade
         self.n_years_window_flux_by_grade = 5
@@ -336,7 +338,8 @@ class HWP:
         Plot the smoothed data with default window length and n peaks parameters
 
         >>> dfd = runner.post_processor.hwp.fluxes_by_grade
-        >>> dfd.set_index("year").plot()
+        >>> cols = ["pulpwood_broad", "pulpwood_con", "sawlogs_broad", "sawlogs_con"]
+        >>> dfd.set_index("year")[cols].plot()
         >>> plt.show()
 
         Change smoothing window size and number of peaks for the whole data frame
