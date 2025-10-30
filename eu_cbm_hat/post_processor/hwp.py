@@ -192,7 +192,7 @@ class HWP:
 
     @property
     def prod_from_dom_harv_stat(self) -> pandas.DataFrame:
-        """Production from domestica hravest statistiscs from hwp_common_input"""
+        """Production from domestic harvest statistiscs from hwp_common_input"""
         hwp_common_input.no_export_no_import = self.no_export_no_import
         return hwp_common_input.prod_from_dom_harv_stat
 

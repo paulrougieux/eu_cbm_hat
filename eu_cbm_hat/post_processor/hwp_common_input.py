@@ -172,6 +172,9 @@ class HWPCommonInput:
         df = pd.read_csv(
             eu_cbm_data_pathlib / "common/Forestry_E_Europe.csv", low_memory=False
         )
+        # Replace Item from 'OSB' to 'Oriented strand board (OSB)' as of latest FAOSTAT download
+        # Replace 'OSB' with 'Oriented strand board (OSB)'
+        df['Item'] = df['Item'].replace({'Oriented strand board (OSB)':'OSB', 'Sawnwood, non-coniferous all':'Sawnwood, non-coniferous'})
         # Rename countries
         area_dict = {"Netherlands (Kingdom of the)": "Netherlands"}
         df["Area"] = df["Area"].replace(area_dict)
@@ -449,7 +452,6 @@ class HWPCommonInput:
             col: col[1:] if col.startswith("Y") else col for col in df.columns
         }
         fao_stat = fao_stat.rename(columns=new_columns)
-
         # reorganize table on long format
         fao_stat = fao_stat.melt(
             id_vars=[
@@ -469,11 +471,10 @@ class HWPCommonInput:
 
         shorts_mapping = {
             "Production": "prod",
-            "Import Quantity": "imp",
-            "Export Quantity": "exp",
+            "Import quantity": "imp",
+            "Export quantity": "exp",
         }
         fao_stat.loc[:, "Element"] = fao_stat.loc[:, "Element_orig"].map(shorts_mapping)
-
         # rename
         fao_stat = fao_stat.rename(columns={"Area": "area"})
         fao_stat["year"] = fao_stat["year"].astype(int)
@@ -483,17 +484,14 @@ class HWPCommonInput:
         # The min_count argument requires at least one value otherwise the sum will be NA
         df_exp = fao_stat.groupby(index).sum(min_count=1).reset_index()
         df_exp = df_exp.rename(columns={"Value": "value"})
-
         # create the input type
         df_exp["type"] = (
             df_exp["Item"].astype(str) + "_" + df_exp["Element"].astype(str)
         )
-
         # convert long to wide format
         df = df_exp.pivot(index=["area", "year"], columns=["type"], values=["value"])
         df = df.droplevel(None, axis=1).reset_index()
         df["year"] = df["year"].astype(int)
-
         # Sum up Particle board values with OSB
         # Sum all 3 columns together for each variable
         for var in ["exp", "imp", "prod"]:
@@ -904,7 +902,7 @@ class HWPCommonInput:
             )
             .reset_index()
         )
-        # Warn about countries which don't have factors data at all
+       # Warn about countries which don't have factors data at all
         country_with_no_data = no_data.loc[no_data.no_value, "area"].to_list()
         if any(country_with_no_data):
             msg = "\nNo export correction factor data for these countries:"
