@@ -104,8 +104,8 @@ class HWPCommonInput:
         # correct for humidity for recycled wood products, as the reported amounts are in t of fresh matter of collected material 
         self.humid_corr_wood = 0.15 # correction from conversion from reported fresh to dry 
         self.humid_corr_paper = 0.10 # correction from conversion from reported fresh to dry
-        self.c_rwp = (self.c_sw_broad+self.c_sw_con)/2 * 0.49 # as of dry matter
-        self.c_rpp = 0.7*0.5 # as of dry matter
+        self.c_rwp = 0.5 # as of dry matter
+        self.c_rpp = 0.7 # as of dry matter
         # N year parameter for the backfill_avg_first_n_years
         self.n_years_for_backfill = 3
 
