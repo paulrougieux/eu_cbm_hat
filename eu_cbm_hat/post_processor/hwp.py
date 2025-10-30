@@ -1,3 +1,69 @@
+"""
+
+This module computes the Harvested Wood Products sink.
+
+# Context
+
+Regulation (EU) 2018/841 (amended 2023)
+[https://eur-lex.europa.eu/eli/reg/2018/841/oj/eng](https://eur-lex.europa.eu/eli/reg/2018/841/oj/eng)
+establishes accounting rules for emissions and removals from land use,
+including harvested wood products throughout their lifecycle. In particular
+paragraph 19:
+
+> "(19) The increased sustainable use of harvested wood products can substantially
+> limit emissions by the substitution effect and enhance removals of greenhouse
+> gases from the atmosphere. The accounting rules should ensure that Member
+> States accurately and transparently reflect in their LULUCF accounts changes
+> in the carbon pool of harvested wood products when such changes take place,
+> in order to recognise and incentivise the enhanced use of harvested wood
+> products with long life-cycles. The Commission should provide guidance on
+> issues related to the methodology concerning the accounting for harvested
+> wood products."
+
+The EC applies the 2019 Refinement to the 2006 IPCC Guidelines for National
+Greenhouse Gas Inventories Volume 4 chapter 12:
+https://www.ipcc-nggip.iges.or.jp/public/2019rf/vol4.html 
+
+Activity data quantify carbon transfers from harvested forest biomass into
+product pools with specific decay rates. When trees are harvested, carbon in
+wood products persists for different durations: long-lived products like
+structural timber (~35 years half-life), medium-term products like furniture
+and paper (2-25 years), or immediate emission when burned for energy. HWP
+accounting tracks carbon entering from harvest, allocation to product
+categories, decay rates, emissions from combustion/decomposition, and benefits
+from recycling and substitution.
+
+
+# Choosing a scenario to compute the HWP sink using different assumptions
+
+The CBM has to be run first, in order to compute the simulated harvest amounts
+moving to the products pool. Harvested Wood Products scenarios are defined as
+part of the post processor in a function in
+ The
+parameters of that function simply modify properties of the HWP class below
+(see the init method of the HWP class). You can change these properties
+directly yourself as well as illustrated below.
+
+The CBM has to be run first, in order to compute the simulated harvest amounts
+moving to the products pool. Harvested Wood Products scenarios are defined as
+part of the post processor in a function in
+[select_hwp_scenario](eu_cbm_hat/post_processor/select_hwp_scenario.html). The
+parameters of that function simply modify properties of the HWP class below
+(see the init method of the HWP class). You can change these properties
+directly yourself as illustrated in some methods below.
+
+Class Properties:
+
+- n_years_dom_frac: Number of common years used to calculate the fraction of domestic semi-finished products.
+- hwp_frac_scenario: Specifies which HWP fraction scenario to apply for allocating harvested wood to different product categories.
+- add_recycling: Controls whether recycling information is included in the HWP accounting calculations.
+- no_export_no_import: When False, export-import flows are accounted for (default option). When set to True, export-import is not accounted and factors are set to 1.
+- n_years_window_flux_by_grade: Window size in years for smoothing peaks in the flux_by_grade data.
+- n_peaks_to_remove_flux_by_grade: Number of peaks to remove when smoothing the flux_by_grade data.
+- year_start_smoothing_flux_by_grade: Starting year for applying smoothing to flux_by_grade, calculated as base_year minus 3 years.
+
+"""
+
 from functools import cached_property
 import numpy as np
 import re
@@ -86,7 +152,7 @@ class HWP:
 
     @property
     def prod_from_dom_harv_stat(self) -> pandas.DataFrame:
-        """Production from domestica hravest statistiscs from hwp_common_input"""
+        """Production from domestic harvest statistiscs from hwp_common_input"""
         hwp_common_input.no_export_no_import = self.no_export_no_import
         return hwp_common_input.prod_from_dom_harv_stat
 
