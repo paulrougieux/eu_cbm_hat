@@ -10,18 +10,8 @@ Unit D1 Bioeconomy.
 Usage:
 
     >>> from eu_cbm_hat.core.continent import continent
-    >>> runner = continent.combos['reference'].runners["ZZ"][-1]
+    >>> runner = continent.combos['special'].runners["ZZ"][-1]
     >>> runner.qaqc.aidb_check.run_all_checks()
-
-Compare one country's table to all other countries, finding common rows.
-
-    For each table in the aidb, an aggregated table
-    with all countries data should be stored as a
-    parquet file in the following directory
-
-    eu_cbm_data/output_agg/aidb_comparison
-
-
 
 """
 

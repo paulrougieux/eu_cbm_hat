@@ -5,40 +5,6 @@ import warnings
 import pandas
 from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
-from eu_cbm_hat import eu_cbm_data_pathlib 
-
-
-def mean_without_peaks(x, n_peaks_to_remove):
-    """Compute the mean after removing the n values furthest from the mean.
-
-    Parameters
-    ----------
-    x : pandas.Series
-        The input series.
-    n_peaks_to_remove : int
-        Number of values to remove that are furthest from the mean.
-
-    Returns
-    -------
-    float
-        The mean of the series after removing the n most distant values.
-
-    Example
-    -------
-    >>> import pandas as pd
-    >>> # [0,1,2,3,4] -> remove 0 and 4 -> mean of [1,2,3] = 2.0
-    >>> mean_without_peaks(pd.Series(range(5)), 2)
-    >>> # remove 100 and -100 -> mean of [1,2,3] = 2.0
-    >>> mean_without_peaks(pd.Series([-100,1,2,3,100]), 2)
-    >>> mean_without_peaks(pd.Series([-100,1,2,3,100]), 1)
-    """
-    if n_peaks_to_remove >= len(x):
-        raise ValueError(f"n_peaks_to_remove={n_peaks_to_remove} >= {len(x)}=len(x)")
-    mu = x.mean()
-    abs_dev = (x - mu).abs()
-    indices_to_remove = abs_dev.nlargest(n_peaks_to_remove).index
-    x_filtered = x.drop(indices_to_remove)
-    return x_filtered.mean()
 
 
 class HWP:
@@ -79,7 +45,7 @@ class HWP:
 
     Set export import factors to one. In other words, assume that all secondary
     products production is made from domestic industrial roundwood harvest.
-
+        
         >>> hwp = runner.post_processor.hwp
         >>> print("no_export_no_import:", hwp.no_export_no_import)
         >>> hwp.no_export_no_import = False
@@ -112,14 +78,8 @@ class HWP:
         self.hwp_frac_scenario = "default"
         # Add recycling information or not
         self.add_recycling = True
-        # Set export import factors to 1, namely FALSE (for which export-import
-        # is accounted, the default option). When set to TRUE, 
-        # the export-import is not accounted.
+        # Set export import factors to one
         self.no_export_no_import = False
-        # Number of years for smoothing peaks in flux_by_grade
-        self.n_years_window_flux_by_grade = 5
-        self.n_peaks_to_remove_flux_by_grade = 2
-        self.year_start_smoothing_flux_by_grade = self.runner.country.base_year - 3
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -201,11 +161,10 @@ class HWP:
         ]
         tc_cols = df.columns[df.columns.str.contains("tc_")]
         # Aggregate over the index
-        df_agg = df.groupby(index)[tc_cols].agg("sum") * 0.8
+        df_agg = df.groupby(index)[tc_cols].agg("sum")
         # Sum fluxes columns together into one tc_irw column
         df_agg = df_agg[tc_cols].sum(axis=1).reset_index()
         df_agg.rename(columns={0: "tc_irw"}, inplace=True)
-
         return df_agg
 
     @cached_property
@@ -302,10 +261,8 @@ class HWP:
         return df2
 
     @cached_property
-    def fluxes_by_grade_not_smoothed(self) -> pandas.DataFrame:
-        """Smoothed fluxes by grade Aggregate and reshape the data frame, replacing exceptional values
-        with adjusted percentages starting from 2021.
-        """
+    def fluxes_by_grade(self) -> pandas.DataFrame:
+        """Aggregate previous data frame and reshape wide by feedstock"""
         index = ["year", "grade", "con_broad"]
         df_long = (
             self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
@@ -315,84 +272,13 @@ class HWP:
         df = df_long.pivot(
             columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
-        return df
-
-
-    @cached_property
-    def fluxes_by_grade(self) -> pandas.DataFrame:
-        """Smooth fluxes by grade according the length of the window and the
-        number of peaks removed. Smoothing starts only from a defined year.
-
-        Example:
-
-        >>> from eu_cbm_hat.core.continent import continent
-        >>> import matplotlib.pyplot as plt
-        >>> runner = continent.combos['reference'].runners['LU'][-1]
-
-        Plot the original un smoothed data
-
-        >>> df0 = runner.post_processor.hwp.fluxes_by_grade_not_smoothed
-        >>> df0.set_index("year").plot()
-        >>> plt.show()
-
-        Plot the smoothed data with default window length and n peaks parameters
-
-        >>> dfd = runner.post_processor.hwp.fluxes_by_grade
-        >>> cols = ["pulpwood_broad", "pulpwood_con", "sawlogs_broad", "sawlogs_con"]
-        >>> dfd.set_index("year")[cols].plot()
-        >>> plt.show()
-
-        Change smoothing window size and number of peaks for the whole data frame
-
-        >>> runner.post_processor.hwp.n_years_window_flux_by_grade = 11
-        >>> runner.post_processor.hwp.n_peaks_to_remove_flux_by_grade = 0
-        >>> # Invalidate the cache by deleting the property
-        >>> del runner.post_processor.hwp.fluxes_by_grade
-        >>> df11 = runner.post_processor.hwp.fluxes_by_grade
-
-        Other experiments on a single column
-
-        Change the length of the window
-
-        >>> # compare 3, 5, 7 years of smoothing, keep also start years
-        >>> df["pulpwood_con3"] = df["pulpwood_con"].rolling(3,min_periods=1, center=True).apply(lambda x: x.mean())
-        >>> df["pulpwood_con5"] = df["pulpwood_con"].rolling(5,min_periods=1, center=True).apply(lambda x: x.mean())
-        >>> df["pulpwood_con7"] = df["pulpwood_con"].rolling(7,min_periods=1, center=True).apply(lambda x: x.mean())
-        >>> df.set_index("year")[["pulpwood_con", "pulpwood_con3", "pulpwood_con5", "pulpwood_con7"]].plot()
-        >>> plt.show()
-
-        Remove 0, 1, 2 or 3 peaks
-
-        >>> from eu_cbm_hat.post_processor.hwp import mean_without_peaks
-        >>> df["pulpwood_broad0"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(0,))
-        >>> df["pulpwood_broad1"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(1,))
-        >>> df["pulpwood_broad2"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(2,))
-        >>> df["pulpwood_broad3"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(3,))
-        >>> df.set_index("year")[["pulpwood_broad", "pulpwood_broad0", "pulpwood_broad1", "pulpwood_broad2", "pulpwood_broad3"]].plot()
-        >>> plt.show()
-
-        """
-        df = self.fluxes_by_grade_not_smoothed.copy()
-        columns_to_process = [
-            "sawlogs_broad",
-            "sawlogs_con",
-            "pulpwood_con",
-            "pulpwood_broad",
-        ]
-        for column in columns_to_process:
-            df[column] = (
-                df[column]
-                # Keep minimum 3 values at the beginning
-                .rolling(window=self.n_years_window_flux_by_grade, min_periods=3, center=True)
-                .apply(mean_without_peaks, args=(self.n_peaks_to_remove_flux_by_grade,))
-            )
-            # Keep original values before the start year
-            selector = df["year"] < self.year_start_smoothing_flux_by_grade
-            df.loc[selector, column] = self.fluxes_by_grade_not_smoothed.loc[selector, column]            
-        df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
+        # Sum sawlogs broad and con together
         df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
+        # Sum back pulpwood con and broad together
+        df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
+        # Remove pulpwood broad and con
+        df.drop(columns=["pulpwood_con", "pulpwood_broad"], inplace=True)
         return df
-
 
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
@@ -421,17 +307,6 @@ class HWP:
             >>> runner.post_processor.hwp.n_years_dom_frac = 4
             >>> print(runner.post_processor.hwp.fraction_semifinished_n_years_mean)
 
-
-        Expot to csv for checking
-
-            >>> from eu_cbm_hat import eu_cbm_data_pathlib 
-            >>> eu_cbm_data_pathlib / "file.csv"
-            >>> df.to_csv(
-            ...     continent.base_dir + "/quick_results/" + "mean_n_years.csv",
-            ...     mode="a",
-            ...     header=True,
-            ... )
-
         """
         # Country statistics on domestic harvest
         dstat = self.prod_from_dom_harv_stat
@@ -456,98 +331,54 @@ class HWP:
         # based on absolute amounts required in future, then df["sw_dom_tc"],
         # df["pp_dom_tc"], df["wp_dom_tc"] have to be generated from that input
         # data just before the following arithmetic's
-
-        # HANDOINLING DENOIMINATOR ZERO AND INF
-        # df["sw_broad_fraction"] = df["sw_broad_dom_tc"] / df["sawlogs_broad"]
-        df["sw_broad_fraction"] = (
-            (df["sw_broad_dom_tc"] / df["sawlogs_broad"])
-            .replace([np.inf, -np.inf], 0)
-            .fillna(0)
-        )
-
-        # df["sw_con_fraction"] = df["sw_con_dom_tc"] / df["sawlogs_con"]
-        df["sw_con_fraction"] = (
-            (df["sw_con_dom_tc"] / df["sawlogs_con"])
-            # NEW lines to ensure non inf due to denomintor zero sometimes
-            .replace([np.inf, -np.inf], 0)
-            .fillna(0)
-        )
-
-        # df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
-        df["pp_fraction"] = (
-            (df["pp_dom_tc"] / df["pulpwood"]).replace([np.inf, -np.inf], 0).fillna(0)
-        )
-
+        df["sw_broad_fraction"] = df["sw_broad_dom_tc"] / df["sawlogs_broad"]
+        df["sw_con_fraction"] = df["sw_con_dom_tc"] / df["sawlogs_con"]
+        df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
         df["sw_dom_tc"] = df["sw_broad_dom_tc"] + df["sw_con_dom_tc"]
-
-        # df["wp_fraction"] = df["wp_dom_tc"] / (
-        #    (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
-        # )
-        df["wp_fraction"] = (
-            (
-                df["wp_dom_tc"]
-                / (df["sawlogs"] - df["sw_dom_tc"] + df["pulpwood"] - df["pp_dom_tc"])
-            )
-            .replace([np.inf, -np.inf], 0)
-            .fillna(0)
+        df["wp_fraction"] = df["wp_dom_tc"] / (
+            (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
         )
-        sw_selector = df["sw_broad_fraction"] > 0.55
+
+        # Check if available raw material is sufficient to produce the amount
+        # of semi finished products reported by countries.
+        # Roundwood can never be converted totally to sawnwood. Fraction always have to
+        # be below this value.
+        sw_selector = df["sw_broad_fraction"] > 0.7
         if any(sw_selector):
-            msg = "Check broad sawnwood production from sawlogs production for the following years:\n"
-            msg += "\n".join(
-                f"Year {int(row['year'])} in {row['area']}: "
-                f"sw_broad_dom_tc = {row['sw_broad_dom_tc']:.2f}, "
-                f"sawlogs_broad = {row['sawlogs_broad']:.2f}, "
-                f"Fraction = {row['sw_broad_fraction']:.2f}"
-                for _, row in df[sw_selector].iterrows()
-            )
-            msg += "\nThis temporary warning related to the sw_broad_fraction should be an error instead."
+            msg = "Check broad sawnwood production from "
+            msg += "sawlogs production for the following years:\n"
+            msg += f"{df.loc[sw_selector]}"
+            msg += "\nThis temporary warning related to the sw_broad_fraction "
+            msg += "should be an error instead."
             warnings.warn(msg)
 
         # Roundwood can never be converted totally to sawnwood. Fraction always have to
         # be below this value.
-        sw_selector = df["sw_con_fraction"] > 0.65
+        sw_selector = df["sw_con_fraction"] > 0.6
         if any(sw_selector):
-            msg = "Check con sawnwood production from sawlogs production for the following years:\n"
-            msg += "\n".join(
-                f"Year {int(row['year'])} in {row['area']}: "
-                f"sw_con_dom_tc = {row['sw_con_dom_tc']:.2f}, "
-                f"sawlogs_con = {row['sawlogs_con']:.2f}, "
-                f"Fraction = {row['sw_con_fraction']:.2f}"
-                for _, row in df[sw_selector].iterrows()
-            )
-            msg += "\nThis temporary warning related to the sw_con_fraction should be an error instead."
-            warnings.warn(msg)
+            msg = "Check con sawnwood production from"
+            msg += "sawlogs production for the following years:\n"
+            msg += f"{df.loc[sw_selector]}"
+            raise ValueError(msg)
 
         pp_selector = df["pp_fraction"] > 1
-        if any(sw_selector):
-            msg = "Check pp production from pulplogs production for the following years:\n"
-            msg += "\n".join(
-                f"Year {int(row['year'])} in {row['area']}: "
-                f"pp_dom_tc = {row['pp_dom_tc']:.2f}, "
-                f"pulpwood = {row['pulpwood']:.2f}, "
-                for _, row in df[sw_selector].iterrows()
-            )
-            msg += "\nThis temporary warning related to the pulplogs should be an error instead."
-            warnings.warn(msg)
+        if any(pp_selector):
+            msg = "Check paper production from"
+            msg += "pulpwood/pulplogs production for the following years:\n"
+            msg += f"{df.loc[pp_selector]}"
+            raise ValueError(msg)
 
         wp_selector = df["wp_fraction"] > 1
         if any(wp_selector):
-            msg = "Check wood panels production from sawlogs and pulplogs production for the following years:\n"
-            msg += "\n".join(
-                f"Year {int(row['year'])} in {row['area']}: "
-                f"wp_dom_tc = {row['wp_dom_tc']:.2f}, "
-                f"Available wood = {(row['sawlogs'] - row['sw_dom_tc'] + row['pulpwood'] - row['pp_dom_tc']):.2f}, "
-                f"Fraction = {row['wp_fraction']:.2f}"
-                for _, row in df[wp_selector].iterrows()
-            )
-            msg += "\nThis temporary warning related to the wp_fraction should be an error instead."
-            warnings.warn(msg)
+            msg = "Check wood panels production from"
+            msg += ("pulpwood and sawnwood production for the following years:\n")
+            msg += f"{df.loc[wp_selector]}"
+            raise ValueError(msg)
 
         # Compute the average of the selected columns
         selected_cols = [
-            "sw_broad_fraction",
-            "sw_con_fraction",
+            'sw_broad_fraction',
+            'sw_con_fraction',
             "pp_fraction",
             "wp_fraction",
             "recycled_paper_prod",
@@ -563,8 +394,8 @@ class HWP:
         max_year = self.runner.country.base_year + self.runner.num_timesteps
         df = pandas.DataFrame({"year": range(1900, max_year + 1)})
         cols = [
-            "sw_broad_fraction",
-            "sw_con_fraction",
+            'sw_broad_fraction',
+            'sw_con_fraction',
             "pp_fraction",
             "wp_fraction",
             "recycled_paper_prod",
@@ -653,12 +484,8 @@ class HWP:
         # Compute production from domestic harvest for the future
         df["sw_broad_dom_tc"] = df["sawlogs_broad"] * df["sw_broad_fraction"]
         df["sw_con_dom_tc"] = df["sawlogs_con"] * df["sw_con_fraction"]
-        df["sw_dom_tc"] = df["sw_broad_dom_tc"] + df["sw_con_dom_tc"]
+        df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
         df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
-        df["wp_dom_tc"] = df["wp_fraction"] * (
-            (df["sawlogs"] - df["sw_dom_tc"]) + (df["pulpwood"] - df["pp_dom_tc"])
-        )
-
         if self.add_recycling:
             msg = "Add recycling amounts because "
             msg += f"add_recycling = {self.add_recycling}"
@@ -674,17 +501,17 @@ class HWP:
                 * df["recycled_paper_factor"]
             )
 
-        ##########
+##########
         #### NEED to check if these are smaller than the corresponding 'loss' in the year
-        # df["recycled_wood_prod"]
-        # * hwp_common_input.c_wp
-        # * df["recycled_wood_factor"] +
-        #        df["recycled_paper_prod"]
-        #        * hwp_common_input.c_pp
-        #        * df["recycled_paper_factor"] < df['hwp_loss']
+            #df["recycled_wood_prod"] 
+            #* hwp_common_input.c_wp
+            #* df["recycled_wood_factor"] +
+            #        df["recycled_paper_prod"]
+            #        * hwp_common_input.c_pp
+            #        * df["recycled_paper_factor"] < df['hwp_loss']
 
-        ##########
-
+##########
+        
         else:
             msg = "No recycling amounts because "
             msg += f"add_recycling = {self.add_recycling}"
@@ -714,7 +541,7 @@ class HWP:
         # Input data frames
         dstat = self.prod_from_dom_harv_stat.copy()
         df_out = self.prod_from_dom_harv_sim.copy()
-        cols = ["sw_broad_dom_tc", "sw_con_dom_tc", "wp_dom_tc", "pp_dom_tc"]
+        cols = ['sw_broad_dom_tc', 'sw_con_dom_tc', "wp_dom_tc", "pp_dom_tc"]
         # Keep data for the selected country
         selector = dstat["area"] == self.runner.country.country_name
         dstat = dstat.loc[selector, ["year"] + cols]
@@ -761,7 +588,7 @@ class HWP:
 
         """
         df = self.prepare_decay_and_inflow.copy()
-        cols = ["sw_broad_inflow", "sw_con_inflow", "wp_inflow", "pp_inflow"]
+        cols = ["sw_broad_inflow","sw_con_inflow", "wp_inflow", "pp_inflow"]
         cols += ["e_sw", "e_wp", "e_pp", "k_sw", "k_wp", "k_pp"]
         df = df[["year"] + cols]
         # Initiate stock values
@@ -774,12 +601,10 @@ class HWP:
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
             df.loc[t, "sw_broad_stock"] = (
-                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"]
-                + df.loc[t, "sw_broad_inflow"]
+                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_broad_inflow"]
             )
             df.loc[t, "sw_con_stock"] = (
-                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"]
-                + df.loc[t, "sw_con_inflow"]
+                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_con_inflow"]
             )
             df.loc[t, "wp_stock"] = (
                 df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
@@ -795,17 +620,10 @@ class HWP:
         df["sw_broad_loss"] = df["sw_broad_stock"] * df["k_sw"]
         df["wp_loss"] = df["wp_stock"] * df["k_wp"]
         df["pp_loss"] = df["pp_stock"] * df["k_pp"]
-        df["hwp_loss"] = (
-            df["sw_con_loss"] + df["sw_broad_loss"] + df["wp_loss"] + df["pp_loss"]
-        )
+        df["hwp_loss"] = df["sw_con_loss"] + df["sw_broad_loss"] + df["wp_loss"] + df["pp_loss"]
 
         # Compute the total stock
-        df["hwp_tot_stock_tc"] = (
-            df["sw_broad_stock"]
-            + df["sw_broad_stock"]
-            + df["wp_stock"]
-            + df["pp_stock"]
-        )
+        df["hwp_tot_stock_tc"] = df["sw_broad_stock"] + df["sw_broad_stock"] + df["wp_stock"] + df["pp_stock"]
 
         # Do the difference between consecutive years
         df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
@@ -840,12 +658,8 @@ class HWP:
         df_mean = df[df["year"] >= 1990].head(5)
         # Initiate stock values as average of 1990-1995 as the average of the
         # First five years for each inflow type
-        df["sw_con_stock"] = (df_mean["sw_con_inflow"].mean()) / (
-            df_mean["k_sw"].mean()
-        )
-        df["sw_broad_stock"] = (df_mean["sw_broad_inflow"].mean()) / (
-            df_mean["k_sw"].mean()
-        )
+        df["sw_con_stock"] = (df_mean["sw_con_inflow"].mean()) / (df_mean["k_sw"].mean())
+        df["sw_broad_stock"] = (df_mean["sw_broad_inflow"].mean()) / (df_mean["k_sw"].mean())
         df["wp_stock"] = (df_mean["wp_inflow"].mean()) / (df_mean["k_wp"].mean())
         df["pp_stock"] = (df_mean["pp_inflow"].mean()) / (df_mean["k_pp"].mean())
 
@@ -853,12 +667,10 @@ class HWP:
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
             df.loc[t, "sw_broad_stock"] = (
-                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"]
-                + df.loc[t, "sw_broad_inflow"]
+                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_broad_inflow"]
             )
             df.loc[t, "sw_con_stock"] = (
-                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"]
-                + df.loc[t, "sw_con_inflow"]
+                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_con_inflow"]
             )
             df.loc[t, "wp_stock"] = (
                 df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
@@ -873,13 +685,9 @@ class HWP:
         df["sw_broad_loss"] = df["sw_broad_stock"] * df["k_sw"]
         df["wp_loss"] = df["wp_stock"] * df["k_wp"]
         df["pp_loss"] = df["pp_stock"] * df["k_pp"]
-        df["hwp_loss"] = (
-            df["sw_broad_loss"] + df["sw_con_loss"] + df["wp_loss"] + df["pp_loss"]
-        )
+        df["hwp_loss"] = df["sw_broad_loss"] + df["sw_con_loss"] + df["wp_loss"] + df["pp_loss"]
         # Compute the total stock
-        df["hwp_tot_stock_tc"] = (
-            df["sw_broad_stock"] + df["sw_con_stock"] + df["wp_stock"] + df["pp_stock"]
-        )
+        df["hwp_tot_stock_tc"] = df["sw_broad_stock"] + df["sw_con_stock"] + df["wp_stock"] + df["pp_stock"]
         # Do the difference between consecutive years
         df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
         # Stock diff shifted by one year
@@ -996,7 +804,7 @@ class HWP:
         df["ncv_x_ef_ch4_x_gwp"] = ncv * ef_ch4 * gwp_ch4
         df["ncv_x_ef_n2o_x_gwp"] = ef_n2o * gwp_n2o
         # convert to dry mass
-        # df["fw_dm"] = df["tc_fw"] / 0.5
+        #df["fw_dm"] = df["tc_fw"] / 0.5
         df["fw_primary_dm"] = df["tc_primary_fw"] / 0.5
         df["fw_secondary_dm"] = df["tc_secondary_fw"] / 0.5
 
@@ -1009,15 +817,13 @@ class HWP:
         df["fw_secondary_ghg_co2_eq"] = (
             df["fw_secondary_dm"] * df["ncv_x_ef_ch4_x_gwp"]
             + df["fw_secondary_dm"] * df["ncv_x_ef_n2o_x_gwp"]
-        )
+        )   
         df["fw_primary_co2"] = df["tc_primary_fw"] * 44 / 12
         df["fw_secondary_co2"] = df["tc_secondary_fw"] * 44 / 12
         # Estimate the Green House Gas Emissions as CO2 Equivalent
-        df["fw_ghg_co2_eq"] = (
-            df["fw_primary_ghg_co2_eq"] + df["fw_secondary_ghg_co2_eq"]
-        )
+        df["fw_ghg_co2_eq"] =df["fw_primary_ghg_co2_eq"] + df["fw_secondary_ghg_co2_eq"]
         df["fw_co2"] = df["fw_primary_co2"] + df["fw_secondary_co2"]
-
+        
         return df
 
     @cached_property
@@ -1108,7 +914,7 @@ class HWP:
               energy
             - Load GHG emissions from waste
 
-        Example use:
+        Example use: 
 
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
@@ -1136,14 +942,8 @@ class HWP:
         df_1990 = df_1990.rename(columns={col: f"{col}_1990" for col in cols_stock})
 
         # Load GHG emissions from burning wood for energy
-        cols = [
-            "year",
-            "fw_primary_ghg_co2_eq",
-            "fw_secondary_ghg_co2_eq",
-            "fw_primary_co2",
-            "fw_secondary_co2",
-        ]
-
+        cols = ["year","fw_primary_ghg_co2_eq", "fw_secondary_ghg_co2_eq", "fw_primary_co2", "fw_secondary_co2"]
+        
         df_fw = self.ghg_emissions_fw[cols]
 
         # Load GHG emissions from waste
@@ -1196,10 +996,10 @@ class HWP:
             "hwp_tot_sink_tco2_1990",
             "hwp_loss_1900",
             "hwp_loss_1990",
-            "fw_primary_ghg_co2_eq",
-            "fw_secondary_ghg_co2_eq",
-            "fw_primary_co2",
-            "fw_secondary_co2",
+            "fw_primary_ghg_co2_eq", 
+            "fw_secondary_ghg_co2_eq", 
+            "fw_primary_co2", 
+            "fw_secondary_co2",            
             "waste_co2_eq",
         ]
         # Return the updated DataFrame with all required columns

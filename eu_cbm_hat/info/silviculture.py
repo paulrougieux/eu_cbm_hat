@@ -79,8 +79,26 @@ def keep_clfrs_without_question_marks(df, classif_list):
     output_classif_list = []
     for classif_name in classif_list:
         values = df[classif_name].unique()
+
+        # Ensure values is always an array (even if it has only one element)
+        if not isinstance(values, (np.ndarray, list, pandas.Series, pandas.Index)):
+            values = np.array([values])
+
+        # Check for question marks (handling array comparison properly)
         has_question_mark = "?" in values
-        has_nan = pandas.isna(values).any()
+
+        # Check for NaN values - handle both numeric and string cases
+        has_nan = False
+        if len(values) > 0:
+            # Try to check for NaN values in a safe way
+            try:
+                has_nan = np.isnan(values).any()
+            except TypeError:
+                # If all values are strings, check for 'nan' or 'NaN' strings
+                try:
+                    has_nan = any(str(v).lower() == 'nan' for v in values if pd.notna(v))
+                except:
+                    has_nan = False
 
         if len(values) > 1 and (has_question_mark or has_nan):
             msg = "Mixture of question marks (i.e. NA values) and other values"
