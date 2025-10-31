@@ -4,9 +4,9 @@
 Get up and running with EU-CBM-HAT. This guide shows you how to install the model, set
 up your data, and run your first forest carbon simulation.
 
-Note:
-This setup is for the Joint Research Centre JRC compute cluster called
-[BDAP](https://jeodpp.jrc.ec.europa.eu/bdap/).
+Note: This setup is for the Joint Research Centre JRC compute cluster called
+[BDAP](https://jeodpp.jrc.ec.europa.eu/bdap/). You will have to adapt the instructions
+if you are running on another computer system.
 
 - See also the bdap guide inside obs3df_documents/tools/bdap/bdap_guide.md
 
