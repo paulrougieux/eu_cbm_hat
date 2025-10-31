@@ -41,13 +41,79 @@ There are 3 ways to run the model:
   defined in an eu_cbm_data directory. An example of the directory structure is
   visible in the test subdirectory for a fictitious country called ZZ.
 
-2. Using a smaller runner called a [bud]() object. This approach has been added
-  in 2025. A bud is a  much simpler object that feeds a simpler data directory to
-  libcbm. It can use the same post-processor methods as the runner.
+2. Using a smaller runner called a [bud](eu_cbm_hat/bud.html) object. This
+   approach has been added in 2025. A bud is a  much simpler object that feeds a
+   simpler data directory to libcbm. It can use the same post-processor methods as
+   the runner.
 
 3. Using another runner called crcf made for the simulations of Carbon Removal and
   Carbon Farming. Introduced in 2025, this is not documented yet. See the source
   code in the crcf directory.
+
+
+# Getting started
+
+- **EU-CBM-HAT Quick Start Guide on JRC BDAP**. A guide to install the model and
+  related input data (from a private git repository called `eu_cbm_data`) at:
+  https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/blob/main/docs/setup_on_jrc_bdap.md
+
+- If you bring your own data. You can use the smaller runner object called a
+  [Bud](eu_cbm_hat/bud.html#Bud) see the documentation of that object for an
+  example of how to set up the input data structure based on sample data.
+
+
+# Specific methods used by the runner object
+
+- Scenario combinations are defined as `.yaml` files in `eu_cbm_data/combos`.
+  When initiating a runner, the content of its yaml file is loaded in
+  [eu_cbm_hat.combos](eu_cbm_hat/combos.html). It defines the scenario used for
+  all input files. Some input files can change scenario every year, other files
+  are defined for the entirety of the simulation length.
+
+- A runner processes data in several steps.
+
+    - [orig_data](eu_cbm_hat/info/orig_data.html) contains the original data
+      for a country. There are many scenarios for inventory, growth (yield), and
+      disturbances.
+
+    - [aidb](eu_cbm_hat/info/aidb.html) contains the Archive Index Database
+      (with soil parameters and biomass expansion factors)
+
+    - [input_data](eu_cbm_hat/info/input_data.html) contains the actual input
+      data sent to libcbm for one and only one combination of scenarios.
+
+    - [output_data](eu_cbm_hat/info/output_data.html) contains the output
+      fluxes and pools after the libcbm simulation run.
+
+    - The ouput data is then used by the
+      [post_processor](eu_cbm_hat/post_processor.html) see below.
+
+
+# Specific methods used by the Bud object
+
+[Bud]() is a small self contain runner-type object to run libcbm by pointing it to an input
+data directory and an AIDB. It is a small self contained object that makes it
+possible to run the libcbm model and the EU-CBM-HAT post processor (to compute
+sink output for example) without the need for the EU-wide
+eu_cbm_data directory.
+
+The data is processed by sub modules:
+
+- [input_data](eu_cbm_hat/bud/input_data.html) prepares the input data for libcbm.
+
+- [output](eu_cbm_hat/bud/output.html) handles the output data.
+
+- The output data is further processed in the [bud
+  post_processor](eu_cbm_hat/bud/post_processor.html) which inherits all methods
+  from the main [post_processor](eu_cbm_hat/post_processor.html), for example
+  methods to compute the stock, sink and hwp mentioned in the common methods
+  section above.
+
+
+# CRCF methods
+
+Runner made for simulations of Carbon Removal and Carbon Farming. This type of
+object is not documented yet. Look at the source code in the crcf directory.
 
 
 # Common methods used by all runner types
@@ -79,60 +145,6 @@ There are 3 ways to run the model:
 
     - [hwp](eu_cbm_hat/post_processor/hwp.html) estimates Harvested Wood
       Products inflows and outflows to compute the HWP sink.
-
-
-# Runner methods
-
-- Scenario combinations are defined as `.yaml` files in `eu_cbm_data/combos`.
-  When initiating a runner, the content of its yaml file is loaded in
-  [eu_cbm_hat.combos](eu_cbm_hat/combos.html). It defines the scenario used for
-  all input files. Some input files can change scenario every year, other files
-  are defined for the entirety of the simulation length.
-
-- A runner processes data in several steps.
-
-    - [orig_data](eu_cbm_hat/info/orig_data.html) contains the original data
-      for a country. There are many scenarios for inventory, growth (yield), and
-      disturbances.
-
-    - [aidb](eu_cbm_hat/info/aidb.html) contains the Archive Index Database
-      (with soil parameters and biomass expansion factors)
-
-    - [input_data](eu_cbm_hat/info/input_data.html) contains the actual input
-      data sent to libcbm for one and only one combination of scenarios.
-
-    - [output_data](eu_cbm_hat/info/output_data.html) contains the output
-      fluxes and pools after the libcbm simulation run.
-
-    - The ouput data is then used by the
-      [post_processor](eu_cbm_hat/post_processor.html) see below.
-
-
-# Bud methods
-
-[Bud]() is a small self contain runner-type object to run libcbm by pointing it to an input
-data directory and an AIDB. It is a small self contained object that makes it
-possible to run the libcbm model and the EU-CBM-HAT post processor (to compute
-sink output for example) without the need for the EU-wide
-eu_cbm_data directory.
-
-The data is processed by sub modules:
-
-- [input_data](eu_cbm_hat/bud/input_data.html) prepares the input data for libcbm.
-
-- [output](eu_cbm_hat/bud/output.html) handles the output data.
-
-- The output data is further processed in the [bud
-  post_processor](eu_cbm_hat/bud/post_processor.html) which inherits all methods
-  from the main [post_processor](eu_cbm_hat/post_processor.html), for example
-  methods to compute the stock, sink and hwp mentioned in the common methods
-  section above.
-
-
-# CRCF methods
-
-Runner made for simulations of Carbon Removal and Carbon Farming. This type of
-object is not documented yet. Look at the source code in the crcf directory.
 
 
 # Related Publications
