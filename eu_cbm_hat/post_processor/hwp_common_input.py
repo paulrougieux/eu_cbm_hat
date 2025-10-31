@@ -944,11 +944,20 @@ class HWPCommonInput:
         df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"]
         df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"]
 
-        
         # In some countries the recycled paper production is higher than pp_dom_tc
         # Then in that case set it to zero
         selector = df["pp_dom_tc"] < 0
         df.loc[selector, "pp_dom_tc"] = 0
+
+        # Production of WP may turn negative toward the start of the century
+        # Then in that case set it to zero
+        selector = df["wp_dom_tc"] < 0
+        df.loc[selector, "wp_dom_tc"] = 0
+        
+
+
+        #df.to_csv('C:/CBM/' +'df_dstat.csv', mode='w', header=True)
+        
         return df
 
     @cached_property
