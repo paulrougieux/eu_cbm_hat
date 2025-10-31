@@ -53,22 +53,19 @@ Agreement DG RTD N° 013 KCB (LC-01591551) JRC Reference N ° 35895 NFP.
 
 # Installation
 
-If you have never used python before and if you are on Windows, you might want to
-[install Anaconda](https://www.anaconda.com/) on your system, it will help you with
-managing packages dependencies. You also need to [install
-git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) in order to install
-python packages from git repositories.
+- **EU-CBM-HAT Quick Start Guide on JRC BDAP**. A guide to install the model and
+  related input data (from a private git repository called `eu_cbm_data`) at:
+  https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/blob/main/docs/setup_on_jrc_bdap.md
 
-Install `eu_cbm_hat` using [pip](https://pip.pypa.io/en/stable/), the package installer
-for python in the shell on Linux or Mac or in the **Anaconda prompt** on windows.
+- If you bring your own data. You can use the smaller runner object called a
+  [Bud](eu_cbm_hat/bud.html#Bud) see the documentation of that object for an
+  example of how to set up the input data structure based on sample data.
 
-    pip install eu_cbm_hat
-    # or
-    python -m pip install eu_cbm_hat
+Installation instructions for linux and windows might be outdated. They are available in
+the docs directory.
 
-Install libcbm using pip.
 
-    python -m pip install https://github.com/cat-cfs/libcbm_py/archive/refs/heads/main.tar.gz
+# Location of the data
 
 By default, the data is located in your home folder. You can display the default
 location where the data should be with these commands in python:
@@ -82,6 +79,7 @@ location where the data should be with these commands in python:
 | Data                   | `~/eu_cbm/eu_cbm_data/` | `C:\Users\user_name\eu_cbm\eu_cbm_data` |
 | Archive Index Database | `~/eu_cbm/eu_cbm_aidb/` | `C:\Users\user_name\eu_cbm\eu_cbm_aidb` |
 
+
 Please create the `eu_cbm` directory at the desired location on your system. The model
 will work once these folders exist on your system. If you don't want to use the default
 location, you can also define the environment variables `EU_CBM_DATA` and `EU_CBM_AIDB`
@@ -93,25 +91,10 @@ above in python in `eu_cbm_hat.eu_cbm_data_dir`):
     >>> from eu_cbm_hat.tests.copy_data import copy_test_data
     >>> copy_test_data()
 
-**Load AIDBs and link them to eu_cbm_data**
-
-The Archive Index Databases (AIDBs) are stored in a separate git repository that needs
-to be linked with the eu_cbm_data repository. Clone the repository containing the AIDBs
-inside your home folder in the parent directory of the path given by
-`eu_cbm_hat.eu_cbm_aidb_dir`. Back to the shell (or conda console):
-
-    cd eu_cbm
-    git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
-
-Before running the model, you need to create AIDB symlinks at a python prompt:
-
-    >>> from eu_cbm_hat.core.continent import continent
-    >>> for country in continent: country.aidb.symlink_all_aidb()
-
 
 ## Upgrade
 
-Over time it's important to regularly upgrade the 2 packages with:
+Over time it's important to regularly upgrade the packages with:
 
     python -m pip install --upgrade eu_cbm_hat
     python -m pip install --upgrade https://github.com/cat-cfs/libcbm_py/archive/refs/heads/1.x.tar.gz
