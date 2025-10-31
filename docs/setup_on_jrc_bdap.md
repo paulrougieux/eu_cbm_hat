@@ -29,7 +29,7 @@ EU-CBM-HAT requires three main components:
 
 # Step 1: Create a GitLab Access Token
 
-You'll need this to download data from private repositories:
+You'll need an access token to download data from private repositories:
 
 1. Log into your GitLab account at https://gitlab.com
 2. Click your profile picture → **Preferences** → **Access Tokens**
@@ -38,7 +38,7 @@ You'll need this to download data from private repositories:
    - Expiration: Set 3-6 months from now
    - Scope: Check **read_repository** only
 4. Click **Create personal access token**
-5. **Important**: Copy and save the token immediately (it won't be shown again)
+5. **Important**: Copy and save the token immediately to your password manager (it won't be shown again)
 
 # Step 2: Set Up Data Directories
 
@@ -61,7 +61,8 @@ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore.git
 
 **When prompted:**
 - Username: Your GitLab username
-- Password: Paste the access token you created in Step 1
+- Password: Paste the access token you created in Step 1. Git will remember the token
+  for subsequent git pull operations.
 
 # Step 3: Create Symbolic Links
 
@@ -274,7 +275,7 @@ Now that you have the model running:
 
 - **Documentation:** https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html
 - **Source code:** https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat
-- **Issues:** Report problems on the GitLab issue tracker
+- **Issues:** Report problems on the GitLab issue tracker https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues
 
 # Developer Setup (Optional)
 
