@@ -92,7 +92,7 @@ above in python in `eu_cbm_hat.eu_cbm_data_dir`):
     >>> copy_test_data()
 
 
-## Upgrade
+## Software upgrade
 
 Over time it's important to regularly upgrade the packages with:
 

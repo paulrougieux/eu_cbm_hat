@@ -18,7 +18,7 @@ if you are running on another computer system.
 - Basic familiarity with command line and Python
 
 
-# Installation Overview
+# Installation
 
 EU-CBM-HAT requires three main components:
 
@@ -26,8 +26,10 @@ EU-CBM-HAT requires three main components:
 2. **eu_cbm_data** - Country-specific input data (inventory, growth, disturbances)
 3. **eu_cbm_aidb** - Archive Index Database (soil parameters, biomass factors)
 
+Follow the steps to set up required input data.
 
-# Step 1: Create a GitLab Access Token
+
+## Step 1: Create a GitLab Access Token
 
 You'll need an access token to download data from private repositories:
 
@@ -40,7 +42,7 @@ You'll need an access token to download data from private repositories:
 4. Click **Create personal access token**
 5. **Important**: Copy and save the token immediately to your password manager (it won't be shown again)
 
-# Step 2: Set Up Data Directories
+## Step 2: Set Up Data Directories
 
 Open a terminal and create the directory structure:
 
@@ -64,7 +66,7 @@ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore.git
 - Password: Paste the access token you created in Step 1. Git will remember the token
   for subsequent git pull operations.
 
-# Step 3: Create Symbolic Links
+## Step 3: Create Symbolic Links
 
 The model expects to find data in `$HOME/eu_cbm`, so create links:
 
@@ -84,7 +86,7 @@ ls -l $HOME/eu_cbm
 # You should see: eu_cbm_data, eu_cbm_aidb, eu_cbm_explore
 ```
 
-# Step 4: Configure Your Environment
+## Step 4: Configure Your Environment
 
 Edit your profile to load the conda environment:
 
@@ -105,7 +107,7 @@ Save and close the file, then reload it:
 source $HOME/.profile
 ```
 
-# Step 5: Set Up the Python Environment
+## Step 5: Set Up the Python Environment
 
 Configure conda to find the EU-CBM environment:
 
@@ -121,7 +123,7 @@ jupyter kernelspec list
 # You should see: susbiom_trade_kernel
 ```
 
-# Step 6: Initialize the AIDB
+## Step 6: Initialize the AIDB
 
 Open Jupyter Lab and create a new console with the `susbiom_trade_kernel`:
 
@@ -135,9 +137,9 @@ for country in continent:
 
 This may take a few minutes. You should see progress messages for each country.
 
-# Step 7: Run Your First Simulation
+## Step 7: Run Your First Simulation
 
-## Test Run: Single Country (ZZ - Test Country)
+### Test Run: Single Country (ZZ - Test Country)
 
 In a Python console or notebook with the `susbiom_trade_kernel`:
 
@@ -162,12 +164,12 @@ print(f"Years simulated: {runner.country.base_year} to {runner.country.num_times
 - `verbose=True` - Shows progress messages
 - `interrupt_on_error=True` - Stops if errors occur
 
-## Expected Output:
+### Expected Output:
 
 You should see progress messages about loading data, running timesteps, and completion
 status. The test country ZZ typically completes in 1-2 minutes.
 
-# Step 8: Access Your Results
+## Step 8: Access Your Results
 
 After the run completes:
 
@@ -185,7 +187,10 @@ print(sink.head())
 print(f"Total sink over simulation: {sink['Total'].sum():.2f} Mt CO2e")
 ```
 
-# Running Real Countries
+# Running the model
+
+
+## Running Real Countries
 
 Once you've tested with ZZ, try a real country:
 
@@ -206,7 +211,7 @@ print(list(continent.combos['reference'].runners.keys()))
 ```
 
 
-# Running Multiple Countries in parallel
+## Running Multiple Countries in parallel
 
 The scenario combination object has a run method to run a list of countries. If the list
 of countries is not specified, run all countries. A convenient method that makes it
@@ -226,16 +231,17 @@ countries:
 ```python
 from eu_cbm_hat.core.continent import continent
 # Run a list of countries
-continent.combos["reference"].run(2050, ['IT','ZZ'])
+continent.combos["reference"].run(2050, ['LU','ZZ'])
 # Run all countries with parallel cpus
 continent.combos["reference"].run(2050)
 # Run sequentially (not in parallel)
 continent.combos["reference"].run(2050, parallel=False)
 ```
 
-# Understanding Scenarios
+# Defining Scenarios
 
-Scenarios are defined in YAML files located in `eu_cbm_data/combos/`. The 'reference' scenario is the baseline. To see available scenarios:
+Scenarios are defined in YAML files located in `eu_cbm_data/combos/`. The 'reference'
+scenario is the baseline. To see available scenarios:
 
 ```python
 print(list(continent.combos.keys()))
