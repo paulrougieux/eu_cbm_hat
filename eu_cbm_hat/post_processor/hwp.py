@@ -623,60 +623,6 @@ class HWP:
         return mean_frac
 
     @property  # Don't cache, in case we change the number of years
-    def prod_from_dom_harv_stat_irw_adjusted(self) -> pandas.DataFrame:
-        """
-        Fix IRW mismatch between historical pre-2020 to calibrated post-2020 
-        """
-        # Country statistics on domestic harvest
-        dstat = self.prod_from_dom_harv_stat
-        dstat.to_csv('C:/CBM/dstat_0.csv')
-        # CBM output
-        df_out = self.fluxes_by_grade
-        index = ["area", "year"]
-        cols = [
-            "sw_broad_dom_tc",
-            "sw_con_dom_tc",
-            "wp_dom_tc",
-            "pp_dom_tc",
-            "recycled_paper_prod",
-            "recycled_wood_prod",
-        ]
-        df_corr = df_out[df_out['year'] <= self.runner.country.base_year]                     
-        # Split the DataFrame into pre-2020 and post-2020 segments
-        pre_2020 = df_corr[df_corr['year'] <= 2020]
-        post_2020 = df_corr[df_corr['year'] > 2020]
-        
-        # Calculate the average for each segment, excluding the 'year' column
-        pre_2020_averages = pre_2020.drop(columns=['year']).mean(numeric_only=True)
-        post_2020_averages = post_2020.drop(columns=['year']).mean(numeric_only=True)
-      
-        # Store the results in a new DataFrame with an 'item' column
-        averages_df = pandas.DataFrame({
-            'item': cols,
-            'pre_2020_average': pre_2020_averages,
-            'post_2020_average': post_2020_averages
-        })
-        averages_df['pre_to_post_irw_corr'] = averages_df['pre_2020_average'] / averages_df['post_2020_average']
-        
-        # Mapping the values for multiplication
-        sawlogs_broad_corr = averages_df.loc[averages_df['item'] == 'sw_broad_dom_tc', 'pre_to_post_irw_corr'].values[0]
-        sawlogs_con_corr = averages_df.loc[averages_df['item'] == 'sw_con_dom_tc', 'pre_to_post_irw_corr'].values[0]
-        pulpwood_corr = averages_df.loc[averages_df['item'] == 'pp_dom_tc', 'pre_to_post_irw_corr'].values[0]
-        
-        # Calculate the average of sawlogs and pulpwood IRW corrections
-        sawlogs_corr = averages_df.loc[averages_df['item'] == 'wp_dom_tc', 'pre_to_post_irw_corr'].values[0]
-        wp_dom_corr = (sawlogs_corr + pulpwood_corr) / 2    
-        
-        # Perform the multiplication in place
-        dstat['sw_broad_dom_tc'] *= sawlogs_broad_corr
-        dstat['sw_con_dom_tc'] *= sawlogs_con_corr
-        dstat['wp_dom_tc'] *= wp_dom_corr
-        dstat['pp_dom_tc'] *= pulpwood_corr
-
-        dstat.to_csv('C:/CBM/dstat_1.csv')
-        return dstat
-
-    @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_default(self) -> pandas.DataFrame:
         """Fraction of semi finished products in the default case"""
         mean_frac = self.fraction_semifinished_n_years_mean
@@ -828,7 +774,7 @@ class HWP:
 
         """
         # Input data frames
-        dstat = self.prod_from_dom_harv_stat_irw_adjusted.copy()
+        dstat = self.prod_from_dom_harv_stat.copy()
         df_out = self.prod_from_dom_harv_sim.copy()
         cols = ['sw_broad_dom_tc', 'sw_con_dom_tc', "wp_dom_tc", "pp_dom_tc"]
         # Keep data for the selected country
