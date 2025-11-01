@@ -962,7 +962,15 @@ class HWPCommonInput:
         # Then in that case set it to zero
         selector = df["wp_dom_tc"] < 0
         df.loc[selector, "wp_dom_tc"] = 0
+<<<<<<< HEAD
 
+=======
+        
+
+
+        #df.to_csv('C:/CBM/' +'df_dstat.csv', mode='w', header=True)
+        
+>>>>>>> 395a70365b7d0fb8a25c2eeedfc818eba1eb68d5
         return df
 
     @cached_property
