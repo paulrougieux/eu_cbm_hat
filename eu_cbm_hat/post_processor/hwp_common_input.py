@@ -404,7 +404,7 @@ class HWPCommonInput:
 
     @cached_property
     def fao_correction_factor(self):
-        """Data 1961-2021 is from Forestry_E_Europe.csv this function
+        """Data 1961-LRY is from Forestry_E_Europe.csv this function
         Prepare the FAO correction factor data
 
         Usage:
@@ -633,7 +633,7 @@ class HWPCommonInput:
 
     @cached_property
     def crf_semifinished_data(self):
-        """data 1961-2021 from common/hwp_crf_submission.csv
+        """data 1961-LRY from common/hwp_crf_submission.csv
         input timeseries of quantities of semifinshed products reported under the CRF
 
         Split the sw_prod_m3 column by con and broad before the gap filling
@@ -673,7 +673,7 @@ class HWPCommonInput:
 
         Add a EU total excluding the countries with incomplete time series. To
         be used as proxy for gap filling of missing data by ms in original unit
-        m3 or t for 1961-2021
+        m3 or t for 1961-LRY
 
         Plot ratio columns:
 
@@ -845,7 +845,7 @@ class HWPCommonInput:
         production from domestic roundwood harvest
         These are the historical domestic feedstock (corrected for export)
         this merges the export with semifinished inputs to generate HWP of
-        domestic origin, in original unit m3 or t for 1961-2021
+        domestic origin, in original unit m3 or t for 1961-LRY
 
         Replace NA recycling values by zero if and only if they have NA in all
         years. In other words NA values for the recycled_paper_prod and
