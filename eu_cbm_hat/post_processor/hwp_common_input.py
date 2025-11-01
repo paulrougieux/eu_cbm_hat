@@ -97,10 +97,13 @@ class HWPCommonInput:
         self.c_sw_con = 0.225
         self.c_wp = 0.294
         self.c_pp = 0.450
+        # correct for humidity for recycled wood products, as the reported amounts are in t of fresh matter of collected material 
+        self.humid_corr_wood = 0.15 # correction from conversion from reported fresh to dry 
+        self.humid_corr_paper = 0.10 # correction from conversion from reported fresh to dry
+        self.c_rwp = 0.5 # as of dry matter
+        self.c_rpp = 0.7 # as of dry matter
         # N year parameter for the backfill_avg_first_n_years
         self.n_years_for_backfill = 3
-        # Set export import factors to one
-        self.no_export_no_import = False
 
     @cached_property
     def decay_params(self):
@@ -178,6 +181,10 @@ class HWPCommonInput:
         """crf sumbissions"""
         df = pd.read_csv(eu_cbm_data_pathlib / "common/hwp_crf_submission.csv")
         df = df.rename(columns={"country": "area"})
+        df = df[['area', 'year', 'sw_prod_m3_crf', 'sw_imp_m3_crf', 'sw_exp_m3_crf',
+                 'wp_prod_m3_crf', 'wp_imp_m3_crf', 'wp_exp_m3_crf', 'pp_prod_t_crf', 
+                 'pp_imp_t_crf', 'pp_exp_t_crf']]
+        # remove columns which have information purpose only, i.e. change compared to previous submission to unfccc
         # Convert other columns to numerical
         cols = df.columns.to_list()
         for col in cols[2:]:
@@ -339,6 +346,7 @@ class HWPCommonInput:
         csv_path = eu_cbm_data_pathlib / "common" / "irw_allocation_by_dbh.csv"
         df = pd.read_csv(csv_path)
         df = df.merge(self.hwp_genus, on=["country", "genus"], how="left")
+
         # Check that proportions sum to one over the forest type and age class
         index = ["country", "mgmt_type", "mgmt_strategy", "forest_type", "age_class"]
         df_agg = (
@@ -414,7 +422,6 @@ class HWPCommonInput:
         df_fao = df_fao[~selector].rename(
             columns={"Item": "Item_orig", "Element": "Element_orig"}
         )
-
         # Add labels used in the hwp scripts, keep only Items in the hwp_types table
         df = df_fao.merge(self.hwp_types, on=["Item Code", "Item_orig"]).merge(
             self.eu_member_states, on=["Area"], how="inner"
@@ -592,6 +599,13 @@ class HWPCommonInput:
         df_exp["fREC_PAPER"] = df_exp["fREC_PAPER"].mask(df_exp["fREC_PAPER"] < 0, 0)
 
         df_exp["year"] = df_exp["year"].astype(int)
+
+
+        # Save intermediary DataFrame to CSV
+        #df['country'] = self.runner.country.country_name
+        output_path = eu_cbm_data_pathlib / "quick_results" / "mean_n_years.csv"
+        df_exp.to_csv(output_path, mode="w", header=True)
+        
         return df_exp
 
     @cached_property
@@ -930,13 +944,25 @@ class HWPCommonInput:
         df["sw_con_dom_tc"] = self.c_sw_con * df["sw_con_dom_m3"]
         df["wp_dom_tc"] = self.c_wp * df["wp_dom_m3"]
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
+
+        # update from tons of fresh matter to C dry matter
+        df["recycled_wood_prod"] =  df["recycled_wood_prod"] * (1 - self.humid_corr_wood)*self.c_rwp
+        df["recycled_paper_prod"] = df["recycled_paper_prod"] * (1 - self.humid_corr_paper)* self.c_rpp
+        
         # Correct for recycled wood panel and paper amounts
-        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"] * self.c_wp
-        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"] * self.c_pp
+        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"]
+        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"]
+
         # In some countries the recycled paper production is higher than pp_dom_tc
         # Then in that case set it to zero
         selector = df["pp_dom_tc"] < 0
         df.loc[selector, "pp_dom_tc"] = 0
+
+        # Production of WP may turn negative toward the start of the century
+        # Then in that case set it to zero
+        selector = df["wp_dom_tc"] < 0
+        df.loc[selector, "wp_dom_tc"] = 0
+
         return df
 
     @cached_property
