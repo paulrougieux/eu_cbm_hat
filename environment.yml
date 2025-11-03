@@ -1,0 +1,22 @@
+name: eu_cbm_hat
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pandas
+  - pyyaml
+  - tqdm
+  - pyarrow
+  - numexpr
+  - simplejson
+  - matplotlib
+  - seaborn
+  - pip
+  - pip:
+    - autopaths>=1.6.0
+    - plumbing>=2.11.1
+    - pymarktex>=1.4.6
+    - p_tqdm
+    - pystache
+    - libcbm

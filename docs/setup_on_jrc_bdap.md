@@ -29,7 +29,7 @@ EU-CBM-HAT requires three main components:
 Follow the steps to set up required input data.
 
 
-## Step 1: Create a GitLab Access Token
+## Step 1: Create a GitLab access token
 
 You'll need an access token to download data from private repositories:
 
@@ -42,7 +42,7 @@ You'll need an access token to download data from private repositories:
 4. Click **Create personal access token**
 5. **Important**: Copy and save the token immediately to your password manager (it won't be shown again)
 
-## Step 2: Set Up Data Directories
+## Step 2: Download the model's code and data
 
 Open a terminal and create the directory structure:
 
@@ -55,9 +55,11 @@ mkdir eu_cbm
 cd eu_cbm
 
 # Clone the three required repositories
-# You'll be prompted for username and token on first clone
-git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
+git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
+# You'll be prompted for username and token on the first clone of the private repository
+git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
+# Optional
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore.git
 ```
 
@@ -66,9 +68,13 @@ git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore.git
 - Password: Paste the access token you created in Step 1. Git will remember the token
   for subsequent git pull operations.
 
-## Step 3: Create Symbolic Links
 
-The model expects to find data in `$HOME/eu_cbm`, so create links:
+## Step 3: Create symbolic links between user's home and the large storage space
+
+The model expects to find data in `$HOME/eu_cbm`, so create symbolic links from the
+user's home directory to the large storage space where the data will actually be located
+(note `$HOME` will auto complete to the correct directory, no need to replace it in the
+instructions below):
 
 ```bash
 # Link from home directory
@@ -86,7 +92,41 @@ ls -l $HOME/eu_cbm
 # You should see: eu_cbm_data, eu_cbm_aidb, eu_cbm_explore
 ```
 
-## Step 4: Configure Your Environment
+
+## Step 4: Install eu_cbm_hat in a Conda environment
+
+```bash
+cd $HOME/eu_cbm/eu_cbm_hat
+conda env create -f environment.yml
+conda activate eu_cbm_hat
+# Install the package
+pip install -e .
+```
+
+
+## Step 5: Configure Jupyter to find the eu_cbm_hat Conda environment
+
+Configure jupyter to find the conda environment as a kernel:
+
+```bash
+conda activate eu_cbm_hat
+# Install ipykernel in the environment (if not already installed)
+conda install ipykernel -y
+# Install the Jupyter kernel for eu_cbm_hat
+python -m ipykernel install --user --name=eu_cbm_hat_kernel
+# Verify installation
+jupyter kernelspec list
+```
+
+### Outdated instructions for the susbiom trade environment pre-2025
+
+As of November 2025, these instructions should not be necessary.
+
+- See issue 134 https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/134
+
+- Instruction below for the susbiom trade conda environment and associated jupyter
+  kernel Kept temporarily in case there is a use case where you do need the susbiom
+  trade environment.
 
 Edit your profile to load the conda environment:
 
@@ -107,9 +147,7 @@ Save and close the file, then reload it:
 source $HOME/.profile
 ```
 
-## Step 5: Set Up the Python Environment
-
-Configure conda to find the EU-CBM environment:
+Configure jupyter to find the conda environment as a kernel:
 
 ```bash
 # Add the environment directory
@@ -125,7 +163,7 @@ jupyter kernelspec list
 
 ## Step 6: Initialize the AIDB
 
-Open Jupyter Lab and create a new console with the `susbiom_trade_kernel`:
+Open Jupyter Lab and create a new console with the `eu_cbm_hat_kernel`:
 
 ```python
 from eu_cbm_hat.core.continent import continent
@@ -141,7 +179,7 @@ This may take a few minutes. You should see progress messages for each country.
 
 ### Test Run: Single Country (ZZ - Test Country)
 
-In a Python console or notebook with the `susbiom_trade_kernel`:
+In a Python console or notebook with the `eu_cbm_hat_kernel`:
 
 ```python
 from eu_cbm_hat.core.continent import continent
@@ -257,7 +295,7 @@ runner.run(keep_in_ram=True, verbose=True)
 # Troubleshooting
 
 **Problem:** `ModuleNotFoundError: No module named 'eu_cbm_hat'`
-- **Solution:** Make sure you selected the `susbiom_trade_kernel` in Jupyter Lab
+- **Solution:** Make sure you selected the `eu_cbm_hat_kernel` in Jupyter Lab
 
 **Problem:** `FileNotFoundError` when accessing country data
 - **Solution:** Verify symbolic links exist: `ls -l $HOME/eu_cbm`
