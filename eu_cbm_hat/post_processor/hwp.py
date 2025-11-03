@@ -523,7 +523,7 @@ class HWP:
         # df["pp_dom_tc"], df["wp_dom_tc"] have to be generated from that input
         # data just before the following arithmetic's
 
-        # HANDOINLING DENOIMINATOR ZERO AND INF
+        # HANDLING DENOIMINATOR ZERO AND INF
         # df["sw_broad_fraction"] = df["sw_broad_dom_tc"] / df["sawlogs_broad"]
         df["sw_broad_fraction"] = (
             (df["sw_broad_dom_tc"] / df["sawlogs_broad"])
@@ -610,6 +610,11 @@ class HWP:
             msg += "\nThis temporary warning related to the wp_fraction should be an error instead."
             warnings.warn(msg)
 
+        # Save intermediary DataFrame to CSV
+        df['country'] = self.runner.country.country_name
+        output_path = eu_cbm_data_pathlib / "quick_results" / "mean_n_years.csv"
+        df.to_csv(output_path, mode="a", header=True)
+
         # Compute the average of the selected columns
         selected_cols = [
             "sw_broad_fraction",
@@ -649,6 +654,13 @@ class HWP:
         """Fraction of semi finished products scenario case"""
         mean_frac = self.fraction_semifinished_n_years_mean
         df = hwp_common_input.hwp_fraction_semifinished_scenario.copy()
+
+        # HERE WE NEED TO ALLOW simulation choosing between input types either on
+        # fraction based inputs: 'sw_fraction','sw_broad_fraction','sw_con_fraction','pp_fraction','wp_fraction'
+        # OR
+        # on amount based inputs 'sw_broad_expected','sw_con_expected','sw_expected','pp_expected','wp_expected'
+        # as defined in the in put file hwp_fraction_semifinished_scenario.csv
+
         selector = df["country"] == self.runner.country.country_name
         selector &= df["hwp_frac_scenario"] == self.hwp_frac_scenario
         df.drop(columns=["country", "hwp_frac_scenario"], inplace=True)

@@ -1,302 +1,153 @@
 
-# EU-CBM-HAT Quick Start Guide on JRC BDAP
+# Introduction
 
-Get up and running with EU-CBM-HAT. This guide shows you how to install the model, set
-up your data, and run your first forest carbon simulation.
-
-Note: This setup is for the Joint Research Centre JRC compute cluster called
-[BDAP](https://jeodpp.jrc.ec.europa.eu/bdap/). You will have to adapt the instructions
-if you are running on another computer system.
+This setup is for the Joint Research Centre JRC compute cluster called
+[BDAP](https://jeodpp.jrc.ec.europa.eu/bdap/).
 
 - See also the bdap guide inside obs3df_documents/tools/bdap/bdap_guide.md
 
 
-# What You'll Need
+# Create a gitlab token
 
-- Access to the JRC BDAP compute cluster (or a local Linux/Mac environment)
-- A GitLab account with access to the eu_cbm repositories
-- Basic familiarity with command line and Python
+- Login to  your gitlab account.
+
+- Click on your user name, then "preferences", then "personal access tokens".
+
+- Click on add a new token.
+
+    - Give it a name "jrc_bdap" for example.
+
+    - Give it an expiration date of a few months so that you don't have to renew it so
+      frequently.
+
+    - Click on the scope button "read_repository" to give it read permissions only. That
+      should be enough to read only.
+
+    - Click on "create token"
+
+- Save the displayed token in your password manager.
+
+You can now use the gitlab authentication token to clone private repositories in the next step.
 
 
-# Installation
+# Create eu_cbm and load data
 
-EU-CBM-HAT requires three main components:
+Some of the commands we used to configure the EU-CBM-HAT model on BDAP JEO-Desk:
 
-1. **eu_cbm_hat** - The Python package (the model itself)
-2. **eu_cbm_data** - Country-specific input data (inventory, growth, disturbances)
-3. **eu_cbm_aidb** - Archive Index Database (soil parameters, biomass factors)
+- Start Applications / JEODPP / Jupyter Lab
 
-Follow the steps to set up required input data.
+- Start a bash terminal within Jupyter lab
 
+- Move to the `/eos` user directory and create a `eu_cbm` directory there, then clone
+  the repositories one by one.
 
-## Step 1: Create a GitLab Access Token
+    - For private repositories `eu_cbm_data` and `eu_cbm_explore`, use your gitlab user
+      name and personal authentication token on the first clone (git will remember the
+      token after that).
 
-You'll need an access token to download data from private repositories:
-
-1. Log into your GitLab account at https://gitlab.com
-2. Click your profile picture → **Preferences** → **Access Tokens**
-3. Click **Add new token**
-   - Name: `jrc_bdap` (or any name you prefer)
-   - Expiration: Set 3-6 months from now
-   - Scope: Check **read_repository** only
-4. Click **Create personal access token**
-5. **Important**: Copy and save the token immediately to your password manager (it won't be shown again)
-
-## Step 2: Set Up Data Directories
-
-Open a terminal and create the directory structure:
-
-```bash
-# Navigate to your user directory
+```
 cd /eos/jeodpp/home/users/$USER
-
-# Create main directory
 mkdir eu_cbm
 cd eu_cbm
-
-# Clone the three required repositories
-# You'll be prompted for username and token on first clone
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_data.git
 git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_aidb.git
-git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore.git
+git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_explore
 ```
 
-**When prompted:**
-- Username: Your GitLab username
-- Password: Paste the access token you created in Step 1. Git will remember the token
-  for subsequent git pull operations.
+- Move to the user `$HOME` directory and create a symbolic link to the `/eos` home
+  directory (`$HOME/eu_cbm` is the default location of the `eu_cbm` data and aidb
+  directories, as defined in
+  [`eu_cbm_hat/__init__.py`](https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/blob/main/eu_cbm_hat/__init__.py?ref_type=heads#L47)).
+  Then move to the `/storage` directory and create a symbolic link to `eu_cbm` there as
+  well (this is needed because `/storage` is the root of the Jupyter lab file browser
+  for some unknown reason)
 
-## Step 3: Create Symbolic Links
-
-The model expects to find data in `$HOME/eu_cbm`, so create links:
-
-```bash
-# Link from home directory
+```
 cd $HOME
 ln -s /eos/jeodpp/home/users/$USER/eu_cbm eu_cbm
-
-# Link from storage directory (for Jupyter Lab file browser)
 cd /storage/$USER
 ln -s /eos/jeodpp/home/users/$USER/eu_cbm eu_cbm
 ```
 
-**Verify your setup:**
-```bash
-ls -l $HOME/eu_cbm
-# You should see: eu_cbm_data, eu_cbm_aidb, eu_cbm_explore
+# Setup conda and environment variables
+
+-  Edit your `.profile` inside your user directory by entering the following in the file
+   browser's address bar:  `/home/<your username>/.profile`. A file editor will open.
+   Add this line of code at the end of the file and then save it (more details above).
+   This will load the conda environment for jeo desk.
+
 ```
-
-## Step 4: Configure Your Environment
-
-Edit your profile to load the conda environment:
-
-```bash
-# Open your profile file
-# In Jupyter Lab file browser, navigate to: /home/<username>/.profile
-# Or use a text editor:
-vim $HOME/.profile
-```
-
-Add this line at the end:
-```bash
 source /storage/SUSBIOM-TRADE/env_var/.env
 ```
 
-Save and close the file, then reload it:
-```bash
-source $HOME/.profile
+- Add the parent directory of the use case environment susbiom_trade_env. Click on
+  “Terminal Emulator” type
+
 ```
-
-## Step 5: Set Up the Python Environment
-
-Configure conda to find the EU-CBM environment:
-
-```bash
-# Add the environment directory
 conda config --append envs_dirs /storage/SUSBIOM-TRADE/conda/
-
-# Install the Jupyter kernel
-/storage/SUSBIOM-TRADE/conda/susbiom_trade_env/bin/python -m ipykernel install --user --name=susbiom_trade_kernel
-
-# Verify installation
-jupyter kernelspec list
-# You should see: susbiom_trade_kernel
 ```
 
-## Step 6: Initialize the AIDB
+- Type this command and then press enter :
 
-Open Jupyter Lab and create a new console with the `susbiom_trade_kernel`:
+```
+/storage/SUSBIOM-TRADE/conda/susbiom_trade_env/bin/python -m ipykernel install --user --name=susbiom_trade_kernel
+```
 
-```python
+- **Optional developer setup** `eu_cbm_hat` was installed by pip install inside the
+  conda environment. But in case we choose to overwrite that version, we can clone the
+  `eu_cbm_hat` repository as well and set the `PYTHONPATH` environment variable to load
+  the development version of `eu_cbm_hat` first.
+
+```
+cd $HOME/eu_cbm
+git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
+# Edit .profile with a text editor and enter your actual user name
+cd $HOME
+vim .profile
+export PYTHONPATH='/eos/jeodpp/home/users/USER_NAME/eu_cbm/eu_cbm_hat/':$PYTHONPATH
+```
+
+
+# Setup Jupyter Lab
+
+Make the python program from the `susbiom_trade_env` available as an ipython kernel for
+processing with jupyter lab:
+
+    /storage/SUSBIOM-TRADE/conda/susbiom_trade_env/bin/python -m ipykernel install --user --name=susbiom_trade_kernel
+
+Check that it is now available:
+
+    jupyter kernelspec list
+
+
+# Create AIDB symlinks
+
+
+- To create AIDB symlinks. Press the big blue plus button in Jupyter lab to start a new
+  launcher, then start a console with the `susbiom_trade_kernel`. In that console enter:
+
+```
 from eu_cbm_hat.core.continent import continent
-
-# Create symbolic links for all country AIDBs
 for country in continent:
     country.aidb.symlink_all_aidb()
 ```
 
-This may take a few minutes. You should see progress messages for each country.
+- **Note**: This setup uses the default location of  `eu_cbm_data` and `eu_cbm_aidb`, it
+  is therefore not necessary to define the environment variables `EU_CBM_DATA` and
+  `EU_CBM_AIDB`.
 
-## Step 7: Run Your First Simulation
 
-### Test Run: Single Country (ZZ - Test Country)
+# Run the model
 
-In a Python console or notebook with the `susbiom_trade_kernel`:
+Try to run the model for one country in a python console:
 
-```python
+```
 from eu_cbm_hat.core.continent import continent
-
-# Load the test country (ZZ) with the reference scenario
 runner = continent.combos['reference'].runners['ZZ'][-1]
-
-# Run the simulation
 runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
-
-# Check basic results
-print(f"Simulation completed for {runner.country.country_code}")
-print(f"Years simulated: {runner.country.base_year} to {runner.country.num_timesteps + runner.country.base_year}")
 ```
 
-**What's happening:**
-- `continent.combos['reference']` - Loads the reference scenario
-- `.runners['ZZ'][-1]` - Gets the runner for country ZZ (last version)
-- `keep_in_ram=True` - Stores results in memory for quick access
-- `verbose=True` - Shows progress messages
-- `interrupt_on_error=True` - Stops if errors occur
-
-### Expected Output:
-
-You should see progress messages about loading data, running timesteps, and completion
-status. The test country ZZ typically completes in 1-2 minutes.
-
-## Step 8: Access Your Results
-
-After the run completes:
-
-```python
-# Access carbon stock data
-stocks = runner.output.stock
-
-# Access carbon sink (CO2 emissions/removals)
-sink = runner.post_processor.sink.long
-
-# View first few rows
-print(sink.head())
-
-# Get summary statistics
-print(f"Total sink over simulation: {sink['Total'].sum():.2f} Mt CO2e")
-```
-
-# Running the model
+- Try a run for many countries by looking
+  at `eu_cbm_hat/scripts/running/run_scenario_combo.py`
 
 
-## Running Real Countries
-
-Once you've tested with ZZ, try a real country:
-
-```python
-# Example: Run Austria
-runner_at = continent.combos['reference'].runners['AT'][-1]
-runner_at.run(keep_in_ram=True, verbose=True)
-
-# Compare with Germany
-runner_de = continent.combos['reference'].runners['DE'][-1]
-runner_de.run(keep_in_ram=True, verbose=True)
-```
-
-**Available countries:**
-Check what's available with:
-```python
-print(list(continent.combos['reference'].runners.keys()))
-```
-
-
-## Running Multiple Countries in parallel
-
-The scenario combination object has a run method to run a list of countries. If the list
-of countries is not specified, run all countries. A convenient method that makes it
-possible to run all countries inside a combination of scenarios. If one country fails to
-run, the error will be kept in its log files but the other countries will continue to
-run.
-
-Note: this method makes use of the run_one_country() function above which will only run
-one step inside the country. An update to that function will be needed in case your
-simulation needs many steps. We typically only run one step normally. Here the meaning
-of step is not that of yearly time steps, but bigger steps in terms of being able to
-start and stop the model which were foreseen in a legacy version of the model.
-
-For example the following code runs the "reference" scenario combination for many
-countries:
-
-```python
-from eu_cbm_hat.core.continent import continent
-# Run a list of countries
-continent.combos["reference"].run(2050, ['LU','ZZ'])
-# Run all countries with parallel cpus
-continent.combos["reference"].run(2050)
-# Run sequentially (not in parallel)
-continent.combos["reference"].run(2050, parallel=False)
-```
-
-# Defining Scenarios
-
-Scenarios are defined in YAML files located in `eu_cbm_data/combos/`. The 'reference'
-scenario is the baseline. To see available scenarios:
-
-```python
-print(list(continent.combos.keys()))
-```
-
-To run a different scenario:
-```python
-# Example: high harvest scenario
-runner = continent.combos['high_harvest'].runners['AT'][-1]
-runner.run(keep_in_ram=True, verbose=True)
-```
-
-# Troubleshooting
-
-**Problem:** `ModuleNotFoundError: No module named 'eu_cbm_hat'`
-- **Solution:** Make sure you selected the `susbiom_trade_kernel` in Jupyter Lab
-
-**Problem:** `FileNotFoundError` when accessing country data
-- **Solution:** Verify symbolic links exist: `ls -l $HOME/eu_cbm`
-
-**Problem:** GitLab authentication fails
-- **Solution:** Regenerate your access token and try cloning again
-
-**Problem:** AIDB symlinks fail
-- **Solution:** Ensure you have write permissions in the aidb directory
-
-# Next Steps
-
-Now that you have the model running:
-
-1. **Explore the output data structure** - See the [post_processor documentation](eu_cbm_hat/post_processor.html)
-2. **Modify scenarios** - Learn about YAML scenario files in `eu_cbm_data/combos/`
-3. **Analyze results** - Use `eu_cbm_explore` for visualization and analysis tools
-4. **Run custom simulations** - See the [full documentation](https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html)
-
-# Getting Help
-
-- **Documentation:** https://bioeconomy.gitlab.io/eu_cbm/eu_cbm_hat/eu_cbm_hat.html
-- **Source code:** https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat
-- **Issues:** Report problems on the GitLab issue tracker https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues
-
-# Developer Setup (Optional)
-
-If you want to modify the `eu_cbm_hat` code itself:
-
-```bash
-# Clone the package repository
-cd $HOME/eu_cbm
-git clone https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat.git
-
-# Edit your .profile to prioritize your development version
-echo "export PYTHONPATH='/eos/jeodpp/home/users/$USER/eu_cbm/eu_cbm_hat/':$PYTHONPATH" >> $HOME/.profile
-
-# Reload your profile
-source $HOME/.profile
-```
-
-Now your local changes to `eu_cbm_hat` will be used instead of the conda-installed version.p

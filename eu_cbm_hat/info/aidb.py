@@ -11,16 +11,21 @@ Unit D1 Bioeconomy.
 # Built-in modules #
 from contextlib import contextmanager
 import os
+from pathlib import Path
 import shutil
 import tempfile
 
+# Third party modules #
+import pandas as pd
+
 # First party modules #
-from autopaths.dir_path   import DirectoryPath
+from autopaths.dir_path import DirectoryPath
 from autopaths.auto_paths import AutoPaths
-from plumbing.cache       import property_cached
+from plumbing.cache import property_cached
 
 # Internal modules #
 from eu_cbm_hat.constants import eu_cbm_aidb_dir
+
 
 @contextmanager
 def local_db_copy(db_path: str):
@@ -28,13 +33,13 @@ def local_db_copy(db_path: str):
     Creates a temporary, local copy of a database file. The temporary copy is
     automatically cleaned up when the 'with' block exits. Cleanup errors are
     ignored to prevent simulation failures due to temporary file system issues.
-    
+
     Args:
         db_path (str): Path to the original database file
-        
+
     Yields:
         str: Path to the temporary database copy
-        
+
     Example:
         with local_db_copy('/path/to/original.db') as tmpdb:
             # Use tmpdb for read operations
@@ -116,14 +121,16 @@ class AIDB(object):
         # Keep the default paths in this argument
         self.default_aidb_path = self.paths.aidb
         # The AIDB path may be changed in some scenario combinations
-        # Path to the database in a separate repository #
-        self.repo_file = eu_cbm_aidb_dir + 'countries/' + self.parent.iso2_code \
-                         + '/aidb.db'
+        # Path to the database in a separate repository
+        self.repo_file = (
+            eu_cbm_aidb_dir + "countries/" + self.parent.iso2_code + "/aidb.db"
+        )
+        self.csv_dir_pathlib = Path(self.repo_file).parent / "csv"
 
     def __bool__(self):
         return bool(self.paths.aidb)
 
-    #----------------------------- Properties --------------------------------#
+    # ----------------------------- Properties --------------------------------#
     @property_cached
     def db(self):
         """
@@ -149,6 +156,7 @@ class AIDB(object):
 
         """
         from plumbing.databases.sqlite_database import SQLiteDatabase
+
         return SQLiteDatabase(self.paths.aidb)
 
     @property
@@ -162,37 +170,40 @@ class AIDB(object):
             >>> r.country.aidb.vol_conv_to_biomass
 
         """
-        #load table with factors
-        vol_to_biomass_factors = (self.db.read_df('vol_to_bio_factor')
-                                  .drop_duplicates(subset=['a', 'b'], keep='last'))
-        #load the parameteres a and b for species from aidb
-        vol_to_bio_f = vol_to_biomass_factors.rename(columns = {'id':'vol_to_bio_factor_id'})
-        vol_to_bio_sp = (self.db.read_df('vol_to_bio_species')
-                         .drop_duplicates(subset=['species_id'], keep='last')
-                        )
+        # load table with factors
+        vol_to_biomass_factors = self.db.read_df("vol_to_bio_factor").drop_duplicates(
+            subset=["a", "b"], keep="last"
+        )
+        # load the parameteres a and b for species from aidb
+        vol_to_bio_f = vol_to_biomass_factors.rename(
+            columns={"id": "vol_to_bio_factor_id"}
+        )
+        vol_to_bio_sp = self.db.read_df("vol_to_bio_species").drop_duplicates(
+            subset=["species_id"], keep="last"
+        )
         # add species ids to a and b values
-        vol_to_bio_sp_f = vol_to_bio_sp.merge(vol_to_bio_f, how = 'inner')
-        species_name = self.db.read_df('species_tr')
-        sp_name = species_name.rename(columns = {'name': 'cbm_forest_name'})
+        vol_to_bio_sp_f = vol_to_bio_sp.merge(vol_to_bio_f, how="inner")
+        species_name = self.db.read_df("species_tr")
+        sp_name = species_name.rename(columns={"name": "cbm_forest_name"})
         # get the final database on spatial_units_ids and species or forest types
-        vol_to_bio_species_factors = (vol_to_bio_sp_f
-                                      .merge(sp_name, how = 'inner', on = 'species_id')
-                                      .drop(columns = 'vol_to_bio_factor_id')
-                                      .rename(columns = {'species_name':'forest_type'})                                                                )
-        #select only the relevant columns
-        colns = ['cbm_forest_name','spatial_unit_id', 'species_id', 'a', 'b']
+        vol_to_bio_species_factors = (
+            vol_to_bio_sp_f.merge(sp_name, how="inner", on="species_id")
+            .drop(columns="vol_to_bio_factor_id")
+            .rename(columns={"species_name": "forest_type"})
+        )
+        # select only the relevant columns
+        colns = ["cbm_forest_name", "spatial_unit_id", "species_id", "a", "b"]
         cbm_biom = vol_to_bio_species_factors[colns]
         return cbm_biom
 
-
-    #------------------------------- Methods ---------------------------------#
+    # ------------------------------- Methods ---------------------------------#
     def symlink_single_aidb(self):
         """
         During development, and for testing purposes we have a single AIDB
         that all countries can share and that is found in another repository.
         """
         # The path to the SQLite3 file #
-        source = DirectoryPath(eu_cbm_aidb_dir + 'aidb.db')
+        source = DirectoryPath(eu_cbm_aidb_dir + "aidb.db")
         # Check it exists #
         try:
             assert source
@@ -218,7 +229,7 @@ class AIDB(object):
         # Symlink #
         self.repo_file.link_to(destin)
         # Return #
-        return 'Symlink success for ' + self.parent.iso2_code + '.'
+        return "Symlink success for " + self.parent.iso2_code + "."
 
     def change_path(self, combo_name):
         """Change the path to the AIDB
@@ -231,3 +242,50 @@ class AIDB(object):
         """
         self.all_paths = f"/config/aidb_{combo_name}.db"
         self.paths = AutoPaths(self.parent.data_dir, self.all_paths)
+
+    def write_all_tables_to_csv(self):
+        """Write all tables to CSV files in the country directory
+
+        Read each table from the database and write it to a CSV in the csv
+        subdirectory.
+
+        Example:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> aidb = continent.countries["ZZ"].aidb
+            >>> aidb.write_all_tables_to_csv()
+
+        """
+        if not self.csv_dir_pathlib.exists():
+            self.csv_dir_pathlib.mkdir()
+        for table in self.db.tables:
+            table_name = table.decode('utf-8')
+            print(f"Writing table {table_name} to CSV")
+            df = self.db.read_df(table_name)
+            csv_path = self.csv_dir_pathlib / f"{table_name}.csv"
+            df.to_csv(csv_path, index=False)
+
+    def read_all_tables_from_csv(self):
+        """Read all tables from CSV files in the country directory"""
+
+
+    def write_all_tables_to_excel(self):
+        """Write all AIDB tables to an excel file in the AIDB repository
+
+        Write each table to a different sheet inside the Excel file.
+
+        Example:
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> aidb = continent.countries["ZZ"].aidb
+            >>> aidb.write_all_tables_to_excel()
+
+        """
+        excel_file = Path(self.repo_file).parent / "aidb.xlsx"
+        with pd.ExcelWriter(excel_file) as writer:
+            for table in self.db.tables:
+                table_name = table.decode('utf-8')
+                print(f"Writing table {table_name} to Excel")
+                df = self.db.read_df(table_name)
+                df.to_excel(writer, sheet_name=table_name, index=False)
+

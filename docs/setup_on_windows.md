@@ -1,11 +1,5 @@
 # Installation
 
-If you have never used python before and if you are on Windows, you might want to
-[install Anaconda](https://www.anaconda.com/) on your system, it will help you with
-managing packages dependencies. You also need to [install
-git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) in order to install
-python packages from git repositories.
-
 This guide shows how to set up the `eu_cbm_data` and `eu_cbm_hat` projects together on a Windows system to run the 26 EU carbon budget simulations with `libcbm_py` automatically.
 
 ## Install Python 3
@@ -54,12 +48,12 @@ Use pip from an administrator shell:
     for example plumbing
     pip install --upgrade plumbing
 
-Set a specific variant of pandas to avoid warnings about the frame.append method as
+Set a specific variant of pandas to avoid warnings about the frame.append method as 
 documented in https://github.com/cat-cfs/libcbm_py/issues/27
 
     pip install --upgrade pandas==1.3.5
 
-See also issue https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/38
+See also issue https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/38 
 
 ## Set environment variables
 
