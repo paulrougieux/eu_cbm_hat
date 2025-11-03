@@ -103,6 +103,24 @@ conda activate eu_cbm_hat
 pip install -e .
 ```
 
+Follow these instructions only in case of an update. **Ignore these instructions on the
+first installation**, if you want a fresh start, remove the old environment, recreate
+it, reinstall the package and the Jupyter kernel.
+
+```bash
+cd $HOME/eu_cbm/eu_cbm_hat
+# Remove the old environment
+conda deactivate
+conda env remove -n eu_cbm_hat
+# Recreate from environment.yml
+conda env create -f environment.yml
+# Reinstall the package
+conda activate eu_cbm_hat
+pip install -e .
+# Reinstall the Jupyter kernel
+python -m ipykernel install --user --name=eu_cbm_hat_kernel --display-name "Python (eu_cbm_hat)"
+```
+
 
 ## Step 5: Configure Jupyter to find the eu_cbm_hat Conda environment
 
@@ -120,12 +138,13 @@ jupyter kernelspec list
 
 ### Outdated instructions for the susbiom trade environment pre-2025
 
-As of November 2025, these instructions should not be necessary.
+**Please ignore this section**, as of November 2025, the following instructions should
+not be necessary.
 
 - See issue 134 https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/134
 
 - Instruction below for the susbiom trade conda environment and associated jupyter
-  kernel Kept temporarily in case there is a use case where you do need the susbiom
+  kernel kept here temporarily in case there is a use case where you do need the susbiom
   trade environment.
 
 Edit your profile to load the conda environment:
