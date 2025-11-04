@@ -457,6 +457,38 @@ class HWP:
         df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         return df
 
+    @cached_property
+    def fluxes_by_grade2(self) -> pandas.DataFrame:
+        """Smooth fluxes by grade according the length of the window and the
+        number of peaks removed. Smoothing starts only from a defined year"""
+
+       
+        # Define the columns to be modified
+        columns_to_modify = ['pulpwood_broad', 'pulpwood_con', 'sawlogs_broad', 'sawlogs_con']
+        
+        # Step 1: Calculate the unique ratio for each column (2024 to 2023)
+        unique_ratios = df[df['year'] == 2023][columns_to_modify].values.flatten() / df[df['year'] == 2024][columns_to_modify].values.flatten()
+        
+        print(df[df['year'] == 2023]) # to move to average of 2021-2023
+        print(df[df['year'] == 2024])
+        print(unique_ratios)
+                    
+        # Step 2: Calculate the fraction change for each year from 2024 onwards
+        fraction_changes = df[df['year'] >= 2024][columns_to_modify].div(df[df['year'] >= 2024][columns_to_modify].shift(1)).fillna(1)
+
+        # Step 3: Multiply the original values from 2024 onwards with the unique ratio and the fraction change for that specific year
+        for year in range(2024, 2101):
+            if year in df['year'].values:
+                # Get the row index for the current year
+                idx = df[df['year'] == year].index[0]
+                # Get the fraction change for the current year
+                current_fraction_change = fraction_changes.loc[idx]
+                # Multiply the original values with the unique ratio and the current fraction change
+                df.loc[idx, columns_to_modify] = (df.loc[idx, columns_to_modify] * unique_ratios * current_fraction_change)  
+
+
+        
+
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products as the average of the
