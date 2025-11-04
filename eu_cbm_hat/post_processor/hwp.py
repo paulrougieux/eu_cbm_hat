@@ -74,37 +74,6 @@ from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
 from eu_cbm_hat import eu_cbm_data_pathlib 
 
 
-def mean_without_peaks(x, n_peaks_to_remove):
-    """Compute the mean after removing the n values furthest from the mean.
-
-    Parameters
-    ----------
-    x : pandas.Series
-        The input series.
-    n_peaks_to_remove : int
-        Number of values to remove that are furthest from the mean.
-
-    Returns
-    -------
-    float
-        The mean of the series after removing the n most distant values.
-
-    Example
-    -------
-    >>> import pandas as pd
-    >>> # [0,1,2,3,4] -> remove 0 and 4 -> mean of [1,2,3] = 2.0
-    >>> mean_without_peaks(pd.Series(range(5)), 2)
-    >>> # remove 100 and -100 -> mean of [1,2,3] = 2.0
-    >>> mean_without_peaks(pd.Series([-100,1,2,3,100]), 2)
-    >>> mean_without_peaks(pd.Series([-100,1,2,3,100]), 1)
-    """
-    if n_peaks_to_remove >= len(x):
-        raise ValueError(f"n_peaks_to_remove={n_peaks_to_remove} >= {len(x)}=len(x)")
-    mu = x.mean()
-    abs_dev = (x - mu).abs()
-    indices_to_remove = abs_dev.nlargest(n_peaks_to_remove).index
-    x_filtered = x.drop(indices_to_remove)
-    return x_filtered.mean()
 
 class HWP:
     """Compute the Harvested Wood Products Sink
@@ -120,6 +89,7 @@ class HWP:
         >>> runner.post_processor.hwp.fluxes_by_grade_dbh
         >>> runner.post_processor.hwp.fluxes_by_grade
         >>> runner.post_processor.hwp.build_hwp_stock
+        >>> print(runner.post_processor.hwp.stock_sink_results)
 
     Compute results for the default scenario and for another hwp scenario
 
@@ -180,10 +150,9 @@ class HWP:
         # is accounted, the default option). When set to TRUE, 
         # the export-import is not accounted.
         self.no_export_no_import = False
-        # Number of years for smoothing peaks in flux_by_grade
-        self.n_years_window_flux_by_grade = 5
-        self.n_peaks_to_remove_flux_by_grade = 2
-        self.year_start_smoothing_flux_by_grade = self.runner.country.base_year - 3
+        # Number of years to compute the ratio between historical and simulation 
+        # sawlogs and pulpwood amounts
+        self.n_years_fluxes_by_grade_mean = 3
 
     def __repr__(self):
         return '%s object code "%s"' % (self.__class__, self.runner.short_name)
@@ -366,128 +335,72 @@ class HWP:
         return df2
 
     @cached_property
-    def fluxes_by_grade_not_smoothed(self) -> pandas.DataFrame:
-        """Smoothed fluxes by grade Aggregate and reshape the data frame, replacing exceptional values
-        with adjusted percentages starting from 2021.
+    def fluxes_by_grade_pulpwood_sawlogs(self) -> pandas.DataFrame:
+        """Fluxes of roundwood products by grade saw logs and pulp logs
+        coniferous and broadleaves.
         """
         index = ["year", "grade", "con_broad"]
         df_long = (
             self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
         )
-        # Glue grade and con_broad columns together
+        # Glue columns grade and con_broad together
         df_long["grade2"] = df_long["grade"] + "_" + df_long["con_broad"]
         df = df_long.pivot(
             columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
         return df
 
-    
+
     @cached_property
     def fluxes_by_grade(self) -> pandas.DataFrame:
-        """Smooth fluxes by grade according the length of the window and the
-        number of peaks removed. Smoothing starts only from a defined year.
+        """ 
+        Separate data before and after the simulation base year
+        Calculate a unique ratio between the past n year and the simulation base year
+        Multiply the ratio for all column
 
-        Example:
+        Ratios smaller than one represent a reduction in the logs amount
+        allocated to products, the difference between the ratio and a value of
+        one represents logs that will later be allocated to secondary fuelwood.
+
+        Example 
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> import matplotlib.pyplot as plt
-        >>> runner = continent.combos['reference'].runners['LU'][-1]
-
-        Plot the original un smoothed data
+        >>> runner = continent.combos['reference'].runners['BE'][-1]
 
         >>> df0 = runner.post_processor.hwp.fluxes_by_grade_not_smoothed
         >>> df0.set_index("year").plot()
         >>> plt.show()
 
-        Plot the smoothed data with default window length and n peaks parameters
-
-        >>> dfd = runner.post_processor.hwp.fluxes_by_grade
-        >>> cols = ["pulpwood_broad", "pulpwood_con", "sawlogs_broad", "sawlogs_con"]
-        >>> dfd.set_index("year")[cols].plot()
-        >>> plt.show()
-
-        Change smoothing window size and number of peaks for the whole data frame
-
-        >>> runner.post_processor.hwp.n_years_window_flux_by_grade = 11
-        >>> runner.post_processor.hwp.n_peaks_to_remove_flux_by_grade = 0
-        >>> # Invalidate the cache by deleting the property
-        >>> del runner.post_processor.hwp.fluxes_by_grade
-        >>> df11 = runner.post_processor.hwp.fluxes_by_grade
-
-        Other experiments on a single column
-
-        Change the length of the window
-
-        >>> # compare 3, 5, 7 years of smoothing, keep also start years
-        >>> df["pulpwood_con3"] = df["pulpwood_con"].rolling(3,min_periods=1, center=True).apply(lambda x: x.mean())
-        >>> df["pulpwood_con5"] = df["pulpwood_con"].rolling(5,min_periods=1, center=True).apply(lambda x: x.mean())
-        >>> df["pulpwood_con7"] = df["pulpwood_con"].rolling(7,min_periods=1, center=True).apply(lambda x: x.mean())
-        >>> df.set_index("year")[["pulpwood_con", "pulpwood_con3", "pulpwood_con5", "pulpwood_con7"]].plot()
-        >>> plt.show()
-
-        Remove 0, 1, 2 or 3 peaks
-
-        >>> from eu_cbm_hat.post_processor.hwp import mean_without_peaks
-        >>> df["pulpwood_broad0"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(0,))
-        >>> df["pulpwood_broad1"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(1,))
-        >>> df["pulpwood_broad2"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(2,))
-        >>> df["pulpwood_broad3"] = df["pulpwood_broad"].rolling(5,min_periods=4, center=True).apply(mean_without_peaks,args=(3,))
-        >>> df.set_index("year")[["pulpwood_broad", "pulpwood_broad0", "pulpwood_broad1", "pulpwood_broad2", "pulpwood_broad3"]].plot()
+        >>> df2 = runner.post_processor.hwp.fluxes_by_grade2
+        >>> df2.set_index("year").plot()
         >>> plt.show()
 
         """
-        df = self.fluxes_by_grade_not_smoothed.copy()
-        columns_to_process = [
-            "sawlogs_broad",
-            "sawlogs_con",
-            "pulpwood_con",
-            "pulpwood_broad",
-        ]
-        for column in columns_to_process:
-            df[column] = (
-                df[column]
-                # Keep minimum 3 values at the beginning
-                .rolling(window=self.n_years_window_flux_by_grade, min_periods=3, center=True)
-                .apply(mean_without_peaks, args=(self.n_peaks_to_remove_flux_by_grade,))
-            )
-            # Keep original values before the start year
-            selector = df["year"] < self.year_start_smoothing_flux_by_grade
-            df.loc[selector, column] = self.fluxes_by_grade_not_smoothed.loc[selector, column]            
+        df = self.fluxes_by_grade_pulpwood_sawlogs.copy()
+        columns_to_modify = ['pulpwood_broad', 'pulpwood_con', 'sawlogs_broad', 'sawlogs_con']
+        # Separate data before and after the simulation base year
+        selector = df["year"] < self.runner.country.base_year
+        df_before = df.loc[selector].copy()
+        df_after = df.loc[~selector].copy()
+        # Calculate a unique ratio between the past n year and the simulation base year
+        selector = (self.runner.country.base_year - self.n_years_fluxes_by_grade_mean) <= df["year"]
+        selector &= df["year"] <= self.runner.country.base_year -1
+        df_mean = df.loc[selector,columns_to_modify].agg("mean")
+        selector = self.runner.country.base_year <= df["year"]
+        selector &= df["year"] <= self.runner.country.base_year + self.n_years_fluxes_by_grade_mean - 1 
+        df_mean_sim_begin = df.loc[selector,columns_to_modify].agg("mean")
+        df_ratio = df_mean / df_mean_sim_begin
+        # Ratios cannot be greater than one, see docstring.
+        df_ratio[df_ratio > 1] = 1
+        # Multiply the ratio for all column
+        for col in columns_to_modify:
+            df_after[col] = df_after[col] *  df_ratio[col]
+        df = pandas.concat([df_before, df_after]).reset_index(drop=True)
         df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
         df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         return df
 
-    @cached_property
-    def fluxes_by_grade2(self) -> pandas.DataFrame:
-        """Smooth fluxes by grade according the length of the window and the
-        number of peaks removed. Smoothing starts only from a defined year"""
-
-       
-        # Define the columns to be modified
-        columns_to_modify = ['pulpwood_broad', 'pulpwood_con', 'sawlogs_broad', 'sawlogs_con']
-        
-        # Step 1: Calculate the unique ratio for each column (2024 to 2023)
-        unique_ratios = df[df['year'] == 2023][columns_to_modify].values.flatten() / df[df['year'] == 2024][columns_to_modify].values.flatten()
-        
-        print(df[df['year'] == 2023]) # to move to average of 2021-2023
-        print(df[df['year'] == 2024])
-        print(unique_ratios)
-                    
-        # Step 2: Calculate the fraction change for each year from 2024 onwards
-        fraction_changes = df[df['year'] >= 2024][columns_to_modify].div(df[df['year'] >= 2024][columns_to_modify].shift(1)).fillna(1)
-
-        # Step 3: Multiply the original values from 2024 onwards with the unique ratio and the fraction change for that specific year
-        for year in range(2024, 2101):
-            if year in df['year'].values:
-                # Get the row index for the current year
-                idx = df[df['year'] == year].index[0]
-                # Get the fraction change for the current year
-                current_fraction_change = fraction_changes.loc[idx]
-                # Multiply the original values with the unique ratio and the current fraction change
-                df.loc[idx, columns_to_modify] = (df.loc[idx, columns_to_modify] * unique_ratios * current_fraction_change)  
-
-
-        
 
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
@@ -641,11 +554,6 @@ class HWP:
             )
             msg += "\nThis temporary warning related to the wp_fraction should be an error instead."
             warnings.warn(msg)
-
-        # Save intermediary DataFrame to CSV
-        df['country'] = self.runner.country.country_name
-        output_path = eu_cbm_data_pathlib / "quick_results" / "mean_n_years.csv"
-        df.to_csv(output_path, mode="a", header=True)
 
         # Compute the average of the selected columns
         selected_cols = [
