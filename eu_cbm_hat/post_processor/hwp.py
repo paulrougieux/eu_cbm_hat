@@ -666,12 +666,8 @@ class HWP:
         external model. See issue 104.
         https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/104#top
 
-        Illustrate a change of fraction semi finished scenario:
-
-
-
-
-        Illustrate a change of the sw, wp, pp fractions:
+        Illustrate a change of the semi finished scenario from fractions to
+        amounts:
 
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
