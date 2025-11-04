@@ -8,7 +8,8 @@ Note: This setup is for the Joint Research Centre JRC compute cluster called
 [BDAP](https://jeodpp.jrc.ec.europa.eu/bdap/). You will have to adapt the instructions
 if you are running on another computer system.
 
-- See also the bdap guide inside obs3df_documents/tools/bdap/bdap_guide.md
+- For more information on how to set up different forest related coding projects on
+  BDAP, see also the bdap guide inside obs3df_documents/tools/bdap/bdap_guide.md
 
 
 # What You'll Need
@@ -95,6 +96,9 @@ ls -l $HOME/eu_cbm
 
 ## Step 4: Install eu_cbm_hat in a Conda environment
 
+Move to the `eu_cbm_hat` directory, then create a conda environment based o the
+`environment.yml` file there
+
 ```bash
 cd $HOME/eu_cbm/eu_cbm_hat
 conda env create -f environment.yml
@@ -102,6 +106,10 @@ conda activate eu_cbm_hat
 # Install the package
 pip install -e .
 ```
+
+Show which python you are using
+
+    which python
 
 Follow these instructions only in case of an update. **Ignore these instructions on the
 first installation**, if you want a fresh start, remove the old environment, recreate
