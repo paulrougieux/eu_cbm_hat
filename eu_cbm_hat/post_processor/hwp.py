@@ -136,6 +136,8 @@ class HWP:
         self.runner = parent.runner
         self.combo_name = self.runner.combo.short_name
         self.classif_list = self.parent.classifiers_list
+        # Semifinished products
+        self.semifinished_products = ['sw_broad', 'sw_con', 'pp', 'wp']
         # IRW fractions
         self.irw_frac = self.parent.irw_frac
         # Use pool fluxes to get area and age class as well
@@ -429,9 +431,7 @@ class HWP:
             >>> runner.post_processor.hwp.n_years_dom_frac = 4
             >>> print(runner.post_processor.hwp.fraction_semifinished_n_years_mean)
 
-
-
-        Expot to csv for checking
+        Export to csv for checking
 
             >>> from eu_cbm_hat import eu_cbm_data_pathlib 
             >>> eu_cbm_data_pathlib / "file.csv"
@@ -591,22 +591,45 @@ class HWP:
 
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_scenario(self) -> pandas.DataFrame:
-        """Fraction of semi finished products scenario case"""
+        """Fraction of semi finished products in a scenario case
+
+        Here we need to allow simulation choosing between input types either on
+        fraction based inputs or on amount based inputs as defined in the input
+        file hwp_fraction_semifinished_scenario.csv. If amounts are defined,
+        then they will be used, otherwise fractions will be used.
+
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> # Choose a scenario
+            >>> runner.post_processor.hwp.hwp_frac_scenario = "more_sw"
+            >>> runner.post_processor.hwp.fraction_semifinished_scenario
+
+        """
         mean_frac = self.fraction_semifinished_n_years_mean
         df = hwp_common_input.hwp_fraction_semifinished_scenario.copy()
-
-        # HERE WE NEED TO ALLOW simulation choosing between input types either on
-        # fraction based inputs: 'sw_fraction','sw_broad_fraction','sw_con_fraction','pp_fraction','wp_fraction'
-        # OR
-        # on amount based inputs 'sw_broad_expected','sw_con_expected','sw_expected','pp_expected','wp_expected'
-        # as defined in the in put file hwp_fraction_semifinished_scenario.csv
-
+        # Select data for the relevant country and scenario
         selector = df["country"] == self.runner.country.country_name
         selector &= df["hwp_frac_scenario"] == self.hwp_frac_scenario
-        df.drop(columns=["country", "hwp_frac_scenario"], inplace=True)
+        df = df.loc[selector]
+        # Keep only fraction columns or amount columns depending on which one
+        # is defined in the scenario input file.
+        fraction_cols = [x + "_fraction" for x in self.semifinished_products]
+        amount_cols = [x + "_expected" for x in self.semifinished_products]
+        fraction_defined = (~df[fraction_cols].isna()).any().any()
+        amount_defined = (~df[amount_cols].isna()).any().any()
+        if amount_defined and fraction_defined:
+            msg = f"Both fractions and amounts are defined in\n{df}\n"
+            msg += "Define either fractions or amounts."
+            raise ValueError(msg)
+        if fraction_defined:
+            df.drop(columns=amount_cols)
+        elif amount_defined:
+            df.drop(columns=fraction_cols)
         # Add recycled values from the mean table
         df["recycled_paper_prod"] = mean_frac["recycled_paper_prod"]
         df["recycled_wood_prod"] = mean_frac["recycled_wood_prod"]
+        df.drop(columns=["country", "hwp_frac_scenario"], inplace=True)
         return df
 
     @property  # Don't cache, in case we change the number of years
@@ -634,9 +657,19 @@ class HWP:
         harvest as an output of the CBM simulated amounts of sawlogs and
         pulpwood.
 
-        TODO: Enable scenarios of production from domestic harvest from an
+        If amount columns are defined in the fraction semi finished scenario,
+        use them as dom_tc production of semi finished products. Otherwise
+        compute the amounts based on the fraction of semi finished products in
+        the historical period.
+
+        Enable scenarios of production from domestic harvest from an
         external model. See issue 104.
         https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/104#top
+
+        Illustrate a change of fraction semi finished scenario:
+
+
+
 
         Illustrate a change of the sw, wp, pp fractions:
 
@@ -668,11 +701,20 @@ class HWP:
         df = self.fluxes_by_grade.copy()
         # Add the fractions to the CBM output data
         df = df.merge(self.fraction_semifinished, on="year")
-        # Compute production from domestic harvest for the future
-        df["sw_broad_dom_tc"] = df["sawlogs_broad"] * df["sw_broad_fraction"]
-        df["sw_con_dom_tc"] = df["sawlogs_con"] * df["sw_con_fraction"]
-        df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
-        df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
+        amount_cols = [x + "_expected" for x in self.semifinished_products]
+        amount_cols_are_defined = set(amount_cols) - set(df.columns) == set()
+        if amount_cols_are_defined:
+            # If amount columns are defined in the fraction semi finished
+            # scenario, use them as dom_tc production of semi finished products
+            for product in self.semifinished_products:
+                df[product + "_dom_tc"] = df[product + "_expected"]
+        else:
+            # Compute production from domestic harvest for the future
+            df["sw_broad_dom_tc"] = df["sawlogs_broad"] * df["sw_broad_fraction"]
+            df["sw_con_dom_tc"] = df["sawlogs_con"] * df["sw_con_fraction"]
+            df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
+            df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
+        # Compute recycled amount if required
         if self.add_recycling:
             msg = "Add recycling amounts because "
             msg += f"add_recycling = {self.add_recycling}"
