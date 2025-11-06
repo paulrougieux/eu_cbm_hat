@@ -13,36 +13,21 @@ def npp_components(df: pandas.DataFrame, groupby: Union[List[str], str]):
 
     Based on stock change and movements to the product pools as well as
     turnover and mouvements to air.
-
-   
+  
         >>> from eu_cbm_hat.core.continent import continent
         >>> from eu_cbm_hat.post_processor.nai import NAI_AGG_COLS
         >>> from eu_cbm_hat.post_processor.nai import compute_nai_gai
         >>> runner = continent.combos['reference'].runners['ZZ'][-1]
         >>> index = ["status"]
-        >>> nai_st = runner.post_processor.nai.df_agg(index)
-
+        >>> nai_st = runner.post_processor.npp.compute_npp
 
     """
-
-    print(groupby)
-
-    
+   
     if isinstance(groupby, str):
         groupby = [groupby]
-
-    if "year" in groupby:
-        msg = " This functions computes the difference in stock across groups "
-        msg += "through time so 'year' should not be in the group variables:\n"
-        msg += f"{groupby}"
-        raise ValueError(msg)
-
     # Order by groupby variables, then years
     df.sort_values(groupby + ["year"], inplace=True)
 
-    #print(df.head(2))
-
-    
     # Check that there are no duplications over the groupby variables plus year
     #selector = df[["year"] + groupby].duplicated(keep=False)
     #if any(selector):
@@ -109,6 +94,8 @@ class NPP:
     def compute_npp(self):
         """Merchantable pools and fluxes aggregated at the classifiers level"""
         df = self.parent.pools_fluxes_morf
-        print(df.columns)
-        df_out = npp_components(df, groupby= ['status','climate', 'con_broad'])
+        df_out = npp_components(df, groupby= ['year','status','climate', 'con_broad'])
+        df_out = df_out.groupby(['year', 'climate', 'con_broad'])[['area','npp']].sum().reset_index()
+        df_out['npp_ha'] = df_out['npp']/df_out['area']
+        df_out=df_out[['year', 'climate', 'con_broad', 'npp_ha']]
         return df_out
