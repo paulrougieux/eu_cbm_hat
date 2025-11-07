@@ -96,7 +96,7 @@ def read_aidb_table_all_countries(table_name):
 
     """
     df_all = pandas.DataFrame()
-    print(f"Reading {table_name} in: ", end="")
+    print(f"Reading '{table_name}' in: ", end="")
     for country_code, country in continent.countries.items():
         print(f"{country_code} ", end="")
         df = country.aidb.db.read_df(table_name)
@@ -106,11 +106,16 @@ def read_aidb_table_all_countries(table_name):
     df_all = df_all.reset_index(drop=True)
     return df_all
 
+
+def count_duplicated_rows(country_code, table_name):
+    """Count the number of duplicated rows in a table, then add this number to
+    a summary data frame
+    """
     
 def compare_one_country_to_all_others(country_code, table_name):
     """Compare the number of identical rows in one country to all others
 
-    example 
+    Example:
 
     >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others
 
@@ -119,10 +124,13 @@ def compare_one_country_to_all_others(country_code, table_name):
     table_name = "admin_boundary"
 
     """
-    df = read_aidb_table_all_countries(table_name)
-
-
-
-
-
+    df_all = read_aidb_table_all_countries(table_name)
+    df_ref = df_all.loc[df_all["country_code"] == country_code].copy()
+    df = pandas.DataFrame({country_code + "_nrow": [len(df_ref)]})
+    for this_code in df_all["country_code"].unique():
+        selector = df_all["country_code"].isin([country_code, this_code])
+        df_comp = df_all.loc[selector].copy()
+        df_comp.drop(columns="country_code", inplace=True)
+        df[this_code] = df_comp.duplicated().sum()
+        
 
