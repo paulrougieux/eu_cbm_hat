@@ -135,7 +135,7 @@ def compare_one_table_in_one_country_to_all_others(country_code, table_name):
     return df
 
 def compare_one_country_to_all_others(country_code):
-    """Compare the number of identical rows between tables of a given country to all other countries
+    """Count the number of identical rows between tables of a given country to all other countries
 
     >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others
     >>> df_de = compare_one_country_to_all_others("DE")
@@ -153,4 +153,17 @@ def compare_one_country_to_all_others(country_code):
         df_all = pandas.concat([df_all, df])
         print(df)
     return df_all
+
+def compare_one_country_to_all_others_relative(country_code):
+    """Provide the number of identical rows between tables of a given country
+    to all other countries divided by the number of rows of the table """
+    df = compare_one_country_to_all_others(country_code)
+    nrow_col = country_code + "_nrow"
+    country_cols = [col for col in df.columns if col != nrow_col and col != 'table']
+    df[country_cols] = df[country_cols].div(df[nrow_col], axis=0)
+    return df
+
+
+
+
 
