@@ -7,6 +7,7 @@ from typing import Union, List
 import warnings
 import pandas
 import numpy as np
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 def npp_components(df: pandas.DataFrame, groupby: Union[List[str], str]):
     """Compute the Net Annual Increment and Gross Annual Increment on climates, for npp-nai analysis
@@ -37,16 +38,17 @@ def npp_components(df: pandas.DataFrame, groupby: Union[List[str], str]):
     #    msg += f"{['year'] + groupby }\n Then run this function.\n"
     #    raise ValueError(msg)
 
-    # Compute the difference in stock for the total standing biomass
-    # Use Observed = True to avoid the warning when using categorical variables
-    df["agb"] = df["merch"] + df["other"]+ df["foliage"]+ df["roots"]
-    df["net_agb"] = df.groupby(groupby, observed=True)["agb"].diff()
-   
+    # exclude disturbances
+    df = df[(df['status'].isin(["ForAWS", "ForNAWS"]))] #& (df['disturbance_type'] == 0)] # exclude all stands with antropogenic loss
+    
+    # compute stock in living biomass      
+    df["biomass_stock"] = df["merch"] + df["other"]+ df["foliage"]+ df["roots"]
+
     # Compute NAI for the merchantable pool
-    df["npp"] = df[["net_agb",
+    df["biomass_loss"] = df[[#"net_agb",
                     # biomass to production
-                    "merch_prod", 
-                    "oth_prod",
+                    "merch_prod", # this is zero for dist=0
+                    "oth_prod",# this is zero for dist=0
                     # transfers to non living pools through disturbances
                     'disturbance_merch_litter_input',
                     'disturbance_oth_litter_input',
@@ -65,12 +67,22 @@ def npp_components(df: pandas.DataFrame, groupby: Union[List[str], str]):
                     'turnover_coarse_litter_input',
                     'turnover_fine_litter_input']].sum(axis=1)
 
-    # Compute per hectare values
-    #df["nai_merch_ha"] = df["nai_merch"] / df["area"]
-    #df["gai_merch_ha"] = df["gai_merch"] / df["area"]
-    #df["nai_agb_ha"] = df["nai_agb"] / df["area"]
-    #df["gai_agb_ha"] = df["gai_agb"] / df["area"]
-    return df
+    df =df[['year', 'status', 'forest_type', 'region',
+            'mgmt_type', 'mgmt_strategy', 'climate', 'con_broad', 'site_index',
+            'area', 'biomass_stock', 'biomass_loss']]
+
+    # Group and sum first
+    df_grouped = df.groupby(['year', 'status', 'climate', 'con_broad'])[['area', 'biomass_stock', 'biomass_loss']].sum().reset_index()
+    
+    # Sort by year to ensure proper chronological order
+    df_grouped = df_grouped.sort_values(['year','status', 'climate', 'con_broad'])
+    
+    # Calculate net biomass change (difference in stock)
+    df_grouped["net_biomass"] = df_grouped.groupby(['status', 'climate', 'con_broad'], observed=True)["biomass_stock"].diff()
+    
+    # Calculate NPP (Net Primary Productivity)
+    df_grouped['npp'] = df_grouped["net_biomass"] + df_grouped["biomass_loss"]
+    return df_grouped
 
 
 class NPP:
