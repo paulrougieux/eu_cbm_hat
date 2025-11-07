@@ -82,6 +82,8 @@ Make sure that all AIDBs have the same tables:
 
 import pandas
 from eu_cbm_hat.core.continent import continent
+from eu_cbm_hat.qaqc.aidb import AIDB_TABLES
+
 
 def read_aidb_table_all_countries(table_name):
     """Read the same AIDB table in all countries
@@ -112,16 +114,14 @@ def count_duplicated_rows(country_code, table_name):
     a summary data frame
     """
     
-def compare_one_country_to_all_others(country_code, table_name):
+def compare_one_table_in_one_country_to_all_others(country_code, table_name):
     """Compare the number of identical rows in one country to all others
 
     Example:
 
-    >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others
-
-    compare_one_country_to_all_others("ZZ", "admin_boundary")
-    country_code = "ZZ"
-    table_name = "admin_boundary"
+    >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_table_in_one_country_to_all_others
+    >>> compare_one_table_in_one_country_to_all_others("ZZ", "admin_boundary")
+    >>> compare_one_table_in_one_country_to_all_others("ZZ", "disturbance_matrix_value")
 
     """
     df_all = read_aidb_table_all_countries(table_name)
@@ -132,5 +132,25 @@ def compare_one_country_to_all_others(country_code, table_name):
         df_comp = df_all.loc[selector].copy()
         df_comp.drop(columns="country_code", inplace=True)
         df[this_code] = df_comp.duplicated().sum()
-        
+    return df
+
+def compare_one_country_to_all_others(country_code):
+    """Compare the number of identical rows between tables of a given country to all other countries
+
+    >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others
+    >>> df_de = compare_one_country_to_all_others("DE")
+    >>> df_it = compare_one_country_to_all_others("IT")
+
+    """
+    df_all = pandas.DataFrame()
+    for table_name in AIDB_TABLES:
+        print(table_name)
+        df = compare_one_table_in_one_country_to_all_others(country_code, table_name)
+        df["table"] = table_name
+        cols = list(df.columns)
+        cols = cols[-1:] + cols[:-1]
+        df = df[cols]
+        df_all = pandas.concat([df_all, df])
+        print(df)
+    return df_all
 
