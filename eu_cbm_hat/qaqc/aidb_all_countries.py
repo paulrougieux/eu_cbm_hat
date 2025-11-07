@@ -108,14 +108,14 @@ def read_aidb_table_all_countries(table_name):
     df_all = df_all.reset_index(drop=True)
     return df_all
 
-
-def count_duplicated_rows(country_code, table_name):
-    """Count the number of duplicated rows in a table, then add this number to
-    a summary data frame
-    """
     
 def compare_one_table_in_one_country_to_all_others(country_code, table_name):
     """Compare the number of identical rows in one country to all others
+
+    Note the way the comparison is make it checks duplicated rows among a pair
+    of countries, the reference country and another country. When the reference
+    country is compared to itself, the result should be zero, unless there are
+    duplicated rows in the table. 
 
     Example:
 
@@ -144,19 +144,23 @@ def compare_one_country_to_all_others(country_code):
     """
     df_all = pandas.DataFrame()
     for table_name in AIDB_TABLES:
-        print(table_name)
         df = compare_one_table_in_one_country_to_all_others(country_code, table_name)
         df["table"] = table_name
         cols = list(df.columns)
         cols = cols[-1:] + cols[:-1]
         df = df[cols]
         df_all = pandas.concat([df_all, df])
-        print(df)
     return df_all
 
 def compare_one_country_to_all_others_relative(country_code):
     """Provide the number of identical rows between tables of a given country
-    to all other countries divided by the number of rows of the table """
+    to all other countries divided by the number of rows of the table 
+
+    >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others_relative
+    >>> df_de = compare_one_country_to_all_others_relative("DE")
+    >>> df_it = compare_one_country_to_all_others_relative("IT")
+
+    """
     df = compare_one_country_to_all_others(country_code)
     nrow_col = country_code + "_nrow"
     country_cols = [col for col in df.columns if col != nrow_col and col != 'table']

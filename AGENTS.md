@@ -117,3 +117,9 @@ Additional EU data structure required for the core/runner.py runner type
 - Details: Changed pandas.DataFrame initialization to use list for scalar values, avoiding the "must pass an index" ValueError
 - Commit hash: dfecc41
 
+### Task: Complete compare_one_country_to_all_others_relative function
+
+- Operation: Modified eu_cbm_hat/qaqc/aidb_all_countries.py to divide country columns by nrow column for relative values
+- Details: Added code to divide all country columns by the nrow column to provide relative values in the compare_one_country_to_all_others_relative function
+- Commit hash: 2fb19ad
+
