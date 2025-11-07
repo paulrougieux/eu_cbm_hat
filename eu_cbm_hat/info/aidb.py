@@ -83,29 +83,6 @@ class AIDB(object):
         >>>     table = str(table).replace("b'","").replace("'","")
         >>>     print(table, len(continent.countries[country_code].aidb.db.read_df(table)))
 
-    Display the number of available tables in all AIDBs in all countries:
-
-        >>> from eu_cbm_hat.core.continent import continent
-        >>> for code, country in continent.countries.items():
-        >>>     print(code, len(country.aidb.db.tables), "tables.")
-
-    Generate a table with the length of all tables in all AIDBs in all countries:
-
-        >>> import pandas as pd
-        >>> from eu_cbm_hat.core.continent import continent
-        >>> df_all = pd.DataFrame()
-        >>> for country_code, country in continent.countries.items():
-        >>>    df = pd.DataFrame({"country":[country_code]})
-        >>>    for table in continent.countries[country_code].aidb.db.tables:
-        >>>        table = str(table).replace("b'","").replace("'","")
-        >>>        df[table] = len(continent.countries[country_code].aidb.db.read_df(table))
-        >>>    print(df)
-        >>>    df_all = pd.concat([df_all, df]).reset_index(drop=True)
-        >>> print(df_all)
-        >>> print("Unique values")
-        >>> for col in df_all.columns:
-        ...     print(col, df_all[col].unique())
-        >>> df_all.to_csv("/tmp/aidb_table_lengths.csv")
 
     """
 
@@ -158,6 +135,24 @@ class AIDB(object):
         from plumbing.databases.sqlite_database import SQLiteDatabase
 
         return SQLiteDatabase(self.paths.aidb)
+
+    @property
+    def tables(self):
+        """List of tables, fix issue with undecoded byte string in db.tables
+
+        Otherwise when using db.tables, str(table_name) contains the "b" from byte.
+        
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> tables = continent.countries["ZZ"].aidb.db.tables
+        >>> print(str(tables[0]))
+        >>> # "b'spatial_unit'"
+        >>> # This method attached directly to the aidb object fixes it
+        >>> tables2 = continent.countries["ZZ"].aidb.tables
+        >>> print(str(tables2[0]))
+
+        """
+        tables = [t.decode('utf-8') for t in self.db.tables]
+        return tables
 
     @property
     def vol_conv_to_biomass(self):
