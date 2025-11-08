@@ -415,7 +415,8 @@ class HWPCommonInput:
         """
         df_fao = self.faostat_bulk_data
         # remove rows which do not reffer to "quantity" from original data
-        selector = df_fao["Element"].str.contains("Value")
+        df_fao["Element"] = df_fao["Element"].astype(str)       
+        selector = df_fao["Element"].str.contains("value")
         df_fao = df_fao[~selector].rename(
             columns={"Item": "Item_orig", "Element": "Element_orig"}
         )
@@ -423,7 +424,6 @@ class HWPCommonInput:
         df = df_fao.merge(self.hwp_types, on=["Item Code", "Item_orig"]).merge(
             self.eu_member_states, on=["Area"], how="inner"
         )
-
         # Filter the columns that start with 'Y' and do not end with a letter
         keep_columns = [
             "Area Code",
@@ -485,7 +485,6 @@ class HWPCommonInput:
         df_exp["type"] = (
             df_exp["Item"].astype(str) + "_" + df_exp["Element"].astype(str)
         )
-        # convert long to wide format
         df = df_exp.pivot(index=["area", "year"], columns=["type"], values=["value"])
         df = df.droplevel(None, axis=1).reset_index()
         df["year"] = df["year"].astype(int)
@@ -539,15 +538,13 @@ class HWPCommonInput:
 
         """
         df_exp = self.fao_correction_factor
-        # average for a generic value
-        #df_exp["irw_prod"] = df_exp["irw_broad_prod"] + df_exp["irw_con_prod"]
-        #df_exp["irw_exp"] = df_exp["irw_broad_exp"] + df_exp["irw_con_exp"]
-        #df_exp["irw_imp"] = df_exp["irw_broad_imp"] + df_exp["irw_con_imp"]
-
         # estimate the fractions of domestic in the country's feedstock on con and broad: IRW, WP, PULP on con and broad
         df_exp["fIRW_SW_con"] = (df_exp["irw_con_prod"] - df_exp["irw_con_exp"]) / (
             df_exp["irw_con_prod"] + df_exp["irw_con_imp"] - df_exp["irw_con_exp"]
         )
+
+
+        
         df_exp["fIRW_SW_broad"] = (
             df_exp["irw_broad_prod"] - df_exp["irw_broad_exp"]
         ) / (
@@ -907,7 +904,7 @@ class HWPCommonInput:
             warnings.warn(msg)
 
         # Replace NA recycling values by zero if and only if they have NA in all years
-        for var in ["recycled_wood_prod", "recycled_wood_prod"]:
+        for var in ["recycled_paper_prod", "recycled_wood_prod"]:
             selector = no_data[var]
             if any(selector):
                 df_replace_zero = no_data.loc[selector, ["area"]].copy()
@@ -919,7 +916,37 @@ class HWPCommonInput:
         n_years = self.n_years_for_backfill
         for col in factor_cols + recycle_cols:
             df = backfill_avg_first_n_years(df, var=col, n=n_years)
-        # Compute production from domestic roundwood
+       # DO zero recycled_wood_prod and recycled_wood_paper for period before 2017
+        # Define the columns to process
+        columns_to_zero = ['recycled_paper_prod', 'recycled_wood_prod']
+        
+        # Set years 1900-2016 to zero
+        df.loc[(df['year'] >= 1900) & (df['year'] <= 2016), columns_to_zero] = 0
+        
+        # Define the range
+        start_year = 2018
+        end_year = 1980  # 2018 - 30 = 1988 (30 years including 2018)
+        
+        # Iterate through each area
+        for area in df['area'].unique():
+            # Create mask for current area
+            area_mask = df['area'] == area
+            
+            # Get initial values for 2018 for this specific area
+            initial_values = df.loc[(df['year'] == start_year) & area_mask, columns_to_zero].iloc[0]
+            
+            # Create a mask for years 1988-2018 for this area
+            years_mask = (df['year'] >= end_year) & (df['year'] <= start_year) & area_mask
+            
+            # Calculate factors for all years at once
+            years_array = df.loc[years_mask, 'year'].values
+            factors = (years_array - end_year) / (start_year - end_year)
+            
+            # Apply the factors for each column
+            for col in columns_to_zero:
+                df.loc[years_mask, col] = initial_values[col] * factors
+
+       # Compute production from domestic roundwood
         df["sw_broad_dom_m3"] = df["sw_broad_prod_m3"] * df["fIRW_SW_broad"]
         df["sw_con_dom_m3"] = df["sw_con_prod_m3"] * df["fIRW_SW_con"]
         df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_WP"]
@@ -934,12 +961,12 @@ class HWPCommonInput:
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
 
         # update from tons of fresh matter to C dry matter
-        df["recycled_wood_prod"] =  df["recycled_wood_prod"] * (1 - self.humid_corr_wood)*self.c_rwp
-        df["recycled_paper_prod"] = df["recycled_paper_prod"] * (1 - self.humid_corr_paper)* self.c_rpp
+        df["recycled_wood_prod_tc"] =  df["recycled_wood_prod"] * (1 - self.humid_corr_wood)*self.c_rwp
+        df["recycled_paper_prod_tc"] = df["recycled_paper_prod"] * (1 - self.humid_corr_paper)* self.c_rpp
         
         # Correct for recycled wood panel and paper amounts
-        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod"]
-        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod"]
+        df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod_tc"]
+        df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod_tc"]
 
         # In some countries the recycled paper production is higher than pp_dom_tc
         # Then in that case set it to zero
