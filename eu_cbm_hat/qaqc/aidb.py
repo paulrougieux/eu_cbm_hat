@@ -25,10 +25,60 @@ Compare one country's table to all other countries, finding common rows.
 
 """
 
-
-# Third party modules #
-import numpy
 import pandas
+
+AIDB_TABLES = [
+    "admin_boundary",
+    "admin_boundary_tr",
+    "afforestation_initial_pool",
+    "afforestation_pre_type",
+    "afforestation_pre_type_tr",
+    "biomass_to_carbon_rate",
+    "composite_flux_indicator",
+    "composite_flux_indicator_category",
+    "composite_flux_indicator_category_tr",
+    "composite_flux_indicator_tr",
+    "composite_flux_indicator_value",
+    "decay_parameter",
+    "disturbance_matrix",
+    "disturbance_matrix_association",
+    "disturbance_matrix_tr",
+    "disturbance_matrix_value",
+    "disturbance_type",
+    "disturbance_type_tr",
+    "dom_pool",
+    "eco_boundary",
+    "eco_boundary_tr",
+    "flux_indicator",
+    "flux_indicator_sink",
+    "flux_indicator_source",
+    "flux_process",
+    "forest_type",
+    "forest_type_tr",
+    "genus",
+    "genus_tr",
+    "growth_multiplier_series",
+    "growth_multiplier_value",
+    "land_class",
+    "land_class_tr",
+    "land_type",
+    "locale",
+    "pool",
+    "pool_tr",
+    "random_return_interval",
+    "root_parameter",
+    "slow_mixing_rate",
+    "spatial_unit",
+    "species",
+    "species_tr",
+    "spinup_parameter",
+    "stump_parameter",
+    "turnover_parameter",
+    "vol_to_bio_factor",
+    "vol_to_bio_forest_type",
+    "vol_to_bio_genus",
+    "vol_to_bio_species",
+]
 
 
 def check_dist_matrix_prop(df: pandas.DataFrame):
@@ -57,7 +107,6 @@ def check_dist_matrix_prop(df: pandas.DataFrame):
         msg += f"\n{prop_issue}"
         msg += f"\n{prop_issue[id_cols].merge(df, on=id_cols)}"
         raise ValueError(msg)
-
 
 
 class AIDBCheck:

@@ -105,3 +105,21 @@ Additional EU data structure required for the core/runner.py runner type
 - Details: Capitalized product names in PRODUCT_PALETTE, changed hue to display full names instead of abbreviated column names, updated palette accordingly
 - Commit hash: ec5e869
 
+### Task: Modify read_aidb_table_all_countries print statement
+
+- Operation: Modified eu_cbm_hat/qaqc/aidb_all_countries.py to print table name only once and append country codes at each iteration
+- Details: Changed the print statement in read_aidb_table_all_countries to display table name once followed by country codes appended on the same line
+- Commit hash: 9b7d736
+
+### Task: Fix ValueError in compare_one_country_to_all_others
+
+- Operation: Modified eu_cbm_hat/qaqc/aidb_all_countries.py to fix DataFrame creation error
+- Details: Changed pandas.DataFrame initialization to use list for scalar values, avoiding the "must pass an index" ValueError
+- Commit hash: dfecc41
+
+### Task: Complete compare_one_country_to_all_others_relative function
+
+- Operation: Modified eu_cbm_hat/qaqc/aidb_all_countries.py to divide country columns by nrow column for relative values
+- Details: Added code to divide all country columns by the nrow column to provide relative values in the compare_one_country_to_all_others_relative function
+- Commit hash: 2fb19ad
+
