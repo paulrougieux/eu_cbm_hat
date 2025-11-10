@@ -925,7 +925,7 @@ class HWPCommonInput:
         
         # Define the range
         start_year = 2018
-        end_year = 1980  # 2018 - 30 = 1988 (30 years including 2018)
+        end_year = 1988  # 2018 - 30 = 1988 (30 years including 2018)
         
         # Iterate through each area
         for area in df['area'].unique():
