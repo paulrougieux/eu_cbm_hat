@@ -201,7 +201,8 @@ class HWPCommonInput:
         """
         # Import data from CRF database, remove NaNs. Remove also the plots with 0 vol, but with agb
         df_wide = pd.read_csv(eu_cbm_data_pathlib / "common/crf_data.csv")
-        indicator = "crf_hwp_tco2"
+        df_wide = df_wide[df_wide["indicator"] == "4.G. Harvested wood products Net CO2 E/R (kt)"]  # Original indicator as of CRF/CTF
+        indicator = "crf_hwp_tco2" # short version of the GHG source for reported CO2 emissions by HWP 
         selector = df_wide["indicator"] == indicator
         df_wide = df_wide[selector].copy()
         # Reshape to long format
