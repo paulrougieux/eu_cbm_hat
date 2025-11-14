@@ -10,15 +10,17 @@ import pandas
 import numpy as np
 
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
+
 
 POOLS_COLS = ["merch_stock_vol", "agb_stock_vol"]
 FLUXES_COLS = [
     "merch_prod_vol",
     "other_prod_vol",
-    "turnover_merch_input_vol",
-    "turnover_oth_input_vol",
-    "dist_merch_input_vol",
-    "dist_oth_input_vol",
+    "turnover_merch_loss_vol",
+    "turnover_oth_loss_vol",
+    "dist_merch_loss_vol",
+    "dist_oth_loss_vol",
     "merch_air_vol",
     "oth_air_vol",
 ]
@@ -79,13 +81,16 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
     df["net_merch"] = df.groupby(groupby, observed=True)["merch_stock_vol"].diff()
     df["net_agb"] = df.groupby(groupby, observed=True)["agb_stock_vol"].diff()
 
-    # Compute NAI for the merchantable pool
-    df["nai_merch"] = df[["net_merch", "merch_prod_vol", "dist_merch_input_vol"]].sum(
+    # Compute NAI for merch pool only
+    df["nai_merch"] = df[["net_merch", "merch_prod_vol", "dist_merch_loss_vol"]].sum(
         axis=1
     )
+    # compute GAI for merch adding mortality and direct emissions loss from merch
     df["gai_merch"] = df["nai_merch"] + df[
-        ["turnover_merch_input_vol", "merch_air_vol"]
-    ].sum(axis=1)
+        ["turnover_merch_loss_vol", 
+         "merch_air_vol"
+        ]
+        ].sum(axis=1)
 
     # Compute NAI for the merchantable pool and OWC pool together
     df["nai_agb"] = df[
@@ -93,14 +98,15 @@ def compute_nai_gai(df: pandas.DataFrame, groupby: Union[List[str], str]):
             "net_agb",
             "merch_prod_vol",
             "other_prod_vol",
-            "dist_merch_input_vol",
-            "dist_oth_input_vol",
+            "dist_merch_loss_vol",
+            "dist_oth_loss_vol",
         ]
-    ].sum(axis=1)
+        ].sum(axis=1)
+    
     df["gai_agb"] = df["nai_agb"] + df[
         [
-            "turnover_merch_input_vol",
-            "turnover_oth_input_vol",
+            "turnover_merch_loss_vol",
+            "turnover_oth_loss_vol",
             "merch_air_vol",
             "oth_air_vol",
         ]
@@ -205,24 +211,13 @@ class NAI:
         df["merch_air_vol"] = ton_carbon_to_m3_ob(df, "disturbance_merch_to_air")
         df["oth_air_vol"] = ton_carbon_to_m3_ob(df, "disturbance_oth_to_air")
 
-        df["turnover_merch_input_vol"] = ton_carbon_to_m3_ob(
-            df, "turnover_merch_litter_input"
-        )
-        df["turnover_oth_input_vol"] = ton_carbon_to_m3_ob(
-            df, "turnover_oth_litter_input"
-        )
+        # add merch and other loses to litter from all stands 
+        df["turnover_merch_loss_vol"] = ton_carbon_to_m3_ob(df, "turnover_merch_litter_input")
+        df["turnover_oth_loss_vol"] = ton_carbon_to_m3_ob(df, "turnover_oth_litter_input")
 
-        # these filters for "== 0" are not needed as such transfers are zero anyway
-        df["dist_merch_input_vol"] = np.where(
-            df["disturbance_type"] == 0,
-            0,
-            ton_carbon_to_m3_ob(df, "disturbance_merch_litter_input"),
-        )
-        df["dist_oth_input_vol"] = np.where(
-            df["disturbance_type"] == 0,
-            0,
-            ton_carbon_to_m3_ob(df, "disturbance_oth_litter_input"),
-        )
+        # add lossess by burning from disturbances
+        df["dist_merch_loss_vol"] = ton_carbon_to_m3_ob(df, "disturbance_merch_litter_input")
+        df["dist_oth_loss_vol"] = ton_carbon_to_m3_ob(df, "disturbance_oth_litter_input")
         return df
 
     def df_agg(self, groupby: Union[List[str], str]):
@@ -250,14 +245,11 @@ class NAI:
         if groupby != ["status"]:
             warnings.warn("This method was written for a group by status.")
         df = self.pools_fluxes_vol
-
+        
         # Aggregate the sum of selected columns
         df_agg = (
             df.groupby(["year"] + groupby)[NAI_AGG_COLS].agg("sum").reset_index()
         )
-
-        print(df_agg.columns)
-        
         # Add NF movements to products back to ForAWS
         # Note this is a problem when we use grouping variables other than
         # "status" alone For example if groupby = ["status", "forest_type"]
@@ -275,6 +267,9 @@ class NAI:
 
         # Compute NAI and GAI
         df_out = compute_nai_gai(df_agg, groupby=groupby)
+        
+        # exclude NF lands
+        df_out = df_out[~df_out['status'].str.contains('NF')]
         return df_out
 
 
@@ -296,8 +291,9 @@ class NAI:
 
         # Aggregate the sum of selected columns
         df_agg = (
-            df.groupby(["year"] + groupby)[NAI_AGG_COLS].agg("sum").reset_index()
+            df.groupby(["year"] + groupby + ['con_broad'])[NAI_AGG_COLS].agg("sum").reset_index()
         )
+
         # Add NF movements to products back to ForAWS
         # Note this is a problem when we use grouping variables other than
         # "status" alone For example if groupby = ["status", "forest_type"]
@@ -354,4 +350,8 @@ class NAI:
         # Compute NAI and GAI
         df_out_con_broad = compute_nai_gai(df_agg, groupby=groupby)
         df_out_con_broad = df_out_con_broad[(df_out_con_broad["status"] != "NF")&(df_out_con_broad["status"] != "AR")]
+
+        df_out_con_broad=df_out_con_broad[['year', 'status', 'con_broad', 'climate',
+                                           'nai_merch_ha', 'gai_merch_ha', 
+                                           'nai_agb_ha', 'gai_agb_ha']]
         return df_out_con_broad
