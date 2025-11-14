@@ -403,8 +403,11 @@ class Harvest:
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
         df = df.merge(area, on=index)
-               
         return df
+
+
+
+        
 
     def provided_fw(self):
         """explicit split on FW from IRW and FW dedicated silviculturasl practices, provided in one country"""
@@ -958,4 +961,17 @@ class Harvest:
             .agg(disturbed_area = ('area', sum) ).astype(int)
             .reset_index()
             )
+        return df
+
+    def felling_residues(self):
+        """Felling residues in one country"""
+        df = self.fluxes
+        df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
+        df["merch_to_litter"] = ton_carbon_to_m3_ob(df, "disturbance_merch_litter_input")
+        df["oth_to_litter"] = ton_carbon_to_m3_ob(df, "disturbance_oth_litter_input")
+        df = df[(df['year'] >= 2010) & (df['year'] <= 2023)]
+        # extract on years
+        df = df.groupby('year', as_index=False)[['merch_to_litter', 'oth_to_litter']].sum()
+        # total per year
+        df['total_residues'] = df[['merch_to_litter', 'oth_to_litter']].sum(axis=1)
         return df
