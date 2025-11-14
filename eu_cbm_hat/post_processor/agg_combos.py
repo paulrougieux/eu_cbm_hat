@@ -803,6 +803,9 @@ def weighted_nai_one_country(combo_name: str, iso2_code: str, groupby: Union[Lis
     runner = continent.combos[combo_name].runners[iso2_code][-1]
     df = runner.post_processor.nai.df_agg(groupby=groupby)
     df = place_combo_name_and_country_first(df, runner)
+    
+    # exclude NF lands
+    df = df[~df['status'].str.contains('NF')]
 
     # Calculate the weighted values for nai_merch_ha and gai_merch_ha by multiplying by area
     df['weighted_merch_nai'] = df['nai_merch_ha'] * df['area']
@@ -814,7 +817,7 @@ def weighted_nai_one_country(combo_name: str, iso2_code: str, groupby: Union[Lis
     grouped = df.groupby(['country', 'year']).agg(
         total_weighted_nai_merch=('weighted_merch_nai', 'sum'),
         total_weighted_gai_merch=('weighted_merch_gai', 'sum'),
-        total_weighted_nai_agb=('weighted_agb_gai', 'sum'),
+        total_weighted_nai_agb=('weighted_agb_nai', 'sum'),
         total_weighted_gai_agb=('weighted_agb_gai', 'sum'),
         total_area=('area', 'sum')
     ).reset_index()
