@@ -108,6 +108,6 @@ class NPP:
         df = self.parent.pools_fluxes_morf
         df_out = npp_components(df, groupby= ['year','status','climate', 'con_broad'])
         df_out = df_out.groupby(['year', 'climate', 'con_broad'])[['area','npp']].sum().reset_index()
-        df_out['npp_ha'] = df_out['npp']/df_out['area']
-        df_out=df_out[['year', 'climate', 'con_broad', 'npp_ha']]
+        df_out['npp_ha_sim'] = df_out['npp']/df_out['area']
+        df_out=df_out[['year', 'climate', 'con_broad', 'npp_ha_sim']]
         return df_out
