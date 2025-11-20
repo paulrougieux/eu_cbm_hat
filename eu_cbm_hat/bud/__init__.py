@@ -56,12 +56,12 @@ class Bud:
     Copy test input data to a temporary directory and run the bud object. It
     will save model output to that temporary directory.
 
-        >>> import eu_cbm_hat as ch
+        >>> import eu_cbm_hat as cbm
         >>> from eu_cbm_hat.bud.test_data import copy_input_to_temp_dir
         >>> data_dir = copy_input_to_temp_dir()
-        >>> bud = ch.Bud(
+        >>> bud = cbm.Bud(
         ...     data_dir=data_dir,
-        ...     aidb_path=ch.eu_cbm_aidb_pathlib / "countries/ZZ/aidb.db"
+        ...     aidb_path=cbm.eu_cbm_aidb_pathlib / "countries/ZZ/aidb.db"
         ... )
         >>> bud.run()
 
