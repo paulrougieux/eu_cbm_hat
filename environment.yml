@@ -14,6 +14,7 @@ dependencies:
   - pyyaml
   - seaborn
   - simplejson
+  - streamlit
   - tqdm
   - pip:
     - autopaths>=1.6.0
