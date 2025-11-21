@@ -26,6 +26,8 @@
 #     rsync -zav $HOME/eu_cbm/eu_cbm_data/output/scenario_combo_name /eos/jeodpp/data/projects/SUSBIOM-TRADE/transfer/eu_cbm_data/output
 #
 
+# Initialize conda for the bash shell 
+source $(conda info --base)/etc/profile.d/conda.sh
 conda activate eu_cbm_hat
 
 cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
