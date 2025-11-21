@@ -300,7 +300,7 @@ with col2:
     # Summary of all processes for both countries
     all_statuses = []
     for combo in SCENARIO_COMBOS:
-        for country in ["IT", "LU"]:
+        for country in COUNTRIES:
             all_statuses.append(check_process_status(combo, country))
 
     running_count = sum(1 for status in all_statuses if status == "running")
