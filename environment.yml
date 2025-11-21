@@ -3,20 +3,21 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.10
-  - pandas
-  - pyyaml
-  - tqdm
-  - pyarrow
-  - numexpr
-  - simplejson
+  - python=3.12
   - matplotlib
-  - seaborn
+  - numexpr
+  - numpy
+  - pandas
   - pip
+  - pyarrow
+  - pyyaml
+  - seaborn
+  - simplejson
+  - tqdm
   - pip:
     - autopaths>=1.6.0
+    - libcbm
+    - p_tqdm
     - plumbing>=2.11.1
     - pymarktex>=1.4.6
-    - p_tqdm
     - pystache
-    - libcbm
