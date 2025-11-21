@@ -20,6 +20,7 @@
 # Distribution
 dist/*
 *.egg-info/
+build
 
 # Generated documentation
 docs/*
