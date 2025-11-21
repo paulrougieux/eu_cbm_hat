@@ -26,7 +26,7 @@
 #     rsync -zav $HOME/eu_cbm/eu_cbm_data/output/scenario_combo_name /eos/jeodpp/data/projects/SUSBIOM-TRADE/transfer/eu_cbm_data/output
 #
 
-conda activate susbiom_trade_env
+conda activate eu_cbm_hat
 
 cd $HOME/eu_cbm/eu_cbm_hat/scripts/running/
 # Run countries individually to keep Italy alone
