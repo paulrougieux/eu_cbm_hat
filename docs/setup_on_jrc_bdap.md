@@ -107,12 +107,21 @@ conda activate eu_cbm_hat
 pip install -e .
 ```
 
-Show which python you are using
+Control that the python you are using comes from the conda environment
 
     which python
+    which ipython
 
-Follow these instructions only in case of an update. **Ignore these instructions on the
-first installation**, if you want a fresh start, remove the old environment, recreate
+**Ignore the following instructions on the first installation.**
+Follow these instructions only in case of an update.
+
+```bash
+cd $HOME/eu_cbm/eu_cbm_hat
+conda env update --file environment.yml --prune
+```
+
+**Ignore the following instructions on the first installation.**
+If you want a fresh start, remove the old environment, recreate
 it, reinstall the package and the Jupyter kernel.
 
 ```bash
@@ -125,6 +134,8 @@ conda env create -f environment.yml
 # Reinstall the package
 conda activate eu_cbm_hat
 pip install -e .
+# Deactivate the environment to go back to the system python which manages the kernels
+conda deactivate
 # Reinstall the Jupyter kernel
 python -m ipykernel install --user --name=eu_cbm_hat_kernel --display-name "Python (eu_cbm_hat)"
 ```
