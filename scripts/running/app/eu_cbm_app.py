@@ -16,6 +16,7 @@ import threading
 import time
 
 from eu_cbm_hat import eu_cbm_data_pathlib
+from eu_cbm_hat.core.continent import continent
 
 # Initialize session state for process tracking
 if "processes" not in st.session_state:
@@ -23,13 +24,36 @@ if "processes" not in st.session_state:
 if "process_status" not in st.session_state:
     st.session_state.process_status = {}
 
-SCENARIO_COMBOS = [
-    "forestpaths_low_thinnings",
-    "forestpaths_high_thinnings",
-    "forestpaths_rot+10",
-    "forestpaths_rot-10",
+SCENARIO_COMBOS = sorted(continent.combos.keys())
+
+COUNTRIES = [
+    "AT",
+    "BE",
+    "BG",
+    "CZ",
+    "DE",
+    "DK",
+    "EE",
+    "ES",
+    "FI",
+    "FR",
+    "GR",
+    "HR",
+    "HU",
+    "IE",
+    "IT",
+    "LT",
+    "LU",
+    "LV",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SE",
+    "SI",
+    "SK",
+    "ZZ",
 ]
-COUNTRIES = ["AT", "IT", "LU"]
 
 
 def slugify(text: str) -> str:
@@ -167,8 +191,10 @@ def get_status_color(status):
 # Streamlit UI #
 ################
 generate_toc(SCENARIO_COMBOS)
-st.title("🌲 EU-CBM-HAT Scenarios Runner")
-st.markdown("Run EU-CBM-HAT simulation scenarios in parallel")
+st.title("🌲 EU-CBM-HAT Scenarios 🌳")
+st.markdown("See the status of EU-CBM-HAT simulation scenarios.")
+st.markdown("Click on 'view combo' to view the scenario yaml file.")
+st.markdown("Click on 'view log' to view a country's log file.")
 
 # Auto-refresh every 5 seconds to update status
 time.sleep(0.2)  # Small delay to prevent too frequent updates
