@@ -487,20 +487,29 @@ class Sink:
             "area_afforested_current_year",
             "area_deforested_current_year",
         ]
+        """
+        Aggregates filtered sink data frame by year.
+        Filters rows where status starts with 'For' or 'AR_For'.
+        """
+        filtered_df = self.df.loc[
+            self.df['status'].str.startswith('For') |
+            self.df['status'].str.startswith('AR_For')
+        ]
         selected_cols += cols[cols.str.contains("stock")].to_list()
         selected_cols += cols[cols.str.contains("sink$")].to_list()
         selected_cols += cols[cols.str.contains("deforest_deduct")].to_list()
+                
         # Aggregate selected columns by the final grouping variables
-        df_agg = self.df.groupby(groupby)[selected_cols].agg("sum").reset_index()
+        df_agg = filtered_df.groupby(groupby)[selected_cols].agg("sum").reset_index()
         return df_agg
 
     @cached_property
     def df_agg_by_year(self):
-        """Aggregated sink data frame by year only"""
+        # Perform the aggregation on the filtered DataFrame
         return self.df_agg(groupby="year")
 
     @cached_property
-    def df_agg_by_year_with_crf(self):
+    def df_agg_by_year_with_ctf(self):
         """Aggregated sink data frame by year only
         and check against CRF data """
         # Import and aggregate sink across land categories
@@ -522,8 +531,13 @@ class Sink:
             "4.A.1. Forest land remaining forest land CSC Soils-Organic (kt C)": "crf_soils_organic_tc",
             "4.A.1. Forest land remaining forest land CSC Soils-Mineral (kt C)": "crf_soils_mineral_tc",
             "4.A.1. Forest land remaining forest land Organic Soil Area (kha)": "crf_soil_organic_area_kha",
-            "4.A.1. Forest land remaining forest land Total Area (kha)": "crf_total_area_kha"
+            "4.A.1. Forest land remaining forest land Total Area (kha)" : "crf_total_area_kha",
+            "4.A.1. Forest land remaining forest land CSC Dead Wood (kt C)":"crf_deadwood_tC",
+            "4.A.1. Forest land remaining forest land CSC LBM-Net Change (kt C)":"crf_livingbiomass_tc",
+            "4.A.1. Forest land remaining forest land CSC Litter (kt C)":"crf_litter_tc",
+            "4.A.1. Forest land remaining forest land Emissions CO2 (kt)":"crf_flrfl_net_co2",
         }
+
         
         # Filter and rename in one step
         df_ctf_filtered = df_ctf[df_ctf['indicator'].isin(indicator_mapping.keys())].copy()
@@ -550,8 +564,7 @@ class Sink:
 
         # reduce cbm's soil estimate to area of mineral soils
         ratio = np.mean(1-(df_ctf_wide['crf_soil_organic_area_kha']/ df_ctf_wide['crf_total_area_kha']))
-        print(df['year'].max())
-        print(ratio)
+
         df['mineral_soils_sink'] = df['cbm_soil_sink'] * ratio
         
         # Calculate organic soils emissions if we have the data
@@ -586,19 +599,41 @@ class Sink:
         # Ensure consistent data types before merge
         #df_extended['year'] = df_extended['year'].astype(str)
         df['year'] = df['year'].astype(str)
-
         df = df.merge(df_extended,
                                         on='year', 
                                         how='left')
         
-        df["member_state"] = self.runner.country.country_iso3
-  
+        df["country"] = self.runner.country.country_iso3
+        df['ctf_livingbiomass_sink'] = -1*1000*df['crf_livingbiomass_tc']*44/12
+        df['ctf_deadwood_sink'] = -1*1000*df['crf_deadwood_tC']*44/12
+        df['ctf_litter_sink'] = -1*1000*df['crf_litter_tc']*44/12
+        df['ctf_mineral_soil_sink'] = -1*1000*df['crf_soils_mineral_tc']*44/12
+        df['ctf_organic_soil_emissions'] = -1*1000*df['crf_soils_organic_tc']*44/12
+
+        df['sim_sink'] = df[['living_biomass_sink','litter_sink', 'dead_wood_sink', 'mineral_soils_sink', 'organic_soils_emissions']].sum(axis=1)
+        
+        df['ctf_sink'] = df[['ctf_livingbiomass_sink', 'ctf_litter_sink', 'ctf_deadwood_sink', 'ctf_mineral_soil_sink','ctf_organic_soil_emissions' ]].sum(axis=1)
+
+        # limit the time series for ctf data to last reported year
+        # Identify all columns with '_ctf' in their name
+        ctf_columns = [col for col in df.columns if 'ctf_' in col]
+        print("last_year:", last_year)
+        print("CTF Columns:", ctf_columns)
+        
+        # Replace values with NaN for rows where year >= last_year + 1
+        df['year'] = pandas.to_numeric(df['year'], errors='coerce')
+        df.loc[df['year'] >= int(last_year) + 1, ctf_columns] = np.nan
+
         #order columns logically
-        df = df[['member_state','year', 
-                                   'area', 'area_afforested_current_year', 'area_deforested_current_year',
-                                   'living_biomass_stock','litter_stock','dead_wood_stock', 'soil_stock', 
-                                   'living_biomass_sink', 'litter_sink', 'dead_wood_sink', 'cbm_soil_sink',
-                                   'mineral_soils_sink', 'organic_soils_emissions']]
+        df = df[['country','year', 
+                #'area', 'area_afforested_current_year', 'area_deforested_current_year',
+                #'living_biomass_stock','litter_stock','dead_wood_stock', 'soil_stock', 
+                'living_biomass_sink','ctf_livingbiomass_sink',
+                'litter_sink', 'ctf_litter_sink', 
+                'dead_wood_sink', 'ctf_deadwood_sink',
+                'mineral_soils_sink', 'ctf_mineral_soil_sink',
+                'organic_soils_emissions','ctf_organic_soil_emissions',
+                'sim_sink', 'ctf_sink']]   
         return df
 
 
