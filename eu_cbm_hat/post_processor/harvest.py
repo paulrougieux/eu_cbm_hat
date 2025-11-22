@@ -9,6 +9,7 @@ import yaml
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 """
 This dictionary is addedd to allow splitting the outputs on silvicultural practices. 
@@ -354,7 +355,6 @@ class Harvest:
         df_irw = df_irw[df_irw['scenario'] == mngm_scenario]
         df = df.merge(df_irw, how='left',
                       on=clfrs_noq + ["year", "disturbance_type"])
-
         #convert roundwood output to IRW and FW
         # add adintional split on con and broad
         df["irw_to_product_soft"] = (
