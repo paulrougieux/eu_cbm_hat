@@ -1,5 +1,6 @@
 from functools import cached_property
 from typing import List, Union
+import pandas as pd
 import numpy as np
 from eu_cbm_hat.post_processor.sink import generate_all_combinations_and_fill_na
 
@@ -151,15 +152,49 @@ class Area:
         
         return df
 
-    @cached_property
-    def df_agg_by_classifiers_age(self):
-        """Area t at the classifier level and by age classes"""
-
-        #####
+    def df_agg_by_classifiers_age(self, years=None):
+        """
+        Area t at the classifier level and by age classes.
+        
+        Parameters
+        ----------
+        years : list of int, optional
+            Years to include (e.g. [2020, 2050, 2070]).
+            If None, all years are kept.
+        """
+    
+        # Step 1: full aggregation by classifiers
         index = self.parent.classifiers_list + ["year", "age", "age_class"]
         area_columns = self.df.columns[self.df.columns.str.contains("area")].to_list()
-        df_agg = self.df.groupby(index)[area_columns].agg("sum").reset_index()
-        return df_agg
+        df = self.df.groupby(index)[area_columns].sum().reset_index()
+    
+        # Step 2: aggregate again by year and age_class
+        df = df.groupby(["year", "age_class"])["area"].sum().reset_index()
+    
+        # Step 3: filter by selected years
+        if years is not None:
+            df = df[df["year"].isin(years)]
+    
+        # Step 4: order age_class
+        age_order = (
+            df["age_class"]
+            .str.extract(r"(\d+)")[0]
+            .astype(int)
+            .sort_values()
+            .unique()
+        )
+        age_labels = [f"AGEID{i}" for i in age_order]
+    
+        df["age_class"] = pd.Categorical(
+            df["age_class"],
+            categories=age_labels,
+            ordered=True
+        )
+    
+        # Step 5: sort  
+        df = df.sort_values(["year", "age_class"])
+    
+        return df
 
     def df_agg(self, groupby: Union[List[str], str] = None):
         """Area aggregated by the given grouping variables and area t-1"""
