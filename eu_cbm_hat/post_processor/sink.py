@@ -617,8 +617,6 @@ class Sink:
         # limit the time series for ctf data to last reported year
         # Identify all columns with '_ctf' in their name
         ctf_columns = [col for col in df.columns if 'ctf_' in col]
-        print("last_year:", last_year)
-        print("CTF Columns:", ctf_columns)
         
         # Replace values with NaN for rows where year >= last_year + 1
         df['year'] = pandas.to_numeric(df['year'], errors='coerce')
