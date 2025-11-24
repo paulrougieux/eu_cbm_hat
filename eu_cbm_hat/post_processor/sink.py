@@ -505,8 +505,112 @@ class Sink:
 
     @cached_property
     def df_agg_by_year(self):
-        # Perform the aggregation on the filtered DataFrame
-        return self.df_agg(groupby="year")
+        """Aggregated sink data frame by year only and check against CRF data 
+        it also provide a split on soils emissions for mineral and organic soils
+        """
+        # Import and aggregate sink across land categories
+        df = self.df_agg(groupby="year")
+        df["member_state"] = self.runner.country.country_iso3
+        df = df.rename(columns = {'soil_sink':'cbm_soil_sink'})
+        
+        # Ensure year is consistent type (string)
+        df['year'] = df['year'].astype(str)
+        
+        # Import additional data needed from CRF database
+        df_ctf = pandas.read_csv(eu_cbm_data_pathlib / "common/crf_data.csv")
+        # Filter for the specific country
+        country = self.runner.country.country_iso3
+        df_ctf = df_ctf[df_ctf['member_state'] == country]
+        df_ctf = df_ctf.drop(columns=['Unnamed: 0'])
+        
+        indicator_mapping = {
+            "4.A.1. Forest land remaining forest land Organic Soil Area (kha)": "crf_soil_organic_area_kha",
+            "4.A.1. Forest land remaining forest land Total Area (kha)" : "crf_total_area_kha",
+            "4.A.1. Forest land remaining forest land CSC Soils-Organic (kt C)": "crf_soils_organic_tc",
+        }
+  
+        # Filter and rename in one step
+        df_ctf_filtered = df_ctf[df_ctf['indicator'].isin(indicator_mapping.keys())].copy()
+        df_ctf_filtered['indicator'] = df_ctf_filtered['indicator'].replace(indicator_mapping)
+        id_vars = ['member_state', 'indicator']
+        # Get the remaining columns (assumed to be years)
+        value_vars = df_ctf_filtered.columns.drop(['member_state', 'indicator']).tolist()
+        
+        df_ctf_long = df_ctf_filtered.melt(
+            id_vars=id_vars,
+            value_vars=value_vars,
+            var_name='year',
+            value_name='value'
+        )  
+        # Ensure year is consistent type (string)
+        df_ctf_long['year'] = df_ctf_long['year'].astype(str)
+        # Pivot to wide format for calculations
+        df_ctf_wide = df_ctf_long.pivot_table(
+            index=['member_state', 'year'],
+            columns='indicator',
+            values='value',
+            aggfunc='first'
+        ).reset_index()
+        # reduce cbm's soil estimate to area of mineral soils
+        ratio = np.mean(1-(df_ctf_wide['crf_soil_organic_area_kha']/ df_ctf_wide['crf_total_area_kha']))
+
+        df['mineral_soils_sink'] = df['cbm_soil_sink'] * ratio
+        
+        # Calculate organic soils emissions if we have the data
+        df_ctf_wide['organic_soils_emissions'] = (
+            df_ctf_wide['crf_soils_organic_tc'] * (44/12)
+        )
+        
+        # Get the last year of data
+        last_year = int(df_ctf_wide['year'].max())
+        current_max_year = df_ctf_wide['year'].max()
+        
+        # Create extended years
+        extended_years = range(last_year + 1, 2101)
+        
+        # If we have data to extend, create extended dataframe
+        if len(extended_years) > 0:
+            # Get the last year's data
+            last_year_data = df_ctf_wide[df_ctf_wide['year'] == str(last_year)].copy()
+            
+            # Create extended dataframes for each year
+            extended_dfs = []
+            for year in extended_years:
+                temp_df = last_year_data.copy()
+                temp_df['year'] = str(year)
+                extended_dfs.append(temp_df)
+            
+            # Concatenate everything
+            df_extended = pandas.concat([df_ctf_wide] + extended_dfs, ignore_index=True)
+        else:
+            df_extended = df_ctf_wide.copy()
+        # Ensure consistent data types before merge
+        df['year'] = df['year'].astype(str)
+        df = df.merge(df_extended,
+                                        on=['year', 'member_state'], 
+                                        how='left')
+        df['sim_sink'] = df[['living_biomass_sink','litter_sink', 'dead_wood_sink', 'mineral_soils_sink', 'organic_soils_emissions']].sum(axis=1)
+        
+        # limit the time series for ctf data to last reported year
+        # Identify all columns with '_ctf' in their name
+        ctf_columns = [col for col in df.columns if 'ctf_' in col]
+        
+        # Replace values with NaN for rows where year >= last_year + 1
+        df['year'] = pandas.to_numeric(df['year'], errors='coerce')
+        df.loc[df['year'] >= int(last_year) + 1, ctf_columns] = np.nan
+
+        #order columns logically
+        df = df[['member_state','year', 
+                #'area', 'area_afforested_current_year', 'area_deforested_current_year',
+                #'living_biomass_stock','litter_stock','dead_wood_stock', 'soil_stock', 
+                'living_biomass_sink',
+                'litter_sink', 
+                'dead_wood_sink', 
+                'mineral_soils_sink', 
+                'organic_soils_emissions',
+                'sim_sink']]   
+        return df
+
 
     @cached_property
     def df_agg_by_year_with_ctf(self):
@@ -514,7 +618,7 @@ class Sink:
         and check against CRF data """
         # Import and aggregate sink across land categories
         df = self.df_agg(groupby="year")
-        df["member_state"] = self.runner.country.country_iso3
+        df["country"] = self.runner.country.country_iso3
         df = df.rename(columns = {'soil_sink':'cbm_soil_sink'})
         
         # Ensure year is consistent type (string)
@@ -603,7 +707,7 @@ class Sink:
                                         on='year', 
                                         how='left')
         
-        df["country"] = self.runner.country.country_iso3
+        df["member_state"] = self.runner.country.country_iso3
         df['ctf_livingbiomass_sink'] = -1*1000*df['crf_livingbiomass_tc']*44/12
         df['ctf_deadwood_sink'] = -1*1000*df['crf_deadwood_tC']*44/12
         df['ctf_litter_sink'] = -1*1000*df['crf_litter_tc']*44/12
@@ -623,7 +727,8 @@ class Sink:
         df.loc[df['year'] >= int(last_year) + 1, ctf_columns] = np.nan
 
         #order columns logically
-        df = df[['country','year', 
+        #df = df.rename(columns = {'country':'member_state'})
+        df = df[['member_state','year', 
                 #'area', 'area_afforested_current_year', 'area_deforested_current_year',
                 #'living_biomass_stock','litter_stock','dead_wood_stock', 'soil_stock', 
                 'living_biomass_sink','ctf_livingbiomass_sink',
@@ -631,10 +736,10 @@ class Sink:
                 'dead_wood_sink', 'ctf_deadwood_sink',
                 'mineral_soils_sink', 'ctf_mineral_soil_sink',
                 'organic_soils_emissions','ctf_organic_soil_emissions',
-                'sim_sink', 'ctf_sink']]   
+                'sim_sink', 'ctf_sink']]
         return df
 
-
+        
 
     @cached_property
     def df_long(self):
