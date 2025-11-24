@@ -112,10 +112,13 @@ def read_aidb_table_all_countries(table_name):
 def compare_one_table_in_one_country_to_all_others(country_code, table_name):
     """Compare the number of identical rows in one country to all others
 
-    Note the way the comparison is make it checks duplicated rows among a pair
-    of countries, the reference country and another country. When the reference
-    country is compared to itself, the result should be zero, unless there are
-    duplicated rows in the table. 
+    First filter data to contain only the two countries we want to compare. The
+    comparison is done by counting the duplicated rows among a pair of
+    countries, the reference country and another country.
+
+    Note: a value of zero is expected for the comparison of a country with
+    itself.  When the reference country is compared to itself, there should be
+    zero duplicated rows in the table. 
 
     Example:
 
@@ -166,8 +169,4 @@ def compare_one_country_to_all_others_relative(country_code):
     country_cols = [col for col in df.columns if col != nrow_col and col != 'table']
     df[country_cols] = df[country_cols].div(df[nrow_col], axis=0)
     return df
-
-
-
-
 
