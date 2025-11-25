@@ -22,7 +22,7 @@ paragraph 19:
 
 The EC applies the 2019 Refinement to the 2006 IPCC Guidelines for National
 Greenhouse Gas Inventories Volume 4 chapter 12:
-https://www.ipcc-nggip.iges.or.jp/public/2019rf/vol4.html 
+https://www.ipcc-nggip.iges.or.jp/public/2019rf/vol4.html
 
 Activity data quantify carbon transfers from harvested forest biomass into
 product pools with specific decay rates. When trees are harvested, carbon in
@@ -52,15 +52,6 @@ parameters of that function simply modify properties of the HWP class below
 (see the init method of the HWP class). You can change these properties
 directly yourself as illustrated in some methods below.
 
-Class Properties:
-
-- n_years_dom_frac: Number of common years used to calculate the fraction of domestic semi-finished products.
-- hwp_frac_scenario: Specifies which HWP fraction scenario to apply for allocating harvested wood to different product categories.
-- add_recycling: Controls whether recycling information is included in the HWP accounting calculations.
-- no_export_no_import: When False, export-import flows are accounted for (default option). When set to True, export-import is not accounted and factors are set to 1.
-- n_years_window_flux_by_grade: Window size in years for smoothing peaks in the flux_by_grade data.
-- n_peaks_to_remove_flux_by_grade: Number of peaks to remove when smoothing the flux_by_grade data.
-- year_start_smoothing_flux_by_grade: Starting year for applying smoothing to flux_by_grade, calculated as base_year minus 3 years.
 
 """
 
@@ -71,12 +62,38 @@ import warnings
 import pandas
 from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
 from eu_cbm_hat.info.silviculture import keep_clfrs_without_question_marks
-from eu_cbm_hat import eu_cbm_data_pathlib 
-
+from eu_cbm_hat import eu_cbm_data_pathlib
 
 
 class HWP:
     """Compute the Harvested Wood Products Sink
+
+    Class Properties:
+
+    - n_years_dom_frac: Number of common years used to calculate the fraction
+      of domestic semi-finished products.
+    - hwp_frac_scenario: Specifies which HWP fraction scenario to apply for
+      allocating harvested wood to different product categories.
+    - add_recycling: Controls whether recycling information is included in the
+      HWP accounting calculations.
+    - no_export_no_import: When False, export-import flows are accounted for
+      (default option). When set to True, export-import is not accounted and
+      factors are set to 1.
+    - n_years_window_flux_by_grade: Window size in years for smoothing peaks in
+      the flux_by_grade data.
+    - n_peaks_to_remove_flux_by_grade: Number of peaks to remove when smoothing
+      the flux_by_grade data.
+    - year_start_smoothing_flux_by_grade: Starting year for applying smoothing
+      to flux_by_grade, calculated as base_year minus 3 years.
+
+    The class property hwp_frac_scenario can have different meanings:
+
+        1. "default" reuses historical fractions from the the last n reported
+           years
+        2. <hwp scenario name> uses fraction specified in
+           hwp_fraction_semifinished_scenario.csv
+        3. "expected" use absolute production of semi finished products.
+            These are exogenous values from a projection of an economic model.
 
     Example usage:
 
@@ -114,7 +131,7 @@ class HWP:
 
     Set export import factors to one. In other words, assume that all secondary
     products production is made from domestic industrial roundwood harvest.
-        
+
         >>> hwp = runner.post_processor.hwp
         >>> print("no_export_no_import:", hwp.no_export_no_import)
         >>> hwp.no_export_no_import = False
@@ -125,19 +142,28 @@ class HWP:
         >>> print(hwp.prod_from_dom_harv_stat)
         >>> print(hwp.stock_sink_results)
 
+    Switch to fraction when the hwp semi finished products scenario is not defined in combos
+    
+        from eu_cbm_hat.core.continent import continent
+        runner = continent.combos['pikfair'].runners['LU'][-1]
+        print(runner.post_processor.hwp.semifinished_prod_scenario)
+        runner = continent.combos['reference'].runners['LU'][-1]
+        print(runner.post_processor.hwp.semifinished_prod_scenario)
+
     TODO:
 
         - Illustrate change of number of years used to compute domestic factors
           self.n_years_dom_frac = 10
 
     """
+
     def __init__(self, parent):
         self.parent = parent
         self.runner = parent.runner
         self.combo_name = self.runner.combo.short_name
         self.classif_list = self.parent.classifiers_list
         # Semifinished products
-        self.semifinished_products = ['sw_broad', 'sw_con', 'pp', 'wp']
+        self.semifinished_products = ["sw_broad", "sw_con", "pp", "wp"]
         # IRW fractions
         self.irw_frac = self.parent.irw_frac
         # Use pool fluxes to get area and age class as well
@@ -145,14 +171,26 @@ class HWP:
         # Number of common years to be used to compute the
         # Fraction domestic semi finished products
         self.n_years_dom_frac = 3
+        # Define how we compute semifinished production from domestic harvest
+        # 1. "default" reuses historical fractions from the last n reported
+        #    years
+        # 2. <hwp scenario name> uses fraction specified in
+        #    hwp_fraction_semifinished_scenario.csv
         self.hwp_frac_scenario = "default"
+        # 3. "expected" use absolute production of semi finished products from
+        #    an economic model. These are exogenous values from a projection of an
+        #    economic model.
+        try:
+            self.semifinished_prod_scenario = self.runner.combo.config["semi_finished_production"]
+        except KeyError:
+            self.semifinished_prod_scenario = "fraction"
         # Add recycling information or not
         self.add_recycling = True
         # Set export import factors to 1, namely FALSE (for which export-import
-        # is accounted, the default option). When set to TRUE, 
+        # is accounted, the default option). When set to TRUE,
         # the export-import is not accounted.
         self.no_export_no_import = False
-        # Number of years to compute the ratio between historical and simulation 
+        # Number of years to compute the ratio between historical and simulation
         # sawlogs and pulpwood amounts
         self.n_years_fluxes_by_grade_mean = 3
 
@@ -241,7 +279,6 @@ class HWP:
         df_agg = df_agg[tc_cols].sum(axis=1).reset_index()
         df_agg.rename(columns={0: "tc_irw"}, inplace=True)
         return df_agg
-
 
     @cached_property
     def fluxes_by_age_to_dbh(self) -> pandas.DataFrame:
@@ -352,10 +389,9 @@ class HWP:
         ).reset_index()
         return df
 
-
     @cached_property
     def fluxes_by_grade(self) -> pandas.DataFrame:
-        """ 
+        """
         Separate data before and after the simulation base year
         Calculate a unique ratio between the past n year and the simulation base year
         Multiply the ratio for all column
@@ -364,7 +400,7 @@ class HWP:
         allocated to products, the difference between the ratio and a value of
         one represents logs that will later be allocated to secondary fuelwood.
 
-        Example 
+        Example
 
         >>> from eu_cbm_hat.core.continent import continent
         >>> import matplotlib.pyplot as plt
@@ -380,29 +416,38 @@ class HWP:
 
         """
         df = self.fluxes_by_grade_pulpwood_sawlogs.copy()
-        columns_to_modify = ['pulpwood_broad', 'pulpwood_con', 'sawlogs_broad', 'sawlogs_con']
+        columns_to_modify = [
+            "pulpwood_broad",
+            "pulpwood_con",
+            "sawlogs_broad",
+            "sawlogs_con",
+        ]
         # Separate data before and after the simulation base year
         selector = df["year"] < self.runner.country.base_year
         df_before = df.loc[selector].copy()
         df_after = df.loc[~selector].copy()
         # Calculate a unique ratio between the past n year and the simulation base year
-        selector = (self.runner.country.base_year - self.n_years_fluxes_by_grade_mean) <= df["year"]
-        selector &= df["year"] <= self.runner.country.base_year -1
-        df_mean = df.loc[selector,columns_to_modify].agg("mean")
+        selector = (
+            self.runner.country.base_year - self.n_years_fluxes_by_grade_mean
+        ) <= df["year"]
+        selector &= df["year"] <= self.runner.country.base_year - 1
+        df_mean = df.loc[selector, columns_to_modify].agg("mean")
         selector = self.runner.country.base_year <= df["year"]
-        selector &= df["year"] <= self.runner.country.base_year + self.n_years_fluxes_by_grade_mean - 1 
-        df_mean_sim_begin = df.loc[selector,columns_to_modify].agg("mean")
+        selector &= (
+            df["year"]
+            <= self.runner.country.base_year + self.n_years_fluxes_by_grade_mean - 1
+        )
+        df_mean_sim_begin = df.loc[selector, columns_to_modify].agg("mean")
         df_ratio = df_mean / df_mean_sim_begin
         # Ratios cannot be greater than one, see docstring.
         df_ratio[df_ratio > 1] = 1
         # Multiply the ratio for all column
         for col in columns_to_modify:
-            df_after[col] = df_after[col] *  df_ratio[col]
+            df_after[col] = df_after[col] * df_ratio[col]
         df = pandas.concat([df_before, df_after]).reset_index(drop=True)
         df["pulpwood"] = df["pulpwood_con"] + df["pulpwood_broad"]
         df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         return df
-
 
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
@@ -433,7 +478,7 @@ class HWP:
 
         Export to csv for checking
 
-            >>> from eu_cbm_hat import eu_cbm_data_pathlib 
+            >>> from eu_cbm_hat import eu_cbm_data_pathlib
             >>> eu_cbm_data_pathlib / "file.csv"
             >>> df.to_csv(
             ...     continent.base_dir + "/quick_results/" + "mean_n_years.csv",
@@ -456,7 +501,7 @@ class HWP:
             "recycled_paper_prod",
             "recycled_wood_prod",
         ]
-        
+
         # Keep data for the last n years and for the selected country
         selector = dstat["year"] > dstat["year"].max() - self.n_years_dom_frac
         selector &= dstat["area"] == self.runner.country.country_name
@@ -480,8 +525,7 @@ class HWP:
         df["sw_con_fraction"] = (
             (df["sw_con_dom_tc"] / df["sawlogs_con"])
             # NEW lines to ensure non inf due to denomintor zero sometimes
-            .replace([np.inf, -np.inf], 0)
-            .fillna(0)
+            .replace([np.inf, -np.inf], 0).fillna(0)
         )
 
         # df["pp_fraction"] = df["pp_dom_tc"] / df["pulpwood"]
@@ -574,8 +618,8 @@ class HWP:
         max_year = self.runner.country.base_year + self.runner.num_timesteps
         df = pandas.DataFrame({"year": range(1900, max_year + 1)})
         cols = [
-            'sw_broad_fraction',
-            'sw_con_fraction',
+            "sw_broad_fraction",
+            "sw_con_fraction",
             "pp_fraction",
             "wp_fraction",
             "recycled_paper_prod",
@@ -612,6 +656,7 @@ class HWP:
         selector = df["country"] == self.runner.country.country_name
         selector &= df["hwp_frac_scenario"] == self.hwp_frac_scenario
         df = df.loc[selector]
+
         # Keep only fraction columns or amount columns depending on which one
         # is defined in the scenario input file.
         fraction_cols = [x + "_fraction" for x in self.semifinished_products]
@@ -622,6 +667,7 @@ class HWP:
             msg = f"Both fractions and amounts are defined in\n{df}\n"
             msg += "Define either fractions or amounts."
             raise ValueError(msg)
+
         if fraction_defined:
             df.drop(columns=amount_cols)
         elif amount_defined:
@@ -649,6 +695,71 @@ class HWP:
         # Other scenarios
         return self.fraction_semifinished_scenario
 
+    @cached_property
+    def prod_semifinished_gfpmx(self):
+        """Production of semi finished products from an economic model
+
+            >>> from eu_cbm_hat.core.continent import continent
+            >>> runner = continent.combos['reference'].runners['LU'][-1]
+            >>> df = runner.post_processor.hwp.prod_semifinished_gfpmx
+
+        df["product"].unique()
+        array(['indround', 'fuel', 'sawn', 'panel', 'pulp', 'paper']
+
+        """
+        # TODO: correct for export and import of saw logs and pulp logs
+        # If saw logs net trade is negative, export < import
+        # The net trade of industrial roundwood should be removed
+        # proportionally from the production of each semi finished product.
+        # If saw logs net trade is positive, import < export
+        # Then do nothing.
+        scenario_dir = eu_cbm_data_pathlib / "domestic_harvest" / self.semifinished_prod_scenario
+        df = pandas.read_csv(scenario_dir / "hwp_expected_gfpmx.csv")
+        selector = df["country"] == self.runner.country.country_name
+        df = df.loc[selector]
+        # Convert products to tons of carbon
+        product_map = pandas.DataFrame(
+            {
+                "product": [
+                    "sawn",
+                    "panel",
+                    "paper",
+                ],
+                "product_short": [
+                    "sw",
+                    "wp",
+                    "pp",
+                ],
+                "conv_factor": [
+                    hwp_common_input.c_sw,
+                    hwp_common_input.c_wp,
+                    hwp_common_input.c_pp,
+                ],
+            }
+        )
+        df = df.loc[df["product"].isin(product_map["product"])]
+        df = df.merge(product_map, on="product", how="left")
+        # Convert 1000m3 of sw and panel to tons of carbon
+        # Convert 1000t of paper to tons of carbon
+        df["prod_tc"] = df["prod"] * df["conv_factor"] * 1000
+        # Reshape prod_tc to wide format with product_short in columns sw_
+        df["variable_name"] = df["product_short"] + "_expected_tc"
+        index = ["country", "year"]
+        # Note we convert to carbon before splitting con and broad. It could
+        # also be done afterwards with con and broad specific factors
+        df_wide = df.pivot(index=index, columns="variable_name", values="prod_tc").reset_index()
+        # Split con and broad based on a proportion from the last n years
+        frac = self.fraction_semifinished_n_years_mean
+        # Compute fraction for sw only
+        sw_broad_fraction = frac["sw_broad_fraction"] / (
+            frac["sw_con_fraction"] + frac["sw_broad_fraction"]
+        )
+        df_wide["sw_broad_expected_tc"] = df_wide["sw_expected_tc"] * sw_broad_fraction
+        df_wide["sw_con_expected_tc"] = df_wide["sw_expected_tc"] * (1-sw_broad_fraction)
+        # See TODO above
+        df_wide["TODO"] = "convert to prod from dom harvest"
+        return df_wide
+
     # Don"t cache, in case we change the number of years or the self.add_recycling
     # property
     @property
@@ -672,6 +783,8 @@ class HWP:
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
             >>> hwp = runner.post_processor.hwp
+            >>> print(hwp.prod_from_dom_harv_sim)
+
             >>> print("Fractions before modification, in the default scenario")
             >>> print(hwp.fraction_semifinished_n_years_mean)
             >>> print(hwp.fraction_semifinished)
@@ -695,21 +808,34 @@ class HWP:
 
         """
         df = self.fluxes_by_grade.copy()
-        # Add the fractions to the CBM output data
+        # Add fractions and recycling to the CBM output data
         df = df.merge(self.fraction_semifinished, on="year")
-        amount_cols = [x + "_expected" for x in self.semifinished_products]
-        amount_cols_are_defined = set(amount_cols) - set(df.columns) == set()
-        if amount_cols_are_defined:
-            # If amount columns are defined in the fraction semi finished
-            # scenario, use them as dom_tc production of semi finished products
-            for product in self.semifinished_products:
-                df[product + "_dom_tc"] = df[product + "_expected"]
-        else:
+
+        if self.semifinished_prod_scenario == "fraction":
             # Compute production from domestic harvest for the future
             df["sw_broad_dom_tc"] = df["sawlogs_broad"] * df["sw_broad_fraction"]
             df["sw_con_dom_tc"] = df["sawlogs_con"] * df["sw_con_fraction"]
             df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
             df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
+        else:
+            df = df.merge(self.prod_semifinished_gfpmx, on="year")
+            # Compute the minimum between saw logs tc and sawnwood tc
+            df["sw_con_dom_tc"] = np.minimum(df["sawlogs_con"], df["sw_con_expected_tc"])
+            df["sw_broad_dom_tc"] = np.minimum(df["sawlogs_broad"], df["sw_broad_expected_tc"])
+            # Compute the minimum between pulp lots  tc and paper tc
+            df["pp_dom_tc"] = np.minimum(df["pulpwood"], df["pp_expected_tc"])
+            # Compute the remaining amount for wood panels
+            # exclude the parenthesis when the difference is negative
+            df["wp_dom_tc"] = np.minimum(
+                df["wp_expected_tc"],
+                (df["sawlogs_con"] - df["sw_con_expected_tc"])
+                + (df["sawlogs_broad"] - df["sw_broad_expected_tc"])
+                + (df["pulpwood"] - df["pp_expected_tc"]),
+            )
+            # Change negative wood panel production to zero
+            # Because of lack of availability
+            df.loc[df["wp_dom_tc"] < 0, "wp_dom_tc"] = 0
+
         # Compute recycled amount if required
         if self.add_recycling:
             msg = "Add recycling amounts because "
@@ -725,18 +851,6 @@ class HWP:
                 * hwp_common_input.c_pp
                 * df["recycled_paper_factor"]
             )
-
-##########
-        #### NEED to check if these are smaller than the corresponding 'loss' in the year
-            #df["recycled_wood_prod"] 
-            #* hwp_common_input.c_wp
-            #* df["recycled_wood_factor"] +
-            #        df["recycled_paper_prod"]
-            #        * hwp_common_input.c_pp
-            #        * df["recycled_paper_factor"] < df['hwp_loss']
-
-##########
-        
         else:
             msg = "No recycling amounts because "
             msg += f"add_recycling = {self.add_recycling}"
@@ -766,7 +880,7 @@ class HWP:
         # Input data frames
         dstat = self.prod_from_dom_harv_stat.copy()
         df_out = self.prod_from_dom_harv_sim.copy()
-        cols = ['sw_broad_dom_tc', 'sw_con_dom_tc', "wp_dom_tc", "pp_dom_tc"]
+        cols = ["sw_broad_dom_tc", "sw_con_dom_tc", "wp_dom_tc", "pp_dom_tc"]
         # Keep data for the selected country
         selector = dstat["area"] == self.runner.country.country_name
         dstat = dstat.loc[selector, ["year"] + cols]
@@ -813,7 +927,7 @@ class HWP:
 
         """
         df = self.prepare_decay_and_inflow.copy()
-        cols = ["sw_broad_inflow","sw_con_inflow", "wp_inflow", "pp_inflow"]
+        cols = ["sw_broad_inflow", "sw_con_inflow", "wp_inflow", "pp_inflow"]
         cols += ["e_sw", "e_wp", "e_pp", "k_sw", "k_wp", "k_pp"]
         df = df[["year"] + cols]
         # Initiate stock values
@@ -826,10 +940,12 @@ class HWP:
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
             df.loc[t, "sw_broad_stock"] = (
-                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_broad_inflow"]
+                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"]
+                + df.loc[t, "sw_broad_inflow"]
             )
             df.loc[t, "sw_con_stock"] = (
-                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_con_inflow"]
+                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"]
+                + df.loc[t, "sw_con_inflow"]
             )
             df.loc[t, "wp_stock"] = (
                 df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
@@ -845,10 +961,17 @@ class HWP:
         df["sw_broad_loss"] = df["sw_broad_stock"] * df["k_sw"]
         df["wp_loss"] = df["wp_stock"] * df["k_wp"]
         df["pp_loss"] = df["pp_stock"] * df["k_pp"]
-        df["hwp_loss"] = df["sw_con_loss"] + df["sw_broad_loss"] + df["wp_loss"] + df["pp_loss"]
+        df["hwp_loss"] = (
+            df["sw_con_loss"] + df["sw_broad_loss"] + df["wp_loss"] + df["pp_loss"]
+        )
 
         # Compute the total stock
-        df["hwp_tot_stock_tc"] = df["sw_broad_stock"] + df["sw_broad_stock"] + df["wp_stock"] + df["pp_stock"]
+        df["hwp_tot_stock_tc"] = (
+            df["sw_broad_stock"]
+            + df["sw_broad_stock"]
+            + df["wp_stock"]
+            + df["pp_stock"]
+        )
 
         # Do the difference between consecutive years
         df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
@@ -883,8 +1006,12 @@ class HWP:
         df_mean = df[df["year"] >= 1990].head(5)
         # Initiate stock values as average of 1990-1995 as the average of the
         # First five years for each inflow type
-        df["sw_con_stock"] = (df_mean["sw_con_inflow"].mean()) / (df_mean["k_sw"].mean())
-        df["sw_broad_stock"] = (df_mean["sw_broad_inflow"].mean()) / (df_mean["k_sw"].mean())
+        df["sw_con_stock"] = (df_mean["sw_con_inflow"].mean()) / (
+            df_mean["k_sw"].mean()
+        )
+        df["sw_broad_stock"] = (df_mean["sw_broad_inflow"].mean()) / (
+            df_mean["k_sw"].mean()
+        )
         df["wp_stock"] = (df_mean["wp_inflow"].mean()) / (df_mean["k_wp"].mean())
         df["pp_stock"] = (df_mean["pp_inflow"].mean()) / (df_mean["k_pp"].mean())
 
@@ -892,10 +1019,12 @@ class HWP:
         df = df.set_index("year")
         for t in range(df.index.min() + 1, df.index.max()):
             df.loc[t, "sw_broad_stock"] = (
-                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_broad_inflow"]
+                df.loc[t - 1, "sw_broad_stock"] * df.loc[t, "e_sw"]
+                + df.loc[t, "sw_broad_inflow"]
             )
             df.loc[t, "sw_con_stock"] = (
-                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"] + df.loc[t, "sw_con_inflow"]
+                df.loc[t - 1, "sw_con_stock"] * df.loc[t, "e_sw"]
+                + df.loc[t, "sw_con_inflow"]
             )
             df.loc[t, "wp_stock"] = (
                 df.loc[t - 1, "wp_stock"] * df.loc[t, "e_wp"] + df.loc[t, "wp_inflow"]
@@ -910,9 +1039,13 @@ class HWP:
         df["sw_broad_loss"] = df["sw_broad_stock"] * df["k_sw"]
         df["wp_loss"] = df["wp_stock"] * df["k_wp"]
         df["pp_loss"] = df["pp_stock"] * df["k_pp"]
-        df["hwp_loss"] = df["sw_broad_loss"] + df["sw_con_loss"] + df["wp_loss"] + df["pp_loss"]
+        df["hwp_loss"] = (
+            df["sw_broad_loss"] + df["sw_con_loss"] + df["wp_loss"] + df["pp_loss"]
+        )
         # Compute the total stock
-        df["hwp_tot_stock_tc"] = df["sw_broad_stock"] + df["sw_con_stock"] + df["wp_stock"] + df["pp_stock"]
+        df["hwp_tot_stock_tc"] = (
+            df["sw_broad_stock"] + df["sw_con_stock"] + df["wp_stock"] + df["pp_stock"]
+        )
         # Do the difference between consecutive years
         df["hwp_tot_diff_tc"] = df["hwp_tot_stock_tc"].diff(periods=1)
         # Stock diff shifted by one year
@@ -1029,7 +1162,7 @@ class HWP:
         df["ncv_x_ef_ch4_x_gwp"] = ncv * ef_ch4 * gwp_ch4
         df["ncv_x_ef_n2o_x_gwp"] = ef_n2o * gwp_n2o
         # convert to dry mass
-        #df["fw_dm"] = df["tc_fw"] / 0.5
+        # df["fw_dm"] = df["tc_fw"] / 0.5
         df["fw_primary_dm"] = df["tc_primary_fw"] / 0.5
         df["fw_secondary_dm"] = df["tc_secondary_fw"] / 0.5
 
@@ -1042,13 +1175,15 @@ class HWP:
         df["fw_secondary_ghg_co2_eq"] = (
             df["fw_secondary_dm"] * df["ncv_x_ef_ch4_x_gwp"]
             + df["fw_secondary_dm"] * df["ncv_x_ef_n2o_x_gwp"]
-        )   
+        )
         df["fw_primary_co2"] = df["tc_primary_fw"] * 44 / 12
         df["fw_secondary_co2"] = df["tc_secondary_fw"] * 44 / 12
         # Estimate the Green House Gas Emissions as CO2 Equivalent
-        df["fw_ghg_co2_eq"] =df["fw_primary_ghg_co2_eq"] + df["fw_secondary_ghg_co2_eq"]
+        df["fw_ghg_co2_eq"] = (
+            df["fw_primary_ghg_co2_eq"] + df["fw_secondary_ghg_co2_eq"]
+        )
         df["fw_co2"] = df["fw_primary_co2"] + df["fw_secondary_co2"]
-        
+
         return df
 
     @cached_property
@@ -1139,7 +1274,7 @@ class HWP:
               energy
             - Load GHG emissions from waste
 
-        Example use: 
+        Example use:
 
             >>> from eu_cbm_hat.core.continent import continent
             >>> runner = continent.combos['reference'].runners['LU'][-1]
@@ -1167,8 +1302,14 @@ class HWP:
         df_1990 = df_1990.rename(columns={col: f"{col}_1990" for col in cols_stock})
 
         # Load GHG emissions from burning wood for energy
-        cols = ["year","fw_primary_ghg_co2_eq", "fw_secondary_ghg_co2_eq", "fw_primary_co2", "fw_secondary_co2"]
-        
+        cols = [
+            "year",
+            "fw_primary_ghg_co2_eq",
+            "fw_secondary_ghg_co2_eq",
+            "fw_primary_co2",
+            "fw_secondary_co2",
+        ]
+
         df_fw = self.ghg_emissions_fw[cols]
 
         # Load GHG emissions from waste
@@ -1221,10 +1362,10 @@ class HWP:
             "hwp_tot_sink_tco2_1990",
             "hwp_loss_1900",
             "hwp_loss_1990",
-            "fw_primary_ghg_co2_eq", 
-            "fw_secondary_ghg_co2_eq", 
-            "fw_primary_co2", 
-            "fw_secondary_co2",            
+            "fw_primary_ghg_co2_eq",
+            "fw_secondary_ghg_co2_eq",
+            "fw_primary_co2",
+            "fw_secondary_co2",
             "waste_co2_eq",
         ]
         # Return the updated DataFrame with all required columns

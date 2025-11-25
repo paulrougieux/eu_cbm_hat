@@ -93,6 +93,7 @@ class HWPCommonInput:
     def __init__(self):
         self.common_dir = eu_cbm_data_pathlib / "common"
         # Constant Carbon Conversion Factors for semi finished products
+        self.c_sw = 0.225
         self.c_sw_broad = 0.225
         self.c_sw_con = 0.225
         self.c_wp = 0.294
