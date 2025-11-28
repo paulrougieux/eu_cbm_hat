@@ -3,6 +3,7 @@ from typing import List, Union
 import pandas as pd
 import numpy as np
 from eu_cbm_hat.post_processor.sink import generate_all_combinations_and_fill_na
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 
 class Area:
@@ -148,8 +149,6 @@ class Area:
         #df["age_class"] = (df["age"] / 10).round().astype(int)
         df['age_class'] = df.age // 10 + 1
         df['age_class'] = 'AGEID' + df.age_class.astype(str)
-
-        
         return df
 
     def df_agg_by_classifiers_age(self, years=None):
@@ -167,10 +166,10 @@ class Area:
         index = self.parent.classifiers_list + ["year", "age", "age_class"]
         area_columns = self.df.columns[self.df.columns.str.contains("area")].to_list()
         df = self.df.groupby(index)[area_columns].sum().reset_index()
-    
+        # exclude 'NF' might be part of a larger string, use str.contains with negation
+        df = df[~df['status'].str.contains('NF', na=False)]
         # Step 2: aggregate again by year and age_class
         df = df.groupby(["year", "age_class"])["area"].sum().reset_index()
-    
         # Step 3: filter by selected years
         if years is not None:
             df = df[df["year"].isin(years)]
