@@ -23,6 +23,7 @@ See development notes under issue:
 """
 
 from pathlib import Path
+from typing import Union, List
 import pandas as pd
 import shutil
 
@@ -32,13 +33,27 @@ from eu_cbm_hat.core.continent import continent
 DEST_DIR = Path("~/eu_cbm/eu_cbm_data_forest_navigator").expanduser()
 COMMON_FILES_TO_SHARE = ["country_codes.csv", "reference_years.csv"]
 
-def share_one_csv_file(orig_dir, relative_path, dest_dir, scenarios):
-    """Share data for one file and filter for a list of scenario
+def share_one_csv_file(
+    orig_dir: Path,
+    relative_path: str,
+    dest_dir: Path,
+    scenarios: Union[str, List[str]]
+) -> None:
+    """Share data for one file and filter for the given scenario(s).
 
-    The orig_dir and dest_dir are country directories within
-    eu_cbm_data/countries.
+    Parameters
+    ----------
+    orig_dir : Path
+        The original directory path, a country directory within
+        eu_cbm_data/countries.
+    relative_path : str
+        The relative path to the CSV file within the original directory.
+    dest_dir : Path
+        The destination directory path where the filtered file will be saved.
+    scenarios : Union[str, List[str]]
+        The scenario(s) to filter by. If a string, it will be converted to a
+        list.
 
-        (
     Examples
     --------
 
@@ -69,7 +84,7 @@ def share_one_csv_file(orig_dir, relative_path, dest_dir, scenarios):
     df.to_csv(dest_csv_file, index=False)
 
 
-def share_country_data(combo_name, country_code):
+def share_country_data(combo_names, country_codes):
     """Share country-specific data for a given scenario, filtering CSV files.
 
     This function searches for all CSV files in the country's data directory,
@@ -86,18 +101,45 @@ def share_country_data(combo_name, country_code):
     cd /home/paul/rp/eu_cbm/eu_cbm_hat/scripts/comparison
     ipython
     from share_eu_cbm_data_with_forest_navigator import share_country_data
-    share_country_data("reference", "IT")
+    share_country_data(combo_names = ["reference", "no_management"], 
+                       country_codes = ["CZ", "IE", "IT"])
+    # this_combo = "reference"
+    # this_country = "IT"
     """
+    if isinstance(combo_names, str):
+        combo_names = [combo_names]
+    if isinstance(country_codes, str):
+        country_codes = [country_codes]
     country_orig_dir = eu_cbm_data_pathlib / "countries" / country_code
     country_dest_dir = DEST_DIR / "countries" / country_code
+    # Load scenarios combo yaml files. Create a dictionary containing many
+    # configuration dictionaries for each scenario combination yaml input file.
+    combo_configs = {name: continent.combos[name].config for name in combo_names}
+    for this_country in country_codes:
+        # Silviculture
+        # Which scenarios are in the combo config?
+        for this_combo, config in combo_configs.items():
 
-    # Load the scenario combo config from the yaml file into a dictionary
-    combo_config = continent.combos[combo_name].config
+            config["irw_frac_by_dist"].values()
+
+
+
+        share_one_csv_file(orig_dir=eu_cbm_data_pathlib / "countries/IT",
+                           relative_path="silv/irw_frac_by_dist.csv",
+                           dest_dir="~/eu_cbm/eu_cbm_data_forest_navigator/countries/IT",
+                           scenarios=["reference", "no_management"])
+        # Activities
+
 
     # Copy files
     relative_path = orig_path.relative_to(country_orig_dir)
 
     # Activities
+
+    share_one_csv_file(orig_dir=eu_cbm_data_pathlib / "countries/IT",
+                       relative_path="silv/irw_frac_by_dist.csv",
+                       dest_dir="~/eu_cbm/eu_cbm_data_forest_navigator/countries/IT",
+                       scenarios=["reference", "no_management"])
 
     # For each combo config value create a relative path to the corresponding
     # csv file and associate a scenario name
