@@ -115,6 +115,24 @@ def share_eu_cbm_data(scenario_combo, country_codes, dest_dir):
 
     # Load scenarios combo yaml files
     combo_configs = {name: continent.combos[name].config for name in combo_names}
+    # file_name = "irw_frac_by_dist"
+    activities_files = ['inventory', 'events', 'growth_curves', 'transitions']
+    other_files = ['events_templates', 'irw_frac_by_dist', 'harvest_factors', 'harvest']
+    selected_scenarios_in_files =  {}
+    for file_name in activities_files + other_files:
+        # print(combo_configs["reference"][file_name])
+        # Collect all unique scenarios from all combos
+        all_scenarios = set() # To get unique values
+        for config in combo_configs.values():
+            try: # Multi year case
+                all_scenarios.update(config[file_name].values())
+            except AttributeError: # single year case
+                # 'str' object has no attribute 'values'
+                all_scenarios.update([config[file_name]])
+        scenarios = list(all_scenarios)
+        print("\n\n\n", file_name, ":", scenarios)
+        print(config[file_name])
+        selected_scenarios_in_files[file_name] = scenarios
 
     # Share common data
     share_common_data(COMMON_FILES_TO_SHARE, dest_dir)
@@ -124,12 +142,11 @@ def share_eu_cbm_data(scenario_combo, country_codes, dest_dir):
         country_orig_dir = eu_cbm_data_pathlib / "countries" / this_country
         country_dest_dir = dest_dir / "countries" / this_country
 
-        # Collect all unique scenarios from all combos
-        all_scenarios = set()
-        for config in combo_configs.values():
-            all_scenarios.update(config["irw_frac_by_dist"].values())
+        # Activities: 'inventory', 'events', 'growth_curves', 'transitions'
+        # Do nothing 'climate_adjustment',
+        # Other files
+        # Activities
 
-        scenarios = list(all_scenarios)
 
         # Find all CSV files in the country directory
         csv_files = list(country_orig_dir.glob("**/*.csv"))
