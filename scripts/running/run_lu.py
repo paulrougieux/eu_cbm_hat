@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Written by Lucas Sinclair and Paul Rougieux.
 
@@ -29,6 +28,13 @@ Run with a profiler from a python interpreter:
     >>> stats.strip_dirs()
     >>> stats.sort_stats(pstats.SortKey.CUMULATIVE)
     >>> stats.print_stats(20)
+
+Run other scenarios
+
+    from eu_cbm_hat.core.continent import continent
+    runner = continent.combos['min_rotation_bnc_fcth'].runners['LU'][-1]
+    runner.num_timesteps = 2030 - runner.country.inventory_start_year
+    output = runner.run(keep_in_ram=True, verbose=True, interrupt_on_error=True)
 
 """
 
