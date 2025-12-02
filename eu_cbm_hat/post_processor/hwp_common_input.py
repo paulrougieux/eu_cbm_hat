@@ -4,7 +4,7 @@
 """Import FAO and CRF databases needed for HWP estimation. This will include all countries.
 
 
-Usage: 
+Usage:
 
     >>> from eu_cbm_hat.post_processor.hwp_common_input import hwp_common_input
     >>> hwp_common_input.crf_semifinished_data
@@ -98,11 +98,15 @@ class HWPCommonInput:
         self.c_sw_con = 0.225
         self.c_wp = 0.294
         self.c_pp = 0.450
-        # correct for humidity for recycled wood products, as the reported amounts are in t of fresh matter of collected material 
-        self.humid_corr_wood = 0.15 # correction from conversion from reported fresh to dry 
-        self.humid_corr_paper = 0.10 # correction from conversion from reported fresh to dry
-        self.c_rwp = 0.5 # as of dry matter
-        self.c_rpp = 0.7 # as of dry matter
+        # correct for humidity for recycled wood products, as the reported amounts are in t of fresh matter of collected material
+        self.humid_corr_wood = (
+            0.15  # correction from conversion from reported fresh to dry
+        )
+        self.humid_corr_paper = (
+            0.10  # correction from conversion from reported fresh to dry
+        )
+        self.c_rwp = 0.5  # as of dry matter
+        self.c_rpp = 0.7  # as of dry matter
         # N year parameter for the backfill_avg_first_n_years
         self.n_years_for_backfill = 3
 
@@ -171,7 +175,12 @@ class HWPCommonInput:
         )
         # Replace Item from 'OSB' to 'Oriented strand board (OSB)' as of latest FAOSTAT download
         # Replace 'OSB' with 'Oriented strand board (OSB)'
-        df['Item'] = df['Item'].replace({'Oriented strand board (OSB)':'OSB', 'Sawnwood, non-coniferous all':'Sawnwood, non-coniferous'})
+        df["Item"] = df["Item"].replace(
+            {
+                "Oriented strand board (OSB)": "OSB",
+                "Sawnwood, non-coniferous all": "Sawnwood, non-coniferous",
+            }
+        )
         # Rename countries
         area_dict = {"Netherlands (Kingdom of the)": "Netherlands"}
         df["Area"] = df["Area"].replace(area_dict)
@@ -179,13 +188,28 @@ class HWPCommonInput:
 
     @cached_property
     def crf_stat(self):
-        """crf sumbissions"""
+        """crf submissions semi finished products data
+
+        Provides historical data on semi finished products from the countries"""
         df = pd.read_csv(eu_cbm_data_pathlib / "common/hwp_crf_submission.csv")
         df = df.rename(columns={"country": "area"})
-        # remove columns which have information purpose only, i.e. change compared to previous submission to unfccc
-        df = df[['area', 'year', 'sw_prod_m3_crf', 'sw_imp_m3_crf', 'sw_exp_m3_crf',
-                 'wp_prod_m3_crf', 'wp_imp_m3_crf', 'wp_exp_m3_crf', 'pp_prod_t_crf', 
-                 'pp_imp_t_crf', 'pp_exp_t_crf']]
+        # Remove columns which have information purpose only, i.e. change
+        # compared to previous submission to unfccc
+        df = df[
+            [
+                "area",
+                "year",
+                "sw_prod_m3_crf",
+                "sw_imp_m3_crf",
+                "sw_exp_m3_crf",
+                "wp_prod_m3_crf",
+                "wp_imp_m3_crf",
+                "wp_exp_m3_crf",
+                "pp_prod_t_crf",
+                "pp_imp_t_crf",
+                "pp_exp_t_crf",
+            ]
+        ]
         # Convert other columns to numerical
         cols = df.columns.to_list()
         for col in cols[2:]:
@@ -202,8 +226,10 @@ class HWPCommonInput:
         """
         # Import data from CRF database, remove NaNs. Remove also the plots with 0 vol, but with agb
         df_wide = pd.read_csv(eu_cbm_data_pathlib / "common/crf_data.csv")
-        df_wide = df_wide[df_wide["indicator"] == "4.G. Harvested wood products Net CO2 E/R (kt)"]  # Original indicator as of CRF/CTF
-        indicator = "crf_hwp_tco2" # short version of the GHG source for reported CO2 emissions by HWP 
+        df_wide = df_wide[
+            df_wide["indicator"] == "4.G. Harvested wood products Net CO2 E/R (kt)"
+        ]  # Original indicator as of CRF/CTF
+        indicator = "crf_hwp_tco2"  # short version of the GHG source for reported CO2 emissions by HWP
         selector = df_wide["indicator"] == indicator
         df_wide = df_wide[selector].copy()
         # Reshape to long format
@@ -417,7 +443,7 @@ class HWPCommonInput:
         """
         df_fao = self.faostat_bulk_data
         # remove rows which do not reffer to "quantity" from original data
-        df_fao["Element"] = df_fao["Element"].astype(str)       
+        df_fao["Element"] = df_fao["Element"].astype(str)
         selector = df_fao["Element"].str.contains("value")
         df_fao = df_fao[~selector].rename(
             columns={"Item": "Item_orig", "Element": "Element_orig"}
@@ -545,8 +571,6 @@ class HWPCommonInput:
             df_exp["irw_con_prod"] + df_exp["irw_con_imp"] - df_exp["irw_con_exp"]
         )
 
-
-        
         df_exp["fIRW_SW_broad"] = (
             df_exp["irw_broad_prod"] - df_exp["irw_broad_exp"]
         ) / (
@@ -571,9 +595,7 @@ class HWPCommonInput:
         )
 
         # f values on con and broad
-        df_exp["fIRW_SW_con"] = df_exp["fIRW_SW_con"].mask(
-            df_exp["fIRW_SW_con"] < 0, 0
-        )
+        df_exp["fIRW_SW_con"] = df_exp["fIRW_SW_con"].mask(df_exp["fIRW_SW_con"] < 0, 0)
         df_exp["fIRW_SW_broad"] = df_exp["fIRW_SW_broad"].mask(
             df_exp["fIRW_SW_broad"] < 0, 0
         )
@@ -593,7 +615,7 @@ class HWPCommonInput:
 
         # apply assumptions that f = 0 when ratio < 0
         df_exp["fREC_PAPER"] = df_exp["fREC_PAPER"].mask(df_exp["fREC_PAPER"] < 0, 0)
-        df_exp["year"] = df_exp["year"].astype(int)        
+        df_exp["year"] = df_exp["year"].astype(int)
         return df_exp
 
     @cached_property
@@ -870,8 +892,8 @@ class HWPCommonInput:
         factor_cols = [
             "fPULP",
             "fIRW_WP",
-            'fIRW_SW_con',
-            'fIRW_SW_broad',
+            "fIRW_SW_con",
+            "fIRW_SW_broad",
         ]
         recycle_cols = [
             "recycled_paper_prod",
@@ -898,7 +920,7 @@ class HWPCommonInput:
             )
             .reset_index()
         )
-       # Warn about countries which don't have factors data at all
+        # Warn about countries which don't have factors data at all
         country_with_no_data = no_data.loc[no_data.no_value, "area"].to_list()
         if any(country_with_no_data):
             msg = "\nNo export correction factor data for these countries:"
@@ -918,37 +940,41 @@ class HWPCommonInput:
         n_years = self.n_years_for_backfill
         for col in factor_cols + recycle_cols:
             df = backfill_avg_first_n_years(df, var=col, n=n_years)
-       # DO zero recycled_wood_prod and recycled_wood_paper for period before 2017
+        # DO zero recycled_wood_prod and recycled_wood_paper for period before 2017
         # Define the columns to process
-        columns_to_zero = ['recycled_paper_prod', 'recycled_wood_prod']
-        
+        columns_to_zero = ["recycled_paper_prod", "recycled_wood_prod"]
+
         # Set years 1900-2016 to zero
-        df.loc[(df['year'] >= 1900) & (df['year'] <= 2016), columns_to_zero] = 0
-        
+        df.loc[(df["year"] >= 1900) & (df["year"] <= 2016), columns_to_zero] = 0
+
         # Define the range
         start_year = 2018
         end_year = 1988  # 2018 - 30 = 1988 (30 years including 2018)
-        
+
         # Iterate through each area
-        for area in df['area'].unique():
+        for area in df["area"].unique():
             # Create mask for current area
-            area_mask = df['area'] == area
-            
+            area_mask = df["area"] == area
+
             # Get initial values for 2018 for this specific area
-            initial_values = df.loc[(df['year'] == start_year) & area_mask, columns_to_zero].iloc[0]
-            
+            initial_values = df.loc[
+                (df["year"] == start_year) & area_mask, columns_to_zero
+            ].iloc[0]
+
             # Create a mask for years 1988-2018 for this area
-            years_mask = (df['year'] >= end_year) & (df['year'] <= start_year) & area_mask
-            
+            years_mask = (
+                (df["year"] >= end_year) & (df["year"] <= start_year) & area_mask
+            )
+
             # Calculate factors for all years at once
-            years_array = df.loc[years_mask, 'year'].values
+            years_array = df.loc[years_mask, "year"].values
             factors = (years_array - end_year) / (start_year - end_year)
-            
+
             # Apply the factors for each column
             for col in columns_to_zero:
                 df.loc[years_mask, col] = initial_values[col] * factors
 
-       # Compute production from domestic roundwood
+        # Compute production from domestic roundwood
         df["sw_broad_dom_m3"] = df["sw_broad_prod_m3"] * df["fIRW_SW_broad"]
         df["sw_con_dom_m3"] = df["sw_con_prod_m3"] * df["fIRW_SW_con"]
         df["wp_dom_m3"] = df["wp_prod_m3"] * df["fIRW_WP"]
@@ -963,9 +989,13 @@ class HWPCommonInput:
         df["pp_dom_tc"] = self.c_pp * df["pp_dom_t"]
 
         # update from tons of fresh matter to C dry matter
-        df["recycled_wood_prod_tc"] =  df["recycled_wood_prod"] * (1 - self.humid_corr_wood)*self.c_rwp
-        df["recycled_paper_prod_tc"] = df["recycled_paper_prod"] * (1 - self.humid_corr_paper)* self.c_rpp
-        
+        df["recycled_wood_prod_tc"] = (
+            df["recycled_wood_prod"] * (1 - self.humid_corr_wood) * self.c_rwp
+        )
+        df["recycled_paper_prod_tc"] = (
+            df["recycled_paper_prod"] * (1 - self.humid_corr_paper) * self.c_rpp
+        )
+
         # Correct for recycled wood panel and paper amounts
         df["wp_dom_tc"] = df["wp_dom_tc"] - df["recycled_wood_prod_tc"]
         df["pp_dom_tc"] = df["pp_dom_tc"] - df["recycled_paper_prod_tc"]
@@ -1004,6 +1034,7 @@ class HWPCommonInput:
         h_corr = 0.15
         df["w_annual_wood_landfill_tdm"] = (1 - h_corr) * df["wood_landfill_tfm"]
         return df
+
 
 # Initiate the class
 hwp_common_input = HWPCommonInput()
