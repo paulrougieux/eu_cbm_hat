@@ -18,7 +18,7 @@ from autopaths.dir_path   import DirectoryPath
 from plumbing.cache       import property_cached
 
 # Internal modules #
-from eu_cbm_hat                     import eu_cbm_data_dir
+from eu_cbm_hat.constants import eu_cbm_data_dir
 from eu_cbm_hat.launch.associations import Associations
 from eu_cbm_hat.info.orig_data      import OrigData
 from eu_cbm_hat.info.aidb           import AIDB

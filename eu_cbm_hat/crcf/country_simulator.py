@@ -4,7 +4,7 @@ import pandas
 
 from plumbing.logger import create_file_logger
 
-from eu_cbm_hat import eu_cbm_data_dir
+from eu_cbm_hat.constants import eu_cbm_data_dir
 from eu_cbm_hat.crcf import Runner
 from eu_cbm_hat.crcf.driver_netcdf import Netcdf
 from eu_cbm_hat.crcf.driver_database import Database

@@ -6,7 +6,7 @@ from plumbing.cache  import property_cached
 from plumbing.common import camel_to_snake
 from plumbing.logger import create_file_logger
 
-from eu_cbm_hat                     import eu_cbm_data_dir
+from eu_cbm_hat.constants import eu_cbm_data_dir
 from eu_cbm_hat.cbm.simulation      import Simulation
 from eu_cbm_hat.launch.create_json  import CreateJSON
 from eu_cbm_hat.launch.associations import Associations
