@@ -123,3 +123,9 @@ Additional EU data structure required for the core/runner.py runner type
 - Details: Added code to divide all country columns by the nrow column to provide relative values in the compare_one_country_to_all_others_relative function
 - Commit hash: 2fb19ad
 
+### Task: Get unique values
+
+- Operation: Modified scripts/comparison/share_eu_cbm_data_with_forest_navigator.py to get unique values from irw_frac_by_dist config and complete the share_eu_cbm_data function
+- Details: Implemented collection of unique scenario values from config["irw_frac_by_dist"].values() across all combos using set(), completed the share_eu_cbm_data function to share EU CBM data by filtering CSV files for specified scenarios and countries
+- Commit hash: f4839bb
+

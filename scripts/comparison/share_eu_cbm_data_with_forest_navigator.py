@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Share EU CBM DATA for a given list of scenarios and a selection of countries
 
 - Selected scenarios: reference
@@ -12,9 +13,10 @@ directory.
 
 Usage as a command line script:
 
-    ipython -i 
+    cd ~/eu_cbm/eu_cbm_hat/scripts/comparison
+    ipython -i share_eu_cbm_data_with_forest_navigator.py
 
-Usage from python 
+Usage from python
 
     cd ~/eu_cbm/eu_cbm_hat/scripts/comparison
     ipython
@@ -25,9 +27,9 @@ Usage from python
     from share_eu_cbm_data_with_forest_navigator import share_common_data
 
     # Share country data
-    share_eu_cbm_data(scenario_combo="reference",
+    share_eu_cbm_data(combo_names=["reference", "no_management"],
                       country_codes=["IT", "IE", "CZ"],
-                      dest_dir="~/eu_cbm/eu_cbm_data_navigator")
+                      dest_dir="~/eu_cbm/eu_cbm_data_forest_navigator")
     # Share common data
     share_common_data(COMMON_FILES_TO_SHARE, dest_dir)
 
@@ -44,11 +46,11 @@ from pathlib import Path
 from typing import Union, List
 import shutil
 import pandas as pd
+import argparse
 from eu_cbm_hat import eu_cbm_data_pathlib
 from eu_cbm_hat.core.continent import continent
 
 # Change these input parameters
-DEST_DIR = Path("~/eu_cbm/eu_cbm_data_forest_navigator").expanduser()
 COMMON_FILES_TO_SHARE = ["country_codes.csv", "reference_years.csv"]
 
 def share_one_csv_file(
@@ -148,7 +150,7 @@ def share_eu_cbm_data(combo_names, country_codes, dest_dir):
     --------
     share_eu_cbm_data(combo_names=["reference", "no_management"],
                       country_codes=["IT", "IE", "CZ"],
-                      dest_dir="~/eu_cbm/eu_cbm_data_navigator")
+                      dest_dir="~/eu_cbm/eu_cbm_data_forest_navigator")
     """
     if isinstance(combo_names, str):
         combo_names = [combo_names]
@@ -202,13 +204,31 @@ def share_common_data(files_to_share, dest_dir):
     share_common_data()
     """
     common_orig_dir = eu_cbm_data_pathlib / "common"
-    common_dest_dir = dest_dir / "common"
-
+    common_dest_dir = (Path(dest_dir) / "common").expanduser()
     for file_name in files_to_share:
         src_path = common_orig_dir / file_name
         dest_path = common_dest_dir / file_name
         dest_path.parent.mkdir(parents=True, exist_ok=True)
+        print(src_path)
+        print(dest_path)
         shutil.copy2(src_path, dest_path)
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Share EU CBM DATA for given scenarios and countries.")
+    parser.add_argument('--combo_names', nargs='+', default=['reference', 'no_management'],
+                        help='List of scenario combo names (default: ["reference", "no_management"])')
+    parser.add_argument('--country_codes', nargs='+', default=['IT', 'IE', 'CZ'],
+                        help='List of ISO country codes (default: ["IT", "IE", "CZ"])')
+    parser.add_argument('--dest_dir', default='~/eu_cbm/eu_cbm_data_forest_navigator',
+                        help='Destination directory path (default: "~/eu_cbm/eu_cbm_data_forest_navigator")')
+    args = parser.parse_args()
+
+    # Share country data
+    share_eu_cbm_data(combo_names=args.combo_names,
+                      country_codes=args.country_codes,
+                      dest_dir=args.dest_dir)
+
+    # Share common data
+    share_common_data(COMMON_FILES_TO_SHARE, args.dest_dir)
 
 
