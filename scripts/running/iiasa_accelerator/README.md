@@ -1,4 +1,3 @@
-
 Scripts in this directory run CBM on the IIASA Accelerator platform.
 
 - IIASA accelerator https://accelerator.iiasa.ac.at/
@@ -6,7 +5,7 @@ Scripts in this directory run CBM on the IIASA Accelerator platform.
     - EU CBM space https://accelerator.iiasa.ac.at/projects/eu-cbm/file-explorer
 
 
-# Install the accelerator CLI client
+# Install accli, the accelerator CLI client accli
 
 Install a Python client for the IIASA accelerator
 
@@ -20,7 +19,7 @@ prompt:
 
     accli login
 
-## Documentation and code
+## accli Documentation
 
 Documentation and source code of the client:
 
@@ -33,17 +32,32 @@ Documentation and source code of the client:
   https://auth0.com/docs/get-started/authentication-and-authorization-flow/device-authorization-flow
 
 
-# Run
+# Prepare data for the IIASA accelerator
+
+Data in `local_data` is a symbolic link to a data repository
+
+    eu_cbm_data@ --> /home/paul/rp/eu_cbm/eu_cbm_data_forest_navigator
+
+That repository was prepared with a scripts that select countries and scenarios for
+sharing:
+
+    ~/eu_cbm/eu_cbm_hat/scripts/comparison/share_eu_cbm_data_with_forest_navigator.py
+
+
+# Prepare scripts for the IIASA accelerator
+
+
+# Run scenarios
 
 see also
 
 - ~/eu_cbm/eu_cbm_explore/projects/iiasa_cbm_run
 
-
 Start a model run by dispatching a routine to the accelerator platform
 
     cd ~/eu_cbm/eu_cbm_hat/scripts/running/iiasa_accelerator
     accli login
+    accli dispatch eu-cbm cz_ie_it_reference
     accli dispatch eu-cbm zz_scenario
 
 
