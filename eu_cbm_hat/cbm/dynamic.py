@@ -130,7 +130,13 @@ class DynamicSimulation(Simulation):
         if self.year < self.country.base_year:
             return cbm_vars
 
-        # Copy cbm_vars and hypothetically end the timestep here #
+        ############################################################
+        # Copy cbm_vars and hypothetically end the timestep here.  #
+        ############################################################
+        # Calling step on a copy of cbm_vars, called end_vars, Hypothetically
+        # or virtually Implements: CBM annual process dynamics: growth,
+        # turnover and decay as well as any disturbances already present before
+        # we do harvest allocation (mostly natural disturbances).
         end_vars = copy.deepcopy(cbm_vars)
         end_vars = self.cbm.step(end_vars)
 
@@ -227,7 +233,9 @@ class DynamicSimulation(Simulation):
         self.out_var('irw_predetermined', tot_flux_irw_vol)
         self.out_var('fw_predetermined',  tot_flux_fw_vol)
 
+        ####################################
         # Get harvest for the current year #
+        ####################################
         query  = "year == %s" % self.year
         harvest_irw_vol = self.runner.harvest.irw.query(query)['value']
         harvest_fw_vol  = self.runner.harvest.fw.query(query)['value']
