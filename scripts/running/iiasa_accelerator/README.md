@@ -5,7 +5,7 @@ Scripts in this directory run CBM on the IIASA Accelerator platform.
     - EU CBM space https://accelerator.iiasa.ac.at/projects/eu-cbm/file-explorer
 
 
-# Install accli, the accelerator CLI client accli
+# Install accli, the accelerator CLI client
 
 Install a Python client for the IIASA accelerator
 
@@ -45,6 +45,12 @@ sharing:
 
 
 # Prepare scripts for the IIASA accelerator
+
+
+## Test locally with different environment variables
+
+Define EU_CBM_DATA to the directory shared with IIASA forest path project.
+
 
 
 # Run scenarios
