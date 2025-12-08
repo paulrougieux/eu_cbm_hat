@@ -78,6 +78,15 @@ Make sure that all AIDBs have the same tables:
 >>>    msg += f" missing tables: {set(AIDB_TABLES) - set(tables)}"
 >>>    print(msg)
 
+Find out tables which are identical to ZZ's AIDB in all other AIDBs: 
+
+>>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others_relative
+>>> df_zz = compare_one_country_to_all_others_relative("ZZ")
+>>> df_comp = (df_zz.set_index(["table", "ZZ_nrow"]) == 1).drop(columns="ZZ").all(axis=1).reset_index(name="identical")
+>>> identical_tables = df_comp.loc[df_comp["identical"] == True, "table"].to_list()
+>>> different_tables = df_comp.loc[df_comp["identical"] == False, "table"].to_list()
+
+
 """
 
 import pandas
