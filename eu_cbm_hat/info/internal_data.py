@@ -54,9 +54,9 @@ class InternalData(object):
         try:
             self["values"]
         except FileNotFoundError:
-            msg = f"No output data found for:\n{self.runner}.\n"
-            msg += "Please run the model first. "
-            msg += "The post processor requires model output."
+            msg = f"No model output data found at:\n{self.runner}.\n"
+            msg += "The post-processor cannot run without model output. "
+            msg += "Please run the model first to generate the required data."
             raise FileNotFoundError(msg)
         return make_classif_df(self['values'], self['classifiers'])
 
