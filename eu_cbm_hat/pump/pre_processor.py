@@ -20,6 +20,7 @@ from plumbing.databases.sqlite_database import SQLiteDatabase
 
 # Internal modules #
 from eu_cbm_hat.pump.long_or_wide import events_wide_to_long
+from eu_cbm_hat import eu_cbm_aidb_pathlib
 
 
 ###############################################################################
@@ -66,8 +67,10 @@ class PreProcessor(object):
         # In case the scenario combination changes the disturbance matrix
         self.copy_and_change_aidb()
 
+
     # ----------------------------- Properties --------------------------------#
     @property
+
     def all_csv(self):
         """Get all CSV inputs in a list."""
         return [
@@ -206,4 +209,78 @@ class PreProcessor(object):
 
         msg = "The disturbance matrix has been changed according to "
         msg += "silv/disturbance_matrix_value.csv"
+        self.parent.log.info(msg)
+
+    def copy_zz_aidb_and_change_it_to_this_country(self):
+        """Copy the ZZ AIDB and modify all tables based on csv input files for
+        the current country.
+
+        First, write all tables to csv files
+
+            from eu_cbm_hat.core.continent import continent
+            aidb = continent.countries["LU"].aidb
+            aidb.write_all_tables_to_csv()
+
+        Second, run the model with a new version that uses the AIDB from ZZ
+        while modifying the different tables to load data from another
+        country's CSV files.
+
+            from eu_cbm_hat.core.continent import continent
+            runner_ref = continent.combos['reference'].runners['LU'][-1]
+            runner_copy = continent.combos['reference_aidb_copy'].runners['LU'][-1]
+            # Experimental copy and change ZZ's AIDB to this country
+            runner_copy.pre_processor.copy_zz_aidb_and_change_it_to_this_country()
+            runner_copy.run()
+            # Compare results
+            runner_ref.post_processor.sink.df_agg_by_year
+            runner_copy.post_processor.sink.df_agg_by_year
+
+        """
+        # Initialize logger debug messages in case this method is used alone
+        # before the run() method 
+        self.parent.verbose = True
+        csv_dir = eu_cbm_aidb_pathlib / "countries" / self.country.iso2_code / "csv"
+        if not csv_dir.exists():
+            raise FileNotFoundError(f"CSV dir doesn't exist at: {csv_dir}") 
+        different_tables = ['admin_boundary', 'admin_boundary_tr',
+                            'afforestation_initial_pool', 'decay_parameter',
+                            'disturbance_matrix_association',
+                            'disturbance_matrix_tr',
+                            'disturbance_matrix_value', 'disturbance_type_tr',
+                            'genus_tr', 'growth_multiplier_series',
+                            'growth_multiplier_value', 'spatial_unit',
+                            'species', 'species_tr', 'spinup_parameter',
+                            'stump_parameter', 'turnover_parameter',
+                            'vol_to_bio_factor', 'vol_to_bio_forest_type',
+                            'vol_to_bio_genus', 'vol_to_bio_species']
+
+        # Copy the default AIDB to a temporary location. This has been added
+        # because the /eos large file system Doesn't handle database writes
+        # very well on JRC's BDAP computing cluster.
+        combo_name = self.runner.combo.short_name
+        zz_aidb_path = eu_cbm_aidb_pathlib / "countries" / "ZZ" / "aidb.db"
+        self.parent.log.info("Source AIDB %s" % zz_aidb_path)
+        aidb_file_name = f"aidb_{combo_name}.db"
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            temp_file = tmpdirname + "/" + aidb_file_name
+            self.parent.log.info("First temporarily copied to %s" % temp_file)
+            shutil.copy(zz_aidb_path, temp_file)
+            temp_db = SQLiteDatabase(temp_file)
+
+            # Loop over each table in the different_tables list
+            for table_name in different_tables:
+                # Load the table from the country's csv file
+                df = pandas.read_csv(csv_dir / f"{table_name}.csv")
+                # Write the data frame to the temporary AIDB
+                temp_db.write_df(df, table_name)
+
+            # Change path to the modified AIDB
+            self.runner.country.aidb.change_path(combo_name=combo_name)
+            # Copy the temporary AIDB to the new path
+            dest_file = self.runner.country.aidb.paths.aidb
+            shutil.copy(temp_file, dest_file)
+            self.parent.log.info("Then copied to a new AIDB %s" % dest_file)
+
+        msg = "The AIDB has been copied from ZZ and overwritten with the coutry CSV "
+        msg += "files."
         self.parent.log.info(msg)
