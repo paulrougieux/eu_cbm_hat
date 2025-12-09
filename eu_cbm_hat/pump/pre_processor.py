@@ -21,6 +21,7 @@ from plumbing.databases.sqlite_database import SQLiteDatabase
 # Internal modules #
 from eu_cbm_hat.pump.long_or_wide import events_wide_to_long
 from eu_cbm_hat import eu_cbm_aidb_pathlib
+from eu_cbm_hat.qaqc.aidb import AIDB_TABLES
 
 
 ###############################################################################
@@ -232,8 +233,11 @@ class PreProcessor(object):
             runner_copy.pre_processor.copy_zz_aidb_and_change_it_to_this_country()
             runner_copy.run()
             # Compare results
-            runner_ref.post_processor.sink.df_agg_by_year
-            runner_copy.post_processor.sink.df_agg_by_year
+            sink_ref = runner_ref.post_processor.sink.df_agg_by_year
+            sink_copy = runner_copy.post_processor.sink.df_agg_by_year
+            sink_ref.equals(sink_copy) # False
+            # Compare relative values by dividing the diff through the 
+            1 - sink_copy.set_index(["member_state", "year"]) / sink_ref.set_index(["member_state", "year"]) 
 
         """
         # Initialize logger debug messages in case this method is used alone
@@ -267,8 +271,9 @@ class PreProcessor(object):
             shutil.copy(zz_aidb_path, temp_file)
             temp_db = SQLiteDatabase(temp_file)
 
-            # Loop over each table in the different_tables list
-            for table_name in different_tables:
+            # Alternative: Loop over each table in the different_tables list
+            # Loop on all AIDB tables 
+            for table_name in AIDB_TABLES:
                 # Load the table from the country's csv file
                 df = pandas.read_csv(csv_dir / f"{table_name}.csv")
                 # Write the data frame to the temporary AIDB
@@ -281,6 +286,6 @@ class PreProcessor(object):
             shutil.copy(temp_file, dest_file)
             self.parent.log.info("Then copied to a new AIDB %s" % dest_file)
 
-        msg = "The AIDB has been copied from ZZ and overwritten with the coutry CSV "
-        msg += "files."
+        msg = "Created a new AIDB based on the one from ZZ. "
+        msg += "Tables have been overwritten with coutry CSV files."
         self.parent.log.info(msg)
