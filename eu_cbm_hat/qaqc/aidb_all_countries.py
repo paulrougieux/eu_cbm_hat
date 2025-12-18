@@ -80,8 +80,8 @@ Make sure that all AIDBs have the same tables:
 
 Find out tables which are identical to ZZ's AIDB in all other AIDBs: 
 
->>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others_relative
->>> df_zz = compare_one_country_to_all_others_relative("ZZ")
+>>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others_relative_difference
+>>> df_zz = compare_one_country_to_all_others_relative_difference("ZZ")
 >>> df_comp = (df_zz.set_index(["table", "ZZ_nrow"]) == 1).drop(columns="ZZ").all(axis=1).reset_index(name="identical")
 >>> identical_tables = df_comp.loc[df_comp["identical"] == True, "table"].to_list()
 >>> different_tables = df_comp.loc[df_comp["identical"] == False, "table"].to_list()
@@ -90,6 +90,9 @@ Find out tables which are identical to ZZ's AIDB in all other AIDBs:
 """
 
 import pandas
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 from eu_cbm_hat.core.continent import continent
 from eu_cbm_hat.qaqc.aidb import AIDB_TABLES
 
@@ -164,18 +167,55 @@ def compare_one_country_to_all_others(country_code):
         df_all = pandas.concat([df_all, df])
     return df_all
 
-def compare_one_country_to_all_others_relative(country_code):
-    """Provide the number of identical rows between tables of a given country
+def compare_one_country_to_all_others_relative_difference(country_code):
+    """Provide the number of rows between tables of a given country
     to all other countries divided by the number of rows of the table 
 
-    >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others_relative
-    >>> df_de = compare_one_country_to_all_others_relative("DE")
-    >>> df_it = compare_one_country_to_all_others_relative("IT")
+    >>> from eu_cbm_hat.qaqc.aidb_all_countries import compare_one_country_to_all_others_relative_difference
+    >>> df_de = compare_one_country_to_all_others_relative_difference("DE")
+    >>> df_it = compare_one_country_to_all_others_relative_difference("IT")
+    >>> df_zz = compare_one_country_to_all_others_relative_difference("ZZ")
 
     """
     df = compare_one_country_to_all_others(country_code)
     nrow_col = country_code + "_nrow"
     country_cols = [col for col in df.columns if col != nrow_col and col != 'table']
-    df[country_cols] = df[country_cols].div(df[nrow_col], axis=0)
+    df[country_cols] = 1 - df[country_cols].div(df[nrow_col], axis=0)
     return df
+
+def plot_heatmap_relative_difference(country_code):
+    """Heatmap plot of the relative difference
+
+    >>> from eu_cbm_hat.qaqc.aidb_all_countries import plot_heatmap_relative_difference
+    >>> plot_heatmap_relative_difference("DE")
+    >>> plot_heatmap_relative_difference("IT")
+    >>> fig = plot_heatmap_relative_difference("ZZ")
+
+    >>> # Save the figure to a PDF file
+    >>> fig.savefig("/tmp/aidb_heatmap_ZZ.pdf", format="pdf", bbox_inches="tight")
+
+    """
+    df = compare_one_country_to_all_others_relative_difference(country_code)
+    # Exclude 'table' and 'ZZ_nrow' columns
+    nrow_col = country_code + "_nrow"
+    numeric_cols = [col for col in df.columns if col != nrow_col and col != 'table' and col!=country_code]
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(14, 20))
+    # Create heatmap with blue (0) to red (1) gradient
+    sns.heatmap(df[numeric_cols],
+                cmap='RdBu_r',  # Reversed Red-Blue colormap (blue for low, red for high)
+                vmin=0,
+                vmax=1,
+                center=0.5,
+                cbar_kws={'label': 'Proportion of rows that differ'},
+                ax=ax,
+                linewidths=0.5,
+                linecolor='lightgray')
+    ax.set_xlabel('Country Code', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Table Name', fontsize=12, fontweight='bold')
+    ax.set_title('Heatmap of Country Data (Blue=0, Red=1)', fontsize=14, fontweight='bold', pad=20)
+    ax.set_yticklabels(df['table'], rotation=0, fontsize=8)
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+    return fig
 
