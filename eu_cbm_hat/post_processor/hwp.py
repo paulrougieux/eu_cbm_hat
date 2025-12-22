@@ -143,7 +143,7 @@ class HWP:
         >>> print(hwp.stock_sink_results)
 
     Switch to fraction when the hwp semi finished products scenario is not defined in combos
-    
+
         from eu_cbm_hat.core.continent import continent
         runner = continent.combos['pikfair'].runners['LU'][-1]
         print(runner.post_processor.hwp.semifinished_prod_scenario)
@@ -182,7 +182,9 @@ class HWP:
         #    an economic model. These are exogenous values from a projection of an
         #    economic model.
         try:
-            self.semifinished_prod_scenario = self.runner.combo.config["semi_finished_production"]
+            self.semifinished_prod_scenario = self.runner.combo.config[
+                "semi_finished_production"
+            ]
         except KeyError:
             self.semifinished_prod_scenario = "fraction"
         # Add recycling information or not
@@ -464,12 +466,13 @@ class HWP:
         df = df_long.pivot(
             columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
-    
-    
+
         # Function to replace spikes starting from base_year
         def replace_spikes(df, column):
             for i in range(1, len(df)):
-                if df.at[i, 'year'] >= self.base_year-3:  # Only start replacing from base_year
+                if (
+                    df.at[i, "year"] >= self.base_year - 3
+                ):  # Only start replacing from base_year
                     prev_value = df.at[i - 1, column]
                     current_value = df.at[i, column]
                     upper_bound = prev_value * 1.05
@@ -479,51 +482,54 @@ class HWP:
                         df.at[i, column] = upper_bound
                     elif current_value < lower_bound:
                         df.at[i, column] = lower_bound
-    
+
         # Apply the function to each column (except 'year')
         columns_to_check = df.columns[1:]  # Exclude 'year' column
         for column in columns_to_check:
             replace_spikes(df, column)
 
-            
         # Calculate average values pre- and post-base_year
-        n_years = 10  # Number of years before and after base_year to include in the average
-        
+        n_years = (
+            10  # Number of years before and after base_year to include in the average
+        )
+
         # Calculate averages with NaN handling
-        avg_post_base_year = df.loc[
-            (df['year'] >= self.base_year) & (df['year'] < self.base_year + n_years), 
-            df.columns[1:]
-        ].mean().fillna(0)  # Replace NaN with 0 after calculating mean
-        
-        avg_pre_base_year = df.loc[
-            (df['year'] > self.base_year - n_years) & (df['year'] <= self.base_year), 
-            df.columns[1:]
-        ].mean().fillna(0)
-        
+        avg_post_base_year = (
+            df.loc[
+                (df["year"] >= self.base_year)
+                & (df["year"] < self.base_year + n_years),
+                df.columns[1:],
+            ]
+            .mean()
+            .fillna(0)
+        )  # Replace NaN with 0 after calculating mean
+
+        avg_pre_base_year = (
+            df.loc[
+                (df["year"] > self.base_year - n_years)
+                & (df["year"] <= self.base_year),
+                df.columns[1:],
+            ]
+            .mean()
+            .fillna(0)
+        )
+
         # Calculate correction factor with NaN/inf handling
         correction_factor = avg_pre_base_year / avg_post_base_year
         correction_factor = correction_factor.replace([np.inf, -np.inf], 0)
-        
+
         # Apply correction factor before handling NaNs
-        df.loc[df['year'] >= self.base_year, df.columns[1:]] *= correction_factor.values
-        
+        df.loc[df["year"] >= self.base_year, df.columns[1:]] *= correction_factor.values
+
         # Replace remaining NaNs in the entire DataFrame before saving
         df = df.fillna(0)
-        
+
         # Create new columns with NaN handling
         df["pulpwood"] = df["pulpwood_con"].fillna(0) + df["pulpwood_broad"].fillna(0)
         df["sawlogs"] = df["sawlogs_con"].fillna(0) + df["sawlogs_broad"].fillna(0)
-            
+
         return df
 
-    
-
-
-
-
-
-
-    
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products as the average of the
@@ -771,27 +777,61 @@ class HWP:
         return self.fraction_semifinished_scenario
 
     @cached_property
-    def prod_semifinished_gfpmx(self):
-        """Production of semi finished products from an economic model
+    def prod_trade_fsm(self):
+        """Production and trade data from a Forest Sector Model"""
+        scenario_dir = (
+            eu_cbm_data_pathlib / "domestic_harvest" / self.semifinished_prod_scenario
+        )
+        df = pandas.read_csv(scenario_dir / "hwp_expected_fsm.csv")
+        selector = df["country"] == self.runner.country.country_name
+        df = df.loc[selector].copy()
+        return df
 
-            >>> from eu_cbm_hat.core.continent import continent
-            >>> runner = continent.combos['reference'].runners['LU'][-1]
-            >>> df = runner.post_processor.hwp.prod_semifinished_gfpmx
+    @cached_property
+    def dom_harvest_factor_fsm(self):
+        """Factor to compute the production from domestic harvest
 
-        df["product"].unique()
-        array(['indround', 'fuel', 'sawn', 'panel', 'pulp', 'paper']
+        Correct for export and import of saw logs and pulp logs
+        If saw logs net trade is negative, export < import
+        The net trade of industrial roundwood should be removed
+        proportionally from the production of each semi finished product.
+        If saw logs net trade is positive, import < export
+        Then do nothing.
+
+        Example:
+
+            from eu_cbm_hat.core.continent import continent
+            runner = continent.combos['reference'].runners['EE'][-1]
+            df = runner.post_processor.hwp.dom_harvest_factor_fsm
 
         """
-        # TODO: correct for export and import of saw logs and pulp logs
-        # If saw logs net trade is negative, export < import
-        # The net trade of industrial roundwood should be removed
-        # proportionally from the production of each semi finished product.
-        # If saw logs net trade is positive, import < export
-        # Then do nothing.
-        scenario_dir = eu_cbm_data_pathlib / "domestic_harvest" / self.semifinished_prod_scenario
-        df = pandas.read_csv(scenario_dir / "hwp_expected_gfpmx.csv")
-        selector = df["country"] == self.runner.country.country_name
-        df = df.loc[selector]
+        df = self.prod_trade_fsm
+        df = df.loc[df["product"] == "indround"].copy()
+        df["net_trade"] = df["exp"] - df["imp"]
+        df["f_trade"] = (df["prod"] - df["exp"]) / (df["prod"] + df["imp"] - df["exp"])
+        # Set negative values to zero
+        df.loc[df["f_trade"] < 0, "f_trade"] = 0
+        return df
+
+    @cached_property
+    def prod_semifinished_from_dom_harv_fsm(self):
+        """Production of semi finished products from an economic model
+
+        Usage example:
+
+            from eu_cbm_hat.core.continent import continent
+            runner = continent.combos['reference'].runners['EE'][-1]
+            df = runner.post_processor.hwp.prod_semifinished_from_dom_harv_fsm
+            # df["product"].unique()
+            # array(['indround', 'fuel', 'sawn', 'panel', 'pulp', 'paper']
+
+        """
+        df = self.prod_trade_fsm
+        # Compute production from domestic harvest
+        index = ["scenario", "year"]
+        irw = self.dom_harvest_factor_fsm[index + ["f_trade"]]
+        df = df.merge(irw, on=index, how="left")
+        df["prod"] = df["prod"] * df["f_trade"]
         # Convert products to tons of carbon
         product_map = pandas.DataFrame(
             {
@@ -819,10 +859,12 @@ class HWP:
         df["prod_tc"] = df["prod"] * df["conv_factor"] * 1000
         # Reshape prod_tc to wide format with product_short in columns sw_
         df["variable_name"] = df["product_short"] + "_expected_tc"
-        index = ["country", "year"]
         # Note we convert to carbon before splitting con and broad. It could
         # also be done afterwards with con and broad specific factors
-        df_wide = df.pivot(index=index, columns="variable_name", values="prod_tc").reset_index()
+        index = ["country", "year"]
+        df_wide = df.pivot(
+            index=index, columns="variable_name", values="prod_tc"
+        ).reset_index()
         # Split con and broad based on a proportion from the last n years
         frac = self.fraction_semifinished_n_years_mean
         # Compute fraction for sw only
@@ -830,9 +872,9 @@ class HWP:
             frac["sw_con_fraction"] + frac["sw_broad_fraction"]
         )
         df_wide["sw_broad_expected_tc"] = df_wide["sw_expected_tc"] * sw_broad_fraction
-        df_wide["sw_con_expected_tc"] = df_wide["sw_expected_tc"] * (1-sw_broad_fraction)
-        # See TODO above
-        df_wide["TODO"] = "convert to prod from dom harvest"
+        df_wide["sw_con_expected_tc"] = df_wide["sw_expected_tc"] * (
+            1 - sw_broad_fraction
+        )
         return df_wide
 
     # Don"t cache, in case we change the number of years or the self.add_recycling
@@ -893,10 +935,14 @@ class HWP:
             df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
             df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
         else:
-            df = df.merge(self.prod_semifinished_gfpmx, on="year")
+            df = df.merge(self.prod_semifinished_fsm, on="year")
             # Compute the minimum between saw logs tc and sawnwood tc
-            df["sw_con_dom_tc"] = np.minimum(df["sawlogs_con"], df["sw_con_expected_tc"])
-            df["sw_broad_dom_tc"] = np.minimum(df["sawlogs_broad"], df["sw_broad_expected_tc"])
+            df["sw_con_dom_tc"] = np.minimum(
+                df["sawlogs_con"], df["sw_con_expected_tc"]
+            )
+            df["sw_broad_dom_tc"] = np.minimum(
+                df["sawlogs_broad"], df["sw_broad_expected_tc"]
+            )
             # Compute the minimum between pulp lots  tc and paper tc
             df["pp_dom_tc"] = np.minimum(df["pulpwood"], df["pp_expected_tc"])
             # Compute the remaining amount for wood panels
@@ -974,13 +1020,18 @@ class HWP:
 
         # constant multiplier value applied to allow mathching the reported by country
         constant = 0.5
-        
+
         # Define the columns you want to multiply
-        columns_to_multiply = ['sw_broad_dom_tc', 'sw_con_dom_tc', 'wp_dom_tc', 'pp_dom_tc']
-        
+        columns_to_multiply = [
+            "sw_broad_dom_tc",
+            "sw_con_dom_tc",
+            "wp_dom_tc",
+            "pp_dom_tc",
+        ]
+
         # Multiply the specified columns by the constant
         df[columns_to_multiply] = df[columns_to_multiply] * constant
-        
+
         # Assign decay parameters inside df
         decay_params = hwp_common_input.decay_params
         for col in decay_params.columns:
@@ -992,7 +1043,7 @@ class HWP:
             sw_con_inflow=(df.sw_con_dom_tc * df.k1_sw),
             wp_inflow=(df.wp_dom_tc * df.k1_wp),
             pp_inflow=(df.pp_dom_tc * df.k1_pp),
-        )  
+        )
         return df
 
     def prepare_decay_and_inflow__(self):
@@ -1005,53 +1056,58 @@ class HWP:
 
         """
         df = self.concat_1900_to_last_sim_year.copy()
-    
+
         # Get the current country code
         country_code = self.runner.country.iso2_code
-    
+
         # Define a dictionary of constants for each country
         constants = {
-                    'AT':0.5,
-                    'BE':0.5,
-                    'BG':0.5,
-                    'CZ':1,
-                    'DE':1,
-                    'DK':0.5,
-                    'EE':1,
-                    'ES':1,
-                    'FI':1,
-                    'FR':1,
-                    'GR':1,
-                    'HR':1,
-                    'HU':1,
-                    'IE':0.5,
-                    'IT':0.5,
-                    'LT':1,
-                    'LU':1,
-                    'LV':1,
-                    'NL':2,
-                    'PL':2,
-                    'PT':0.5,
-                    'RO':1,
-                    'SE':0.5,
-                    'SI':1,
-                    'SK':1
-                            }
-    
+            "AT": 0.5,
+            "BE": 0.5,
+            "BG": 0.5,
+            "CZ": 1,
+            "DE": 1,
+            "DK": 0.5,
+            "EE": 1,
+            "ES": 1,
+            "FI": 1,
+            "FR": 1,
+            "GR": 1,
+            "HR": 1,
+            "HU": 1,
+            "IE": 0.5,
+            "IT": 0.5,
+            "LT": 1,
+            "LU": 1,
+            "LV": 1,
+            "NL": 2,
+            "PL": 2,
+            "PT": 0.5,
+            "RO": 1,
+            "SE": 0.5,
+            "SI": 1,
+            "SK": 1,
+        }
+
         # Retrieve the multiplier for the current country, default to 1.0 if not found
         constant = constants.get(country_code, 1.0)
-    
+
         # Define the columns to multiply
-        columns_to_multiply = ['sw_broad_dom_tc', 'sw_con_dom_tc', 'wp_dom_tc', 'pp_dom_tc']
-    
+        columns_to_multiply = [
+            "sw_broad_dom_tc",
+            "sw_con_dom_tc",
+            "wp_dom_tc",
+            "pp_dom_tc",
+        ]
+
         # Apply the country-specific constant to the selected columns
         df[columns_to_multiply] = df[columns_to_multiply] * constant
-    
+
         # Assign decay parameters
         decay_params = hwp_common_input.decay_params
         for col in decay_params.columns:
             df[col] = decay_params[col].values[0]
-    
+
         # Compute the corrected inflow based on decay parameters
         df = df.assign(
             sw_broad_inflow=(df.sw_broad_dom_tc * df.k1_sw),
@@ -1059,14 +1115,8 @@ class HWP:
             wp_inflow=(df.wp_dom_tc * df.k1_wp),
             pp_inflow=(df.pp_dom_tc * df.k1_pp),
         )
-    
+
         return df
-
-
-
-
-
-        
 
     @property  # Don't cache, in case we change the number of years
     def build_hwp_stock_since_1900(self):
