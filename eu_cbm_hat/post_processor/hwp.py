@@ -465,9 +465,6 @@ class HWP:
             columns="grade2", index=["year"], values="tc_irw"
         ).reset_index()
     
-        # Save initial results
-        output_path = eu_cbm_data_pathlib / "quick_results" / "fluxes_by_grade_pulpwood_sawlogs_0.csv"
-        df.to_csv(output_path, mode="w", header=True)      
     
         # Function to replace spikes starting from base_year
         def replace_spikes(df, column):
@@ -488,9 +485,6 @@ class HWP:
         for column in columns_to_check:
             replace_spikes(df, column)
 
-        # Save final results
-        output_path = eu_cbm_data_pathlib / "quick_results" / "fluxes_by_grade_pulpwood_sawlogs_1.csv"
-        df.to_csv(output_path, mode="w", header=True)
             
         # Calculate average values pre- and post-base_year
         n_years = 10  # Number of years before and after base_year to include in the average
@@ -519,11 +513,6 @@ class HWP:
         # Create new columns with NaN handling
         df["pulpwood"] = df["pulpwood_con"].fillna(0) + df["pulpwood_broad"].fillna(0)
         df["sawlogs"] = df["sawlogs_con"].fillna(0) + df["sawlogs_broad"].fillna(0)
-
-
-        # Save final results
-        output_path = eu_cbm_data_pathlib / "quick_results" / "fluxes_by_grade_pulpwood_sawlogs_2.csv"
-        df.to_csv(output_path, mode="w", header=True)
             
         return df
 
@@ -1007,7 +996,14 @@ class HWP:
         return df
 
     def prepare_decay_and_inflow__(self):
-        """Prepare decay parameters and compute inflow with country-specific constants"""
+        """Prepare decay parameters and compute inflow with country-specific constants
+
+        >>> from eu_cbm_hat.core.continent import continent
+        >>> runner = continent.combos['reference'].runners['LU'][-1]
+        >>> hwp = runner.post_processor.hwp
+        >>> hwp.prepare_decay_and_inflow__()
+
+        """
         df = self.concat_1900_to_last_sim_year.copy()
     
         # Get the current country code
