@@ -189,8 +189,8 @@ def plot_heatmap_relative_difference(country_code):
     >>> from eu_cbm_hat.qaqc.aidb_all_countries import plot_heatmap_relative_difference
     >>> plot_heatmap_relative_difference("DE")
     >>> plot_heatmap_relative_difference("IT")
-    >>> fig = plot_heatmap_relative_difference("ZZ")
 
+    >>> fig = plot_heatmap_relative_difference("ZZ")
     >>> # Save the figure to a PDF file
     >>> fig.savefig("/tmp/aidb_heatmap_ZZ.pdf", format="pdf", bbox_inches="tight")
 
@@ -200,7 +200,7 @@ def plot_heatmap_relative_difference(country_code):
     nrow_col = country_code + "_nrow"
     numeric_cols = [col for col in df.columns if col != nrow_col and col != 'table' and col!=country_code]
     # Create figure and axis
-    fig, ax = plt.subplots(figsize=(14, 20))
+    fig, ax = plt.subplots(figsize=(7, 10))
     # Create heatmap with blue (0) to red (1) gradient
     sns.heatmap(df[numeric_cols],
                 cmap='RdBu_r',  # Reversed Red-Blue colormap (blue for low, red for high)
@@ -213,7 +213,6 @@ def plot_heatmap_relative_difference(country_code):
                 linecolor='lightgray')
     ax.set_xlabel('Country Code', fontsize=12, fontweight='bold')
     ax.set_ylabel('Table Name', fontsize=12, fontweight='bold')
-    ax.set_title('Heatmap of Country Data (Blue=0, Red=1)', fontsize=14, fontweight='bold', pad=20)
     ax.set_yticklabels(df['table'], rotation=0, fontsize=8)
     # Adjust layout to prevent label cutoff
     plt.tight_layout()

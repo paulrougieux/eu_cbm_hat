@@ -129,3 +129,13 @@ Additional EU data structure required for the core/runner.py runner type
 - Details: Implemented collection of unique scenario values from config["irw_frac_by_dist"].values() across all combos using set(), completed the share_eu_cbm_data function to share EU CBM data by filtering CSV files for specified scenarios and countries
 - Commit hash: f4839bb
 
+### Task: Add return statement to plot_heatmap_relative_difference
+
+- Operation: Modified plot_heatmap_relative_difference in eu_cbm_hat/qaqc/aidb_all_countries.py to return the figure object
+- Details: Added "return fig" at the end of the function to allow saving or further customization of the plot
+
+### Task: Modify plot_heatmap_relative_difference figsize for A4 PDF
+
+- Operation: Modified plot_heatmap_relative_difference in eu_cbm_hat/qaqc/aidb_all_countries.py to set figsize to occupy 70% height and 80% width of A4 PDF
+- Details: Changed figsize from (14, 20) to (6.616, 8.183) inches
+
