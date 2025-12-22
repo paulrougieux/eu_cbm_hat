@@ -216,30 +216,33 @@ class HWPCommonInput:
             df[col] = pd.to_numeric(df[col], errors="coerce")
         return df
 
-    @cached_property
     def ctf_unfccc(self):
-        """Common Reporting Format CRF submissions of green house gas reported
+        """Common Reporting Format CRF submissions of greenhouse gas reported
         by the countries to the UNFCCC.
-
-        Note: the old name  of the input table was Common Reporting Format, the
+    
+        Note: the old name of the input table was Common Reporting Format, the
         new name is CTF for Common Table Format.
         """
         # Import data from CRF database, remove NaNs. Remove also the plots with 0 vol, but with agb
         df_wide = pd.read_csv(eu_cbm_data_pathlib / "common/crf_data.csv")
+        
+        # Filter for the original indicator name
         df_wide = df_wide[
             df_wide["indicator"] == "4.G. Harvested wood products Net CO2 E/R (kt)"
-        ]  # Original indicator as of CRF/CTF
-        indicator = "crf_hwp_tco2"  # short version of the GHG source for reported CO2 emissions by HWP
-        selector = df_wide["indicator"] == indicator
-        df_wide = df_wide[selector].copy()
+        ]
+
+        # Rename the indicator to the short version
+        new_indicator = "crf_hwp_tco2"
+        df_wide["indicator"] = new_indicator  # Update the indicator name in the DataFrame
+    
         # Reshape to long format
         df = df_wide.melt(
-            id_vars=["member_state", "indicator"], var_name="year", value_name=indicator
+            id_vars=["member_state", "indicator"], 
+            var_name="year", 
+            value_name=new_indicator
         )
-        # convert to numeric
-        df[indicator] = pd.to_numeric(df[indicator], errors="coerce")
-        # Convert kilo tons to tons
-        df[indicator] = df[indicator] * 1000
+        # Convert to numeric and adjust units
+        df[new_indicator] = pd.to_numeric(df[new_indicator], errors="coerce") * 1000
         return df
 
     @cached_property

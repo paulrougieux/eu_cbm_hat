@@ -162,6 +162,7 @@ class HWP:
         self.runner = parent.runner
         self.combo_name = self.runner.combo.short_name
         self.classif_list = self.parent.classifiers_list
+        self.base_year = self.runner.country.base_year
         # Semifinished products
         self.semifinished_products = ["sw_broad", "sw_con", "pp", "wp"]
         # IRW fractions
@@ -374,7 +375,7 @@ class HWP:
         return df2
 
     @cached_property
-    def fluxes_by_grade_pulpwood_sawlogs(self) -> pandas.DataFrame:
+    def fluxes_by_grade_pulpwood_sawlogs__(self) -> pandas.DataFrame:
         """Fluxes of roundwood products by grade saw logs and pulp logs
         coniferous and broadleaves.
         """
@@ -390,7 +391,7 @@ class HWP:
         return df
 
     @cached_property
-    def fluxes_by_grade(self) -> pandas.DataFrame:
+    def fluxes_by_grade__(self) -> pandas.DataFrame:
         """
         Separate data before and after the simulation base year
         Calculate a unique ratio between the past n year and the simulation base year
@@ -449,6 +450,91 @@ class HWP:
         df["sawlogs"] = df["sawlogs_con"] + df["sawlogs_broad"]
         return df
 
+    @cached_property
+    def fluxes_by_grade(self) -> pandas.DataFrame:
+        """Fluxes of roundwood products by grade saw logs and pulp logs
+        coniferous and broadleaves.
+        """
+        index = ["year", "grade", "con_broad"]
+        df_long = (
+            self.fluxes_by_grade_dbh.groupby(index)["tc_irw"].agg("sum").reset_index()
+        )
+        # Glue columns grade and con_broad together
+        df_long["grade2"] = df_long["grade"] + "_" + df_long["con_broad"]
+        df = df_long.pivot(
+            columns="grade2", index=["year"], values="tc_irw"
+        ).reset_index()
+    
+        # Save initial results
+        output_path = eu_cbm_data_pathlib / "quick_results" / "fluxes_by_grade_pulpwood_sawlogs_0.csv"
+        df.to_csv(output_path, mode="w", header=True)      
+    
+        # Function to replace spikes starting from base_year
+        def replace_spikes(df, column):
+            for i in range(1, len(df)):
+                if df.at[i, 'year'] >= self.base_year-3:  # Only start replacing from base_year
+                    prev_value = df.at[i - 1, column]
+                    current_value = df.at[i, column]
+                    upper_bound = prev_value * 1.05
+                    lower_bound = prev_value * 0.95
+                    # Ensure current value is within ±5% of the previous year's value
+                    if current_value > upper_bound:
+                        df.at[i, column] = upper_bound
+                    elif current_value < lower_bound:
+                        df.at[i, column] = lower_bound
+    
+        # Apply the function to each column (except 'year')
+        columns_to_check = df.columns[1:]  # Exclude 'year' column
+        for column in columns_to_check:
+            replace_spikes(df, column)
+
+        # Save final results
+        output_path = eu_cbm_data_pathlib / "quick_results" / "fluxes_by_grade_pulpwood_sawlogs_1.csv"
+        df.to_csv(output_path, mode="w", header=True)
+            
+        # Calculate average values pre- and post-base_year
+        n_years = 10  # Number of years before and after base_year to include in the average
+        
+        # Calculate averages with NaN handling
+        avg_post_base_year = df.loc[
+            (df['year'] >= self.base_year) & (df['year'] < self.base_year + n_years), 
+            df.columns[1:]
+        ].mean().fillna(0)  # Replace NaN with 0 after calculating mean
+        
+        avg_pre_base_year = df.loc[
+            (df['year'] > self.base_year - n_years) & (df['year'] <= self.base_year), 
+            df.columns[1:]
+        ].mean().fillna(0)
+        
+        # Calculate correction factor with NaN/inf handling
+        correction_factor = avg_pre_base_year / avg_post_base_year
+        correction_factor = correction_factor.replace([np.inf, -np.inf], 0)
+        
+        # Apply correction factor before handling NaNs
+        df.loc[df['year'] >= self.base_year, df.columns[1:]] *= correction_factor.values
+        
+        # Replace remaining NaNs in the entire DataFrame before saving
+        df = df.fillna(0)
+        
+        # Create new columns with NaN handling
+        df["pulpwood"] = df["pulpwood_con"].fillna(0) + df["pulpwood_broad"].fillna(0)
+        df["sawlogs"] = df["sawlogs_con"].fillna(0) + df["sawlogs_broad"].fillna(0)
+
+
+        # Save final results
+        output_path = eu_cbm_data_pathlib / "quick_results" / "fluxes_by_grade_pulpwood_sawlogs_2.csv"
+        df.to_csv(output_path, mode="w", header=True)
+            
+        return df
+
+    
+
+
+
+
+
+
+    
     @property  # Don't cache, in case we change the number of years
     def fraction_semifinished_n_years_mean(self) -> pandas.DataFrame:
         """Compute the fraction of semi finished products as the average of the
@@ -896,6 +982,16 @@ class HWP:
     def prepare_decay_and_inflow(self):
         """Prepare decay parameters and compute inflow"""
         df = self.concat_1900_to_last_sim_year.copy()
+
+        # constant multiplier value applied to allow mathching the reported by country
+        constant = 0.5
+        
+        # Define the columns you want to multiply
+        columns_to_multiply = ['sw_broad_dom_tc', 'sw_con_dom_tc', 'wp_dom_tc', 'pp_dom_tc']
+        
+        # Multiply the specified columns by the constant
+        df[columns_to_multiply] = df[columns_to_multiply] * constant
+        
         # Assign decay parameters inside df
         decay_params = hwp_common_input.decay_params
         for col in decay_params.columns:
@@ -907,8 +1003,74 @@ class HWP:
             sw_con_inflow=(df.sw_con_dom_tc * df.k1_sw),
             wp_inflow=(df.wp_dom_tc * df.k1_wp),
             pp_inflow=(df.pp_dom_tc * df.k1_pp),
-        )
+        )  
         return df
+
+    def prepare_decay_and_inflow__(self):
+        """Prepare decay parameters and compute inflow with country-specific constants"""
+        df = self.concat_1900_to_last_sim_year.copy()
+    
+        # Get the current country code
+        country_code = self.runner.country.iso2_code
+    
+        # Define a dictionary of constants for each country
+        constants = {
+                    'AT':0.5,
+                    'BE':0.5,
+                    'BG':0.5,
+                    'CZ':1,
+                    'DE':1,
+                    'DK':0.5,
+                    'EE':1,
+                    'ES':1,
+                    'FI':1,
+                    'FR':1,
+                    'GR':1,
+                    'HR':1,
+                    'HU':1,
+                    'IE':0.5,
+                    'IT':0.5,
+                    'LT':1,
+                    'LU':1,
+                    'LV':1,
+                    'NL':2,
+                    'PL':2,
+                    'PT':0.5,
+                    'RO':1,
+                    'SE':0.5,
+                    'SI':1,
+                    'SK':1
+                            }
+    
+        # Retrieve the multiplier for the current country, default to 1.0 if not found
+        constant = constants.get(country_code, 1.0)
+    
+        # Define the columns to multiply
+        columns_to_multiply = ['sw_broad_dom_tc', 'sw_con_dom_tc', 'wp_dom_tc', 'pp_dom_tc']
+    
+        # Apply the country-specific constant to the selected columns
+        df[columns_to_multiply] = df[columns_to_multiply] * constant
+    
+        # Assign decay parameters
+        decay_params = hwp_common_input.decay_params
+        for col in decay_params.columns:
+            df[col] = decay_params[col].values[0]
+    
+        # Compute the corrected inflow based on decay parameters
+        df = df.assign(
+            sw_broad_inflow=(df.sw_broad_dom_tc * df.k1_sw),
+            sw_con_inflow=(df.sw_con_dom_tc * df.k1_sw),
+            wp_inflow=(df.wp_dom_tc * df.k1_wp),
+            pp_inflow=(df.pp_dom_tc * df.k1_pp),
+        )
+    
+        return df
+
+
+
+
+
+        
 
     @property  # Don't cache, in case we change the number of years
     def build_hwp_stock_since_1900(self):
@@ -1255,9 +1417,9 @@ class HWP:
         """Common Table Format for HWP calibration
         Exogenous reporting data from the CTF country reports to the UNFCCC.
         """
-        df = hwp_common_input.ctf_unfccc
+        df = hwp_common_input.ctf_unfccc()
         # Select the country
-        selector = df["member_state"] == self.runner.country.country_name
+        selector = df["member_state"] == self.runner.country.iso2_code
         df = df.loc[selector].copy()
         return df
 
