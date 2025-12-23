@@ -894,34 +894,61 @@ class HWP:
         external model. See issue 104.
         https://gitlab.com/bioeconomy/eu_cbm/eu_cbm_hat/-/issues/104#top
 
-        Illustrate a change of the semi finished scenario from fractions to
-        amounts:
+        Production from domestic harvest is based on an external model or on
+        fraction scenarios:
 
-            >>> from eu_cbm_hat.core.continent import continent
-            >>> runner = continent.combos['reference'].runners['LU'][-1]
-            >>> hwp = runner.post_processor.hwp
-            >>> print(hwp.prod_from_dom_harv_sim)
+            - If the file is defined in a scenario c ombination, then the
+              external Forest Sector Model data will  be used. 
+            - otherwise a fraction of semi finished can be used:
+                - default fraciton 
+                - there can also be a scenario of fractions 
 
-            >>> print("Fractions before modification, in the default scenario")
-            >>> print(hwp.fraction_semifinished_n_years_mean)
-            >>> print(hwp.fraction_semifinished)
-            >>> print(hwp.prod_from_dom_harv_sim)
-            >>> print(hwp.stock_sink_results)
+        Example calling a runner with available exogenous data from a forest
+        Sector Model:
 
-            >>> # Change the fraction semi finished
-            >>> runner.post_processor.hwp.hwp_frac_scenario = "more_sw"
-            >>> print("Fractions in the scenario")
-            >>> print(hwp.fraction_semifinished)
-            >>> # Display the effect on the production from domestic harvest
-            >>> print(hwp.prod_from_dom_harv_sim)
-            >>> # Display the effect on the final results
-            >>> print(hwp.stock_sink_results)
+            from eu_cbm_hat.core.continent import continent
+            runner = continent.combos['reference'].runners['EE'][-1]
+            hwp = runner.post_processor.hwp
+            print("semifinished_prod_scenario:", hwp.semifinished_prod_scenario)
+            print(hwp.prod_from_dom_harv_sim)
+            print(hwp.stock_sink_results)
 
-            >>> # Add recycling (default)
-            >>> df_with_recycling = hwp.prod_from_dom_harv_sim
-            >>> # Don't add recycling
-            >>> hwp.add_recycling = False
-            >>> df_without_recycling = hwp.prod_from_dom_harv_sim
+        Change the scenario and display the economic model data, as well as the
+        output of simulated production from domestic harvest:
+
+            hwp.semifinished_prod_scenario = "pikssp2_fel1"
+            print("semifinished_prod_scenario:", hwp.semifinished_prod_scenario)
+            print(hwp.prod_trade_fsm)
+            print(hwp.prod_from_dom_harv_sim)
+
+        Illustrate a change of the semi finished scenario from amounts to fractions.
+        Modify fractions semi finished scenarios
+
+            from eu_cbm_hat.core.continent import continent
+            runner = continent.combos['reference'].runners['LU'][-1]
+            hwp = runner.post_processor.hwp
+            print(hwp.prod_from_dom_harv_sim)
+
+            print("Fractions before modification, in the default scenario")
+            print(hwp.fraction_semifinished_n_years_mean)
+            print(hwp.fraction_semifinished)
+            print(hwp.prod_from_dom_harv_sim)
+            print(hwp.stock_sink_results)
+
+            # Change the fraction semi finished
+            runner.post_processor.hwp.hwp_frac_scenario = "more_sw"
+            print("Fractions in the scenario")
+            print(hwp.fraction_semifinished)
+            # Display the effect on the production from domestic harvest
+            print(hwp.prod_from_dom_harv_sim)
+            # Display the effect on the final results
+            print(hwp.stock_sink_results)
+
+            # Add recycling (default)
+            df_with_recycling = hwp.prod_from_dom_harv_sim
+            # Don't add recycling
+            hwp.add_recycling = False
+            df_without_recycling = hwp.prod_from_dom_harv_sim
 
         """
         df = self.fluxes_by_grade.copy()
@@ -935,7 +962,7 @@ class HWP:
             df["wp_dom_tc"] = df["sawlogs"] * df["wp_fraction"]
             df["pp_dom_tc"] = df["pulpwood"] * df["pp_fraction"]
         else:
-            df = df.merge(self.prod_semifinished_fsm, on="year")
+            df = df.merge(self.prod_semifinished_from_dom_harv_fsm, on="year")
             # Compute the minimum between saw logs tc and sawnwood tc
             df["sw_con_dom_tc"] = np.minimum(
                 df["sawlogs_con"], df["sw_con_expected_tc"]
