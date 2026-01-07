@@ -267,6 +267,9 @@ class NAI:
 
         # Compute NAI and GAI
         df_out = compute_nai_gai(df_agg, groupby=groupby)
+        ##################################
+        output_path = eu_cbm_data_pathlib / "quick_results" / "prod_from_dom_harv_stat_0.csv"
+        df_out.to_csv(output_path, mode="w", header=True)
         
         # exclude NF lands
         df_out = df_out[~df_out['status'].str.contains('NF')]

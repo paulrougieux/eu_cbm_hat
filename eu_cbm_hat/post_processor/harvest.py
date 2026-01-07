@@ -384,7 +384,7 @@ class Harvest:
         df["irw_to_product"] = (df["irw_to_product_soft"] + df["irw_to_product_hard"] )
         df["fw_to_product"] = (df["fw_to_product_soft"] + df["fw_to_product_hard"] )
                               
-        # Convert tons of carbon to volume under bark
+        # Convert tons of carbon to volume under/over bark
         df["irw_harvest_prov_ub_con"] = ton_carbon_to_m3_ub(df, "irw_to_product_soft")
         df["irw_harvest_prov_ub_broad"] = ton_carbon_to_m3_ub(df, "irw_to_product_hard")
         df["irw_harvest_prov_ob_con"] = ton_carbon_to_m3_ob(df, "irw_to_product_soft")
@@ -398,16 +398,15 @@ class Harvest:
         df["irw_harvest_prov_ob"] = df["irw_harvest_prov_ob_con"] + df["irw_harvest_prov_ob_broad"]
         df["fw_harvest_prov_ub"] = df["fw_harvest_prov_ub_con"] + df["fw_harvest_prov_ub_broad"]
         df["fw_harvest_prov_ob"] = df["fw_harvest_prov_ob_con"] + df["fw_harvest_prov_ob_broad"]
+
+        df["harvest_prov_ub"] =  df["irw_harvest_prov_ub"] + df["fw_harvest_prov_ub"]
+        df["harvest_prov_ob"] =  df["irw_harvest_prov_ob"] + df["fw_harvest_prov_ob"]
         
         # Area information
         index = ["identifier", "timestep"]
         area = self.pools[index + ["area"]]
         df = df.merge(area, on=index)
         return df
-
-
-
-        
 
     def provided_fw(self):
         """explicit split on FW from IRW and FW dedicated silviculturasl practices, provided in one country"""
@@ -465,7 +464,8 @@ class Harvest:
                                     "disturbance_type", "con_broad", 
                                     "site_index", "growth_period"], how='inner')
 
-        # here the split on 2dfs: one accounting for when there is no industrial use of roundwood, the other for the FW colateral IRW production. Because of this split, total_harvest_ub_provided is split. 
+        # here the split on 2dfs: one accounting for when there is no industrial use of roundwood, the other for the FW colateral IRW production. 
+        # Because of this split, total_harvest_ub_provided is split. 
         # 'df_fw' and 'df_fw_irw'. Both contain the four source pools: merch, other, stem_snags and branch_snag
         
         columns = ['softwood_merch_irw_frac',
@@ -718,9 +718,6 @@ class Harvest:
         
         # stems in FW dedicated silvicultural practices
         df_merged['fw_merch_ub_in_fw_ub_provided_frac'] = df_merged['fw_harvest_prov_merch_ub']/(df_merged['fw_harvest_prov_ub'])
-
-        df_merged['country'] = self.runner.country.iso2_code
-  
         return df_merged
 
 
@@ -827,8 +824,8 @@ class Harvest:
                 ["irw_to_product","fw_to_product","irw_harvest_prov_ub",
                  "irw_harvest_prov_ob", "fw_harvest_prov_ub", "fw_harvest_prov_ob", 
                  "irw_harvest_prov_ub_con","irw_harvest_prov_ub_broad", "fw_harvest_prov_ub_con", 
-                 "fw_harvest_prov_ub_broad"])
-        df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()   
+                 "fw_harvest_prov_ub_broad","harvest_prov_ub","harvest_prov_ob"])
+        df_agg = self.provided.groupby(groupby)[cols].agg("sum").reset_index()  
         return df_agg
 
     def irw_provided_2020_agg(self, groupby: Union[List[str], str]):
@@ -884,7 +881,7 @@ class Harvest:
         if groupby == ["year"]:
             # print("Group by year, adding demand columns from the economic model.")
             df = df.merge(self.demand, on=groupby)
-
+        df["member_state"] = self.runner.country.iso2_code
         # Sort rows in the order of the grouping variables
         df.sort_values(groupby, inplace=True)
         return df
