@@ -20,6 +20,7 @@ from eu_cbm_hat.post_processor.area import Area
 from eu_cbm_hat.post_processor.stock import Stock
 from eu_cbm_hat.post_processor.nai import NAI
 from eu_cbm_hat.post_processor.npp import NPP
+from eu_cbm_hat.post_processor.natural_disturbances import NatDist
 from eu_cbm_hat.post_processor.growth_curve import GrowthCurve
 from eu_cbm_hat.post_processor.diagnostic import Diagnostic
 
@@ -266,6 +267,11 @@ class PostProcessor(object):
     def stock(self):
         """Compute standing stocks"""
         return Stock(self)
+
+    @cached_property
+    def nd(self):
+        """Compute emissions from natural disturbances"""
+        return NatDist(self)
 
     def sum_flux_pool(self, by: Union[List[str], str], pools: List[str]):
         """Aggregate the flux pool table over the "by" variables and for the

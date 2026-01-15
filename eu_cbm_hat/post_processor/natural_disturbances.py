@@ -8,11 +8,17 @@ import yaml
 from eu_cbm_hat.info.harvest import combined
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ub
 from eu_cbm_hat.post_processor.convert import ton_carbon_to_m3_ob
+from eu_cbm_hat.constants import eu_cbm_data_pathlib
 
 """
 This dictionary allows splitting the natural disturbances area, harvest and emissions 
 
-In this script "salvage" stands for natural disturbances
+In this script "salvage" stands for natural disturbances in general
+
+Retrieve "wildfires" only emissions
+runner = continent.combos[scenario].runners['LU'][-1]
+from eu_cbm_hat.post_processor.natural_disturbances import NatDist
+nat_dist = runner.post_processor.nd.wildfire_emissions
 """
 dist_silv_corresp = { 
                 1 :'thinnings',#generic 5%
@@ -58,10 +64,10 @@ dist_silv_corresp = {
                 43 :'salvage',#Salvage logging after insects (calibration)
                 45 :'salvage',#generic 90% mortality (calibration)
                 45 :'salvage',#Salvage logging after insects (calibration)
-                50 :'salvage',#Fire with salvage logging
-                50 :'salvage',#Fire with salvage logging (calibration)
-                50 :'salvage',#generic 50% mortality (calibration)
-                51 :'salvage',#Fire with salvage logging (calibration)
+                50 :'wildfire',#Fire with salvage logging
+                50 :'wildfire',#Fire with salvage logging (calibration)
+                50 :'wildfire',#generic 50% mortality (calibration)
+                51 :'wildfire',#Fire with salvage logging (calibration)
                 115 :'thinnings',#15% commercial thinning
                 120 :'thinnings',#generic 40% mortality
                 125 :'final_cut',#generic 70%
@@ -93,8 +99,8 @@ dist_silv_corresp = {
                 500 :'salvage',#Fire with salvage logging (projection)
                 501 :'salvage',#Fire with salvage logging (projection)
                 501 :'salvage',#generic 50% mortality (projection)
-                501	:'salvage',#Fire with salvage logging (projection)
-                502	:'salvage',#Forest floor fire without salvage logging (projection)
+                501	:'wildfire',#Fire with salvage logging (projection)
+                502	:'wildfire',#Forest floor fire without salvage logging (projection)
                 515 :'thinnings',#Post_conversion_LA_15%_commercial_thinning
                 535 :'thinnings',#Step_1_conversion_LA_35%_commercial_thinning
                 550 :'thinnings',#Step_2_conversion_LA_50%_commercial_thinning
@@ -254,44 +260,40 @@ class NatDist:
 
 
     @cached_property
-    def nd_emissions(self):
+    def wildfire_emissions(self):
         """this is total CO2 emissions from all pools from NDs"""
         df = self.fluxes
-        self.fluxes_dict = FLUXES_DICT.copy()
-        self.groupby_nd = ["year", "silv_practice"]
-        
-        # Add wood density information by forest type
-        #df = df.merge(self.parent.wood_density_bark_frac, on="forest_type")
-        
-        # Convert tons of carbon to volume under bark
-        #df["total_harvest_ub_provided"] = ton_carbon_to_m3_ub(df, "to_product")
-        #df["total_harvest_ob_provided"] = ton_carbon_to_m3_ob(df, "to_product")
-        
-        # add silvicultural practices
-        # Add a new column to the DataFrame
-        df['silv_practice'] = None
-        # Match the values in df with the keys in dist_silv_corresp
-        for i in range(len(df)):
-            disturbance_type = df.loc[i, 'disturbance_type']
-            if disturbance_type in dist_silv_corresp:
-                df.loc[i, 'silv_practice'] = dist_silv_corresp[disturbance_type]
-        df = df[df['silv_practice'] == 'salvage']
+        n2oef = 0.26 #g kg-1 DRY MATTER BURNT
+        CO2ef = 1569 #g kg-1 DRY MATTER BURNT
+        GWP_n2o = 265 #  Fifth Assessment Report (AR5)  or 298 as of AR4
 
-        # Area information
-        index = ["identifier", "timestep"]
-        area = self.pools[index + ["area"]]
-        df = df.merge(area, on=index)
+        # First, we need to process the dictionary to avoid duplicate keys
+        # Get unique disturbance codes that map to 'wildfire'
+        wildfire_codes = {code: value for code, value in dist_silv_corresp.items()
+                         if value == 'wildfire'}.keys()
         
-        for key in self.fluxes_dict:
-            # Aggregate all pool columns to one pool value for this key
-            df = df.copy()
-            df.loc[:, key] = df[self.fluxes_dict[key]].sum(axis=1)*44/12
-            
-        cols = list(self.fluxes_dict.keys())+['area']
-        df_agg = df.groupby(self.groupby_nd)[cols].agg("sum").reset_index()
-        df_agg['total_emissions'] = df_agg[cols].sum(axis=1)
- 
-        return df_agg
+        # Subset the DataFrame
+        wildfire_df = df[df['disturbance_type'].isin(wildfire_codes)]
+    
+        # Group by 'timestep' and sum the specified columns
+        df = wildfire_df.groupby('timestep').agg({
+            'disturbance_co2_production': 'sum',
+            'disturbance_ch4_production': 'sum',
+            'disturbance_co_production': 'sum'
+        }).reset_index()  # Reset index to make 'timestep' a column again
+
+        # Rename the columns
+        df = df.rename(columns={
+            'disturbance_co2_production': 'co2_wildfires',
+            'disturbance_ch4_production': 'ch4_co2eq_wildfires',
+            'disturbance_co_production': 'co_wildfires'
+        })
+
+        # add column with n20 in equivalent CO2 based on IPCC default emission factor ratio
+        # emission factorsused  are: N2Oef = 0.26 and CO2ef = 1569.
+        df['n2o_co2eq_wildfires'] = df['co2_wildfires'] * n2oef/CO2ef * GWP_n2o
+
+        return df
 
 
         
