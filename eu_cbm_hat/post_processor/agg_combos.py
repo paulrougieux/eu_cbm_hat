@@ -812,6 +812,7 @@ def weighted_nai_one_country(combo_name: str, iso2_code: str, groupby: Union[Lis
     df['weighted_merch_gai'] = df['gai_merch_ha'] * df['area']
     df['weighted_agb_nai'] = df['nai_agb_ha'] * df['area']
     df['weighted_agb_gai'] = df['gai_agb_ha'] * df['area']
+    
 
     # Group by the necessary columns and sum the weighted values and the area
     grouped = df.groupby(['country', 'year']).agg(
@@ -830,9 +831,10 @@ def weighted_nai_one_country(combo_name: str, iso2_code: str, groupby: Union[Lis
 
     grouped = grouped.rename(columns = {'total_area':'area', 'total_weighted_nai_merch':'nai_merch', 'total_weighted_gai_merch':'gai_merch',
                                        'total_weighted_nai_agb':'nai_agb', 'total_weighted_gai_agb':'gai_agb'})
+    grouped['combo_name'] = combo_name
     
     # Select the relevant columns for the final output
-    final_df = grouped[['country', 'year', 'area', 'nai_merch', 'gai_merch',
+    final_df = grouped[['combo_name','country', 'year', 'area', 'nai_merch', 'gai_merch',
                        'nai_agb', 'gai_agb', 'nai_merch_ha', 'gai_merch_ha', 
                         'nai_agb_ha', 'gai_agb_ha']]
     return final_df
@@ -854,7 +856,7 @@ def nai_all_countries_weighted_nai_eu(combo_name: str, groupby: Union[List[str],
     df_eu = df_all.groupby('year').apply(
         lambda x: pandas.Series({
             'country': 'EU',
-            #'combo_name': combo_name,
+            'combo_name': combo_name,
             #'status': '',  # You can set this to any value you want
             'area': x['area'].sum(),
             'nai_merch': x['nai_merch'].sum(),
