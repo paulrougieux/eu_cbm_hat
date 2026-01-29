@@ -109,7 +109,8 @@ class Runner(object):
 
     @property_cached
     def post_processor(self):
-        """Update or convert the output data to this run using some rules."""
+        """Modifies the output data from this run `eu_cbm_hat.post_processor`.
+        """
         return PostProcessor(self)
 
     @property_cached
