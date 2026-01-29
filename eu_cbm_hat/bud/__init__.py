@@ -213,6 +213,21 @@ class Bud:
         """Convert and summarize output data."""
         return BudPostProcessor(self)
 
+    @cached_property
+    def combo(self):
+        """Make combo available for use in HWP"""
+        return BudCombo(self)
+
+    @cached_property
+    def country(self):
+        """Make country parameters available for use in HWP"""
+        return BudCountry(self)
+
+    @cached_property
+    def silv(self):
+        """Make silv coefficients available for use in HWP"""
+        return BudSilviculture(self)
+
     ######################################
     # Methods copied from core/runner.py #
     ######################################
@@ -248,3 +263,42 @@ class Bud:
         """
         return InternalData(self)
 
+###########################################################################
+# Patch the bud as if it was a runner for the purposes of HWP computation #
+###########################################################################
+class BudCombo():
+    """Patch combo object to use HWP in bud"""
+    def __init__(self, parent):
+        self.parent = parent
+        self.short_name = "reference"
+        self.config = {
+                'irw_frac_by_dist':"reference"
+                }
+
+class BudCountry():
+    """Patch country object to use HWP in bud"""
+    def __init__(self, parent):
+        self.parent = parent
+        self.short_name = None
+        self.base_year = None
+        self.iso2_code = None
+
+class SilvicultureCoefs():
+    """Load wood density bark fraction coefficients"""
+    def __init__(self, parent):
+        self.parent = parent
+        file_name = "vol_to_mass_coefs.csv"
+        csv_path = csv_path = self.parent.parent.data_dir / "input/csv" / file_name
+        # if csv_path.exists():
+        #     raise Dir
+        self.raw = pd.read_csv(csv_path)
+
+class BudSilviculture():
+    """Patch silvictulture object to use HWP in bud"""
+    def __init__(self, parent):
+        self.parent = parent
+
+    def coefs(self):
+        """Wood density and bark fraction data"""
+        return(SilvicultureCoefs(self))
+#
