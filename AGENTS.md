@@ -1,12 +1,14 @@
 
 # Development Workflow
 
+- When using Neovim, I often start it in the subdirectory eu_cbm_hat
 - Follow NumPy docstrings, type hints, line length 88.
 - Comments should explain scientific rationale. Include references to relevant
   literature and standards where applicable
 - Use pandas for data manipulation, ensure reproducible code.
 - External data repos: eu_cbm_data and eu_cbm_aidb need to be kept in sync.
 - Use GitLab CI/CD for automated testing.
+
 
 
 # Project Architecture
