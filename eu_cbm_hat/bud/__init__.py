@@ -14,6 +14,7 @@ TODO :
 from typing import Union, Dict
 from pathlib import Path
 from functools import cached_property
+import pandas as pd
 
 # autopaths and plumbing dependencies from Lucas Sinclair
 from autopaths.auto_paths import AutoPaths
@@ -37,6 +38,7 @@ from eu_cbm_hat.bud.input_data import BudInputData
 from eu_cbm_hat.bud.output import BudOutput
 from eu_cbm_hat.bud.output import BudSim
 from eu_cbm_hat.bud.post_processor import BudPostProcessor
+from eu_cbm_hat.bud.silviculture import BudSilviculture
 
 
 class Bud:
@@ -254,7 +256,7 @@ class Bud:
         )
         # Return #
         return logger
-    
+
     @cached_property
     def internal(self):
         """
@@ -282,23 +284,3 @@ class BudCountry():
         self.short_name = None
         self.base_year = None
         self.iso2_code = None
-
-class SilvicultureCoefs():
-    """Load wood density bark fraction coefficients"""
-    def __init__(self, parent):
-        self.parent = parent
-        file_name = "vol_to_mass_coefs.csv"
-        csv_path = csv_path = self.parent.parent.data_dir / "input/csv" / file_name
-        # if csv_path.exists():
-        #     raise Dir
-        self.raw = pd.read_csv(csv_path)
-
-class BudSilviculture():
-    """Patch silvictulture object to use HWP in bud"""
-    def __init__(self, parent):
-        self.parent = parent
-
-    def coefs(self):
-        """Wood density and bark fraction data"""
-        return(SilvicultureCoefs(self))
-#
