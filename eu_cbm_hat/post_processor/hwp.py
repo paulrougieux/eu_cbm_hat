@@ -160,7 +160,6 @@ class HWP:
     def __init__(self, parent):
         self.parent = parent
         self.runner = parent.runner
-        self.combo_name = self.runner.combo.short_name
         self.classif_list = self.parent.classifiers_list
         self.base_year = self.runner.country.base_year
         # Semifinished products
@@ -185,7 +184,7 @@ class HWP:
             self.semifinished_prod_scenario = self.runner.combo.config[
                 "semi_finished_production"
             ]
-        except KeyError:
+        except (KeyError, AttributeError):
             self.semifinished_prod_scenario = "fraction"
         # Add recycling information or not
         self.add_recycling = True
