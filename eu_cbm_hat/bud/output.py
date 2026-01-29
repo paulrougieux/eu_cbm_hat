@@ -23,7 +23,15 @@ class BudSim:
         return self.bud.cbm_output
 
 class BudOutput(OutputData):
-    """libcbm simulation output"""
+    """libcbm simulation output
+
+    Inherits from the runner OutputData object. Stores data in the same way.
+    The data can be retrieved after a simulation run for example load the pool
+    flux data frame with:
+
+    bud.output.pool_flux
+
+    """
 
     def __init__(self, parent):
         self.parent = parent
@@ -36,14 +44,4 @@ class BudOutput(OutputData):
         self.paths = AutoPaths(str(self.parent.data_dir), self.all_paths)
         self.sim = self.parent.sim
 
-    # def save(self):
-    #     """Save libcbm output to parquet files on disk
-
-    #     One parquet file for each of the tables:
-    #     ['area', 'classifiers', 'flux', 'parameters', 'pools', 'state']
-
-    #     """
-
-    #     for t in self.tables:
-    #         print(self.bud.cbm_output[t].head())
 
