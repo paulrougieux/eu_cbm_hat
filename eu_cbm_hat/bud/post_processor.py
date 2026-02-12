@@ -26,13 +26,17 @@ class BudPostProcessor(PostProcessor):
     def __init__(self, parent):
         # Call the runner.post_processor initialization method
         super().__init__(parent)
-        irw_frac = pd.read_csv(self.parent.data_dir / "input/csv" / "irw_frac_by_dist.csv")
+
+    @cached_property
+    def irw_frac(self):
+        """Industrial roundwood fractions to be used in the HWP computation"""
+        df = pd.read_csv(self.parent.data_dir / "input/csv" / "irw_frac_by_dist.csv")
         # Duplicate irw_frac for every year to match standard CBM runner input format
         years = pd.DataFrame({'year': range(2000, 2101)})
-        irw_frac = irw_frac.assign(key=1).merge(years.assign(key=1), on='key').drop('key', axis=1)
+        df = df.assign(key=1).merge(years.assign(key=1), on='key').drop('key', axis=1)
         # Convert site index to a string
-        irw_frac["site_index"] = irw_frac["site_index"].astype(str)
-        self.irw_frac = irw_frac
+        df["site_index"] = df["site_index"].astype(str)
+        return df
 
     def get_dist_description(self, pattern):
         """Get disturbance types which contain the given pattern in their name"""
